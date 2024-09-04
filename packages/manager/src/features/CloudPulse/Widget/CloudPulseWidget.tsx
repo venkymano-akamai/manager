@@ -334,7 +334,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
               <Box sx={{ display: { lg: 'flex', xs: 'none' } }}>
                 <ZoomIcon
                   handleZoomToggle={handleZoomToggle}
-                  zoomIn={widget?.size === 12}
+                  selectedZoom={widget?.size === 12}
                 />
               </Box>
             </Stack>

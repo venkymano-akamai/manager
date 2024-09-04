@@ -5,7 +5,7 @@ import * as React from 'react';
 export interface ZoomIconProperties {
   className?: string;
   handleZoomToggle: (zoomIn: boolean) => void;
-  zoomIn: boolean;
+  selectedZoom: boolean;
 }
 
 export const ZoomIcon = React.memo((props: ZoomIconProperties) => {
@@ -14,7 +14,7 @@ export const ZoomIcon = React.memo((props: ZoomIconProperties) => {
   };
 
   const ToggleZoomer = () => {
-    if (props.zoomIn) {
+    if (props.selectedZoom) {
       return (
         <ZoomInMap
           data-testid="zoom-in"
