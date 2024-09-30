@@ -7,6 +7,7 @@ import type {
   Dashboard,
   Widgets,
 } from '@linode/api-v4';
+import type { UserPreferences } from '@linode/api-v4/src/profile';
 
 const color = ['blue', 'red', 'green', 'yellow'];
 const chart_type = ['area', 'area', 'area', 'line'];
@@ -132,12 +133,7 @@ export const widgetFactory = Factory.Sync.makeFactory<Widgets>({
  * - `metric_type`: Set to `'gauge'`, indicating the type of metric.
  * - `scrape_interval`: The interval at which metrics are scraped, chosen from a predefined list (`scrape_interval`). The value is selected based on the index modulo the length of `scrape_interval`.
  * - `unit`: The unit of measurement for the metric, chosen from a predefined list (`units_interval`). The unit is selected based on the index modulo the length of `units_interval`.
- *
- * Usage Example:
- * ```typescript
- * const myDashboardMetricFactory = dashboardMetricFactory(['Widget1', 'Widget2'], ['Metric1', 'Metric2']);
- * const myMetric = myDashboardMetricFactory.build(); // Creates an AvailableMetrics instance with the specified properties.
- * ```
+ * * 
  */
 
 export const dashboardMetricFactory = Factory.Sync.makeFactory<AvailableMetrics>(
@@ -198,7 +194,7 @@ export const generateValues = (
   return {
     result: [{ metric: {}, values }],
     result_type: 'matrix',
-  }
+  };
 };
 
 // Factory for CloudPulseMetricsResponseData
@@ -223,5 +219,18 @@ export const cloudPulseMetricsResponseFactory = Factory.Sync.makeFactory<CloudPu
       series_fetched: 2, // Adjust based on the number of metrics
     },
     status: 'success',
+  }
+);
+
+export const userPreferencesFactory = Factory.Sync.makeFactory<UserPreferences>(
+  {
+    aclpPreference: {
+      dashboardId: 'default-id',
+      engine: 'default-engine',
+      region: 'us-ord',
+      resources: ['1'],
+      role: 'default-role',
+      widgets: {},
+    },
   }
 );

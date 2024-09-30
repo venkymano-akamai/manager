@@ -14,6 +14,7 @@ import {
   cloudPulseMetricsResponseFactory,
   dashboardFactory,
   dashboardMetricFactory,
+  databaseFactory,
   generateValues,
   kubeLinodeFactory,
   linodeFactory,
@@ -25,9 +26,10 @@ import { mockGetLinodes } from 'support/intercepts/linodes';
 import { mockGetUserPreferences, mockUpdateUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { extendRegion } from 'support/util/regions';
-import { CloudPulseMetricsResponse, UserPreferences } from '@linode/api-v4';
+import { CloudPulseMetricsResponse, Database, UserPreferences } from '@linode/api-v4';
 import { transformData } from 'src/features/CloudPulse/Utils/unitConversion';
 import { getMetrics } from 'src/utilities/statMetrics';
+import { mockGetDatabases } from 'support/intercepts/databases';
 import { userPreferencesFactory } from 'src/factories/dashboards';
 
 /**
@@ -50,8 +52,10 @@ const {
   serviceType,
   dashboardName,
   region,
-  resource
-} = widgetDetails.linode;
+  engine,
+  clusterName,
+  nodeType,
+} = widgetDetails.dbaas;
 
 const dashboard = dashboardFactory.build({
   label: dashboardName,
@@ -78,7 +82,7 @@ const metricDefinitions = {
 
 const mockKubeLinode = kubeLinodeFactory.build();
 const mockLinode = linodeFactory.build({
-  label: resource,
+  label:clusterName,
   id: mockKubeLinode.instance_id ?? undefined,
 });
 
@@ -91,17 +95,30 @@ const mockRegion = extendRegion(
     country: 'us',
   })
 );
-
 const responsePayload =cloudPulseMetricsResponseFactory.build( {data:generateValues( timeDurationToSelect,
-  '5 min')});
-  
+  '5 min')});  
 
+const databaseMock: Database = databaseFactory.build({
+  label:  clusterName,
+  type:  engine,
+  region:  region,
+  version: "1",
+  status: 'provisioning',
+  cluster_size: 1,
+  engine: 'mysql',
+  hosts: {
+    primary: undefined,
+    secondary: undefined,
+  },
+});
 const userPreferences = userPreferencesFactory.build({
   aclpPreference: {
     dashboardId: id, 
+    "engine":engine.toLowerCase(),
     region:'us-ord',
-    resources: ['4'], 
+    resources: ['1'], 
     timeDuration:timeDurationToSelect,
+    "role": nodeType.toLowerCase(),
     // You can also override widgets if necessary
     widgets: {
       'CPU Utilization': {
@@ -127,7 +144,7 @@ const userPreferences = userPreferencesFactory.build({
     },
   },
 } as Partial<UserPreferences>);
-describe('Linode Dashboard and  Widget Verification Tests', () => {
+describe('Dbaas Dashboard and Widget Verification Tests', () => {
   beforeEach(() => {
     // Mocking Feature Flags
     mockAppendFeatureFlags({
@@ -158,14 +175,17 @@ describe('Linode Dashboard and  Widget Verification Tests', () => {
     // Mocking Metrics Creation
     mockCloudPulseCreateMetrics(responsePayload, serviceType).as('getMetrics');
 
+    // Mocking Database Data
+    mockGetDatabases([databaseMock]).as('getDatabases');
 
     // Mocking Regions Data
     mockGetRegions([mockRegion]).as('getRegions');
 
     // Mocking User Preferences
     mockGetUserPreferences({}).as('getUserPreferences');
-    
-  // Visit the Cloud Pulse Page
+
+
+    // Visit the Cloud Pulse Page
     cy.visitWithLogin('monitor/cloudpulse').as('cloudPulsePage');
     
     // Selecting a Dashboard from the autocomplete input
@@ -175,13 +195,20 @@ describe('Linode Dashboard and  Widget Verification Tests', () => {
       .type(`${dashboardName}{enter}`)
       .should('be.visible');
 
-   // Select a Time Duration
+  
+    // Select a Time Duration
     ui.autocomplete
       .findByLabel('Select a Time Duration')
       .should('be.visible')
       .type(`${timeDurationToSelect}{enter}`)
       .should('be.visible');
-   
+
+    // Select an Engine
+    ui.autocomplete
+      .findByLabel('Select an Engine')
+      .should('be.visible')
+      .type(`${engine}{enter}`)
+      .should('be.visible');
 
     // Select a Region
     ui.regionSelect
@@ -189,15 +216,22 @@ describe('Linode Dashboard and  Widget Verification Tests', () => {
       .click()
       .type(`${region}{enter}`);
 
-    // Mocking User Preferences Update
-    mockUpdateUserPreferences(userPreferences).as('updateUserPreferences');
-
-   // Select a Resource
+    // Select a Resource
     ui.autocomplete
       .findByLabel('Select a Resource')
       .should('be.visible')
-      .type(`${resource}{enter}`)
+      .type(`${clusterName}{enter}`)
       .click();
+
+  
+    // Mocking User Preferences Update
+    mockUpdateUserPreferences(userPreferences).as('updateUserPreferences');
+
+    // Select a Node Type
+    ui.autocomplete
+      .findByLabel('Select a Node Type')
+      .should('be.visible')
+      .type(`${nodeType}{enter}`);
 
     // Verify Expected Widgets on the Dashboard
     metrics.forEach((testData) => {
@@ -218,7 +252,9 @@ describe('Linode Dashboard and  Widget Verification Tests', () => {
       expect(preferences).to.have.property('dashboardId',id);
       expect(preferences).to.have.property('timeDuration',timeDurationToSelect);
       expect(preferences).to.have.property('region', 'us-ord');
-      expect(preferences).to.have.property('resources').that.deep.equals( ["4"]);
+      expect(preferences).to.have.property('engine', engine.toLowerCase());
+      expect(preferences).to.have.property('role', nodeType.toLowerCase());
+      expect(preferences).to.have.property('resources').that.deep.equals( ["1"]);
   
     });
   });
@@ -421,6 +457,11 @@ describe('Linode Dashboard and  Widget Verification Tests', () => {
         .should('be.visible')
         .and('have.value', timeDurationToSelect);
 
+    // Check if the Engine filter is visible and has the correct value
+    ui.autocomplete
+        .findByLabel('Select an Engine')
+        .should('be.visible')
+        .and('have.value', engine);
 
     // Check if the Region filter is visible and has the correct value
     ui.regionSelect
@@ -432,6 +473,12 @@ describe('Linode Dashboard and  Widget Verification Tests', () => {
     ui.autocomplete
         .findByLabel('Select a Resource')
         .should('be.visible');
+
+    // Check if the Node Type filter is visible and has the correct value
+    ui.autocomplete
+        .findByLabel('Select a Node Type')
+        .should('be.visible')
+        .and('have.value', nodeType);
 
     // Step 5: Verify each widget's title and configuration
     metrics.forEach((testData) => {
