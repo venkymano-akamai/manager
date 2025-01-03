@@ -11,10 +11,11 @@ import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
 export interface CloudPulseLineGraph extends AreaChartProps {
   error?: string;
   loading?: boolean;
+  zoomReset?: number;
 }
 
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
-  const { error, loading, ...rest } = props;
+  const { error, loading, zoomReset, ...rest } = props;
 
   const theme = useTheme();
 
@@ -53,6 +54,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           }}
           fillOpacity={0.5}
           legendHeight="150px"
+          zoomReset={zoomReset}
         />
       )}
       {rest.data.length === 0 && (

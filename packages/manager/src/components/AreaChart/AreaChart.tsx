@@ -168,7 +168,7 @@ export interface AreaChartProps {
    */
   yAxisProps?: YAxisProps;
 
-  resetZoom?: boolean;
+  zoomReset?: number;
 }
 
 export const AreaChart = (props: AreaChartProps) => {
@@ -192,6 +192,7 @@ export const AreaChart = (props: AreaChartProps) => {
     xAxis,
     xAxisTickCount,
     yAxisProps,
+    zoomReset,
   } = props;
 
   const theme = useTheme();
@@ -202,6 +203,27 @@ export const AreaChart = (props: AreaChartProps) => {
   );
 
   const [chartData, setChartData] = React.useState<any[]>(data);
+
+  React.useEffect(() => {
+    const newStartIndex = 0;
+    const newEndIndex = data.length - 1;
+
+    // Update the brush range
+    const startTimestamp = data[newStartIndex].timestamp;
+    const endTimestamp = data[newEndIndex].timestamp;
+
+    if (
+      startTimestamp &&
+      endTimestamp &&
+      !(xDomain[0] === startTimestamp && xDomain[1] === endTimestamp)
+    ) {
+      // Slice the chartData based on the brush range
+      const newChartData = data.slice(newStartIndex, newEndIndex + 1);
+      setXDomain([startTimestamp, endTimestamp]);
+      setChartData(newChartData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoomReset]);
 
   const handleZoom = (event: React.WheelEvent) => {
     event.preventDefault();

@@ -133,6 +133,8 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
 
   const [widget, setWidget] = React.useState<Widgets>({ ...props.widget });
 
+  const [zoomCount, setZoomCount] = React.useState<number>(0);
+
   const theme = useTheme();
 
   const {
@@ -325,7 +327,17 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                 />
               </Box>
               <Box>
-                <Button buttonType="primary">Reset Zoom</Button>
+                <Button
+                  onClick={() => {
+                    setZoomCount(zoomCount + 1);
+                  }}
+                  buttonType="primary"
+                  sx={{
+                    maxHeight:'20px'
+                  }}
+                >
+                  Reset Zoom
+                </Button>
               </Box>
             </Stack>
           </Stack>
@@ -352,6 +364,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
             unit={currentUnit}
             variant={variant}
             xAxis={{ tickFormat, tickGap: 60 }}
+            zoomReset={zoomCount}
           />
         </Paper>
       </Stack>
