@@ -67,13 +67,6 @@ export interface AlertValidationSchemaProps {
    */
   aclpAlertServiceTypeConfig: AclpAlertServiceTypeConfig[];
   /**
-   * The base schema which needs to be enhanced with the entity_ids validation
-   */
-  baseSchema: ObjectSchema<
-    CreateAlertDefinitionForm | EditAlertDefinitionPayload
-  >;
-
-  /**
    * The service type that is linked with alert and for which the validation schema needs to be built
    */
   serviceTypeObj: null | string;
@@ -276,35 +269,43 @@ export const processMetricCriteria = (
   );
 };
 
-/**
- * @param props The props required to enhance the validation schema
- * @returns The validation schema updated with max selection count for entity_ids based on service type
- */
-export const enhanceValidationSchemaWithEntityIdValidation = (
-  props: AlertValidationSchemaProps
-): ObjectSchema<CreateAlertDefinitionForm | EditAlertDefinitionPayload> => {
-  const { aclpAlertServiceTypeConfig, baseSchema, serviceTypeObj } = props;
-
-  if (!serviceTypeObj || !aclpAlertServiceTypeConfig.length) {
-    return baseSchema;
-  }
-
+export const enhanceWithEntityIdValidationForCreateFlow = (
+  props: AlertValidationSchemaProps,
+  createSchema: ObjectSchema<CreateAlertDefinitionForm>
+): ObjectSchema<CreateAlertDefinitionForm> => {
+  const { aclpAlertServiceTypeConfig, serviceTypeObj } = props;
   const maxSelectionCount = aclpAlertServiceTypeConfig.find(
     ({ serviceType }) => serviceTypeObj === serviceType
   )?.maxResourceSelectionCount;
 
   return maxSelectionCount === undefined
-    ? baseSchema
-    : baseSchema.concat(
-        object({
-          entity_ids: array()
-            .of(string())
-            .max(
-              maxSelectionCount,
-              `The overall number of resources assigned to an alert can't exceed ${maxSelectionCount}.`
-            ),
-        }) as ObjectSchema<
-          CreateAlertDefinitionForm | EditAlertDefinitionPayload
-        >
-      );
+    ? createSchema
+    : createSchema.concat(getEntityIdWithMax(maxSelectionCount));
+};
+
+export const enhanceWithEntityIdValidationForEditPayload = (
+  props: AlertValidationSchemaProps,
+  editSchema: ObjectSchema<EditAlertDefinitionPayload>
+): ObjectSchema<EditAlertDefinitionPayload> => {
+  const { aclpAlertServiceTypeConfig, serviceTypeObj } = props;
+  const maxSelectionCount = aclpAlertServiceTypeConfig.find(
+    ({ serviceType }) => serviceTypeObj === serviceType
+  )?.maxResourceSelectionCount;
+
+  return maxSelectionCount === undefined
+    ? editSchema
+    : editSchema.concat(getEntityIdWithMax(maxSelectionCount));
+};
+
+const getEntityIdWithMax = (maxSelectionCount: number) => {
+  return object({
+    entity_ids: array()
+      .of(string().required())
+      .optional()
+      .default([])
+      .max(
+        maxSelectionCount,
+        `The overall number of resources assigned to an alert can't exceed ${maxSelectionCount}.`
+      ),
+  });
 };

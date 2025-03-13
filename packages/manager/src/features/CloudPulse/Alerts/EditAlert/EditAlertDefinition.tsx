@@ -1,7 +1,6 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty } from '@linode/api-v4';
 import { ActionsPanel, Paper, TextField, Typography } from '@linode/ui';
-import { scrollErrorIntoView } from '@linode/utilities';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
@@ -10,6 +9,7 @@ import { useHistory } from 'react-router-dom';
 import { Breadcrumb } from 'src/components/Breadcrumb/Breadcrumb';
 import { useFlags } from 'src/hooks/useFlags';
 import { useEditAlertDefinition } from 'src/queries/cloudpulse/alerts';
+import { scrollErrorIntoView } from 'src/utilities/scrollErrorIntoView';
 
 import { MetricCriteriaField } from '../CreateAlert/Criteria/MetricCriteria';
 import { TriggerConditions } from '../CreateAlert/Criteria/TriggerConditions';
@@ -19,7 +19,7 @@ import { AddChannelListing } from '../CreateAlert/NotificationChannels/AddChanne
 import { CloudPulseModifyAlertResources } from '../CreateAlert/Resources/CloudPulseModifyAlertResources';
 import {
   convertAlertDefinitionValues,
-  enhanceValidationSchemaWithEntityIdValidation,
+  enhanceWithEntityIdValidationForEditPayload,
 } from '../Utils/utils';
 import { EditAlertDefinitionSchema } from './schemas';
 
@@ -56,11 +56,13 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     defaultValues: filteredAlertDefinitionValues,
     mode: 'onBlur',
     resolver: yupResolver(
-      enhanceValidationSchemaWithEntityIdValidation({
-        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
-        baseSchema: editAlertSchema,
-        serviceTypeObj: alertDetails.service_type,
-      })
+      enhanceWithEntityIdValidationForEditPayload(
+        {
+          aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+          serviceTypeObj: alertDetails.service_type,
+        },
+        editAlertSchema
+      )
     ),
   });
 

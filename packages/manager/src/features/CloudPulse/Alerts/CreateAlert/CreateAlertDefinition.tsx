@@ -12,7 +12,7 @@ import { useFlags } from 'src/hooks/useFlags';
 import { useCreateAlertDefinition } from 'src/queries/cloudpulse/alerts';
 import { scrollErrorIntoView } from 'src/utilities/scrollErrorIntoView';
 
-import { enhanceValidationSchemaWithEntityIdValidation } from '../Utils/utils';
+import { enhanceWithEntityIdValidationForCreateFlow } from '../Utils/utils';
 import { MetricCriteriaField } from './Criteria/MetricCriteria';
 import { TriggerConditions } from './Criteria/TriggerConditions';
 import { CloudPulseAlertSeveritySelect } from './GeneralInformation/AlertSeveritySelect';
@@ -27,6 +27,7 @@ import type {
   MetricCriteriaForm,
   TriggerConditionForm,
 } from './types';
+import type { ObjectSchema } from 'yup';
 
 const triggerConditionInitialValues: TriggerConditionForm = {
   criteria_condition: 'ALL',
@@ -75,12 +76,16 @@ export const CreateAlertDefinition = () => {
   const createAlertSchema = CreateAlertDefinitionFormSchema;
 
   // Default resolver
-  const [validationSchema, setValidationSchema] = React.useState(
-    enhanceValidationSchemaWithEntityIdValidation({
-      aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
-      baseSchema: createAlertSchema,
-      serviceTypeObj: null,
-    })
+  const [validationSchema, setValidationSchema] = React.useState<
+    ObjectSchema<CreateAlertDefinitionForm>
+  >(
+    enhanceWithEntityIdValidationForCreateFlow(
+      {
+        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+        serviceTypeObj: null,
+      },
+      createAlertSchema
+    )
   );
 
   const formMethods = useForm<CreateAlertDefinitionForm>({
@@ -150,11 +155,13 @@ export const CreateAlertDefinition = () => {
 
   React.useEffect(() => {
     setValidationSchema(
-      enhanceValidationSchemaWithEntityIdValidation({
-        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
-        baseSchema: createAlertSchema,
-        serviceTypeObj: serviceTypeWatcher,
-      })
+      enhanceWithEntityIdValidationForCreateFlow(
+        {
+          aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+          serviceTypeObj: serviceTypeWatcher,
+        },
+        createAlertSchema
+      )
     );
   }, [createAlertSchema, flags.aclpAlertServiceTypeConfig, serviceTypeWatcher]);
 
