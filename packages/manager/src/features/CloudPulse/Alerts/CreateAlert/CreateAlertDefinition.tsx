@@ -25,7 +25,6 @@ import type {
   MetricCriteriaForm,
   TriggerConditionForm,
 } from './types';
-import type { ObjectSchema } from 'yup';
 
 const triggerConditionInitialValues: TriggerConditionForm = {
   criteria_condition: 'ALL',
@@ -74,9 +73,7 @@ export const CreateAlertDefinition = () => {
   const formMethods = useForm<CreateAlertDefinitionForm>({
     defaultValues: initialValues,
     mode: 'onBlur',
-    resolver: yupResolver(
-      CreateAlertDefinitionFormSchema as ObjectSchema<CreateAlertDefinitionForm>
-    ),
+    resolver: yupResolver(CreateAlertDefinitionFormSchema),
   });
   const {
     control,

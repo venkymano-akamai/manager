@@ -2,6 +2,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty } from '@linode/api-v4';
 import { ActionsPanel, Paper, TextField, Typography } from '@linode/ui';
 import { scrollErrorIntoView } from '@linode/utilities';
+import { metricCriteria } from '@linode/validation';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
@@ -17,14 +18,15 @@ import { CloudPulseServiceSelect } from '../CreateAlert/GeneralInformation/Servi
 import { AddChannelListing } from '../CreateAlert/NotificationChannels/AddChannelListing';
 import { CloudPulseModifyAlertResources } from '../CreateAlert/Resources/CloudPulseModifyAlertResources';
 import { convertAlertDefinitionValues } from '../Utils/utils';
-import { EditAlertDefinitionFormSchema } from './schemas';
 
 import type {
   Alert,
   AlertServiceType,
   EditAlertDefinitionPayload,
+  MetricCriteria,
 } from '@linode/api-v4';
 import type { ObjectSchema } from 'yup';
+import { EditAlertDefinitionSchema } from './schemas';
 
 export interface EditAlertProps {
   /**
@@ -50,9 +52,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
   const formMethods = useForm<EditAlertDefinitionPayload>({
     defaultValues: filteredAlertDefinitionValues,
     mode: 'onBlur',
-    resolver: yupResolver(
-      EditAlertDefinitionFormSchema as ObjectSchema<EditAlertDefinitionPayload>
-    ),
+    resolver: yupResolver(EditAlertDefinitionSchema),
   });
 
   const alertId = alertDetails.id;
