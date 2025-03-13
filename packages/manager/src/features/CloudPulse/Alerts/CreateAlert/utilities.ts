@@ -19,7 +19,6 @@ export const filterFormValues = (
 ): CreateAlertDefinitionPayload => {
   const values = omitProps(formValues, [
     'serviceType',
-    'region',
     'engineType',
     'severity',
     'rule_criteria',

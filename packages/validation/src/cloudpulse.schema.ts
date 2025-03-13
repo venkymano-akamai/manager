@@ -66,11 +66,8 @@ export const createAlertDefinitionSchema = object({
   channel_ids: array()
     .of(number().required())
     .min(1, 'At least one notification channel is required.').required(),
-  tags: array().of(string().required()).optional(),
   entity_ids: array().of(string().required()).optional().default([]),
-  serviceType: string()
-    .oneOf(['linode', 'dbaas'])
-    .required(fieldErrorMessage),
+  tags: array().of(string()).notRequired(),
   severity: number().oneOf([0, 1, 2, 3])
     .required(fieldErrorMessage),
 });
@@ -102,9 +99,6 @@ export const editAlertDefinitionSchema = object({
     .optional(),
   tags: array().of(string().required()).optional(),
   trigger_conditions: triggerConditionValidation.optional(), 
-  serviceType: string()
-    .oneOf(['linode','dbaas'])
-    .optional(),
   severity: number().oneOf([0,1,2,3])
     .optional(),
 })

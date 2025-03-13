@@ -67,7 +67,7 @@ export const triggerConditionValidationUpdated = triggerConditionValidation.conc
 export const CreateAlertDefinitionFormSchema = createAlertDefinitionSchema.concat(
   object({
     engineType: string().defined().nullable(),
-    region: string().required(),
+    region: string().optional(),
     rule_criteria: object({
       rules: array()
         .of(metricCriteriaUpdated)

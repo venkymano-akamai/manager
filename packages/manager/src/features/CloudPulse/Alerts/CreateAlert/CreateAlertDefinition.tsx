@@ -47,13 +47,11 @@ const initialValues: CreateAlertDefinitionForm = {
   engineType: null,
   entity_ids: [],
   label: '',
-  region: '',
   rule_criteria: {
     rules: [criteriaInitialValues],
   },
   serviceType: null,
   severity: null,
-  tags: [''],
   trigger_conditions: triggerConditionInitialValues,
 };
 

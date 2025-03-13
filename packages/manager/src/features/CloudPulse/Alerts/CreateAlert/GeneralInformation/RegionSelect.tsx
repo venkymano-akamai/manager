@@ -11,7 +11,7 @@ export interface CloudViewRegionSelectProps {
   /**
    * name used for the component to set in the form
    */
-  name: FieldPathByValue<CreateAlertDefinitionForm, string>;
+  name: FieldPathByValue<CreateAlertDefinitionForm, string | undefined>;
 }
 
 export const CloudPulseRegionSelect = (props: CloudViewRegionSelectProps) => {
