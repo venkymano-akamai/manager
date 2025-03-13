@@ -10,7 +10,6 @@ import { useHistory } from 'react-router-dom';
 import { Breadcrumb } from 'src/components/Breadcrumb/Breadcrumb';
 import { useFlags } from 'src/hooks/useFlags';
 import { useEditAlertDefinition } from 'src/queries/cloudpulse/alerts';
-import { scrollErrorIntoView } from 'src/utilities/scrollErrorIntoView';
 
 import { MetricCriteriaField } from '../CreateAlert/Criteria/MetricCriteria';
 import { TriggerConditions } from '../CreateAlert/Criteria/TriggerConditions';
@@ -18,14 +17,17 @@ import { CloudPulseAlertSeveritySelect } from '../CreateAlert/GeneralInformation
 import { CloudPulseServiceSelect } from '../CreateAlert/GeneralInformation/ServiceTypeSelect';
 import { AddChannelListing } from '../CreateAlert/NotificationChannels/AddChannelListing';
 import { CloudPulseModifyAlertResources } from '../CreateAlert/Resources/CloudPulseModifyAlertResources';
-import { convertAlertDefinitionValues, enhanceValidationSchemaWithEntityIdValidation } from '../Utils/utils';
+import {
+  convertAlertDefinitionValues,
+  enhanceValidationSchemaWithEntityIdValidation,
+} from '../Utils/utils';
+import { EditAlertDefinitionSchema } from './schemas';
 
 import type {
   Alert,
   AlertServiceType,
   EditAlertDefinitionPayload,
 } from '@linode/api-v4';
-import { EditAlertDefinitionSchema } from './schemas';
 
 export interface EditAlertProps {
   /**
