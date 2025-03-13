@@ -27,7 +27,6 @@ import type {
   MetricCriteriaForm,
   TriggerConditionForm,
 } from './types';
-import type { ObjectSchema } from 'yup';
 
 const triggerConditionInitialValues: TriggerConditionForm = {
   criteria_condition: 'ALL',
@@ -73,7 +72,7 @@ export const CreateAlertDefinition = () => {
   const history = useHistory();
   const alertCreateExit = () => history.push('/alerts/definitions');
   const flags = useFlags();
-  const createAlertSchema = CreateAlertDefinitionFormSchema as ObjectSchema<CreateAlertDefinitionForm>;
+  const createAlertSchema = CreateAlertDefinitionFormSchema;
 
   // Default resolver
   const [validationSchema, setValidationSchema] = React.useState(
@@ -81,7 +80,7 @@ export const CreateAlertDefinition = () => {
       aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
       baseSchema: createAlertSchema,
       serviceTypeObj: null,
-    }) as ObjectSchema<CreateAlertDefinitionForm>
+    })
   );
 
   const formMethods = useForm<CreateAlertDefinitionForm>({
@@ -155,7 +154,7 @@ export const CreateAlertDefinition = () => {
         aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
         baseSchema: createAlertSchema,
         serviceTypeObj: serviceTypeWatcher,
-      }) as ObjectSchema<CreateAlertDefinitionForm>
+      })
     );
   }, [createAlertSchema, flags.aclpAlertServiceTypeConfig, serviceTypeWatcher]);
 

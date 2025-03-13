@@ -1,6 +1,7 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty } from '@linode/api-v4';
 import { ActionsPanel, Paper, TextField, Typography } from '@linode/ui';
+import { scrollErrorIntoView } from '@linode/utilities';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
@@ -17,18 +18,14 @@ import { CloudPulseAlertSeveritySelect } from '../CreateAlert/GeneralInformation
 import { CloudPulseServiceSelect } from '../CreateAlert/GeneralInformation/ServiceTypeSelect';
 import { AddChannelListing } from '../CreateAlert/NotificationChannels/AddChannelListing';
 import { CloudPulseModifyAlertResources } from '../CreateAlert/Resources/CloudPulseModifyAlertResources';
-import {
-  convertAlertDefinitionValues,
-  enhanceValidationSchemaWithEntityIdValidation,
-} from '../Utils/utils';
-import { EditAlertDefinitionFormSchema } from './schemas';
+import { convertAlertDefinitionValues, enhanceValidationSchemaWithEntityIdValidation } from '../Utils/utils';
 
 import type {
   Alert,
   AlertServiceType,
   EditAlertDefinitionPayload,
 } from '@linode/api-v4';
-import type { ObjectSchema } from 'yup';
+import { EditAlertDefinitionSchema } from './schemas';
 
 export interface EditAlertProps {
   /**
@@ -52,7 +49,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     serviceType
   );
   const flags = useFlags();
-  const editAlertSchema = EditAlertDefinitionFormSchema as ObjectSchema<EditAlertDefinitionPayload>;
+  const editAlertSchema = EditAlertDefinitionSchema;
   const formMethods = useForm<EditAlertDefinitionPayload>({
     defaultValues: filteredAlertDefinitionValues,
     mode: 'onBlur',
@@ -61,7 +58,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
         aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
         baseSchema: editAlertSchema,
         serviceTypeObj: alertDetails.service_type,
-      }) as ObjectSchema<EditAlertDefinitionPayload>
+      })
     ),
   });
 
