@@ -14,7 +14,7 @@ import type {
 export interface CreateAlertDefinitionForm
   extends Omit<
     CreateAlertDefinitionPayload,
-    'rule_criteria' | 'severity' | 'tags' | 'trigger_conditions'
+    'rule_criteria' | 'severity' | 'trigger_conditions'
   > {
   engineType: null | string;
   entity_ids: string[];

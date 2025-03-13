@@ -16,7 +16,7 @@ export const metricCriteria = object({
     .required(fieldErrorMessage)
     .min(0, "The value can't be negative.")
     .typeError('The value should be a number.'),
-  dimension_filters: array().of(dimensionFilters.required()).optional().default([]),
+  dimension_filters: array().of(dimensionFilters.defined()).optional(),
 });
 
 export const triggerConditionValidation = object({
@@ -64,10 +64,10 @@ export const createAlertDefinitionSchema = object({
   }),
   trigger_conditions: triggerConditionValidation,
   channel_ids: array()
-    .of(number().required())
+    .of(number().defined())
     .min(1, 'At least one notification channel is required.').required(),
-  entity_ids: array().of(string().required()).optional().default([]),
-  tags: array().of(string()).notRequired(),
+  entity_ids: array().of(string().defined()).defined(),
+  tags: array().of(string().defined()).optional(),
   severity: number().oneOf([0, 1, 2, 3])
     .required(fieldErrorMessage),
 });
