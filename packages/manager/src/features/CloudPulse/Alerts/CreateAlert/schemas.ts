@@ -33,10 +33,7 @@ export const metricCriteriaUpdated = metricCriteria.concat(
       .nullable()
       .test('emptyTest', fieldErrorMessage, (value) => value !== null),
 
-    dimension_filters: array()
-      .of(dimensionFiltersUpdated)
-      .optional()
-      .default([]),
+    dimension_filters: array().of(dimensionFiltersUpdated).required(),
 
     metric: string()
       .required(fieldErrorMessage)
@@ -72,7 +69,7 @@ export const CreateAlertDefinitionFormSchema = createAlertDefinitionSchema.conca
       rules: array()
         .of(metricCriteriaUpdated)
         .min(1, 'At least one metric criteria is required.')
-        .default([]),
+        .required(),
     }),
     serviceType: string()
       .oneOf(['linode', 'dbaas'])
