@@ -14,7 +14,7 @@ import type {
 } from '@linode/api-v4';
 import type { Theme } from '@mui/material';
 import type { AclpAlertServiceTypeConfig } from 'src/featureFlags';
-import type { ObjectSchema } from 'yup';
+import { array, object, string, type ObjectSchema } from 'yup';
 
 interface AlertChipBorderProps {
   /**
@@ -278,10 +278,7 @@ export const getCreateSchemaWithEntityIdValidation = (
 
   return maxSelectionCount === undefined
     ? createSchema
-    : getSchemaWithMaxValidation<CreateAlertDefinitionForm>(
-        maxSelectionCount,
-        createSchema
-      );
+    : createSchema.concat(getEntityIdWithMax(maxSelectionCount));
 };
 
 export const getEditSchemaWithEntityIdValidation = (
@@ -295,33 +292,18 @@ export const getEditSchemaWithEntityIdValidation = (
 
   return maxSelectionCount === undefined
     ? editSchema
-    : getSchemaWithMaxValidation<EditAlertDefinitionPayload>(
-        maxSelectionCount,
-        editSchema
-      );
+    : editSchema.concat(getEntityIdWithMax(maxSelectionCount));
 };
 
-const getSchemaWithMaxValidation = <
-  T extends CreateAlertDefinitionForm | EditAlertDefinitionPayload
->(
-  maxSelectionCount: number,
-  baseSchema: ObjectSchema<T>
-): ObjectSchema<T> => {
-  return baseSchema.test({
-    exclusive: true,
-    message: `The overall number of resources assigned to an alert can't exceed ${maxSelectionCount}.`,
-    name: 'entity-ids-max',
-    test(value) {
-      // We need to check if entity_ids exists and is an array
-      if (
-        !value ||
-        !('entity_ids' in value) ||
-        !Array.isArray(value.entity_ids)
-      ) {
-        return true;
-      }
-
-      return value.entity_ids.length <= maxSelectionCount;
-    },
+const getEntityIdWithMax = (maxSelectionCount: number) => {
+  return object({
+    entity_ids: array()
+      .of(string().required())
+      .optional()
+      .default([])
+      .max(
+        maxSelectionCount,
+        `The overall number of resources assigned to an alert can't exceed ${maxSelectionCount}.`
+      ),
   });
 };
