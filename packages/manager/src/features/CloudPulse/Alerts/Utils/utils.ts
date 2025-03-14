@@ -1,5 +1,3 @@
-import { array, object, string } from 'yup';
-
 import { aggregationTypeMap, metricOperatorTypeMap } from '../constants';
 
 import type { AlertDimensionsProp } from '../AlertsDetail/DisplayAlertDetailChips';
@@ -269,7 +267,7 @@ export const processMetricCriteria = (
   );
 };
 
-export const enhanceWithEntityIdValidationForCreateFlow = (
+export const getCreateSchemaWithEntityIdValidation = (
   props: AlertValidationSchemaProps,
   createSchema: ObjectSchema<CreateAlertDefinitionForm>
 ): ObjectSchema<CreateAlertDefinitionForm> => {
@@ -280,10 +278,13 @@ export const enhanceWithEntityIdValidationForCreateFlow = (
 
   return maxSelectionCount === undefined
     ? createSchema
-    : createSchema.concat(getEntityIdWithMax(maxSelectionCount));
+    : getSchemaWithMaxValidation<CreateAlertDefinitionForm>(
+        maxSelectionCount,
+        createSchema
+      );
 };
 
-export const enhanceWithEntityIdValidationForEditPayload = (
+export const getEditSchemaWithEntityIdValidation = (
   props: AlertValidationSchemaProps,
   editSchema: ObjectSchema<EditAlertDefinitionPayload>
 ): ObjectSchema<EditAlertDefinitionPayload> => {
@@ -294,17 +295,33 @@ export const enhanceWithEntityIdValidationForEditPayload = (
 
   return maxSelectionCount === undefined
     ? editSchema
-    : editSchema.concat(getEntityIdWithMax(maxSelectionCount));
+    : getSchemaWithMaxValidation<EditAlertDefinitionPayload>(
+        maxSelectionCount,
+        editSchema
+      );
 };
 
-const getEntityIdWithMax = (maxSelectionCount: number) => {
-  return object({
-    entity_ids: array()
-      .of(string().required())
-      .defined()
-      .max(
-        maxSelectionCount,
-        `The overall number of resources assigned to an alert can't exceed ${maxSelectionCount}.`
-      ),
+const getSchemaWithMaxValidation = <
+  T extends CreateAlertDefinitionForm | EditAlertDefinitionPayload
+>(
+  maxSelectionCount: number,
+  baseSchema: ObjectSchema<T>
+): ObjectSchema<T> => {
+  return baseSchema.test({
+    exclusive: true,
+    message: `The overall number of resources assigned to an alert can't exceed ${maxSelectionCount}.`,
+    name: 'entity-ids-max',
+    test(value) {
+      // We need to check if entity_ids exists and is an array
+      if (
+        !value ||
+        !('entity_ids' in value) ||
+        !Array.isArray(value.entity_ids)
+      ) {
+        return true;
+      }
+
+      return value.entity_ids.length <= maxSelectionCount;
+    },
   });
 };

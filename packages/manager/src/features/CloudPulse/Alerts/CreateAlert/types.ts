@@ -18,7 +18,7 @@ export interface CreateAlertDefinitionForm
   > {
   engineType: null | string;
   entity_ids: string[];
-  region?: string;
+  region: string;
   rule_criteria: {
     rules: MetricCriteriaForm[];
   };
