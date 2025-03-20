@@ -4,12 +4,7 @@ import { ActionsPanel, Paper, TextField, Typography } from '@linode/ui';
 import { scrollErrorIntoView } from '@linode/utilities';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useWatch,
-} from 'react-hook-form';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 import { useHistory } from 'react-router-dom';
 
 import { Breadcrumb } from 'src/components/Breadcrumb/Breadcrumb';
@@ -22,7 +17,10 @@ import {
   MULTILINE_ERROR_SEPARATOR,
   SINGLELINE_ERROR_SEPARATOR,
 } from '../constants';
-import { handleMultipleError, getCreateSchemaWithEntityIdValidation } from '../Utils/utils';
+import {
+  getCreateSchemaWithEntityIdValidation,
+  handleMultipleError,
+} from '../Utils/utils';
 import { MetricCriteriaField } from './Criteria/MetricCriteria';
 import { TriggerConditions } from './Criteria/TriggerConditions';
 import { CloudPulseAlertSeveritySelect } from './GeneralInformation/AlertSeveritySelect';
@@ -55,10 +53,8 @@ const criteriaInitialValues: MetricCriteriaForm = {
 };
 const initialValues: CreateAlertDefinitionForm = {
   channel_ids: [],
-  engineType: null,
   entity_ids: [],
   label: '',
-  region: '',
   rule_criteria: {
     rules: [criteriaInitialValues],
   },
