@@ -18,7 +18,7 @@ import {
   SINGLELINE_ERROR_SEPARATOR,
 } from '../constants';
 import {
-  getCreateSchemaWithEntityIdValidation,
+  getSchemaWithEntityIdValidation,
   handleMultipleError,
 } from '../Utils/utils';
 import { MetricCriteriaField } from './Criteria/MetricCriteria';
@@ -86,7 +86,7 @@ export const CreateAlertDefinition = () => {
   const [validationSchema, setValidationSchema] = React.useState<
     ObjectSchema<CreateAlertDefinitionForm>
   >(
-    getCreateSchemaWithEntityIdValidation(
+    getSchemaWithEntityIdValidation(
       {
         aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
         serviceTypeObj: null,
@@ -166,7 +166,7 @@ export const CreateAlertDefinition = () => {
 
   React.useEffect(() => {
     setValidationSchema(
-      getCreateSchemaWithEntityIdValidation(
+      getSchemaWithEntityIdValidation(
         {
           aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
           serviceTypeObj: serviceTypeWatcher,

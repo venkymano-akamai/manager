@@ -277,7 +277,7 @@ export const processMetricCriteria = (
   );
 };
 
-export const getCreateSchemaWithEntityIdValidation = (
+export const getSchemaWithEntityIdValidation = (
   props: AlertValidationSchemaProps,
   createSchema: ObjectSchema<CreateAlertDefinitionForm>
 ): ObjectSchema<CreateAlertDefinitionForm> => {
@@ -289,20 +289,6 @@ export const getCreateSchemaWithEntityIdValidation = (
   return maxSelectionCount === undefined
     ? createSchema
     : createSchema.concat(getEntityIdWithMax(maxSelectionCount));
-};
-
-export const getEditSchemaWithEntityIdValidation = (
-  props: AlertValidationSchemaProps,
-  editSchema: ObjectSchema<EditAlertDefinitionPayload>
-): ObjectSchema<EditAlertDefinitionPayload> => {
-  const { aclpAlertServiceTypeConfig, serviceTypeObj } = props;
-  const maxSelectionCount = aclpAlertServiceTypeConfig.find(
-    ({ serviceType }) => serviceTypeObj === serviceType
-  )?.maxResourceSelectionCount;
-
-  return maxSelectionCount === undefined
-    ? editSchema
-    : editSchema.concat(getEntityIdWithMax(maxSelectionCount));
 };
 
 const getEntityIdWithMax = (maxSelectionCount: number) => {

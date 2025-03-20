@@ -26,7 +26,7 @@ import { createAlertDefinitionFormSchema as editAlertDefinitionFormSchema } from
 import { filterEditFormValues } from '../CreateAlert/utilities';
 import {
   convertAlertDefinitionValues,
-  getCreateSchemaWithEntityIdValidation,
+  getSchemaWithEntityIdValidation,
   handleMultipleError,
 } from '../Utils/utils';
 
@@ -68,7 +68,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     },
     mode: 'onBlur',
     resolver: yupResolver(
-      getCreateSchemaWithEntityIdValidation(
+      getSchemaWithEntityIdValidation(
         {
           aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
           serviceTypeObj: alertDetails.service_type,
