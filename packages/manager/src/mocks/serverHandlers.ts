@@ -133,9 +133,9 @@ import { MTC_SUPPORTED_REGIONS } from 'src/features/components/PlansPanel/consta
 import type {
   AccountMaintenance,
   AlertDefinitionType,
-  AlertServiceType,
   AlertSeverityType,
   AlertStatusType,
+  CloudPulseServiceType,
   CreateAlertDefinitionPayload,
   CreateObjectStorageKeyPayload,
   Dashboard,
@@ -2655,7 +2655,7 @@ export const handlers = [
       const status: AlertStatusType[] = ['enabled', 'disabled'];
       const severity: AlertSeverityType[] = [0, 1, 2, 3];
       const users = ['user1', 'user2', 'user3'];
-      const serviceTypes: AlertServiceType[] = ['linode', 'dbaas'];
+      const serviceTypes: CloudPulseServiceType[] = ['linode', 'dbaas'];
       const reqBody = await request.json();
       const response = alertFactory.build({
         ...(reqBody as CreateAlertDefinitionPayload),

@@ -11,8 +11,8 @@ import type {
   Alert,
   AlertDefinitionMetricCriteria,
   AlertDefinitionType,
-  AlertServiceType,
   APIError,
+  CloudPulseServiceType,
   EditAlertPayloadWithService,
   NotificationChannel,
   Region,
@@ -72,7 +72,7 @@ export interface AlertValidationSchemaProps {
   /**
    * The config that holds the maxResourceSelection count per service type like linode, dbaas etc.,
    */
-  aclpAlertServiceTypeConfig: AclpAlertServiceTypeConfig[];
+  aclpCloudPulseServiceTypeConfig: AclpAlertServiceTypeConfig[];
 
   /**
    * The base schema which needs to be enhanced with the entity_ids validation
@@ -154,7 +154,7 @@ interface FilterRegionProps {
   /**
    * The service type for which the regions are being filtered
    */
-  serviceType: AlertServiceType | null;
+  serviceType: CloudPulseServiceType | null;
 }
 
 interface SupportedRegionsProps {
@@ -173,7 +173,7 @@ interface SupportedRegionsProps {
   /**
    * The service type for which the regions are being filtered
    */
-  serviceType: AlertServiceType | null;
+  serviceType: CloudPulseServiceType | null;
 }
 
 /**
@@ -335,7 +335,7 @@ export const convertAlertDefinitionValues = (
     scope,
     regions,
   }: Alert,
-  serviceType: AlertServiceType
+  serviceType: CloudPulseServiceType
 ): EditAlertPayloadWithService => {
   return {
     alertId: id,
@@ -395,12 +395,12 @@ export const processMetricCriteria = (
 export const getSchemaWithEntityIdValidation = (
   props: AlertValidationSchemaProps
 ): ObjectSchema<CreateAlertDefinitionForm> => {
-  const { aclpAlertServiceTypeConfig, baseSchema, serviceTypeObj } = props;
-  if (!serviceTypeObj || !aclpAlertServiceTypeConfig?.length) {
+  const { aclpCloudPulseServiceTypeConfig, baseSchema, serviceTypeObj } = props;
+  if (!serviceTypeObj || !aclpCloudPulseServiceTypeConfig?.length) {
     return baseSchema;
   }
 
-  const maxSelectionCount = aclpAlertServiceTypeConfig.find(
+  const maxSelectionCount = aclpCloudPulseServiceTypeConfig.find(
     (config) => config && serviceTypeObj === config.serviceType
   )?.maxResourceSelectionCount;
   return maxSelectionCount

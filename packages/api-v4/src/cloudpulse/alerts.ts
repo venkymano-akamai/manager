@@ -15,8 +15,8 @@ import Request, {
 import type { Filter, Params, ResourcePage } from '../types';
 import type {
   Alert,
-  AlertServiceType,
   CloudPulseAlertsPayload,
+  CloudPulseServiceType,
   CreateAlertDefinitionPayload,
   EditAlertDefinitionPayload,
   NotificationChannel,
@@ -24,7 +24,7 @@ import type {
 
 export const createAlertDefinition = (
   data: CreateAlertDefinitionPayload,
-  serviceType: AlertServiceType,
+  serviceType: CloudPulseServiceType,
 ) =>
   Request<Alert>(
     setURL(

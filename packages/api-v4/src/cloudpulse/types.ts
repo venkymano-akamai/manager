@@ -3,8 +3,6 @@ import type { AccountCapability } from 'src/account';
 export type AlertSeverityType = 0 | 1 | 2 | 3;
 export type MetricAggregationType = 'avg' | 'count' | 'max' | 'min' | 'sum';
 export type MetricOperatorType = 'eq' | 'gt' | 'gte' | 'lt' | 'lte';
-export type AlertServiceType = 'dbaas' | 'linode';
-export type MetricsServiceType = 'dbaas' | 'linode' | 'nodebalancers';
 export type CloudPulseServiceType = 'dbaas' | 'linode' | 'nodebalancers';
 export type AlertClass = 'dedicated' | 'shared';
 export type DimensionFilterOperatorType =
@@ -38,7 +36,7 @@ export interface Dashboard {
   created: string;
   id: number;
   label: string;
-  service_type: MetricsServiceType;
+  service_type: CloudPulseServiceType;
   time_duration: TimeDuration;
   updated: string;
   widgets: Widgets[];
@@ -249,7 +247,7 @@ export interface Alert {
     rules: AlertDefinitionMetricCriteria[];
   };
   scope: AlertDefinitionGroup;
-  service_type: AlertServiceType;
+  service_type: CloudPulseServiceType;
   severity: AlertSeverityType;
   status: AlertStatusType;
   tags: string[];
@@ -364,7 +362,7 @@ export interface DeleteAlertPayload {
 }
 
 export const capabilityServiceTypeMapping: Record<
-  MetricsServiceType,
+  CloudPulseServiceType,
   AccountCapability
 > = {
   linode: 'Linodes',

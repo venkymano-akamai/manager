@@ -7,8 +7,8 @@ import type {
   TriggerConditionForm,
 } from './types';
 import type {
-  AlertServiceType,
   AlertSeverityType,
+  CloudPulseServiceType,
   CreateAlertDefinitionPayload,
   DimensionFilter,
   EditAlertPayloadWithService,
@@ -50,7 +50,7 @@ export const filterFormValues = (
  */
 export const filterEditFormValues = (
   formValues: CreateAlertDefinitionForm,
-  serviceType: AlertServiceType,
+  serviceType: CloudPulseServiceType,
   severity: AlertSeverityType,
   alertId: number
 ): EditAlertPayloadWithService => {

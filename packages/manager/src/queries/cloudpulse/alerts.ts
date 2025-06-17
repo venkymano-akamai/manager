@@ -18,8 +18,8 @@ import { queryFactory } from './queries';
 
 import type {
   Alert,
-  AlertServiceType,
   CloudPulseAlertsPayload,
+  CloudPulseServiceType,
   CreateAlertDefinitionPayload,
   DeleteAlertPayload,
   EditAlertPayloadWithService,
@@ -28,7 +28,9 @@ import type {
 } from '@linode/api-v4/lib/cloudpulse';
 import type { APIError, Filter, Params } from '@linode/api-v4/lib/types';
 
-export const useCreateAlertDefinition = (serviceType: AlertServiceType) => {
+export const useCreateAlertDefinition = (
+  serviceType: CloudPulseServiceType
+) => {
   const queryClient = useQueryClient();
   return useMutation<Alert, APIError[], CreateAlertDefinitionPayload>({
     mutationFn: (data) => createAlertDefinition(data, serviceType),

@@ -37,8 +37,8 @@ import type { CreateAlertDefinitionForm as EditAlertDefintionForm } from '../Cre
 import type {
   Alert,
   AlertDefinitionGroup,
-  AlertServiceType,
   APIError,
+  CloudPulseServiceType,
   EditAlertPayloadWithService,
 } from '@linode/api-v4';
 
@@ -50,7 +50,7 @@ export interface EditAlertProps {
   /**
    * The type of service associated with the alert
    */
-  serviceType: AlertServiceType;
+  serviceType: CloudPulseServiceType;
 }
 
 export const EditAlertDefinition = (props: EditAlertProps) => {
@@ -73,7 +73,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     mode: 'onBlur',
     resolver: yupResolver(
       getSchemaWithEntityIdValidation({
-        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+        aclpCloudPulseServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
         baseSchema: alertDefinitionFormSchema,
         serviceTypeObj: alertDetails.service_type,
       })

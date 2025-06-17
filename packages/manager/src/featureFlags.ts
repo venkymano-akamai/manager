@@ -1,6 +1,5 @@
 import type { OCA } from './features/OneClickApps/types';
 import type {
-  AlertServiceType,
   CloudPulseServiceType,
   TPAProvider,
 } from '@linode/api-v4/lib/profile';
@@ -298,7 +297,7 @@ export interface APIMaintenance {
 
 export interface AclpAlertServiceTypeConfig {
   maxResourceSelectionCount: number;
-  serviceType: AlertServiceType;
+  serviceType: CloudPulseServiceType;
   // This can be extended to have supportedRegions, supportedFilters and other tags
 }
 

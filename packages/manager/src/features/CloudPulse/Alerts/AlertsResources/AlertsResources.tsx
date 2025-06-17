@@ -34,7 +34,7 @@ import type {
 import type {
   AlertClass,
   AlertDefinitionType,
-  AlertServiceType,
+  CloudPulseServiceType,
   Filter,
   Region,
 } from '@linode/api-v4';
@@ -92,7 +92,7 @@ export interface AlertResourcesProp {
   /**
    * The service type associated with the alerts like DBaaS, Linode etc.,
    */
-  serviceType?: AlertServiceType;
+  serviceType?: CloudPulseServiceType;
 }
 
 export const AlertResources = React.memo((props: AlertResourcesProp) => {
