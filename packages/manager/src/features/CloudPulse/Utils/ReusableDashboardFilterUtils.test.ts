@@ -131,12 +131,6 @@ it('test checkIfFilterBuilderNeeded method', () => {
   });
   expect(result).toBe(true); // should be true for dbaas, as we have the role filter
 
-  result = checkIfFilterBuilderNeeded({
-    ...mockDashboard,
-    service_type: '',
-  });
-  expect(result).toBe(false); // should be false for empty / undefined case
-
   result = checkIfFilterBuilderNeeded(undefined);
 
   expect(result).toBe(false); // should be false for empty / undefined dashboard

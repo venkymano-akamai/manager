@@ -5,6 +5,7 @@ export type MetricAggregationType = 'avg' | 'count' | 'max' | 'min' | 'sum';
 export type MetricOperatorType = 'eq' | 'gt' | 'gte' | 'lt' | 'lte';
 export type AlertServiceType = 'dbaas' | 'linode';
 export type MetricsServiceType = 'dbaas' | 'linode' | 'nodebalancers';
+export type CloudPulseServiceType = 'dbaas' | 'linode' | 'nodebalancers';
 export type AlertClass = 'dedicated' | 'shared';
 export type DimensionFilterOperatorType =
   | 'endswith'
@@ -37,7 +38,7 @@ export interface Dashboard {
   created: string;
   id: number;
   label: string;
-  service_type: string;
+  service_type: MetricsServiceType;
   time_duration: TimeDuration;
   updated: string;
   widgets: Widgets[];

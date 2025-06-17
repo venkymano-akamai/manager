@@ -1,5 +1,9 @@
 import type { OCA } from './features/OneClickApps/types';
-import type { AlertServiceType, TPAProvider } from '@linode/api-v4/lib/profile';
+import type {
+  AlertServiceType,
+  CloudPulseServiceType,
+  TPAProvider,
+} from '@linode/api-v4/lib/profile';
 import type { NoticeVariant } from '@linode/ui';
 
 // These flags should correspond with active features flags in LD
@@ -298,9 +302,9 @@ export interface AclpAlertServiceTypeConfig {
   // This can be extended to have supportedRegions, supportedFilters and other tags
 }
 
-export interface AclpBetaServices {
-  [serviceType: string]: {
+export type AclpBetaServices = {
+  [K in CloudPulseServiceType]: {
     alerts: boolean;
     metrics: boolean;
   };
-}
+};

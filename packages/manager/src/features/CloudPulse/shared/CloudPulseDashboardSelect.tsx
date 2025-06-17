@@ -7,7 +7,11 @@ import { useCloudPulseServiceTypes } from 'src/queries/cloudpulse/services';
 
 import { formattedServiceTypes, getAllDashboards } from '../Utils/utils';
 
-import type { Dashboard, FilterValue } from '@linode/api-v4';
+import type {
+  CloudPulseServiceType,
+  Dashboard,
+  FilterValue,
+} from '@linode/api-v4';
 
 export interface CloudPulseDashboardSelectProps {
   /**
@@ -90,6 +94,12 @@ export const CloudPulseDashboardSelect = React.memo(
       );
     };
 
+    const isCloudPulseServiceType = (
+      value: string
+    ): value is CloudPulseServiceType => {
+      return aclpBetaServices !== undefined && value in aclpBetaServices;
+    };
+
     // Once the data is loaded, set the state variable with value stored in preferences
     React.useEffect(() => {
       // only call this code when the component is rendered initially
@@ -124,16 +134,24 @@ export const CloudPulseDashboardSelect = React.memo(
           handleDashboardChange(dashboard, savePreferences);
         }}
         options={getSortedDashboardsList(dashboardsList ?? [])}
+        // options={[]}
         placeholder={placeHolder}
-        renderGroup={(params) => (
-          <Box key={params.key}>
-            <Typography sx={{ marginLeft: '3.5%' }} variant="h3">
-              {serviceTypeMap.get(params.group) || params.group}{' '}
-              {aclpBetaServices?.[params.group]?.metrics && <BetaChip />}
-            </Typography>
-            {params.children}
-          </Box>
-        )}
+        renderGroup={(params) => {
+          const label = serviceTypeMap.get(params.group) || params.group;
+
+          const showBetaChip =
+            isCloudPulseServiceType(params.group) &&
+            aclpBetaServices?.[params.group]?.metrics;
+
+          return (
+            <Box key={params.key}>
+              <Typography sx={{ marginLeft: '3.5%' }} variant="h3">
+                {label} {showBetaChip && <BetaChip />}
+              </Typography>
+              {params.children}
+            </Box>
+          );
+        }}
         sx={(theme) => ({
           '& .MuiInputBase-input.Mui-disabled': {
             WebkitTextFillColor: theme.tokens.color.Neutrals.Black,
