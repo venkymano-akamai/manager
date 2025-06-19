@@ -100,12 +100,12 @@ it('should correctly convert an alert definition values to the required format',
 
 describe('getSchemaWithEntityIdValidation', () => {
   const baseSchema = alertDefinitionFormSchema;
-  const aclpCloudPulseServiceTypeConfig: AclpAlertServiceTypeConfig[] = [
+  const aclpAlertServiceTypeConfig: AclpAlertServiceTypeConfig[] = [
     { maxResourceSelectionCount: 3, serviceType: 'dbaas' },
     { maxResourceSelectionCount: 5, serviceType: 'linode' },
   ];
   const props: AlertValidationSchemaProps = {
-    aclpCloudPulseServiceTypeConfig,
+    aclpAlertServiceTypeConfig,
     baseSchema,
     serviceTypeObj: 'dbaas',
   };

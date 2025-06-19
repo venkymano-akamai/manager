@@ -72,7 +72,7 @@ export interface AlertValidationSchemaProps {
   /**
    * The config that holds the maxResourceSelection count per service type like linode, dbaas etc.,
    */
-  aclpCloudPulseServiceTypeConfig: AclpAlertServiceTypeConfig[];
+  aclpAlertServiceTypeConfig: AclpAlertServiceTypeConfig[];
 
   /**
    * The base schema which needs to be enhanced with the entity_ids validation
@@ -395,12 +395,12 @@ export const processMetricCriteria = (
 export const getSchemaWithEntityIdValidation = (
   props: AlertValidationSchemaProps
 ): ObjectSchema<CreateAlertDefinitionForm> => {
-  const { aclpCloudPulseServiceTypeConfig, baseSchema, serviceTypeObj } = props;
-  if (!serviceTypeObj || !aclpCloudPulseServiceTypeConfig?.length) {
+  const { aclpAlertServiceTypeConfig, baseSchema, serviceTypeObj } = props;
+  if (!serviceTypeObj || !aclpAlertServiceTypeConfig?.length) {
     return baseSchema;
   }
 
-  const maxSelectionCount = aclpCloudPulseServiceTypeConfig.find(
+  const maxSelectionCount = aclpAlertServiceTypeConfig.find(
     (config) => config && serviceTypeObj === config.serviceType
   )?.maxResourceSelectionCount;
   return maxSelectionCount

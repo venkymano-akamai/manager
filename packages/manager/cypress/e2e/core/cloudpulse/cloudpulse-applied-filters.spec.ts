@@ -32,6 +32,7 @@ import type { Database } from '@linode/api-v4';
 import type { Flags } from 'src/featureFlags';
 
 const timeDurationToSelect = 'Last 24 Hours';
+const serviceType = 'dbaas';
 
 const flags: Partial<Flags> = {
   aclp: { beta: true, enabled: true },
@@ -51,15 +52,8 @@ const flags: Partial<Flags> = {
   ],
 };
 
-const {
-  clusterName,
-  dashboardName,
-  engine,
-  id,
-  metrics,
-  nodeType,
-  serviceType,
-} = widgetDetails.dbaas;
+const { clusterName, dashboardName, engine, id, metrics, nodeType } =
+  widgetDetails.dbaas;
 
 const dashboard = dashboardFactory.build({
   label: dashboardName,

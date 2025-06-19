@@ -302,7 +302,7 @@ export interface AclpAlertServiceTypeConfig {
 }
 
 export type AclpBetaServices = {
-  [K in CloudPulseServiceType]: {
+  [serviceType in CloudPulseServiceType]: {
     alerts: boolean;
     metrics: boolean;
   };

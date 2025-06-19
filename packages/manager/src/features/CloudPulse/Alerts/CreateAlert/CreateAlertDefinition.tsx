@@ -89,7 +89,7 @@ export const CreateAlertDefinition = () => {
   // Default resolver
   const [validationSchema, setValidationSchema] = React.useState(
     getSchemaWithEntityIdValidation({
-      aclpCloudPulseServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+      aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
       baseSchema: alertDefinitionFormSchema,
       serviceTypeObj: null,
     })
@@ -167,7 +167,7 @@ export const CreateAlertDefinition = () => {
   React.useEffect(() => {
     setValidationSchema(
       getSchemaWithEntityIdValidation({
-        aclpCloudPulseServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
         baseSchema: alertDefinitionFormSchema,
         serviceTypeObj: serviceTypeWatcher,
       })

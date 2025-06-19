@@ -73,7 +73,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     mode: 'onBlur',
     resolver: yupResolver(
       getSchemaWithEntityIdValidation({
-        aclpCloudPulseServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
         baseSchema: alertDefinitionFormSchema,
         serviceTypeObj: alertDetails.service_type,
       })
