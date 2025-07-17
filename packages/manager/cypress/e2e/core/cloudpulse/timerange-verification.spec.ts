@@ -259,16 +259,10 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     
    
     cy.get('.MuiPopover-root').within(() => {
-      cy.get('.MuiBackdrop-root').then(($backdrop) => {
-        $backdrop.remove();
-        console.log("removed me")
-      });
+      cy.get('@startDateInput').clear();
+      cy.findAllByText(startDay).first().click();
+      cy.findAllByText(endDay).first().click();
     })
-
-    cy.get('@startDateInput').clear();
-
-    cy.findAllByText(startDay).first().click();
-    cy.findAllByText(endDay).first().click();
     ui.button
       .findByAttribute('aria-label^', 'Choose time')
       .first()
