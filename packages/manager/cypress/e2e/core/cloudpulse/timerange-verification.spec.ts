@@ -256,11 +256,10 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('[aria-labelledby="start-date"]').as('startDateInput');
     cy.get('@startDateInput').click();
-    cy.get('.MuiPopover-root').within(() => {
-      cy.get('@startDateInput').clear();
+    cy.get('[role="dialog"]').within(() => {      
       cy.findAllByText(startDay).first().click();
       cy.findAllByText(endDay).first().click();
-    })
+    });
     ui.button
       .findByAttribute('aria-label^', 'Choose time')
       .first()
