@@ -256,8 +256,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('[aria-labelledby="start-date"]').as('startDateInput');
     cy.get('@startDateInput').click();
-    
-   
     cy.get('.MuiPopover-root').within(() => {
       cy.get('@startDateInput').clear();
       cy.findAllByText(startDay).first().click();
