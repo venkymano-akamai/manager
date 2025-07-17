@@ -256,11 +256,18 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('[aria-labelledby="start-date"]').as('startDateInput');
     cy.get('@startDateInput').click();
-    cy.get('@startDateInput').clear();
+    
+   
+    cy.get('.MuiPopover-root').within(() => {
+      cy.get('.MuiBackdrop-root').then(($backdrop) => {
+        $backdrop.remove();
+        console.log("removed me")
+      });
+      cy.get('@startDateInput').clear();
 
-    cy.findAllByText(startDay).first().click();
-    cy.findAllByText(endDay).first().click();
-
+      cy.findAllByText(startDay).first().click();
+      cy.findAllByText(endDay).first().click();
+    })
     ui.button
       .findByAttribute('aria-label^', 'Choose time')
       .first()
@@ -269,13 +276,16 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('@timePickerButton').click();
 
+
     // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
     cy.findByLabelText('Select hours')
       .as('selectHours')
       .scrollIntoView({ easing: 'linear' });
+
     cy.get('@selectHours').within(() => {
       cy.get(`[aria-label="${startHour} hours"]`).click();
     });
+
 
     cy.findByLabelText('Select minutes')
       .as('selectMinutes')
