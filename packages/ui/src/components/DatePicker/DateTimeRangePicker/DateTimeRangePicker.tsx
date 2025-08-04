@@ -51,6 +51,8 @@ export interface DateTimeRangePickerProps {
     timeZone: null | string;
   }) => void;
 
+  onClose?: (selectedPreset: string) => void;
+
   openCalender?: boolean;
 
   /** Additional settings for the presets dropdown */
@@ -113,6 +115,7 @@ export const DateTimeRangePicker = ({
   timeZoneProps,
   sx,
   openCalender,
+  onClose,
 }: DateTimeRangePickerProps) => {
   const [startDate, setStartDate] = useState<DateTime | null>(
     startDateProps?.value ?? null,
@@ -172,11 +175,14 @@ export const DateTimeRangePicker = ({
 
     setOpen(false);
     setAnchorEl(null);
+
+    onClose?.(selectedPreset ?? '');
   };
 
   React.useEffect(() => {
     if (startDateProps?.updatedValue) {
       setStartDate(startDateProps.updatedValue);
+      setCurrentMonth(startDateProps.updatedValue);
       previousValues.current.startDate = startDateProps.updatedValue;
     }
 
@@ -189,7 +195,7 @@ export const DateTimeRangePicker = ({
       setTimeZone(timeZoneProps.updatedValue);
       previousValues.current.timeZone = timeZoneProps.updatedValue;
     }
-    if ((selectedPreset !== 'reset') && openCalender === true) {
+    if (selectedPreset !== 'reset' && openCalender === true) {
       handleOpen('start');
     }
   }, [
@@ -293,7 +299,6 @@ export const DateTimeRangePicker = ({
     setStartDateError('');
     setEndDateError('');
   };
-
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
       <Box display={openCalender ? 'flex' : 'none'}>
@@ -335,7 +340,7 @@ export const DateTimeRangePicker = ({
           disableRestoreFocus // ✅ Prevent restoring focus (prevents MUI auto-close)
           onClose={(event, reason) => {
             // ✅ Block close only if clickaway
-            if (reason === 'backdropClick') return;
+            // if (reason === 'backdropClick') return;
 
             handleClose();
           }}
