@@ -189,7 +189,7 @@ export const DateTimeRangePicker = ({
       setTimeZone(timeZoneProps.updatedValue);
       previousValues.current.timeZone = timeZoneProps.updatedValue;
     }
-    if (openCalender === true) {
+    if ((selectedPreset !== 'reset') && openCalender === true) {
       handleOpen('start');
     }
   }, [

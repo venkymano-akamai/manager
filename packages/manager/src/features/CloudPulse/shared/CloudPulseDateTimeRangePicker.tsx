@@ -47,6 +47,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     const [showPreset, setPreset] = React.useState<boolean>(
       defaultSelected.preset !== 'reset'
     );
+    const [openCalender, setOpenCalendar] = React.useState<boolean>(defaultSelected.preset === 'reset');
     React.useEffect(() => {
       if (defaultSelected) {
         handleStatsChange(defaultSelected);
@@ -59,8 +60,10 @@ export const CloudPulseDateTimeRangePicker = React.memo(
         return;
       }
       if (selectedPreset !== 'reset') {
+        setOpenCalendar(false);
         setPreset(true);
       } else {
+        setOpenCalendar(true);
         setPreset(false);
       }
       handleStatsChange(
@@ -72,6 +75,8 @@ export const CloudPulseDateTimeRangePicker = React.memo(
         },
         savePreferences
       );
+      
+      
     };
 
     const end = defaultSelected?.start
@@ -84,7 +89,10 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     return (
       <Box alignItems={'center'} display={'flex'}>
         <Button
-          onClick={() => setPreset(false)}
+          onClick={() => {
+            setPreset(false);
+            setOpenCalendar(true);
+          }}
           sx={{
             marginTop: 3,
             display: showPreset ? 'flex' : 'none',
@@ -101,7 +109,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
           }}
           format="yyyy-MM-dd hh:mm a"
           onApply={handleDateChange}
-          openCalender={!showPreset}
+          openCalender={openCalender}
           presetsProps={{
             defaultValue: defaultSelected?.preset,
             enablePresets: true,
