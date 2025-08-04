@@ -1,5 +1,5 @@
 import { useProfile } from '@linode/queries';
-import { Button, DateTimeRangePicker } from '@linode/ui';
+import { Box, Button, DateTimeRangePicker } from '@linode/ui';
 import { DateTime } from 'luxon';
 import React from 'react';
 
@@ -82,43 +82,45 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       : end;
 
     return (
-      <>
-        {showPreset && (
-          <Button onClick={() => setPreset(false)}>
-            {defaultSelected.preset}
-          </Button>
-        )}
-        {!showPreset && (
-          <DateTimeRangePicker
-            endDateProps={{
-              label: 'End Date',
-              placeholder: 'Select End Date',
-              showTimeZone: true,
-              updatedValue: end,
-            }}
-            format="yyyy-MM-dd hh:mm a"
-            onApply={handleDateChange}
-            openCalender={defaultSelected.preset !== 'reset'}
-            presetsProps={{
-              defaultValue: defaultSelected?.preset,
-              enablePresets: true,
-            }}
-            startDateProps={{
-              label: 'Start Date',
-              placeholder: 'Select Start Date',
-              showTimeZone: true,
-              timeZoneValue: timezone,
-              updatedValue: start,
-            }}
-            sx={{
-              minWidth: '226px',
-            }}
-            timeZoneProps={{
-              updatedValue: timezone,
-            }}
-          />
-        )}
-      </>
+      <Box alignItems={'center'} display={'flex'}>
+        <Button
+          onClick={() => setPreset(false)}
+          sx={{
+            marginTop: 3,
+            display: showPreset ? 'flex' : 'none',
+          }}
+        >
+          {defaultSelected.preset}
+        </Button>
+        <DateTimeRangePicker
+          endDateProps={{
+            label: 'End Date',
+            placeholder: 'Select End Date',
+            showTimeZone: true,
+            updatedValue: end,
+          }}
+          format="yyyy-MM-dd hh:mm a"
+          onApply={handleDateChange}
+          openCalender={!showPreset}
+          presetsProps={{
+            defaultValue: defaultSelected?.preset,
+            enablePresets: true,
+          }}
+          startDateProps={{
+            label: 'Start Date',
+            placeholder: 'Select Start Date',
+            showTimeZone: true,
+            timeZoneValue: timezone,
+            updatedValue: start,
+          }}
+          sx={{
+            minWidth: '226px',
+          }}
+          timeZoneProps={{
+            updatedValue: timezone,
+          }}
+        />
+      </Box>
     );
   }
 );

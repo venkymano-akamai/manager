@@ -296,7 +296,7 @@ export const DateTimeRangePicker = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
-      <Box>
+      <Box display={openCalender ? 'flex' : 'none'}>
         <Stack direction="row" spacing={2} sx={sx}>
           <DateTimeField
             errorText={startDateError}
@@ -331,7 +331,14 @@ export const DateTimeRangePicker = ({
           anchorEl={anchorEl}
           anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
           disableAutoFocus
-          onClose={handleClose}
+          disableEnforceFocus // ✅ Prevent auto-closing focus trap
+          disableRestoreFocus // ✅ Prevent restoring focus (prevents MUI auto-close)
+          onClose={(event, reason) => {
+            // ✅ Block close only if clickaway
+            if (reason === 'backdropClick') return;
+
+            handleClose();
+          }}
           open={open}
           role="dialog"
           sx={{ boxShadow: 3, zIndex: 1300 }}
