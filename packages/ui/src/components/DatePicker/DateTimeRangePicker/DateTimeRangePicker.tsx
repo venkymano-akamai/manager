@@ -26,6 +26,7 @@ export interface DateTimeRangePickerProps {
     placeholder?: string;
     /** Whether to show the timezone selector for the end date */
     showTimeZone?: boolean;
+    updatedValue?: DateTime | null;
     /** Initial or controlled value for the end date-time */
     value?: DateTime | null;
   };
@@ -50,12 +51,15 @@ export interface DateTimeRangePickerProps {
     timeZone: null | string;
   }) => void;
 
+  openCalender?: boolean;
+
   /** Additional settings for the presets dropdown */
   presetsProps?: {
     /** Default value for the presets field */
     defaultValue?: string;
     /** If true, shows the date presets field instead of the date pickers */
     enablePresets?: boolean;
+    updatedValue?: string;
   };
 
   /** Properties for the start date field */
@@ -70,6 +74,7 @@ export interface DateTimeRangePickerProps {
     showTimeZone?: boolean;
     /** Initial or controlled value for the start timezone */
     timeZoneValue?: null | string;
+    updatedValue?: DateTime | null;
     /** Initial or controlled value for the start date-time */
     value?: DateTime | null;
   };
@@ -83,6 +88,7 @@ export interface DateTimeRangePickerProps {
     defaultValue?: string;
     /** If true, disables the timezone selector */
     disabled?: boolean;
+    updatedValue?: string;
   };
 }
 
@@ -106,6 +112,7 @@ export const DateTimeRangePicker = ({
   startDateProps,
   timeZoneProps,
   sx,
+  openCalender,
 }: DateTimeRangePickerProps) => {
   const [startDate, setStartDate] = useState<DateTime | null>(
     startDateProps?.value ?? null,
@@ -166,6 +173,31 @@ export const DateTimeRangePicker = ({
     setOpen(false);
     setAnchorEl(null);
   };
+
+  React.useEffect(() => {
+    if (startDateProps?.updatedValue) {
+      setStartDate(startDateProps.updatedValue);
+      previousValues.current.startDate = startDateProps.updatedValue;
+    }
+
+    if (endDateProps?.updatedValue) {
+      setEndDate(endDateProps.updatedValue);
+      previousValues.current.endDate = endDateProps.updatedValue;
+    }
+
+    if (timeZoneProps?.updatedValue) {
+      setTimeZone(timeZoneProps.updatedValue);
+      previousValues.current.timeZone = timeZoneProps.updatedValue;
+    }
+    if (openCalender === true) {
+      handleOpen('start');
+    }
+  }, [
+    startDateProps?.updatedValue,
+    endDateProps?.updatedValue,
+    timeZoneProps?.updatedValue,
+    openCalender,
+  ]);
 
   const handleApply = () => {
     onApply?.({

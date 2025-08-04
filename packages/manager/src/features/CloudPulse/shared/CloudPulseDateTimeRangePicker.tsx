@@ -1,5 +1,5 @@
 import { useProfile } from '@linode/queries';
-import { DateTimeRangePicker } from '@linode/ui';
+import { Button, DateTimeRangePicker } from '@linode/ui';
 import { DateTime } from 'luxon';
 import React from 'react';
 
@@ -44,6 +44,9 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       defaultSelected = getTimeFromPreset(defaultSelected, timezone);
     }
 
+    const [showPreset, setPreset] = React.useState<boolean>(
+      defaultSelected.preset !== 'reset'
+    );
     React.useEffect(() => {
       if (defaultSelected) {
         handleStatsChange(defaultSelected);
@@ -55,7 +58,11 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       if (!endDate || !startDate || !selectedPreset || !timeZone) {
         return;
       }
-
+      if (selectedPreset !== 'reset') {
+        setPreset(true);
+      } else {
+        setPreset(false);
+      }
       handleStatsChange(
         {
           end: endDate,
@@ -75,33 +82,43 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       : end;
 
     return (
-      <DateTimeRangePicker
-        endDateProps={{
-          label: 'End Date',
-          placeholder: 'Select End Date',
-          showTimeZone: true,
-          value: end,
-        }}
-        format="yyyy-MM-dd hh:mm a"
-        onApply={handleDateChange}
-        presetsProps={{
-          defaultValue: defaultSelected?.preset,
-          enablePresets: true,
-        }}
-        startDateProps={{
-          label: 'Start Date',
-          placeholder: 'Select Start Date',
-          showTimeZone: true,
-          timeZoneValue: timezone,
-          value: start,
-        }}
-        sx={{
-          minWidth: '226px',
-        }}
-        timeZoneProps={{
-          defaultValue: timezone,
-        }}
-      />
+      <>
+        {showPreset && (
+          <Button onClick={() => setPreset(false)}>
+            {defaultSelected.preset}
+          </Button>
+        )}
+        {!showPreset && (
+          <DateTimeRangePicker
+            endDateProps={{
+              label: 'End Date',
+              placeholder: 'Select End Date',
+              showTimeZone: true,
+              updatedValue: end,
+            }}
+            format="yyyy-MM-dd hh:mm a"
+            onApply={handleDateChange}
+            openCalender={defaultSelected.preset !== 'reset'}
+            presetsProps={{
+              defaultValue: defaultSelected?.preset,
+              enablePresets: true,
+            }}
+            startDateProps={{
+              label: 'Start Date',
+              placeholder: 'Select Start Date',
+              showTimeZone: true,
+              timeZoneValue: timezone,
+              updatedValue: start,
+            }}
+            sx={{
+              minWidth: '226px',
+            }}
+            timeZoneProps={{
+              updatedValue: timezone,
+            }}
+          />
+        )}
+      </>
     );
   }
 );
