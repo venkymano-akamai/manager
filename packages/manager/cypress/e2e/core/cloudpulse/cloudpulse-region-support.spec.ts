@@ -26,11 +26,11 @@ import {
   accountFactory,
   dashboardFactory,
   databaseFactory,
+  flagsFactory,
   widgetFactory,
 } from 'src/factories';
 
 import type { Database } from '@linode/api-v4';
-import type { Flags } from 'src/featureFlags';
 
 const { dashboardName, id, metrics } = widgetDetails.dbaas;
 const serviceType = 'dbaas';
@@ -86,23 +86,8 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
   });
 
   it('should only display the Chicago region in the dropdown when supportedRegionIds is set to Chicago (us-ord)', () => {
-    const flags: Partial<Flags> = {
-      aclp: { beta: true, enabled: true },
-      aclpResourceTypeMap: [
-        {
-          dimensionKey: 'LINODE_ID',
-          maxResourceSelections: 10,
-          serviceType: 'linode',
-        },
-        {
-          dimensionKey: 'cluster_id',
-          maxResourceSelections: 10,
-          serviceType: 'dbaas',
-        },
-      ],
-    };
     mockGetRegions([mockRegion, extendedMockRegion]).as('fetchRegion');
-    mockAppendFeatureFlags(flags).as('getFeatureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('getFeatureFlags');
     cy.visitWithLogin('metrics');
     cy.wait('@getFeatureFlags');
 
@@ -124,12 +109,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
-      .type('PostgreSQL');
+      .type('MySQL');
 
-    ui.autocompletePopper
-      .findByTitle('PostgreSQL')
-      .should('be.visible')
-      .click();
+    ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
 
     //  Select a region from the dropdown.
     ui.regionSelect.find().click();
@@ -162,17 +144,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
   });
   // Reason: Not needed
   it.skip('If the supportedRegionIds column is removed, all mocked regions will be considered supported by default', () => {
-    const flags: Partial<Flags> = {
-      aclp: { beta: true, enabled: true },
-      aclpResourceTypeMap: [
-        {
-          dimensionKey: 'cluster_id',
-          maxResourceSelections: 10,
-          serviceType: 'dbaas',
-        },
-      ],
-    };
-    mockAppendFeatureFlags(flags).as('getFeatureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('getFeatureFlags');
     cy.visitWithLogin('metrics');
     cy.wait('@getFeatureFlags');
 
@@ -211,23 +183,8 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     });
   });
   it('supportedRegionIds is empty, no regions will be displayed', () => {
-    const flags: Partial<Flags> = {
-      aclp: { beta: true, enabled: true },
-      aclpResourceTypeMap: [
-        {
-          dimensionKey: 'LINODE_ID',
-          maxResourceSelections: 10,
-          serviceType: 'linode',
-        },
-        {
-          dimensionKey: 'cluster_id',
-          maxResourceSelections: 10,
-          serviceType: 'dbaas',
-        },
-      ],
-    };
     mockGetRegions([extendedMockRegion]).as('fetchRegion');
-    mockAppendFeatureFlags(flags).as('getFeatureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('getFeatureFlags');
     cy.visitWithLogin('metrics');
     cy.wait('@getFeatureFlags');
 
@@ -249,12 +206,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
-      .type('PostgreSQL');
+      .type('MySQL');
 
-    ui.autocompletePopper
-      .findByTitle('PostgreSQL')
-      .should('be.visible')
-      .click();
+    ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
 
     ui.regionSelect.find().click();
     ui.autocompletePopper.find().within(() => {
@@ -271,23 +225,8 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
   });
 
   it('should only display mocking region as Chicago and then supportedRegionIds is set to Junk', () => {
-    const flags: Partial<Flags> = {
-      aclp: { beta: true, enabled: true },
-      aclpResourceTypeMap: [
-        {
-          dimensionKey: 'LINODE_ID',
-          maxResourceSelections: 10,
-          serviceType: 'linode',
-        },
-        {
-          dimensionKey: 'cluster_id',
-          maxResourceSelections: 10,
-          serviceType: 'dbaas',
-        },
-      ],
-    };
     mockGetRegions([{ ...mockRegion, monitors: undefined }]).as('fetchRegion');
-    mockAppendFeatureFlags(flags).as('getFeatureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('getFeatureFlags');
     cy.visitWithLogin('metrics');
     cy.wait('@getFeatureFlags');
 
@@ -314,12 +253,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
-      .type('PostgreSQL');
+      .type('MySQL');
 
-    ui.autocompletePopper
-      .findByTitle('PostgreSQL')
-      .should('be.visible')
-      .click();
+    ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
 
     ui.regionSelect.find().click();
     ui.autocompletePopper.find().within(() => {
@@ -339,22 +275,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     // Since we are mocking the region as Chicago but setting supportedRegionIds to Newark,
     // no region should be displayed in the dropdown, as the region displayed must match the supported region
 
-    const flags: Partial<Flags> = {
-      aclp: { beta: true, enabled: true },
-      aclpResourceTypeMap: [
-        {
-          dimensionKey: 'LINODE_ID',
-          maxResourceSelections: 10,
-          serviceType: 'linode',
-        },
-        {
-          dimensionKey: 'cluster_id',
-          maxResourceSelections: 10,
-          serviceType: 'dbaas',
-        },
-      ],
-    };
-    mockAppendFeatureFlags(flags).as('getFeatureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('getFeatureFlags');
     mockGetRegions([{ ...mockRegion, monitors: undefined }]).as('fetchRegion');
 
     cy.visitWithLogin('metrics');
@@ -378,12 +299,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
-      .type('PostgreSQL');
+      .type('MySQL');
 
-    ui.autocompletePopper
-      .findByTitle('PostgreSQL')
-      .should('be.visible')
-      .click();
+    ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
 
     ui.regionSelect.find().click();
     ui.autocompletePopper.find().within(() => {
@@ -401,22 +319,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
 
   it('should only display the Chicago region in the dropdown when supportedRegionIds is set to Chicago (us-ord) with extra spaces', () => {
     // Adding extra space to supportedRegionIds with the value ' us-ord', and the value should be trimmed to remove the extra spaces.',
-    const flags: Partial<Flags> = {
-      aclp: { beta: true, enabled: true },
-      aclpResourceTypeMap: [
-        {
-          dimensionKey: 'LINODE_ID',
-          maxResourceSelections: 10,
-          serviceType: 'linode',
-        },
-        {
-          dimensionKey: 'cluster_id',
-          maxResourceSelections: 10,
-          serviceType: 'dbaas',
-        },
-      ],
-    };
-    mockAppendFeatureFlags(flags).as('getFeatureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('getFeatureFlags');
     mockGetRegions([mockRegion, extendedMockRegion]).as('fetchRegion');
 
     cy.visitWithLogin('metrics');
@@ -440,12 +343,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
-      .type('PostgreSQL');
+      .type('MySQL');
 
-    ui.autocompletePopper
-      .findByTitle('PostgreSQL')
-      .should('be.visible')
-      .click();
+    ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
 
     //  Select a region from the dropdown.
     ui.regionSelect.find().click();

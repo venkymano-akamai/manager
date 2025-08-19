@@ -117,6 +117,8 @@ interface DesignUpdatesBannerFlag extends BaseFeatureFlag {
 }
 
 interface AclpAlerting {
+  accountAlertLimit: number;
+  accountMetricLimit: number;
   alertDefinitions: boolean;
   notificationChannels: boolean;
   recentActivity: boolean;
@@ -156,6 +158,7 @@ export interface Flags {
   gecko2: GeckoFeatureFlag;
   gpuv2: GpuV2;
   iam: BetaFeatureFlag;
+  iamRbacPrimaryNavChanges: boolean;
   ipv6Sharing: boolean;
   limitsEvolution: LimitsEvolution;
   linodeCloneFirewall: boolean;

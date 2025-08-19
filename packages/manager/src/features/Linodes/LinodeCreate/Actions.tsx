@@ -43,9 +43,13 @@ export const Actions = ({ isAlertsBetaMode }: ActionProps) => {
       ],
     });
 
-  const { permissions } = usePermissions('linode', ['clone_linode'], linodeId);
+  const { data: permissions } = usePermissions(
+    'linode',
+    ['clone_linode'],
+    linodeId
+  );
 
-  const { permissions: accountPermissions } = usePermissions('account', [
+  const { data: accountPermissions } = usePermissions('account', [
     'create_linode',
   ]);
 
@@ -95,7 +99,7 @@ export const Actions = ({ isAlertsBetaMode }: ActionProps) => {
         onClose={() => setIsAPIAwarenessModalOpen(false)}
         payLoad={getLinodeCreatePayload(structuredClone(getValues()), {
           isShowingNewNetworkingUI: isLinodeInterfacesEnabled,
-          isAclpIntegration: aclpServices?.linode?.alerts?.beta,
+          isAclpIntegration: aclpServices?.linode?.alerts?.enabled,
           isAclpAlertsPreferenceBeta: isAlertsBetaMode,
         })}
       />

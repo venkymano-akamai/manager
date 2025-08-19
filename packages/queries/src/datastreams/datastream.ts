@@ -1,6 +1,8 @@
 import {
-  type APIError,
+  createDestination,
   createStream,
+  getDestination,
+  getDestinations,
   getStream,
   getStreams,
 } from '@linode/api-v4';
@@ -10,7 +12,10 @@ import { createQueryKeys } from '@lukemorales/query-key-factory';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import type {
+  APIError,
+  CreateDestinationPayload,
   CreateStreamPayload,
+  Destination,
   Filter,
   Params,
   ResourcePage,
@@ -23,6 +28,17 @@ export const getAllDataStreams = (
 ) =>
   getAll<Stream>((params, filter) =>
     getStreams({ ...params, ...passedParams }, { ...filter, ...passedFilter }),
+  )().then((data) => data.data);
+
+export const getAllDestinations = (
+  passedParams: Params = {},
+  passedFilter: Filter = {},
+) =>
+  getAll<Destination>((params, filter) =>
+    getDestinations(
+      { ...params, ...passedParams },
+      { ...filter, ...passedFilter },
+    ),
   )().then((data) => data.data);
 
 export const datastreamQueries = createQueryKeys('datastream', {
@@ -43,10 +59,26 @@ export const datastreamQueries = createQueryKeys('datastream', {
     },
     queryKey: null,
   },
-  // @TODO (DPS-34038) destinations
+  destination: (id: number) => ({
+    queryFn: () => getDestination(id),
+    queryKey: [id],
+  }),
+  destinations: {
+    contextQueries: {
+      all: (params: Params = {}, filter: Filter = {}) => ({
+        queryFn: () => getAllDestinations(params, filter),
+        queryKey: [params, filter],
+      }),
+      paginated: (params: Params, filter: Filter) => ({
+        queryFn: () => getDestinations(params, filter),
+        queryKey: [params, filter],
+      }),
+    },
+    queryKey: null,
+  },
 });
 
-export const useDataStreamsQuery = (params: Params = {}, filter: Filter = {}) =>
+export const useStreamsQuery = (params: Params = {}, filter: Filter = {}) =>
   useQuery<ResourcePage<Stream>, APIError[]>({
     ...datastreamQueries.streams._ctx.paginated(params, filter),
   });
@@ -65,6 +97,46 @@ export const useCreateStreamMutation = () => {
       queryClient.setQueryData(
         datastreamQueries.stream(stream.id).queryKey,
         stream,
+      );
+
+      // If a restricted user creates an entity, we must make sure grants are up to date.
+      queryClient.invalidateQueries({
+        queryKey: profileQueries.grants.queryKey,
+      });
+    },
+  });
+};
+
+export const useAllDestinationsQuery = (
+  params: Params = {},
+  filter: Filter = {},
+) =>
+  useQuery<Destination[], APIError[]>({
+    ...datastreamQueries.destinations._ctx.all(params, filter),
+  });
+
+export const useDestinationsQuery = (
+  params: Params = {},
+  filter: Filter = {},
+) =>
+  useQuery<ResourcePage<Destination>, APIError[]>({
+    ...datastreamQueries.destinations._ctx.paginated(params, filter),
+  });
+
+export const useCreateDestinationMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation<Destination, APIError[], CreateDestinationPayload>({
+    mutationFn: createDestination,
+    onSuccess(destination) {
+      // Invalidate paginated lists
+      queryClient.invalidateQueries({
+        queryKey: datastreamQueries.destinations._ctx.paginated._def,
+      });
+
+      // Set Destination in cache
+      queryClient.setQueryData(
+        datastreamQueries.destination(destination.id).queryKey,
+        destination,
       );
 
       // If a restricted user creates an entity, we must make sure grants are up to date.

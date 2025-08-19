@@ -97,6 +97,10 @@ export const dimensionOperatorOptions: Item<
     value: 'startswith',
   },
   {
+    label: 'Ends with',
+    value: 'endswith',
+  },
+  {
     label: 'In',
     value: 'in',
   },
@@ -224,3 +228,18 @@ export const PORT_HELPER_TEXT = 'Enter a port number (1-65535).';
 export const PORTS_PLACEHOLDER_TEXT = 'e.g., 80,443,3000';
 
 export const PORT_PLACEHOLDER_TEXT = 'e.g., 80';
+
+export const CONFIGS_HELPER_TEXT =
+  'Enter one or more configuration IDs separated by commas.';
+
+export const CONFIGS_ERROR_MESSAGE =
+  'Enter valid configuration ID numbers as integers separated by commas.';
+
+export const CONFIG_ERROR_MESSAGE = 'Enter a valid configuration ID number.';
+export const CONFIG_IDS_CONSECUTIVE_COMMAS_ERROR_MESSAGE =
+  'Use a single comma to separate IDs.';
+
+export const CONFIG_IDS_LEADING_COMMA_ERROR_MESSAGE =
+  'First character must be an integer.';
+export const CONFIG_ID_PLACEHOLDER_TEXT = 'e.g., 12345';
+export const CONFIGS_ID_PLACEHOLDER_TEXT = 'e.g., 1234,5678';

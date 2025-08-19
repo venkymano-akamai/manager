@@ -113,7 +113,7 @@ export const LinodeCreate = () => {
   const { handleLinodeCreateAnalyticsFormError } =
     useHandleLinodeCreateAnalyticsFormError(linodeCreateType ?? 'OS');
 
-  const { permissions } = usePermissions('account', ['create_linode']);
+  const { data: permissions } = usePermissions('account', ['create_linode']);
 
   const { tabs, handleTabChange, tabIndex } = useTabs([
     {
@@ -157,7 +157,7 @@ export const LinodeCreate = () => {
   const onSubmit: SubmitHandler<LinodeCreateFormValues> = async (values) => {
     const payload = getLinodeCreatePayload(values, {
       isShowingNewNetworkingUI: isLinodeInterfacesEnabled,
-      isAclpIntegration: aclpServices?.linode?.alerts?.beta,
+      isAclpIntegration: aclpServices?.linode?.alerts?.enabled,
       isAclpAlertsPreferenceBeta: isAclpAlertsBetaCreateFlow,
     });
 

@@ -25,30 +25,12 @@ import {
   dashboardFactory,
   dashboardMetricFactory,
   databaseFactory,
+  flagsFactory,
   widgetFactory,
 } from 'src/factories';
 
 import type { Database } from '@linode/api-v4';
-import type { Flags } from 'src/featureFlags';
-
 const timeDurationToSelect = 'Last 24 Hours';
-
-const flags: Partial<Flags> = {
-  aclp: { beta: true, enabled: true },
-  aclpResourceTypeMap: [
-    {
-      dimensionKey: 'LINODE_ID',
-      maxResourceSelections: 10,
-      serviceType: 'linode',
-    },
-    {
-      dimensionKey: 'cluster_id',
-      maxResourceSelections: 10,
-      serviceType: 'dbaas',
-    },
-  ],
-};
-
 const { clusterName, dashboardName, engine, id, metrics, nodeType } =
   widgetDetails.dbaas;
 const serviceType = 'dbaas';
@@ -116,7 +98,7 @@ const extendDatabaseMock: Database = databaseFactory.build({
 
 describe('Integration Tests for Applied Filters', () => {
   beforeEach(() => {
-    mockAppendFeatureFlags(flags);
+    mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount); // Enables the account to have capability for Akamai Cloud Pulse
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions.data);
     mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
@@ -266,12 +248,9 @@ describe('Integration Tests for Applied Filters', () => {
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
-      .type('PostgreSQL');
+      .type('MySQL');
 
-    ui.autocompletePopper
-      .findByTitle('PostgreSQL')
-      .should('be.visible')
-      .click();
+    ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
 
     // Select a region from the dropdown.
     ui.regionSelect.find().click();
@@ -300,9 +279,9 @@ describe('Integration Tests for Applied Filters', () => {
     // Collapse the Filters section
     ui.button.findByTitle('Filters').should('be.visible').click();
     cy.get('[data-testid="applied-filter"]').within(() => {
-      cy.get(`[data-qa-value="Database Engine ${'PostgreSQL'}"]`)
+      cy.get(`[data-qa-value="Database Engine ${'MySQL'}"]`)
         .should('be.visible')
-        .should('have.text', 'PostgreSQL');
+        .should('have.text', 'MySQL');
 
       cy.get(`[data-qa-value="Region US, Chicago, IL"]`)
         .should('be.visible')
