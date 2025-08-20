@@ -1,5 +1,5 @@
 import { useProfile } from '@linode/queries';
-import { Box, Button, DateTimeRangePicker } from '@linode/ui';
+import { Box, Button, CalendarIcon, DateTimeRangePicker } from '@linode/ui';
 import { DateTime } from 'luxon';
 import React from 'react';
 
@@ -96,14 +96,21 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     return (
       <Box alignItems={'center'} display={'flex'}>
         <Button
-          buttonType="primary"
+          buttonType="secondary"
+          endIcon={<CalendarIcon color="#343438" height={24} width={24} />}
           onClick={() => {
             setPreset(false);
             setOpenCalendar(true);
           }}
           sx={{
             marginTop: 3.5,
+            bottom: '2px',
             display: showPreset ? 'flex' : 'none',
+            '&:hover': {
+              '& .MuiButton-endIcon svg': {
+                color: 'inherit',
+              },
+            },
           }}
         >
           {defaultSelected.preset}
@@ -113,7 +120,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
             label: 'End Date',
             placeholder: 'Select End Date',
             showTimeZone: true,
-            updatedValue: end,
+            value: end,
           }}
           format="yyyy-MM-dd hh:mm a"
           onApply={handleDateChange}
@@ -128,7 +135,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
             placeholder: 'Select Start Date',
             showTimeZone: true,
             timeZoneValue: timezone,
-            updatedValue: start,
+            value: start,
           }}
           sx={{
             minWidth: '226px',
