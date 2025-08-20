@@ -18,6 +18,8 @@ import type { SxProps } from '@mui/material/styles';
 export interface DateTimeRangePickerProps {
   /** Properties for the end date field */
   endDateProps?: {
+    /** Initial default value for the end date-time */
+    defaultValue?: DateTime | null;
     /** Custom error message for invalid end date */
     errorMessage?: string;
     /** Label for the end date field */
@@ -26,8 +28,7 @@ export interface DateTimeRangePickerProps {
     placeholder?: string;
     /** Whether to show the timezone selector for the end date */
     showTimeZone?: boolean;
-    updatedValue?: DateTime | null;
-    /** Initial or controlled value for the end date-time */
+    /** Controlled current value of the end date-time */
     value?: DateTime | null;
   };
 
@@ -61,11 +62,14 @@ export interface DateTimeRangePickerProps {
     defaultValue?: string;
     /** If true, shows the date presets field instead of the date pickers */
     enablePresets?: boolean;
-    updatedValue?: string;
+    /** Controlled current value of the presets field */
+    value?: string;
   };
 
   /** Properties for the start date field */
   startDateProps?: {
+    /** Initial default value for the start date-time */
+    defaultValue?: DateTime | null;
     /** Custom error message for invalid start date */
     errorMessage?: string;
     /** Label for the start date field */
@@ -76,8 +80,7 @@ export interface DateTimeRangePickerProps {
     showTimeZone?: boolean;
     /** Initial or controlled value for the start timezone */
     timeZoneValue?: null | string;
-    updatedValue?: DateTime | null;
-    /** Initial or controlled value for the start date-time */
+    /** Controlled current value of the start date-time */
     value?: DateTime | null;
   };
 
@@ -90,7 +93,8 @@ export interface DateTimeRangePickerProps {
     defaultValue?: string;
     /** If true, disables the timezone selector */
     disabled?: boolean;
-    updatedValue?: string;
+    /** Controlled current value of the timezone */
+    value?: string;
   };
 }
 
@@ -118,13 +122,13 @@ export const DateTimeRangePicker = ({
   onClose,
 }: DateTimeRangePickerProps) => {
   const [startDate, setStartDate] = useState<DateTime | null>(
-    startDateProps?.value ?? null,
+    startDateProps?.defaultValue ?? null,
   );
   const [selectedPreset, setSelectedPreset] = useState<null | string>(
     presetsProps?.defaultValue ?? 'reset',
   );
   const [endDate, setEndDate] = useState<DateTime | null>(
-    endDateProps?.value ?? null,
+    endDateProps?.defaultValue ?? null,
   );
   const [startDateError, setStartDateError] = useState(
     startDateProps?.errorMessage,
@@ -148,8 +152,8 @@ export const DateTimeRangePicker = ({
     startDate: DateTime | null;
     timeZone: string;
   }>({
-    endDate: endDateProps?.value ?? null,
-    startDate: startDateProps?.value ?? null,
+    endDate: endDateProps?.defaultValue ?? null,
+    startDate: startDateProps?.defaultValue ?? null,
     selectedPreset: presetsProps?.defaultValue ?? null,
     timeZone: timeZoneProps?.defaultValue ?? 'UTC', // fallback to a string
   });
@@ -183,28 +187,28 @@ export const DateTimeRangePicker = ({
   };
 
   React.useEffect(() => {
-    if (startDateProps?.updatedValue) {
-      setStartDate(startDateProps.updatedValue);
-      setCurrentMonth(startDateProps.updatedValue);
-      previousValues.current.startDate = startDateProps.updatedValue;
+    if (startDateProps?.value) {
+      setStartDate(startDateProps.value);
+      setCurrentMonth(startDateProps.value);
+      previousValues.current.startDate = startDateProps.value;
     }
 
-    if (endDateProps?.updatedValue) {
-      setEndDate(endDateProps.updatedValue);
-      previousValues.current.endDate = endDateProps.updatedValue;
+    if (endDateProps?.value) {
+      setEndDate(endDateProps.value);
+      previousValues.current.endDate = endDateProps.value;
     }
 
-    if (timeZoneProps?.updatedValue) {
-      setTimeZone(timeZoneProps.updatedValue);
-      previousValues.current.timeZone = timeZoneProps.updatedValue;
+    if (timeZoneProps?.value) {
+      setTimeZone(timeZoneProps.value);
+      previousValues.current.timeZone = timeZoneProps.value;
     }
     if (selectedPreset !== 'reset' && openCalender === true) {
       handleOpen('start');
     }
   }, [
-    startDateProps?.updatedValue,
-    endDateProps?.updatedValue,
-    timeZoneProps?.updatedValue,
+    startDateProps?.value,
+    endDateProps?.value,
+    timeZoneProps?.value,
     openCalender,
   ]);
 

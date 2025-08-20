@@ -141,7 +141,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
             minWidth: '226px',
           }}
           timeZoneProps={{
-            updatedValue: timezone,
+            value: timezone,
           }}
         />
       </Box>

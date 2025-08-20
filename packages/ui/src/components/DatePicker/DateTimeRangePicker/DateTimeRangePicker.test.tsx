@@ -22,7 +22,7 @@ const defaultProps: DateTimeRangePickerProps = {
   },
   startDateProps: {
     label: 'Start Date',
-    value: mockDate,
+    defaultValue: mockDate,
   },
 };
 
