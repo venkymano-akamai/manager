@@ -122,7 +122,7 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
             display="flex"
             flexDirection={{ md: 'row', xs: 'column' }}
             flexWrap="wrap"
-            gap={2}
+            gap={1.5}
           >
             <CloudPulseDateTimeRangePicker
               defaultValue={preferences?.[TIME_DURATION]}
