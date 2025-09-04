@@ -81,6 +81,9 @@ export const CloudPulseRegionSelect = React.memo(
 
     const [selectedRegion, setSelectedRegion] = React.useState<string>();
     React.useEffect(() => {
+      if (!savePreferences) {
+        return; // early exit if savePreferences is false
+      }
       if (disabled && !selectedRegion) {
         return; // no need to do anything
       }
@@ -111,13 +114,20 @@ export const CloudPulseRegionSelect = React.memo(
       regions, // Function to call on change
     ]);
 
-    const linodeRegionIds = useFetchOptions({
+    const {
+      values: linodeRegions,
+      isLoading: isLinodeRegionIdLoading,
+      isError: isLinodeRegionIdError,
+    } = useFetchOptions({
       dimensionLabel: filterKey,
       entities: selectedEntities,
       regions,
       serviceType,
       type: 'metrics',
-    }).map((option: Item<string, string>) => option.value);
+    });
+    const linodeRegionIds = linodeRegions.map(
+      (option: Item<string, string>) => option.value
+    );
 
     const supportedLinodeRegions =
       regions?.filter((region) => linodeRegionIds?.includes(region.id)) ?? [];
@@ -142,14 +152,17 @@ export const CloudPulseRegionSelect = React.memo(
         disableClearable={false}
         disabled={!selectedDashboard || !regions || disabled || !resources}
         errorText={
-          isError || isResourcesError
+          isError || isResourcesError || isLinodeRegionIdError
             ? `Failed to fetch ${label || 'Regions'}.`
             : ''
         }
         fullWidth
         isGeckoLAEnabled={isGeckoLAEnabled}
         label={label || 'Region'}
-        loading={!disabled && (isLoading || isResourcesLoading)}
+        loading={
+          !disabled &&
+          (isLoading || isResourcesLoading || isLinodeRegionIdLoading)
+        }
         noMarginTop
         noOptionsText={
           NO_REGION_MESSAGE[selectedDashboard?.service_type ?? ''] ??
@@ -167,7 +180,9 @@ export const CloudPulseRegionSelect = React.memo(
         placeholder={placeholder ?? 'Select a Region'}
         regions={supportedRegionsFromResources}
         value={
-          supportedRegionsFromResources?.length ? selectedRegion : undefined
+          supportedRegionsFromResources?.length
+            ? (selectedRegion ?? null)
+            : null
         }
       />
     );
