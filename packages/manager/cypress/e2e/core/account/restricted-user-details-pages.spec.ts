@@ -105,7 +105,8 @@ describe('restricted user details pages', () => {
     mockAppendFeatureFlags({
       apl: false,
       dbaasV2: { beta: false, enabled: false },
-      iamRbacPrimaryNavChanges: false,
+      // TODO M3-10491 - Remove `iamRbacPrimaryNavChanges` feature flag mock once flag is deleted.
+      iamRbacPrimaryNavChanges: true,
     });
   });
 
@@ -186,7 +187,7 @@ describe('restricted user details pages', () => {
       .and('be.disabled')
       .trigger('mouseover');
     ui.tooltip.findByText(
-      'You must be an unrestricted User in order to add or modify tags on Linodes.'
+      'You must be an unrestricted User in order to add or modify tags on a Linode.'
     );
   });
 
@@ -203,26 +204,6 @@ describe('restricted user details pages', () => {
       label: randomLabel(),
       type: 'automatic',
     });
-    // const mockCustomImages: Image[] = new Array(3)
-    //   .fill(null)
-    //   .map((_item: null, index: number): Image => {
-    //     return imageFactory.build({
-    //       eol: imageEOLDate.toISOString(),
-    //       label: `Image ${index}`,
-    //       tags: [index % 2 === 0 ? 'even' : 'odd', 'nums'],
-    //       type: 'manual',
-    //     });
-    //   });
-    // const mockRecoveryImages: Image[] = new Array(3)
-    //   .fill(null)
-    //   .map((_item: null, index: number): Image => {
-    //     return imageFactory.build({
-    //       eol: imageEOLDate.toISOString(),
-    //       label: `Image ${index}`,
-    //       tags: [index % 2 === 0 ? 'even' : 'odd', 'nums'],
-    //       type: 'automatic',
-    //     });
-    //   });
     const actions = [
       'Edit',
       'Deploy to New Linode',

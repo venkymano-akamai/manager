@@ -8,7 +8,6 @@ import { notificationFactory } from '@src/factories/notification';
 import { mockGetAccount, mockGetMaintenance } from 'support/intercepts/account';
 import { mockGetLinodeConfigs } from 'support/intercepts/configs';
 import { mockGetNotifications } from 'support/intercepts/events';
-import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import {
   mockGetLinodeDetails,
   mockGetLinodes,
@@ -31,11 +30,6 @@ import { formatDate } from 'src/utilities/formatDate';
 import type { Notification } from '@linode/api-v4';
 
 describe('QEMU reboot upgrade notification', () => {
-  beforeEach(() => {
-    mockAppendFeatureFlags({
-      iamRbacPrimaryNavChanges: false,
-    }).as('getFeatureFlags');
-  });
   const NOTIFICATION_BANNER_TEXT = 'critical platform maintenance';
   const noticeMessageShort =
     'One or more Linodes need to be rebooted for critical platform maintenance.';
@@ -115,7 +109,7 @@ describe('QEMU reboot upgrade notification', () => {
     // Confirm that the notice is visible and contains the expected message
     cy.findByText(NOTIFICATION_BANNER_TEXT, { exact: false })
       .should('be.visible')
-      .closest('[data-testid="notice-warning"]')
+      .closest('[data-testid="platform-maintenance-banner"]')
       .within(() => {
         cy.get('p').then(($el) => {
           const noticeText = $el.text();
@@ -327,7 +321,7 @@ describe('QEMU reboot upgrade notification', () => {
     // Confirm that the notice is visible and contains the expected message
     cy.findByText(NOTIFICATION_BANNER_TEXT, { exact: false })
       .should('be.visible')
-      .closest('[data-testid="notice-warning"]')
+      .closest('[data-testid="platform-maintenance-banner"]')
       .within(() => {
         cy.get('p').then(($el) => {
           const noticeText = $el.text();
@@ -335,7 +329,7 @@ describe('QEMU reboot upgrade notification', () => {
         });
       });
     cy.findByText(' upcoming', { exact: false })
-      .closest('[data-testid="notice-warning"]')
+      .closest('[data-testid="maintenance-banner"]')
       .should('be.visible')
       .within(() => {
         cy.get('p').then(($el) => {

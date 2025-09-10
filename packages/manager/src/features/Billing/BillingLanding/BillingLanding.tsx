@@ -100,13 +100,13 @@ export const BillingLanding = () => {
             search: { action: 'make-payment' },
           })
         : {},
-    title: 'Account',
+    title: 'Billing',
   };
 
   return (
     <>
-      <PlatformMaintenanceBanner pathname={location.pathname} />
-      <MaintenanceBannerV2 pathname={location.pathname} />
+      <PlatformMaintenanceBanner />
+      <MaintenanceBannerV2 />
       <DocumentTitleSegment segment="Billing" />
       <LandingHeader {...landingHeaderProps} spacingBottom={4} />
       <BillingDetail />

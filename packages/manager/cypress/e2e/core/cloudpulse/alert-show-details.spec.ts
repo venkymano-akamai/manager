@@ -208,10 +208,12 @@ describe('Integration Tests for Alert Show Detail Page', () => {
           .findByTitle(`Action menu for Alert ${label}`)
           .should('be.visible')
           .click();
+        // Select the "Show Details" option from the action menu
+        ui.actionMenuItem
+          .findByTitle('Show Details')
+          .should('be.visible')
+          .click();
       });
-
-    // Select the "Show Details" option from the action menu
-    ui.actionMenuItem.findByTitle('Show Details').should('be.visible').click();
 
     // Verify the URL ends with the expected details page path
     cy.url().should('endWith', `/detail/${service_type}/${id}`);
@@ -453,22 +455,22 @@ describe('Integration Tests for Alert Show Detail Page', () => {
       cy.get('[data-qa-item="Polling Interval"]')
         .find('[data-qa-chip]')
         .should('be.visible')
-        .should('have.text', '10 minutes');
+        .should('have.text', '10 min');
 
       // Validating contents of Evaluation Periods
       cy.get('[data-qa-item="Evaluation Period"]')
         .find('[data-qa-chip]')
         .should('be.visible')
-        .should('have.text', '5 minutes');
+        .should('have.text', '5 min');
 
       // Validating contents of Trigger Alert
       cy.get('[data-qa-chip="All"]')
         .should('be.visible')
         .should('have.text', 'All');
 
-      cy.get('[data-qa-chip="5 minutes"]')
+      cy.get('[data-qa-chip="5 min"]')
         .should('be.visible')
-        .should('have.text', '5 minutes');
+        .should('have.text', '5 min');
 
       cy.get('[data-qa-item="criteria are met for"]')
         .should('be.visible')
