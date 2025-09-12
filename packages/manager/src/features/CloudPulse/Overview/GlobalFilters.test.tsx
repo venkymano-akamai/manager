@@ -52,9 +52,9 @@ describe('Global filters component test', () => {
   it('Should have time range select with default value', () => {
     setup();
 
-    const timeRangeSelect = screen.getByText('Start Date');
+    const presetButton = screen.getByTestId('preset-button');
 
-    expect(timeRangeSelect).toBeInTheDocument();
+    expect(presetButton).toBeInTheDocument();
   });
 
   it('Should show circle progress if resources call is loading', async () => {

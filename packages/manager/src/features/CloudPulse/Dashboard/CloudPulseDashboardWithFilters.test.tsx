@@ -112,9 +112,9 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
       <CloudPulseDashboardWithFilters dashboardId={1} resource={1} />
     );
 
-    const startDate = screen.getByText('Start Date');
+    const presetButton = screen.getByTestId('preset-button');
     const nodeTypeSelect = screen.getByTestId('node-type-select');
-    expect(startDate).toBeInTheDocument();
+    expect(presetButton).toBeInTheDocument();
     expect(nodeTypeSelect).toBeInTheDocument();
   });
 
