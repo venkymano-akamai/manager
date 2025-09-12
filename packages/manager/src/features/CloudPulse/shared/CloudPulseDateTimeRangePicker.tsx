@@ -95,55 +95,59 @@ export const CloudPulseDateTimeRangePicker = React.memo(
 
     return (
       <Box alignItems={'center'} display={'flex'}>
-        <Button
-          buttonType="secondary"
-          endIcon={<CalendarIcon color="#343438" height={24} width={24} />}
-          onClick={() => {
-            setPreset(false);
-            setOpenCalendar(true);
-          }}
-          sx={{
-            marginTop: 3.5,
-            bottom: '2px',
-            display: showPreset ? 'flex' : 'none',
-            '&:hover': {
-              '& .MuiButton-endIcon svg': {
-                color: 'inherit',
+        {showPreset && (
+          <Button
+            buttonType="secondary"
+            endIcon={<CalendarIcon color="#343438" height={24} width={24} />}
+            onClick={() => {
+              setPreset(false);
+              setOpenCalendar(true);
+            }}
+            sx={{
+              marginTop: 3.5,
+              bottom: '2px',
+              display: showPreset ? 'flex' : 'none',
+              '&:hover': {
+                '& .MuiButton-endIcon svg': {
+                  color: 'inherit',
+                },
               },
-            },
-          }}
-        >
-          {defaultSelected.preset}
-        </Button>
-        <DateTimeRangePicker
-          endDateProps={{
-            label: 'End Date',
-            placeholder: 'Select End Date',
-            showTimeZone: true,
-            value: end,
-          }}
-          format="yyyy-MM-dd hh:mm a"
-          onApply={handleDateChange}
-          onClose={handleClose}
-          openCalender={openCalender}
-          presetsProps={{
-            defaultValue: defaultSelected?.preset,
-            enablePresets: true,
-          }}
-          startDateProps={{
-            label: 'Start Date',
-            placeholder: 'Select Start Date',
-            showTimeZone: true,
-            timeZoneValue: timezone,
-            value: start,
-          }}
-          sx={{
-            minWidth: '226px',
-          }}
-          timeZoneProps={{
-            value: timezone,
-          }}
-        />
+            }}
+          >
+            {defaultSelected.preset}
+          </Button>
+        )}
+        {!showPreset && (
+          <DateTimeRangePicker
+            endDateProps={{
+              label: 'End Date',
+              placeholder: 'Select End Date',
+              showTimeZone: true,
+              value: end,
+            }}
+            format="yyyy-MM-dd hh:mm a"
+            onApply={handleDateChange}
+            onClose={handleClose}
+            openCalender={openCalender}
+            presetsProps={{
+              defaultValue: defaultSelected?.preset,
+              enablePresets: true,
+            }}
+            startDateProps={{
+              label: 'Start Date',
+              placeholder: 'Select Start Date',
+              showTimeZone: true,
+              timeZoneValue: timezone,
+              value: start,
+            }}
+            sx={{
+              minWidth: '226px',
+            }}
+            timeZoneProps={{
+              value: timezone,
+            }}
+          />
+        )}
       </Box>
     );
   }
