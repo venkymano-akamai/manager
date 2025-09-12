@@ -1,5 +1,6 @@
 import { useProfile } from '@linode/queries';
 import { Box, Button, CalendarIcon, DateTimeRangePicker } from '@linode/ui';
+import { useTheme } from '@mui/material/styles';
 import { DateTime } from 'luxon';
 import React from 'react';
 
@@ -32,7 +33,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     const { defaultValue, handleStatsChange, savePreferences } = props;
     const { data: profile } = useProfile();
     let defaultSelected = defaultValue as DateTimeWithPreset;
-
+    const theme = useTheme();
     const timezone =
       defaultSelected?.timeZone ??
       profile?.timezone ??
@@ -43,10 +44,12 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     } else {
       defaultSelected = getTimeFromPreset(defaultSelected, timezone);
     }
-
+    // Show button with preset value only if selected or default preset is not 'reset'
     const [showPreset, setPreset] = React.useState<boolean>(
       defaultSelected.preset !== 'reset'
     );
+
+    // Show calendar only if selected or default preset is 'reset' or button is clicked
     const [openCalender, setOpenCalendar] = React.useState<boolean>(
       defaultSelected.preset === 'reset'
     );
@@ -98,7 +101,13 @@ export const CloudPulseDateTimeRangePicker = React.memo(
         {showPreset && (
           <Button
             buttonType="secondary"
-            endIcon={<CalendarIcon color="#343438" height={24} width={24} />}
+            endIcon={
+              <CalendarIcon
+                color={theme.tokens.alias.Background.Base}
+                height={24}
+                width={24}
+              />
+            }
             onClick={() => {
               setPreset(false);
               setOpenCalendar(true);
