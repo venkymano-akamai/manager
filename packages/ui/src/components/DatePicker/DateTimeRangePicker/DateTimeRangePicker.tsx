@@ -351,8 +351,6 @@ export const DateTimeRangePicker = ({
           anchorEl={anchorEl}
           anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
           disableAutoFocus
-          disableEnforceFocus // ✅ Prevent auto-closing focus trap
-          disableRestoreFocus // ✅ Prevent restoring focus (prevents MUI auto-close)
           onClose={(event, reason) => {
             // ✅ Block close only if clickaway
             if (reason === 'backdropClick') return;
