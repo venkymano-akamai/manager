@@ -316,7 +316,7 @@ export const DateTimeRangePicker = ({
   };
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
-      <Box display={openCalender ? 'flex' : 'none'}>
+      <Box>
         <Stack direction="row" spacing={2} sx={sx}>
           <DateTimeField
             errorText={startDateError}
