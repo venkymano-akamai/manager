@@ -355,7 +355,7 @@ export const DateTimeRangePicker = ({
           disableRestoreFocus // ✅ Prevent restoring focus (prevents MUI auto-close)
           onClose={(event, reason) => {
             // ✅ Block close only if clickaway
-            // if (reason === 'backdropClick') return;
+            if (reason === 'backdropClick') return;
 
             handleClose();
           }}
