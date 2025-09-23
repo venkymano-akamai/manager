@@ -75,8 +75,8 @@ export const CloudPulseDimensionFilterSelect = (
 
   const filteredSelections = selectedDimensions?.length
     ? selectedDimensions.filter((filter) =>
-      isValidFilter(filter, mergedDimensionOptions)
-    )
+        isValidFilter(filter, mergedDimensionOptions)
+      )
     : [];
 
   const handleChangeInSelection = (

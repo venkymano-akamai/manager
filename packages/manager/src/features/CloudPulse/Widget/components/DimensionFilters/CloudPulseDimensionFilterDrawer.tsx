@@ -1,9 +1,7 @@
 import { Drawer, Stack, Typography } from '@linode/ui';
 import React from 'react';
 
-import type {
-  MetricsDimensionFilter,
-} from './types';
+import type { MetricsDimensionFilter } from './types';
 import type { CloudPulseServiceType, Dimension } from '@linode/api-v4';
 
 interface CloudPulseDimensionFilterDrawerProps {
@@ -52,11 +50,7 @@ interface CloudPulseDimensionFilterDrawerProps {
 export const CloudPulseDimensionFilterDrawer = (
   props: CloudPulseDimensionFilterDrawerProps
 ) => {
-  const {
-    onClose,
-    open,
-    drawerLabel,
-  } = props;
+  const { onClose, open, drawerLabel } = props;
 
   const handleClose = () => {
     onClose();
@@ -92,7 +86,7 @@ export const CloudPulseDimensionFilterDrawer = (
         >
           Select upto 5 Dimension Filters
         </Typography>
-        </Stack>
+      </Stack>
     </Drawer>
   );
 };

@@ -1,8 +1,8 @@
 import Badge from '@mui/material/Badge';
 import React from 'react';
 
-import FilterIcon from 'src/assets/icons/filter.svg';
 import FilledFilterIcon from 'src/assets/icons/filledfilter.svg';
+import FilterIcon from 'src/assets/icons/filter.svg';
 interface CloudPulseDimensionFilterIconWithBadgeProps {
   /**
    * The count to be displayed in the badge
