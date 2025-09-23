@@ -28,6 +28,7 @@ import type {
   CloudPulseAlertsPayload,
   CloudPulseServiceType,
   Dashboard,
+  Dimension,
   MonitoringCapabilities,
   ResourcePage,
   Service,
@@ -40,6 +41,7 @@ import type {
   StatWithDummyPoint,
   WithStartAndEnd,
 } from 'src/features/Longview/request.types';
+import { MetricsDimensionFilter } from '../Widget/components/DimensionFilters/types';
 
 interface AclpSupportedRegionProps {
   /**
@@ -391,4 +393,31 @@ export const useIsAclpSupportedRegion = (
   const region = regions?.find(({ id }) => id === regionId);
 
   return region?.monitors?.[type]?.includes(capability) ?? false;
+};
+
+/**
+ * @param filter The filter associated with the metric
+ * @param options The dimension options associated with the metric
+ * @returns boolean
+ */
+export const isValidFilter = (
+  filter: MetricsDimensionFilter,
+  options: Dimension[]
+): boolean => {
+  const operator = filter.operator;
+  if (!operator || !VALID_OPERATORS.includes(operator)) return false;
+
+  // allow pattern operators without value check
+  if (operator === 'endswith' || operator === 'startswith') return true;
+
+  const dimension = options.find(
+    ({ dimension_label: dimensionLabel }) =>
+      dimensionLabel === filter.dimension_label
+  );
+  if (!dimension) return false;
+
+  const validValues = new Set(dimension.values);
+  return (filter.value ?? '')
+    .split(',')
+    .every((value) => validValues.has(value));
 };

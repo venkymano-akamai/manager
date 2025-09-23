@@ -1,0 +1,128 @@
+import { IconButton } from '@linode/ui';
+import React from 'react';
+
+import { useFetchOptions } from 'src/features/CloudPulse/Alerts/CreateAlert/Criteria/DimensionFilterValue/useFetchOptions';
+import { CloudPulseTooltip } from 'src/features/CloudPulse/shared/CloudPulseTooltip';
+import { isValidFilter } from 'src/features/CloudPulse/Utils/utils';
+
+import { CloudPulseDimensionFilterDrawer } from './CloudPulseDimensionFilterDrawer';
+import { CloudPulseDimensionFilterIconWithBadge } from './CloudPulseFilterIconWithBadge';
+
+import type { MetricsDimensionFilter } from './types';
+import type { CloudPulseServiceType, Dimension } from '@linode/api-v4';
+
+interface CloudPulseDimensionFilterSelectProps {
+  /**
+   * The list of available dimensions for the selected metric
+   */
+  dimensionOptions: Dimension[];
+  /**
+   * The label for the drawer, typically the name of the metric
+   */
+  drawerLabel: string;
+  /**
+   *
+   * @param selectedDimensions The list of selected dimension filters
+   * @returns
+   */
+  handleSelectionChange: (selectedDimensions: MetricsDimensionFilter[]) => void;
+  /**
+   * The selected dimension filters for the metric
+   */
+  selectedDimensions?: MetricsDimensionFilter[];
+
+  /**
+   * The selected entities for the dimension filter
+   */
+  selectedEntities?: string[];
+
+  /**
+   * The service type of the associated metric
+   */
+  serviceType: CloudPulseServiceType;
+}
+
+export const CloudPulseDimensionFilterSelect = (
+  props: CloudPulseDimensionFilterSelectProps
+) => {
+  const {
+    dimensionOptions,
+    selectedDimensions,
+    handleSelectionChange,
+    drawerLabel,
+    selectedEntities,
+    serviceType,
+  } = props;
+  const [open, setOpen] = React.useState(false);
+  const linodesFetch = useFetchOptions({
+    dimensionLabel: 'linode_id',
+    type: 'metrics',
+    entities: selectedEntities,
+    regions: [],
+    scope: 'entity',
+    serviceType,
+  });
+
+  const mergedDimensionOptions = React.useMemo(
+    () =>
+      dimensionOptions.map((dim) =>
+        dim.dimension_label === 'linode_id'
+          ? { ...dim, values: linodesFetch.values.map((lin) => lin.value) }
+          : dim
+      ),
+    [dimensionOptions, linodesFetch.values]
+  );
+
+  const filteredSelections = selectedDimensions?.length
+    ? selectedDimensions.filter((filter) =>
+      isValidFilter(filter, mergedDimensionOptions)
+    )
+    : [];
+
+  const handleChangeInSelection = (
+    selectedValue: MetricsDimensionFilter[],
+    close: boolean
+  ) => {
+    if (close) {
+      handleSelectionChange(selectedValue);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <CloudPulseTooltip placement="bottom-end" title="Dimension Filter">
+        <IconButton
+          aria-label="Widget Dimension Filter"
+          color="inherit"
+          data-qa-selected={filteredSelections?.length}
+          data-testid="dimension-filter"
+          disabled={dimensionOptions.length === 0}
+          onClick={() => setOpen(true)}
+          size="small"
+          sx={(theme) => ({
+            marginBlockEnd: 'auto',
+            color: filteredSelections?.length
+              ? theme.color.buttonPrimaryHover
+              : 'inherit',
+            padding: 0,
+          })}
+        >
+          <CloudPulseDimensionFilterIconWithBadge
+            count={filteredSelections?.length ?? 0}
+          />
+        </IconButton>
+      </CloudPulseTooltip>
+      <CloudPulseDimensionFilterDrawer
+        dimensionOptions={dimensionOptions}
+        drawerLabel={drawerLabel}
+        handleSelectionChange={handleChangeInSelection}
+        onClose={() => setOpen(false)}
+        open={open}
+        selectedDimensions={filteredSelections}
+        selectedEntities={selectedEntities}
+        serviceType={serviceType}
+      />
+    </>
+  );
+};
