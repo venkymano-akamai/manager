@@ -19,8 +19,10 @@ import {
   PORTS_LEADING_ZERO_ERROR_MESSAGE,
   PORTS_LIMIT_ERROR_MESSAGE,
   PORTS_RANGE_ERROR_MESSAGE,
+  VALID_OPERATORS,
 } from './constants';
 
+import type { MetricsDimensionFilter } from '../Widget/components/DimensionFilters/types';
 import type {
   Alert,
   APIError,
@@ -41,7 +43,6 @@ import type {
   StatWithDummyPoint,
   WithStartAndEnd,
 } from 'src/features/Longview/request.types';
-import { MetricsDimensionFilter } from '../Widget/components/DimensionFilters/types';
 
 interface AclpSupportedRegionProps {
   /**
