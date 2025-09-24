@@ -4,7 +4,7 @@ import React from 'react';
 
 import { useCloudPulseDashboardByIdQuery } from 'src/queries/cloudpulse/dashboards';
 
-import { GlobalGroupByRenderer } from '../GroupBy/GlobalGroupByRenderer';
+import { GlobalFilterGroupByRenderer } from '../GroupBy/GlobalFilterGroupByRenderer';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
 import { CloudPulseDashboardFilterBuilder } from '../shared/CloudPulseDashboardFilterBuilder';
 import { CloudPulseDashboardSelect } from '../shared/CloudPulseDashboardSelect';
@@ -29,14 +29,18 @@ export interface CloudPulseDashboardWithFiltersProp {
    */
   dashboardId: number;
   /**
+   * The region for which the metrics will be listed
+   */
+  region?: string;
+  /**
    * The resource id for which the metrics will be listed
    */
-  resource: number;
+  resource: number | string;
 }
 
 export const CloudPulseDashboardWithFilters = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
-    const { dashboardId, resource } = props;
+    const { dashboardId, resource, region } = props;
     const { data: dashboard, isError } =
       useCloudPulseDashboardByIdQuery(dashboardId);
     const [filterData, setFilterData] = React.useState<FilterData>({
@@ -122,6 +126,7 @@ export const CloudPulseDashboardWithFilters = React.memo(
       dashboardObj: dashboard,
       filterValue: filterData.id,
       resource,
+      region,
       timeDuration,
       groupBy,
     });
@@ -157,7 +162,7 @@ export const CloudPulseDashboardWithFilters = React.memo(
                     handleStatsChange={handleTimeRangeChange}
                     savePreferences
                   />
-                  <GlobalGroupByRenderer
+                  <GlobalFilterGroupByRenderer
                     handleChange={handleGroupByChange}
                     selectedDashboard={dashboard}
                   />
@@ -180,7 +185,13 @@ export const CloudPulseDashboardWithFilters = React.memo(
                 emitFilterChange={onFilterChange}
                 handleToggleAppliedFilter={toggleAppliedFilter}
                 isServiceAnalyticsIntegration
-                resource_ids={[resource]}
+                resource_ids={
+                  dashboard.service_type !== 'objectstorage'
+                    ? typeof resource === 'number'
+                      ? [resource]
+                      : undefined
+                    : undefined
+                }
               />
             )}
             <GridLegacy
@@ -206,6 +217,7 @@ export const CloudPulseDashboardWithFilters = React.memo(
               dashboardObj: dashboard,
               filterValue: filterData.id,
               resource,
+              region,
               timeDuration,
               groupBy,
             })}

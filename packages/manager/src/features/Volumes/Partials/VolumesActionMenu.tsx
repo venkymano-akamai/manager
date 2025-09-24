@@ -29,12 +29,14 @@ export interface Props {
 
 export const VolumesActionMenu = (props: Props) => {
   const { handlers, isVolumesLanding, isVolumeDetails, volume } = props;
+  const [isOpen, setIsOpen] = React.useState<boolean>(false);
+
   const isAttached = volume.linode_id !== null;
 
   const { data: accountPermissions } = usePermissions('account', [
     'create_volume',
   ]);
-  const { data: volumePermissions } = usePermissions(
+  const { data: volumePermissions, isLoading } = usePermissions(
     'volume',
     [
       'delete_volume',
@@ -45,7 +47,8 @@ export const VolumesActionMenu = (props: Props) => {
       'detach_volume',
       'update_volume',
     ],
-    volume.id
+    volume.id,
+    isOpen
   );
 
   const ACTIONS = {
@@ -69,6 +72,13 @@ export const VolumesActionMenu = (props: Props) => {
       disabled: !volumePermissions?.update_volume,
       onClick: handlers.handleManageTags,
       title: 'Manage Tags',
+      tooltip: !volumePermissions?.update_volume
+        ? getRestrictedResourceText({
+            action: 'edit',
+            isSingular: true,
+            resourceType: 'Volumes',
+          })
+        : undefined,
     },
     RESIZE: {
       disabled: !volumePermissions?.resize_volume,
@@ -175,6 +185,10 @@ export const VolumesActionMenu = (props: Props) => {
       <ActionMenu
         actionsList={actions}
         ariaLabel={`Action menu for Volume ${volume.label}`}
+        loading={isLoading}
+        onOpen={() => {
+          setIsOpen(true);
+        }}
       />
     </div>
   );
