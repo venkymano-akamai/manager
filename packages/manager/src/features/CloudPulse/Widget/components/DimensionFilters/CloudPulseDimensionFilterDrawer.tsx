@@ -1,7 +1,12 @@
 import { Button, Drawer, Stack, Typography } from '@linode/ui';
 import React from 'react';
 
-import type { MetricsDimensionFilter } from './types';
+import { CloudPulseDimensionFilterRenderer } from './CloudPulseDimensionFilterRenderer';
+
+import type {
+  MetricsDimensionFilter,
+  MetricsDimensionFilterForm,
+} from './types';
 import type { CloudPulseServiceType, Dimension } from '@linode/api-v4';
 
 interface CloudPulseDimensionFilterDrawerProps {
@@ -47,11 +52,37 @@ interface CloudPulseDimensionFilterDrawerProps {
 
 export const CloudPulseDimensionFilterDrawer = React.memo(
   (props: CloudPulseDimensionFilterDrawerProps) => {
-    const { onClose, open, drawerLabel } = props;
+    const {
+      onClose,
+      open,
+      drawerLabel,
+      selectedDimensions,
+      dimensionOptions,
+      selectedEntities,
+      serviceType,
+      handleSelectionChange,
+    } = props;
+
+    const [clearAllTrigger, setClearAllTrigger] = React.useState(0);
+    const [hideClearAll, setHideClearAll] = React.useState(
+      !selectedDimensions?.length
+    );
 
     const handleClose = React.useCallback(() => {
       onClose();
     }, [onClose]);
+
+    const onDimensionChange = React.useCallback((isDirty: boolean) => {
+      setHideClearAll(!isDirty);
+    }, []);
+
+    const handleFormSubmit = React.useCallback(
+      ({ dimension_filters: dimensionFilters }: MetricsDimensionFilterForm) => {
+        handleSelectionChange(dimensionFilters, true);
+        setClearAllTrigger(0); // After submission, reset the clear all trigger
+      },
+      [handleSelectionChange]
+    );
 
     return (
       <Drawer
@@ -76,18 +107,33 @@ export const CloudPulseDimensionFilterDrawer = React.memo(
               Select up to 5 Filters
             </Typography>
             <Button
+              aria-hidden={hideClearAll}
               component="a"
               data-qa-id="filter-drawer-clear-all"
+              onClick={() => {
+                setClearAllTrigger((prev) => prev + 1);
+              }}
               sx={(theme) => ({
                 padding: 0,
                 font: theme.font.normal,
                 color: theme.textColors.linkActiveLight,
+                display: hideClearAll ? 'none' : 'flex',
               })}
               variant="text"
             >
               Clear All
             </Button>
           </Stack>
+          <CloudPulseDimensionFilterRenderer
+            clearAllTrigger={clearAllTrigger}
+            dimensionOptions={dimensionOptions}
+            onClose={handleClose}
+            onDimensionChange={onDimensionChange}
+            onSubmit={handleFormSubmit}
+            selectedDimensions={selectedDimensions}
+            selectedEntities={selectedEntities}
+            serviceType={serviceType}
+          />
         </Stack>
       </Drawer>
     );
