@@ -363,11 +363,11 @@ export const AreaChart = (props: AreaChartProps) => {
             scale="time"
             stroke={theme.color.label}
             tickFormatter={xAxisTickFormatter}
-            ticks={
-              xAxisTickCount
-                ? generate12HourTicks(data, timezone, xAxisTickCount)
-                : []
-            }
+            // ticks={
+            //   xAxisTickCount
+            //     ? generate12HourTicks(data, timezone, xAxisTickCount)
+            //     : []
+            // }
             type="number"
           />
           <YAxis

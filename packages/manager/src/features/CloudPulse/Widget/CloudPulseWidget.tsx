@@ -1,5 +1,5 @@
-import { Button, useProfile } from '@linode/queries';
-import { Box, Paper, Typography } from '@linode/ui';
+import { useProfile } from '@linode/queries';
+import { Box, Paper, Typography, Button } from '@linode/ui';
 import { GridLegacy, Stack, useTheme } from '@mui/material';
 import { DateTime } from 'luxon';
 import React from 'react';
