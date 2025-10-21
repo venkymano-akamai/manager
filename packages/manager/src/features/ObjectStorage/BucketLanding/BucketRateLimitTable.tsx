@@ -83,7 +83,7 @@ export const BucketRateLimitTable = ({
           'This endpoint type supports up to 750 Requests Per Second (RPS). '
         )}
         Understand{' '}
-        <Link to="https://techdocs.akamai.com/cloud-computing/docs/create-and-manage-buckets">
+        <Link to="https://techdocs.akamai.com/cloud-computing/docs/object-storage-product-limits#optimize-to-avoid-rate-limiting">
           bucket rate limits
         </Link>
         .
@@ -96,12 +96,12 @@ export const BucketRateLimitTable = ({
               {tableHeaders.map((header, index) => {
                 return (
                   <TableCell
+                    key={`${index}-${header}`}
                     sx={{
                       '&&:last-child': {
                         paddingRight: 2,
                       },
                     }}
-                    key={`${index}-${header}`}
                   >
                     {header}
                   </TableCell>
@@ -128,12 +128,12 @@ export const BucketRateLimitTable = ({
                 {row.values.map((value, index) => {
                   return (
                     <TableCell
+                      key={`${index}-${value}`}
                       sx={{
                         '&&:last-child': {
                           paddingRight: 2,
                         },
                       }}
-                      key={`${index}-${value}`}
                     >
                       {value}
                     </TableCell>

@@ -1,6 +1,7 @@
 import _CircularProgress from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import { omittedProps } from '../../utilities';
 import { Box } from '../Box';
@@ -33,7 +34,7 @@ const SIZE_MAP = {
   lg: 124,
   md: 40,
   sm: 20,
-  xs: 14,
+  xs: 16,
 };
 
 /**
@@ -55,6 +56,7 @@ const CircleProgress = (props: CircleProgressProps) => {
   if (size) {
     return (
       <StyledCustomCircularProgress
+        {...rest}
         aria-label="Content is loading"
         data-qa-circle-progress
         data-testid="circle-progress"

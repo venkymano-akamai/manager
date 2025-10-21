@@ -74,8 +74,8 @@ interface DescriptionListGridProps
    * Only for the "grid" display mode.
    */
   gridProps: {
-    columnSpacing?: number;
     columns: number;
+    columnSpacing?: number;
   };
 }
 
@@ -134,7 +134,7 @@ export const DescriptionList = (props: DescriptionListProps) => {
               <Typography component="dd">{description}</Typography>
               {tooltip && (
                 <TooltipIcon
-                  status="help"
+                  status="info"
                   sxTooltipIcon={{ px: 1, py: 0, top: -2 }}
                   text={tooltip?.text}
                   tooltipPosition={tooltip?.position}

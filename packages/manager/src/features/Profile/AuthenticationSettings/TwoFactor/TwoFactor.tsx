@@ -1,10 +1,9 @@
 import { getTFAToken } from '@linode/api-v4/lib/profile';
-import { Notice, StyledLinkButton, Typography } from '@linode/ui';
+import { profileQueries, useSecurityQuestions } from '@linode/queries';
+import { LinkButton, Notice, Typography } from '@linode/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
-import { profileQueries } from 'src/queries/profile/profile';
-import { useSecurityQuestions } from 'src/queries/profile/securityQuestions';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 import { getAPIErrorFor } from 'src/utilities/getAPIErrorFor';
 
@@ -12,8 +11,8 @@ import { DisableTwoFactorDialog } from './DisableTwoFactorDialog';
 import { EnableTwoFactorForm } from './EnableTwoFactorForm';
 import { ScratchCodeDialog } from './ScratchCodeDialog';
 import {
-  StyledCTAWrapper,
   StyledCopy,
+  StyledCTAWrapper,
   StyledRootContainer,
 } from './TwoFactor.styles';
 import { TwoFactorToggle } from './TwoFactorToggle';
@@ -209,13 +208,13 @@ export const TwoFactor = (props: TwoFactorProps) => {
         )}
         {twoFactorEnabled && (
           <StyledCTAWrapper>
-            <StyledLinkButton data-qa-hide-show-code onClick={toggleHidden}>
+            <LinkButton data-qa-hide-show-code onClick={toggleHidden}>
               {showQRCode
                 ? 'Hide QR Code'
                 : twoFactorConfirmed
-                ? 'Reset two-factor authentication'
-                : 'Show QR Code'}
-            </StyledLinkButton>
+                  ? 'Reset two-factor authentication'
+                  : 'Show QR Code'}
+            </LinkButton>
           </StyledCTAWrapper>
         )}
         {twoFactorEnabled &&

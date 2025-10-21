@@ -1,14 +1,18 @@
-import { Notice, Paper, Stack, Typography } from '@linode/ui';
+import { useUpdateImageRegionsMutation } from '@linode/queries';
+import { useIsGeckoEnabled } from '@linode/shared';
+import { ActionsPanel, Notice, Paper, Stack, Typography } from '@linode/ui';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import type { Resolver } from 'react-hook-form';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { Link } from 'src/components/Link';
 import { RegionMultiSelect } from 'src/components/RegionSelect/RegionMultiSelect';
-import { useUpdateImageRegionsMutation } from 'src/queries/images';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
+import { useFlags } from 'src/hooks/useFlags';
 
+import { useRegionsThatSupportImageStorage } from '../../utils';
 import { ImageRegionRow } from './ImageRegionRow';
 
 import type {
@@ -17,8 +21,7 @@ import type {
   Region,
   UpdateImageRegionsPayload,
 } from '@linode/api-v4';
-import type { Resolver } from 'react-hook-form';
-import type { DisableItemOption } from 'src/components/ListItemOption';
+import type { DisableItemOption } from '@linode/ui';
 
 interface Props {
   image: Image | undefined;
@@ -32,11 +35,23 @@ interface Context {
 export const ManageImageReplicasForm = (props: Props) => {
   const { image, onClose } = props;
 
+  const flags = useFlags();
+  const { isGeckoLAEnabled } = useIsGeckoEnabled(
+    flags.gecko2?.enabled,
+    flags.gecko2?.la
+  );
+
   const imageRegionIds = image?.regions.map(({ region }) => region) ?? [];
 
   const { enqueueSnackbar } = useSnackbar();
-  const { data: regions } = useRegionsQuery();
+  const { regions } = useRegionsThatSupportImageStorage();
   const { mutateAsync } = useUpdateImageRegionsMutation(image?.id ?? '');
+
+  const { data: permissions } = usePermissions(
+    'image',
+    ['replicate_image'],
+    image?.id
+  );
 
   const {
     formState: { errors, isDirty, isSubmitting },
@@ -96,6 +111,14 @@ export const ManageImageReplicasForm = (props: Props) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      {!permissions.replicate_image && (
+        <Notice
+          text={getRestrictedResourceText({
+            resourceType: 'Images',
+          })}
+          variant="error"
+        />
+      )}
       {errors.root?.message && (
         <Notice text={errors.root.message} variant="error" />
       )}
@@ -106,19 +129,33 @@ export const ManageImageReplicasForm = (props: Props) => {
         </Link>{' '}
         for details on managing your Linux system's disk space.
       </Typography>
+      <Notice spacingTop={16} variant="info">
+        <Typography fontSize="inherit">
+          As part of our limited promotional period, image replicas are free of
+          charge. In 2026, replicas will be subject to our standard monthly rate
+          of $0.10/GB. When replicas become billable, your monthly charge will
+          be calculated using the value in the All Replicas column.{' '}
+          <Link to="https://www.linode.com/blog/compute/image-service-improvements-akamai-cdn">
+            Learn more
+          </Link>
+          .
+        </Typography>
+      </Notice>
       <RegionMultiSelect
+        currentCapability={undefined} // Images don't have a region capability yet
+        disabled={!permissions.replicate_image}
+        disabledRegions={disabledRegions}
+        errorText={errors.regions?.message}
+        isGeckoLAEnabled={isGeckoLAEnabled}
+        label="Add Regions"
         onChange={(regionIds) =>
           setValue('regions', regionIds, {
             shouldDirty: true,
             shouldValidate: true,
           })
         }
-        currentCapability="Object Storage" // Images use Object Storage as the storage backend
-        disabledRegions={disabledRegions}
-        errorText={errors.regions?.message}
-        label="Add Regions"
         placeholder="Select regions or type to search"
-        regions={regions?.filter((r) => r.site_type === 'core') ?? []}
+        regions={regions}
         renderTags={() => null}
         selectedIds={values.regions}
       />
@@ -127,7 +164,9 @@ export const ManageImageReplicasForm = (props: Props) => {
       </Typography>
       <Paper
         sx={(theme) => ({
-          backgroundColor: theme.palette.background.paper,
+          backgroundColor: !permissions.replicate_image
+            ? theme.tokens.alias.Interaction.Background.Disabled
+            : theme.palette.background.paper,
           p: 2,
           py: 1,
         })}
@@ -153,6 +192,9 @@ export const ManageImageReplicasForm = (props: Props) => {
 
             return (
               <ImageRegionRow
+                disabled={!permissions.replicate_image}
+                disableRemoveButton={isLastAvailableRegion}
+                key={regionId}
                 onRemove={() =>
                   setValue(
                     'regions',
@@ -160,8 +202,6 @@ export const ManageImageReplicasForm = (props: Props) => {
                     { shouldDirty: true, shouldValidate: true }
                   )
                 }
-                disableRemoveButton={isLastAvailableRegion}
-                key={regionId}
                 region={regionId}
                 status={status}
               />
@@ -171,7 +211,7 @@ export const ManageImageReplicasForm = (props: Props) => {
       </Paper>
       <ActionsPanel
         primaryButtonProps={{
-          disabled: !isDirty,
+          disabled: !isDirty || !permissions.replicate_image,
           label: 'Save',
           loading: isSubmitting,
           type: 'submit',

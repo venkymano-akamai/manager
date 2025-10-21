@@ -1,50 +1,84 @@
-import { Button, Paper, Stack, Typography } from '@linode/ui';
-import { isEmpty } from 'ramda';
+import { useAccountUser, useUserRoles } from '@linode/queries';
+import {
+  CircleProgress,
+  ErrorState,
+  Notice,
+  Paper,
+  Typography,
+  useTheme,
+} from '@linode/ui';
+import { useParams } from '@tanstack/react-router';
 import React from 'react';
-import { useParams } from 'react-router-dom';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 
-import { NO_ASSIGNED_ROLES_TEXT } from '../../Shared/constants';
+import { usePermissions } from '../../hooks/usePermissions';
+import { AssignedRolesTable } from '../../Shared/AssignedRolesTable/AssignedRolesTable';
+import {
+  ERROR_STATE_TEXT,
+  NO_ASSIGNED_ROLES_TEXT,
+} from '../../Shared/constants';
 import { NoAssignedRoles } from '../../Shared/NoAssignedRoles/NoAssignedRoles';
 
-import type { IamUserPermissions } from '@linode/api-v4';
+export const UserRoles = () => {
+  const { username } = useParams({ from: '/iam/users/$username' });
+  const { data: permissions } = usePermissions('account', ['is_account_admin']);
+  const theme = useTheme();
 
-interface Props {
-  assignedRoles?: IamUserPermissions;
-}
+  const {
+    data: assignedRoles,
+    isLoading,
+    error: assignedRolesError,
+  } = useUserRoles(username ?? '', permissions?.is_account_admin);
 
-export const UserRoles = ({ assignedRoles }: Props) => {
-  const { username } = useParams<{ username: string }>();
+  const { error } = useAccountUser(
+    username ?? '',
+    permissions?.is_account_admin
+  );
 
-  const handleClick = () => {
-    // mock for UIE-8140: RBAC-4: User Roles - Assign New Role
-  };
+  const hasAssignedRoles = assignedRoles
+    ? assignedRoles.account_access.length > 0 ||
+      assignedRoles.entity_access.length > 0
+    : false;
 
-  const hasAssignedRoles = assignedRoles ? !isEmpty(assignedRoles) : false;
+  if (isLoading) {
+    return <CircleProgress />;
+  }
+
+  if (!permissions?.is_account_admin) {
+    return (
+      <Notice variant="error">
+        You do not have permission to view this user&apos;s roles.
+      </Notice>
+    );
+  }
+
+  if (error || assignedRolesError) {
+    return <ErrorState errorText={ERROR_STATE_TEXT} />;
+  }
 
   return (
     <>
       <DocumentTitleSegment segment={`${username} - User Roles`} />
-      <Paper>
-        <Stack spacing={3}>
-          <Stack
-            alignItems="center"
-            direction="row"
-            justifyContent="space-between"
+      {hasAssignedRoles ? (
+        <Paper sx={(theme) => ({ marginTop: theme.tokens.spacing.S16 })}>
+          <Typography variant="h2">Assigned Roles</Typography>
+          <Typography
+            sx={{
+              margin: `${theme.tokens.spacing.S12} 0 ${theme.tokens.spacing.S20}`,
+            }}
+            variant="body1"
           >
-            <Typography variant="h2">Assigned Roles</Typography>
-            <Button buttonType="primary" onClick={handleClick}>
-              Assign New Role
-            </Button>
-          </Stack>
-          {hasAssignedRoles ? (
-            <p>UIE-8138 - assigned roles table</p>
-          ) : (
-            <NoAssignedRoles text={NO_ASSIGNED_ROLES_TEXT} />
-          )}
-        </Stack>
-      </Paper>
+            View and manage roles assigned to the user.
+          </Typography>
+          <AssignedRolesTable />
+        </Paper>
+      ) : (
+        <NoAssignedRoles
+          hasAssignNewRoleDrawer={true}
+          text={NO_ASSIGNED_ROLES_TEXT}
+        />
+      )}
     </>
   );
 };

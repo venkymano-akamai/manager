@@ -1,13 +1,23 @@
-import { Button, CircleProgress, Notice } from '@linode/ui';
+import {
+  useDomainQuery,
+  useDomainsQuery,
+  useLinodesQuery,
+  useProfile,
+  useUpdateDomainMutation,
+} from '@linode/queries';
+import { Button, CircleProgress, ErrorState, Notice } from '@linode/ui';
+import { Hidden } from '@linode/ui';
 import { styled } from '@mui/material/styles';
-import { useLocation, useNavigate, useParams } from '@tanstack/react-router';
+import {
+  useLocation,
+  useMatch,
+  useNavigate,
+  useParams,
+} from '@tanstack/react-router';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
-import { DeletionDialog } from 'src/components/DeletionDialog/DeletionDialog';
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
-import { Hidden } from 'src/components/Hidden';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFooter';
 import { Table } from 'src/components/Table';
@@ -16,17 +26,8 @@ import { TableCell } from 'src/components/TableCell';
 import { TableHead } from 'src/components/TableHead';
 import { TableRow } from 'src/components/TableRow';
 import { TableSortCell } from 'src/components/TableSortCell';
-import { useDialogData } from 'src/hooks/useDialogData';
 import { useOrderV2 } from 'src/hooks/useOrderV2';
 import { usePaginationV2 } from 'src/hooks/usePaginationV2';
-import {
-  useDeleteDomainMutation,
-  useDomainQuery,
-  useDomainsQuery,
-  useUpdateDomainMutation,
-} from 'src/queries/domains';
-import { useLinodesQuery } from 'src/queries/linodes/linodes';
-import { useProfile } from 'src/queries/profile/profile';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import { CloneDomainDrawer } from './CloneDomainDrawer';
@@ -35,6 +36,7 @@ import {
   DOMAINS_TABLE_DEFAULT_ORDER_BY,
   DOMAINS_TABLE_PREFERENCE_KEY,
 } from './constants';
+import { DeleteDomainDialog } from './DeleteDomainDialog';
 import { DisableDomainDialog } from './DisableDomainDialog';
 import { DomainBanner } from './DomainBanner';
 import { DomainsEmptyLandingState } from './DomainsEmptyLandingPage';
@@ -58,6 +60,9 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
   const navigate = useNavigate();
   const params = useParams({ strict: false });
   const location = useLocation();
+  const match = useMatch({
+    strict: false,
+  });
   const locationState = location.state as DomainState;
 
   const { enqueueSnackbar } = useSnackbar();
@@ -84,7 +89,11 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
     ['+order_by']: orderBy,
   };
 
-  const { data: domains, error, isLoading } = useDomainsQuery(
+  const {
+    data: domains,
+    error,
+    isLoading,
+  } = useDomainsQuery(
     {
       page: pagination.page,
       page_size: pagination.pageSize,
@@ -100,18 +109,11 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
 
   const { domainForEditing } = props;
 
-  const { data: selectedDomain, isFetching: isFetchingDomain } = useDialogData({
-    enabled: !!params.domainId,
-    paramKey: 'domainId',
-    queryHook: useDomainQuery,
-    redirectToOnNotFound: '/domains',
-  });
-
   const {
-    error: deleteError,
-    isPending: isDeleting,
-    mutateAsync: deleteDomain,
-  } = useDeleteDomainMutation(selectedDomain?.id ?? 0);
+    data: selectedDomain,
+    isFetching: isFetchingDomain,
+    error: domainError,
+  } = useDomainQuery(params.domainId ?? -1, !!params.domainId);
 
   const { mutateAsync: updateDomain } = useUpdateDomainMutation();
 
@@ -151,7 +153,7 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
     });
   };
 
-  const handleImport = () => {
+  const navigateToImportZone = () => {
     navigate({
       search: (prev) => prev,
       to: `/domains/import`,
@@ -163,12 +165,6 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
       params: { action: 'delete', domainId: domain.id },
       search: (prev) => prev,
       to: `/domains/$domainId/$action`,
-    });
-  };
-
-  const removeDomain = () => {
-    deleteDomain().then(() => {
-      navigateToDomains();
     });
   };
 
@@ -221,11 +217,11 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
         <DocumentTitleSegment segment="Domains" />
         <DomainsEmptyLandingState
           navigateToCreate={navigateToCreate}
-          openImportZoneDrawer={handleImport}
+          navigateToImportZone={navigateToImportZone}
         />
         <DomainZoneImportDrawer
           onClose={navigateToDomains}
-          open={location.pathname === '/domains/import'}
+          open={match.routeId === '/domains/import'}
         />
       </>
     );
@@ -260,13 +256,13 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
           labelTitle: 'Domains',
           pathname: '/domains',
         }}
+        docsLink="https://techdocs.akamai.com/cloud-computing/docs/dns-manager"
+        entity="Domain"
         extraActions={
-          <StyledButon buttonType="secondary" onClick={handleImport}>
+          <StyledButon buttonType="secondary" onClick={navigateToImportZone}>
             Import a Zone
           </StyledButon>
         }
-        docsLink="https://techdocs.akamai.com/cloud-computing/docs/dns-manager"
-        entity="Domain"
         onButtonClick={navigateToCreate}
         title="Domains"
       />
@@ -326,47 +322,43 @@ export const DomainsLanding = (props: DomainsLandingProps) => {
       />
       <DomainZoneImportDrawer
         onClose={navigateToDomains}
-        open={location.pathname === '/domains/import'}
+        open={match.routeId === '/domains/import'}
       />
       <DisableDomainDialog
         domain={selectedDomain}
+        domainError={domainError}
         isFetching={isFetchingDomain}
         onClose={navigateToDomains}
         open={params.action === 'disable'}
       />
       <CloneDomainDrawer
         domain={selectedDomain}
+        domainError={domainError}
         isFetching={isFetchingDomain}
         onClose={navigateToDomains}
         open={params.action === 'clone'}
       />
       <EditDomainDrawer
         domain={selectedDomain}
+        domainError={domainError}
         isFetching={isFetchingDomain}
         onClose={navigateToDomains}
         open={params.action === 'edit'}
       />
-      <DeletionDialog
-        error={
-          deleteError
-            ? getAPIErrorOrDefault(deleteError, 'Error deleting Domain.')[0]
-                .reason
-            : undefined
-        }
-        entity="domain"
+      <DeleteDomainDialog
+        domainError={domainError}
+        domainId={selectedDomain?.id}
+        domainLabel={selectedDomain?.domain}
         isFetching={isFetchingDomain}
-        label={selectedDomain?.domain ?? 'Unknown'}
-        loading={isDeleting}
         onClose={navigateToDomains}
-        onDelete={removeDomain}
+        onSuccess={() => navigateToDomains()}
         open={params.action === 'delete'}
-        typeToConfirm
       />
     </>
   );
 };
 
 const StyledButon = styled(Button, { label: 'StyledButton' })(({ theme }) => ({
-  marginLeft: `-${theme.spacing()}`,
+  marginLeft: `-${theme.spacingFunction()}`,
   whiteSpace: 'nowrap',
 }));

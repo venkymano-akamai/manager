@@ -1,3 +1,4 @@
+import { useProfile } from '@linode/queries';
 import { Divider, Paper, Stack, Typography } from '@linode/ui';
 import * as React from 'react';
 
@@ -14,11 +15,13 @@ import { DatabaseSettingsReviewUpdatesDialog } from 'src/features/Databases/Data
 import { DatabaseSettingsUpgradeVersionDialog } from 'src/features/Databases/DatabaseDetail/DatabaseSettings/DatabaseSettingsUpgradeVersionDialog';
 import {
   isDefaultDatabase,
+  isLegacyDatabase,
   useIsDatabasesEnabled,
 } from 'src/features/Databases/utilities';
-import { useProfile } from 'src/queries/profile/profile';
+import { useFlags } from 'src/hooks/useFlags';
 
 import AccessControls from '../AccessControls';
+import { useDatabaseDetailContext } from '../DatabaseDetailContext';
 import DatabaseSettingsDeleteClusterDialog from './DatabaseSettingsDeleteClusterDialog';
 import { DatabaseSettingsMaintenance } from './DatabaseSettingsMaintenance';
 import DatabaseSettingsMenuItem from './DatabaseSettingsMenuItem';
@@ -26,18 +29,13 @@ import DatabaseSettingsResetPasswordDialog from './DatabaseSettingsResetPassword
 import { DatabaseSettingsSuspendClusterDialog } from './DatabaseSettingsSuspendClusterDialog';
 import MaintenanceWindow from './MaintenanceWindow';
 
-import type { Database } from '@linode/api-v4/lib/databases/types';
-
-interface Props {
-  database: Database;
-  disabled?: boolean;
-}
-
-export const DatabaseSettings: React.FC<Props> = (props) => {
-  const { database, disabled } = props;
+export const DatabaseSettings = () => {
+  const { database, disabled } = useDatabaseDetailContext();
   const { data: profile } = useProfile();
   const { isDatabasesV2GA } = useIsDatabasesEnabled();
+  const flags = useFlags();
   const isDefaultDB = isDefaultDatabase(database);
+  const isVPCEnabled = flags.databaseVpc;
 
   const accessControlCopy = (
     <Typography>
@@ -58,24 +56,16 @@ export const DatabaseSettings: React.FC<Props> = (props) => {
     : DELETE_CLUSTER_TEXT;
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [
-    isResetRootPasswordDialogOpen,
-    setIsResetRootPasswordDialogOpen,
-  ] = React.useState(false);
-  const [
-    isSuspendClusterDialogOpen,
-    setIsSuspendClusterDialogOpen,
-  ] = React.useState(false);
+  const [isResetRootPasswordDialogOpen, setIsResetRootPasswordDialogOpen] =
+    React.useState(false);
+  const [isSuspendClusterDialogOpen, setIsSuspendClusterDialogOpen] =
+    React.useState(false);
 
-  const [
-    isUpgradeVersionDialogOpen,
-    setIsUpgradeVersionDialogOpen,
-  ] = React.useState(false);
+  const [isUpgradeVersionDialogOpen, setIsUpgradeVersionDialogOpen] =
+    React.useState(false);
 
-  const [
-    isReviewUpdatesDialogOpen,
-    setIsReviewUpdatesDialogOpen,
-  ] = React.useState(false);
+  const [isReviewUpdatesDialogOpen, setIsReviewUpdatesDialogOpen] =
+    React.useState(false);
 
   const onResetRootPassword = () => {
     setIsResetRootPasswordDialogOpen(true);
@@ -133,11 +123,13 @@ export const DatabaseSettings: React.FC<Props> = (props) => {
               sectionTitle={'Suspend Cluster'}
             />
           )}
-          <AccessControls
-            database={database}
-            description={accessControlCopy}
-            disabled={disabled}
-          />
+          {(!isVPCEnabled || isLegacyDatabase(database)) && (
+            <AccessControls
+              database={database}
+              description={accessControlCopy}
+              disabled={disabled}
+            />
+          )}
           <DatabaseSettingsMenuItem
             buttonText="Reset Root Password"
             descriptiveText={resetRootPasswordCopy}
@@ -148,7 +140,7 @@ export const DatabaseSettings: React.FC<Props> = (props) => {
           <DatabaseSettingsMenuItem
             buttonText="Delete Cluster"
             descriptiveText={deleteClusterCopy}
-            disabled={Boolean(profile?.restricted)}
+            disabled={disabled}
             onClick={onDeleteCluster}
             sectionTitle="Delete the Cluster"
           />

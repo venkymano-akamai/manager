@@ -1,8 +1,9 @@
-import { Button, H1Header, Typography, fadeIn } from '@linode/ui';
+import { Button, fadeIn, H1Header, Typography } from '@linode/ui';
 import { styled, useTheme } from '@mui/material/styles';
 import * as React from 'react';
+import type { JSX } from 'react';
 
-import LinodeIcon from 'src/assets/addnewmenu/linode.svg';
+import ComputeIcon from 'src/assets/icons/entityIcons/compute.svg';
 
 import { TransferDisplay } from '../TransferDisplay/TransferDisplay';
 
@@ -74,7 +75,7 @@ export const Placeholder = (props: PlaceholderProps) => {
     buttonProps,
     dataQAPlaceholder,
     descriptionMaxWidth,
-    icon: Icon = LinodeIcon,
+    icon: Icon = ComputeIcon,
     isEntity,
     linksSection,
     renderAsSecondary,
@@ -127,12 +128,12 @@ export const Placeholder = (props: PlaceholderProps) => {
         </StyledIconWrapper>
 
         <H1Header
+          data-qa-placeholder-title
+          renderAsSecondary={renderAsSecondary}
           sx={{
             gridArea: 'title',
             textAlign: 'center',
           }}
-          data-qa-placeholder-title
-          renderAsSecondary={renderAsSecondary}
           title={title}
         />
         {hasSubtitle ? (
@@ -304,8 +305,8 @@ const PlaceholderRoot = styled('div')<Partial<PlaceholderProps>>(
       : `${theme.spacing(2)} 0`,
     [theme.breakpoints.up('md')]: {
       padding: props.showTransferDisplay
-        ? `${theme.spacing(10)} 0 ${theme.spacing(4)}`
-        : `${theme.spacing(10)} 0`,
+        ? `${theme.spacing(8)} 0 ${theme.spacing(4)}`
+        : `${theme.spacing(8)} 0`,
     },
   })
 );

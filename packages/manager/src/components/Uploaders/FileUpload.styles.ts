@@ -1,4 +1,4 @@
-import { Typography, rotate360 } from '@linode/ui';
+import { rotate360, Typography } from '@linode/ui';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { styled } from '@mui/material/styles';
 import { makeStyles } from 'tss-react/mui';
@@ -73,7 +73,9 @@ export const StyledActionsContainer = styled('div', {
 export const useStyles = makeStyles()((theme: Theme) => ({
   barColorPrimary: {
     backgroundColor:
-      theme.name === 'light' ? theme.tokens.color.Brand[30] : '#243142',
+      theme.name === 'light'
+        ? theme.tokens.color.Brand[30]
+        : theme.tokens.color.Brand[100],
   },
   error: {
     '& g': {

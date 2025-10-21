@@ -1,14 +1,20 @@
-import { Notice, TextField, Typography } from '@linode/ui';
+import {
+  useAllIPsQuery,
+  useLinodeIPMutation,
+  useLinodeQuery,
+} from '@linode/queries';
+import {
+  ActionsPanel,
+  Drawer,
+  Notice,
+  TextField,
+  Typography,
+} from '@linode/ui';
 import { useTheme } from '@mui/material/styles';
 import { useFormik } from 'formik';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { useLinodeQuery } from 'src/queries/linodes/linodes';
-import { useLinodeIPMutation } from 'src/queries/linodes/networking';
-import { useAllIPsQuery } from 'src/queries/networking/networking';
 import { getErrorMap } from 'src/utilities/errorUtils';
 
 import { listIPv6InRange } from './LinodeIPAddressRow';
@@ -59,9 +65,13 @@ export const EditRangeRDNSDrawer = (props: Props) => {
         address: values.address ?? '',
         rdns: values.rdns === '' ? null : values.rdns,
       });
-      enqueueSnackbar(`Successfully updated RDNS for ${range?.range}`, {
-        variant: 'success',
-      });
+      enqueueSnackbar(
+        `Successfully updated RDNS for ${range?.range}. RDNS entry updates may take up to one hour to show.`,
+        {
+          variant: 'success',
+          persist: true,
+        }
+      );
       handleClose();
     },
   });

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import LinodeSvg from 'src/assets/icons/entityIcons/linode.svg';
+import ComputeIcon from 'src/assets/icons/entityIcons/compute.svg';
 import {
   gettingStartedGuides,
   headers,
@@ -10,7 +10,7 @@ import {
 
 import { ResourcesSection } from './ResourcesSection';
 
-import type { Meta, StoryFn, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof ResourcesSection> = {
   args: {
@@ -23,7 +23,7 @@ const meta: Meta<typeof ResourcesSection> = {
     descriptionMaxWidth: 500,
     gettingStartedGuidesData: gettingStartedGuides,
     headers,
-    icon: LinodeSvg,
+    icon: ComputeIcon,
     linkAnalyticsEvent,
     showTransferDisplay: true,
     wide: true,
@@ -31,7 +31,7 @@ const meta: Meta<typeof ResourcesSection> = {
   },
   component: ResourcesSection,
   decorators: [
-    (Story: StoryFn) => (
+    (Story) => (
       <div style={{ margin: '1em' }}>
         <Story />
       </div>

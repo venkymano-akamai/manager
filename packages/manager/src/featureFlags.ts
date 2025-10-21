@@ -1,5 +1,8 @@
 import type { OCA } from './features/OneClickApps/types';
-import type { TPAProvider } from '@linode/api-v4/lib/profile';
+import type {
+  CloudPulseServiceType,
+  TPAProvider,
+} from '@linode/api-v4/lib/profile';
 import type { NoticeVariant } from '@linode/ui';
 
 // These flags should correspond with active features flags in LD
@@ -50,6 +53,26 @@ interface BaseFeatureFlag {
   enabled: boolean;
 }
 
+interface LinodeInterfacesFlag extends BaseFeatureFlag {
+  /**
+   * Shows a Beta chip for UI elements related to Linode Interfaces
+   */
+  beta?: boolean;
+  /**
+   * Enables the Interface History Table
+   */
+  interface_history?: boolean;
+  /**
+   * Shows a New chip for UI elements related to Linode Interfaces
+   */
+  new?: boolean;
+}
+
+interface VMHostMaintenanceFlag extends BaseFeatureFlag {
+  beta: boolean;
+  new: boolean;
+}
+
 interface BetaFeatureFlag extends BaseFeatureFlag {
   beta: boolean;
 }
@@ -60,11 +83,28 @@ interface GeckoFeatureFlag extends BaseFeatureFlag {
 }
 
 interface AclpFlag {
+  /**
+   * This property indicates whether the feature is in beta
+   */
   beta: boolean;
+  /**
+   * This property indicates whether to bypass account capabilities check or not
+   */
+  bypassAccountCapabilities?: boolean;
+  /**
+   * This property indicates whether the feature is enabled
+   */
   enabled: boolean;
 }
 
 interface LkeEnterpriseFlag extends BaseFeatureFlag {
+  ga: boolean;
+  la: boolean;
+  phase2Mtc: { byoVPC: boolean; dualStack: boolean };
+  postLa: boolean;
+}
+
+interface CloudNatFlag extends BetaFeatureFlag {
   ga: boolean;
   la: boolean;
 }
@@ -72,13 +112,11 @@ interface LkeEnterpriseFlag extends BaseFeatureFlag {
 export interface CloudPulseResourceTypeMapFlag {
   dimensionKey: string;
   maxResourceSelections?: number;
-  serviceType: string;
-  supportedRegionIds?: string;
+  serviceType: CloudPulseServiceType;
 }
 
-interface gpuV2 {
+interface GpuV2 {
   egressBanner: boolean;
-  planDivider: boolean;
   transferBanner: boolean;
 }
 
@@ -93,41 +131,69 @@ interface DesignUpdatesBannerFlag extends BaseFeatureFlag {
 }
 
 interface AclpAlerting {
+  accountAlertLimit: number;
+  accountMetricLimit: number;
   alertDefinitions: boolean;
   notificationChannels: boolean;
   recentActivity: boolean;
 }
+
+interface LimitsEvolution {
+  enabled: boolean;
+  requestForIncreaseDisabledForAll: boolean;
+  requestForIncreaseDisabledForInternalAccountsOnly: boolean;
+}
+
 export interface Flags {
   acceleratedPlans: AcceleratedPlansFlag;
   aclp: AclpFlag;
   aclpAlerting: AclpAlerting;
+  aclpAlertServiceTypeConfig: AclpAlertServiceTypeConfig[];
+  aclpLogs: BetaFeatureFlag;
   aclpReadEndpoint: string;
   aclpResourceTypeMap: CloudPulseResourceTypeMapFlag[];
-  apiMaintenance: APIMaintenance;
+  aclpServices: Partial<AclpServices>;
   apicliButtonCopy: string;
+  apiMaintenance: APIMaintenance;
   apl: boolean;
+  aplGeneralAvailability: boolean;
+  aplLkeE: boolean;
   blockStorageEncryption: boolean;
+  blockStorageVolumeLimit: boolean;
   cloudManagerDesignUpdatesBanner: DesignUpdatesBannerFlag;
+  cloudNat: CloudNatFlag;
+  databaseAdvancedConfig: boolean;
   databaseBeta: boolean;
+  databasePremium: boolean;
   databaseResize: boolean;
+  databaseRestrictPlanResize: boolean;
   databases: boolean;
+  databaseVpc: boolean;
+  databaseVpcBeta: boolean;
   dbaasV2: BetaFeatureFlag;
   dbaasV2MonitorMetrics: BetaFeatureFlag;
   disableLargestGbPlans: boolean;
-  disallowImageUploadToNonObjRegions: boolean;
   gecko2: GeckoFeatureFlag;
-  gpuv2: gpuV2;
+  gpuv2: GpuV2;
   iam: BetaFeatureFlag;
-  imageServiceGen2: boolean;
-  imageServiceGen2Ga: boolean;
+  iamDelegation: BaseFeatureFlag;
+  iamRbacPrimaryNavChanges: boolean;
   ipv6Sharing: boolean;
+  kubernetesBlackwellPlans: boolean;
+  limitsEvolution: LimitsEvolution;
+  linodeCloneFirewall: boolean;
   linodeDiskEncryption: boolean;
-  lkeEnterprise: LkeEnterpriseFlag;
+  linodeInterfaces: LinodeInterfacesFlag;
+  lkeEnterprise2: LkeEnterpriseFlag;
   mainContentBanner: MainContentBanner;
   marketplaceAppOverrides: MarketplaceAppOverride[];
   metadata: boolean;
-  objMultiCluster: boolean;
+  mtc2025: boolean;
+  nodebalancerIpv6: boolean;
+  nodebalancerVpc: boolean;
   objectStorageGen2: BaseFeatureFlag;
+  objMultiCluster: boolean;
+  objSummaryPage: boolean;
   productInformationBanners: ProductInformationBannerFlag[];
   promos: boolean;
   promotionalOffers: PromotionalOffer[];
@@ -138,9 +204,13 @@ export interface Flags {
   supportTicketSeverity: boolean;
   taxBanner: TaxBanner;
   taxCollectionBanner: TaxCollectionBanner;
-  taxId: BaseFeatureFlag;
   taxes: Taxes;
+  taxId: BaseFeatureFlag;
   tpaProviders: Provider[];
+  udp: boolean;
+  vmHostMaintenance: VMHostMaintenanceFlag;
+  volumeSummaryPage: boolean;
+  vpcIpv6: boolean;
 }
 
 interface MarketplaceAppOverride {
@@ -152,7 +222,7 @@ interface MarketplaceAppOverride {
    *
    * Pass `null` to hide the marketplace app
    */
-  details: Partial<OCA> | null;
+  details: null | Partial<OCA>;
   /**
    * The ID of the StackScript that powers this Marketplace app
    */
@@ -229,22 +299,24 @@ export type ProductInformationBannerLocation =
   | 'Account'
   | 'Betas'
   | 'Databases'
+  | 'Delivery'
   | 'Domains'
   | 'Firewalls'
-  | 'Identity and Access Management'
+  | 'Identity and Access'
   | 'Images'
   | 'Kubernetes'
   | 'LinodeCreate' // Use for Marketplace banners
   | 'Linodes'
   | 'LoadBalancers'
+  | 'Logs'
   | 'Longview'
   | 'Managed'
   | 'NodeBalancers'
   | 'Object Storage'
   | 'Placement Groups'
   | 'StackScripts'
-  | 'VPC'
-  | 'Volumes';
+  | 'Volumes'
+  | 'VPC';
 
 interface ProductInformationBannerDecoration {
   important: 'false' | 'true' | boolean;
@@ -271,3 +343,16 @@ export interface SuppliedMaintenanceData {
 export interface APIMaintenance {
   maintenances: SuppliedMaintenanceData[];
 }
+
+export interface AclpAlertServiceTypeConfig {
+  maxResourceSelectionCount: number;
+  serviceType: CloudPulseServiceType;
+  // This can be extended to have supportedRegions, supportedFilters and other tags
+}
+
+export type AclpServices = {
+  [serviceType in CloudPulseServiceType]: {
+    alerts?: AclpFlag;
+    metrics?: AclpFlag;
+  };
+};

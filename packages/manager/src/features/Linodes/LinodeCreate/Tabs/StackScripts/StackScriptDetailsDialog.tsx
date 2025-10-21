@@ -1,10 +1,8 @@
-import { CircleProgress } from '@linode/ui';
+import { useStackScriptQuery } from '@linode/queries';
+import { CircleProgress, Dialog, ErrorState } from '@linode/ui';
 import React from 'react';
 
-import { Dialog } from 'src/components/Dialog/Dialog';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { StackScript } from 'src/components/StackScript/StackScript';
-import { useStackScriptQuery } from 'src/queries/stackscripts';
 
 interface Props {
   /**
@@ -24,10 +22,11 @@ interface Props {
 export const StackScriptDetailsDialog = (props: Props) => {
   const { id, onClose, open } = props;
 
-  const { data: stackscript, error, isLoading } = useStackScriptQuery(
-    id ?? -1,
-    id !== undefined
-  );
+  const {
+    data: stackscript,
+    error,
+    isLoading,
+  } = useStackScriptQuery(id ?? -1, id !== undefined);
 
   const title = stackscript
     ? `${stackscript.username} / ${stackscript.label}`

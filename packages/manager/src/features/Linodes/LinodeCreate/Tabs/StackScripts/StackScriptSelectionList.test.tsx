@@ -2,12 +2,39 @@ import React from 'react';
 
 import { stackScriptFactory } from 'src/factories';
 import { makeResourcePage } from 'src/mocks/serverHandlers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithThemeAndHookFormContext } from 'src/utilities/testHelpers';
 
 import { StackScriptSelectionList } from './StackScriptSelectionList';
 
+const queryMocks = vi.hoisted(() => ({
+  useLocation: vi.fn(),
+  useNavigate: vi.fn(),
+  useParams: vi.fn(),
+  useSearch: vi.fn(),
+}));
+
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
+  return {
+    ...actual,
+    useLocation: queryMocks.useLocation,
+    useNavigate: queryMocks.useNavigate,
+    useSearch: queryMocks.useSearch,
+    useParams: queryMocks.useParams,
+  };
+});
+
 describe('StackScriptSelectionList', () => {
+  beforeEach(() => {
+    queryMocks.useLocation.mockReturnValue({
+      pathname: '/linodes/create',
+    });
+    queryMocks.useNavigate.mockReturnValue(vi.fn());
+    queryMocks.useSearch.mockReturnValue({});
+    queryMocks.useParams.mockReturnValue({});
+  });
+
   it('renders StackScripts returned by the API', async () => {
     const stackscripts = stackScriptFactory.buildList(5);
 
@@ -22,7 +49,6 @@ describe('StackScriptSelectionList', () => {
     });
 
     for (const stackscript of stackscripts) {
-      // eslint-disable-next-line no-await-in-loop
       const item = await findByText(stackscript.label, { exact: false });
 
       expect(item).toBeVisible();
@@ -30,6 +56,9 @@ describe('StackScriptSelectionList', () => {
   });
 
   it('renders and selected a StackScript from query params if one is specified', async () => {
+    queryMocks.useSearch.mockReturnValue({
+      stackScriptID: '921609',
+    });
     const stackscript = stackScriptFactory.build();
 
     server.use(
@@ -41,11 +70,10 @@ describe('StackScriptSelectionList', () => {
     const { findByLabelText, getByText } = renderWithThemeAndHookFormContext({
       component: <StackScriptSelectionList type="Account" />,
       options: {
-        MemoryRouter: {
-          initialEntries: [
-            '/linodes/create?type=StackScripts&subtype=Account&stackScriptID=921609',
-          ],
-        },
+        initialRoute: '/linodes/create/stackscripts',
+        initialEntries: [
+          '/linodes/create/stackscripts?subtype=Account&stackScriptID=921609',
+        ],
       },
     });
 

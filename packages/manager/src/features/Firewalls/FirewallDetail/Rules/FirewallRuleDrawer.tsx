@@ -1,9 +1,7 @@
-import { Typography } from '@linode/ui';
+import { Drawer, Typography } from '@linode/ui';
+import { capitalize } from '@linode/utilities';
 import { Formik } from 'formik';
 import * as React from 'react';
-
-import { Drawer } from 'src/components/Drawer';
-import { capitalize } from 'src/utilities/capitalize';
 
 import {
   formValueToIPs,
@@ -74,7 +72,6 @@ export const FirewallRuleDrawer = React.memo(
     }: FormState) => {
       // The validated IPs may have errors, so set them to state so we see the errors.
       const validatedIPs = validateIPs(ips, {
-        // eslint-disable-next-line sonarjs/no-duplicate-string
         allowEmptyAddress: addresses !== 'ip/netmask',
       });
       setIPs(validatedIPs);

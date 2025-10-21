@@ -1,4 +1,4 @@
-import { Box, Button, StyledLinkButton, omittedProps } from '@linode/ui';
+import { Box, Button, omittedProps } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 
 import DragIndicator from 'src/assets/icons/drag-indicator.svg';
@@ -39,7 +39,7 @@ export const StyledTableRow = styled('tr', {
 export const StyledInnerBox = styled(Box, { label: 'StyledInnerBox' })(
   ({ theme }) => ({
     backgroundColor: theme.bg.tableHeader,
-    fontFamily: theme.font.bold,
+    font: theme.font.bold,
     fontSize: '.875rem',
   })
 );
@@ -56,12 +56,6 @@ export const StyledFirewallTableButton = styled(Button, {
   label: 'StyledFirewallTableButton',
 })(({ theme }) => ({
   margin: `${theme.spacing(1)} 0px`,
-}));
-
-export const MoreStyledLinkButton = styled(StyledLinkButton, {
-  label: 'MoreStyledLinkButton',
-})(({ ...props }) => ({
-  color: props.disabled ? 'inherit' : '',
 }));
 
 export const StyledButtonDiv = styled('div', { label: 'StyledButtonDiv' })({

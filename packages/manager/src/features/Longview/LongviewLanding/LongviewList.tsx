@@ -1,13 +1,13 @@
 import {
   Box,
   CircleProgress,
+  ErrorState,
+  LinkButton,
   Paper,
-  StyledLinkButton,
   Typography,
 } from '@linode/ui';
 import * as React from 'react';
 
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import Paginate from 'src/components/Paginate';
 import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFooter';
 
@@ -81,21 +81,21 @@ export const LongviewList = React.memo((props: Props) => {
   if (longviewClientsLastUpdated !== 0 && longviewClientsResults === 0) {
     return (
       <Paper
+        data-testid="no-client-list"
         sx={{
           alignItems: 'center',
           display: 'flex',
           height: '20em',
           justifyContent: 'center',
         }}
-        data-testid="no-client-list"
       >
         <Typography sx={{ fontSize: '1.1em' }} variant="body1">
           {userCanCreateLongviewClient ? (
             <React.Fragment>
               You have no Longview clients configured.{' '}
-              <StyledLinkButton onClick={createLongviewClient}>
+              <LinkButton onClick={createLongviewClient}>
                 Click here to add one.
-              </StyledLinkButton>
+              </LinkButton>
             </React.Fragment>
           ) : (
             'You have no Longview clients configured.'

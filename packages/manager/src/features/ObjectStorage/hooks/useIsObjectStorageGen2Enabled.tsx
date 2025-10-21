@@ -1,6 +1,7 @@
+import { useAccount } from '@linode/queries';
+import { isFeatureEnabledV2 } from '@linode/utilities';
+
 import { useFlags } from 'src/hooks/useFlags';
-import { useAccount } from 'src/queries/account/account';
-import { isFeatureEnabledV2 } from 'src/utilities/accountCapabilities';
 
 /**
  * Hook to determine if the Object Storage Gen2 feature should be visible to the user.
@@ -21,4 +22,17 @@ export const useIsObjectStorageGen2Enabled = (): {
   );
 
   return { isObjectStorageGen2Enabled };
+};
+
+export const useIsObjMultiClusterEnabled = () => {
+  const flags = useFlags();
+  const { data: account } = useAccount();
+
+  const isObjMultiClusterEnabled = isFeatureEnabledV2(
+    'Object Storage Access Key Regions',
+    Boolean(flags.objMultiCluster),
+    account?.capabilities ?? []
+  );
+
+  return { isObjMultiClusterEnabled };
 };

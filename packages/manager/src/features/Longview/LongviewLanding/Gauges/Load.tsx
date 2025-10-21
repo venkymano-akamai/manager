@@ -1,7 +1,7 @@
 import { Typography } from '@linode/ui';
 import { useTheme } from '@mui/material/styles';
-import { pathOr } from 'ramda';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import { GaugePercent } from 'src/components/GaugePercent/GaugePercent';
 import withClientData from 'src/containers/longview.stats.container';
@@ -24,12 +24,8 @@ export const LoadGauge = withClientData<Props>((ownProps) => ownProps.clientID)(
 
     const theme = useTheme();
 
-    const load = pathOr<number>(0, ['Load', 0, 'y'], longviewClientData);
-    const numberOfCores = pathOr<number>(
-      0,
-      ['SysInfo', 'cpu', 'cores'],
-      longviewClientData
-    );
+    const load = longviewClientData?.Load?.[0]?.y ?? 0;
+    const numberOfCores = longviewClientData?.SysInfo?.cpu?.cores ?? 0;
 
     const generateCopy = (): {
       innerText: string;

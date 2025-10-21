@@ -1,6 +1,6 @@
 import { Box, Button, Notice, Typography } from '@linode/ui';
+import { useNavigate } from '@tanstack/react-router';
 import React from 'react';
-import { useHistory } from 'react-router-dom';
 
 interface Props {
   hasSecurityQuestions: boolean;
@@ -11,7 +11,7 @@ export const VerificationDetailsBanner = ({
   hasSecurityQuestions,
   hasVerifiedPhoneNumber,
 }: Props) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const focusOptions = {
     focusSecurityQuestions: false,
     focusTel: false,
@@ -24,12 +24,15 @@ export const VerificationDetailsBanner = ({
   }
 
   return (
-    <Notice important spacing={1} variant="warning">
+    <Notice forceImportantIconVerticalCenter variant="warning">
       <Box
         alignItems="center"
         display="flex"
         gap={1}
         justifyContent="space-between"
+        sx={{
+          width: '100%',
+        }}
       >
         <Typography variant="body1">
           Add verification details to enhance account security and ensure prompt
@@ -38,7 +41,19 @@ export const VerificationDetailsBanner = ({
         <Button
           buttonType="primary"
           data-testid="confirmButton"
-          onClick={() => history.push('/profile/auth', focusOptions)}
+          onClick={() => {
+            const { focusSecurityQuestions, focusTel } = focusOptions;
+            navigate({
+              to: '/profile/auth',
+              search: {
+                focusSecurityQuestions,
+                focusTel,
+              },
+            });
+          }}
+          sx={{
+            width: 250,
+          }}
         >
           Add verification details
         </Button>

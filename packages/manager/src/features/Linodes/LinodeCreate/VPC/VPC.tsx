@@ -1,32 +1,38 @@
+import { useAllVPCsQuery, useRegionQuery } from '@linode/queries';
 import {
   Autocomplete,
   Box,
-  Checkbox,
   Divider,
-  FormControlLabel,
   Notice,
   Paper,
   Stack,
-  TextField,
   TooltipIcon,
   Typography,
 } from '@linode/ui';
+import { LinkButton } from '@linode/ui';
 import React, { useState } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 
 import { Link } from 'src/components/Link';
-import { LinkButton } from 'src/components/LinkButton';
+import { PublicIPv4Access } from 'src/features/Linodes/LinodesDetail/LinodeNetworking/LinodeInterfaces/PublicIPv4Access';
+import { PublicIPv6Access } from 'src/features/Linodes/LinodesDetail/LinodeNetworking/LinodeInterfaces/PublicIPv6Access';
+import { VPCIPv4Address } from 'src/features/Linodes/LinodesDetail/LinodeNetworking/LinodeInterfaces/VPCIPv4Address';
+import { VPCIPv6Address } from 'src/features/Linodes/LinodesDetail/LinodeNetworking/LinodeInterfaces/VPCIPv6Address';
 import {
+  DualStackVPCRangesDescription,
+  VPCRangesDescription,
+} from 'src/features/VPCs/components/VPCRangesDescription';
+import {
+  ASSIGN_IP_RANGES_TITLE,
   REGION_CAVEAT_HELPER_TEXT,
-  VPC_AUTO_ASSIGN_IPV4_TOOLTIP,
 } from 'src/features/VPCs/constants';
 import { VPCCreateDrawer } from 'src/features/VPCs/VPCCreateDrawer/VPCCreateDrawer';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useAllVPCsQuery } from 'src/queries/vpcs/vpcs';
+import { useVPCDualStack } from 'src/hooks/useVPCDualStack';
 import { sendLinodeCreateFormInputEvent } from 'src/utilities/analytics/formEventAnalytics';
-import { doesRegionSupportFeature } from 'src/utilities/doesRegionSupportFeature';
 
-import { useLinodeCreateQueryParams } from '../utilities';
+import { VPCAvailabilityNotice } from '../Networking/VPCAvailabilityNotice';
+import { useGetLinodeCreateType } from '../Tabs/utils/useGetLinodeCreateType';
+import { VPCIPv6Ranges } from './VPCIPv6Ranges';
 import { VPCRanges } from './VPCRanges';
 
 import type { CreateLinodeRequest } from '@linode/api-v4';
@@ -35,51 +41,58 @@ import type { LinodeCreateFormEventOptions } from 'src/utilities/analytics/types
 export const VPC = () => {
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
 
-  const {
-    control,
-    formState,
-    setValue,
-  } = useFormContext<CreateLinodeRequest>();
+  const { control, getValues, formState, setValue } =
+    useFormContext<CreateLinodeRequest>();
 
-  const { data: regions } = useRegionsQuery();
-
-  const [
-    regionId,
-    selectedVPCId,
-    selectedSubnetId,
-    linodeVPCIPAddress,
-  ] = useWatch({
+  const [regionId, selectedVPCId, selectedSubnetId] = useWatch({
     control,
     name: [
       'region',
       'interfaces.0.vpc_id',
+      // eslint-disable-next-line sonarjs/no-duplicate-string
       'interfaces.0.subnet_id',
       'interfaces.0.ipv4.vpc',
+      'interfaces.0.ipv6.slaac.0.range',
     ],
   });
 
-  const regionSupportsVPCs = doesRegionSupportFeature(
-    regionId,
-    regions ?? [],
-    'VPCs'
-  );
+  const { data: region } = useRegionQuery(regionId);
 
-  const { data: vpcs, error, isLoading } = useAllVPCsQuery({
+  const regionSupportsVPCs = region?.capabilities.includes('VPCs') ?? false;
+
+  const { isDualStackEnabled } = useVPCDualStack();
+
+  const {
+    data: vpcs,
+    error,
+    isLoading,
+  } = useAllVPCsQuery({
     enabled: regionSupportsVPCs,
     filter: { region: regionId },
   });
 
   const selectedVPC = vpcs?.find((vpc) => vpc.id === selectedVPCId);
 
+  // Check that selected subnet supports IPv6
+  const selectedSubnet = selectedVPC?.subnets.find(
+    (subnet) => subnet.id === getValues('interfaces.0.subnet_id')
+  );
+
+  const showIPv6Fields =
+    isDualStackEnabled &&
+    Boolean(selectedSubnet?.ipv6?.length && selectedSubnet?.ipv6?.length > 0);
+
   const copy =
     vpcs?.length === 0
       ? 'Allow Linode to communicate in an isolated environment.'
       : 'Assign this Linode to an existing VPC.';
 
-  const { params } = useLinodeCreateQueryParams();
+  const createType = useGetLinodeCreateType();
+  const isCreatingFromBackup = createType === 'Backups';
+  const disabled = !regionSupportsVPCs || isCreatingFromBackup;
 
   const vpcFormEventOptions: LinodeCreateFormEventOptions = {
-    createType: params.type ?? 'OS',
+    createType: createType ?? 'OS',
     headerName: 'VPC',
     interaction: 'click',
     label: 'VPC',
@@ -88,7 +101,16 @@ export const VPC = () => {
   return (
     <Paper data-testid="vpc-panel">
       <Stack spacing={2}>
-        <Typography variant="h2">VPC</Typography>
+        <Box alignItems="center" display="flex" flexDirection="row">
+          <Typography variant="h2">VPC</Typography>
+          {isCreatingFromBackup && (
+            <TooltipIcon
+              status="info"
+              sxTooltipIcon={{ p: 0, marginLeft: '8px' }}
+              text="You cannot assign a VPC when deploying to a new Linode from a backup."
+            />
+          )}
+        </Box>
         <Typography>
           {copy}{' '}
           <Link
@@ -103,15 +125,25 @@ export const VPC = () => {
             Learn more.
           </Link>
         </Typography>
+        {region && !regionSupportsVPCs && <VPCAvailabilityNotice />}
         <Stack spacing={1.5}>
           <Controller
+            control={control}
+            name="interfaces.0.vpc_id"
             render={({ field, fieldState }) => (
               <Autocomplete
+                disabled={disabled}
+                errorText={error?.[0].reason ?? fieldState.error?.message}
                 helperText={
-                  regionId && !regionSupportsVPCs
-                    ? 'VPC is not available in the selected region.'
+                  !regionId
+                    ? 'Select a region to see available VPCs.'
                     : undefined
                 }
+                label="Assign VPC"
+                loading={isLoading}
+                noMarginTop
+                noOptionsText="There are no VPCs in the selected region."
+                onBlur={field.onBlur}
                 onChange={(e, vpc) => {
                   field.onChange(vpc?.id ?? null);
 
@@ -143,22 +175,14 @@ export const VPC = () => {
                     });
                   }
                 }}
+                options={vpcs ?? []}
+                placeholder="None"
                 textFieldProps={{
                   tooltipText: REGION_CAVEAT_HELPER_TEXT,
                 }}
-                disabled={!regionSupportsVPCs}
-                errorText={error?.[0].reason ?? fieldState.error?.message}
-                label="Assign VPC"
-                loading={isLoading}
-                noMarginTop
-                onBlur={field.onBlur}
-                options={vpcs ?? []}
-                placeholder="None"
                 value={selectedVPC ?? null}
               />
             )}
-            control={control}
-            name="interfaces.0.vpc_id"
           />
           {regionId && regionSupportsVPCs && (
             <Box>
@@ -178,136 +202,128 @@ export const VPC = () => {
           {selectedVPCId && (
             <>
               <Controller
+                control={control}
+                name="interfaces.0.subnet_id"
                 render={({ field, fieldState }) => (
                   <Autocomplete
+                    errorText={fieldState.error?.message}
                     getOptionLabel={(subnet) =>
                       `${subnet.label} (${subnet.ipv4})`
                     }
-                    value={
-                      selectedVPC?.subnets.find(
-                        (subnet) => subnet.id === field.value
-                      ) ?? null
-                    }
-                    errorText={fieldState.error?.message}
                     label="Subnet"
                     noMarginTop
                     onBlur={field.onBlur}
                     onChange={(e, subnet) => field.onChange(subnet?.id ?? null)}
                     options={selectedVPC?.subnets ?? []}
                     placeholder="Select Subnet"
+                    value={
+                      selectedVPC?.subnets.find(
+                        (subnet) => subnet.id === field.value
+                      ) ?? null
+                    }
                   />
                 )}
-                control={control}
-                name="interfaces.0.subnet_id"
               />
               {selectedSubnetId && (
                 <>
                   <Stack>
                     <Controller
-                      render={({ field }) => (
-                        <Box>
-                          <FormControlLabel
-                            checked={
-                              field.value === null || field.value === undefined
-                            }
-                            label={
-                              <Stack alignItems="center" direction="row">
-                                <Typography>
-                                  Auto-assign a VPC IPv4 address for this Linode
-                                  in the VPC
-                                </Typography>
-                                <TooltipIcon
-                                  status="help"
-                                  text={VPC_AUTO_ASSIGN_IPV4_TOOLTIP}
-                                />
-                              </Stack>
-                            }
-                            onChange={(e, checked) =>
-                              // If "Auto-assign" is checked, set the VPC IP to null
-                              // so that it gets auto-assigned. Otherwise, set it to
-                              // an empty string so that the TextField renders and a
-                              // user can enter one.
-                              field.onChange(checked ? null : '')
-                            }
-                            control={<Checkbox sx={{ ml: 0.5 }} />}
-                          />
-                        </Box>
-                      )}
                       control={control}
                       name="interfaces.0.ipv4.vpc"
+                      render={({ field, fieldState }) => (
+                        <VPCIPv4Address
+                          errorMessage={fieldState.error?.message}
+                          fieldValue={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
                     />
-                    {linodeVPCIPAddress !== null &&
-                      linodeVPCIPAddress !== undefined && (
-                        <Controller
-                          render={({ field, fieldState }) => (
-                            <TextField
-                              containerProps={{ sx: { mb: 1, mt: 1 } }}
-                              errorText={fieldState.error?.message}
-                              label="VPC IPv4"
-                              noMarginTop
-                              onBlur={field.onBlur}
-                              onChange={field.onChange}
-                              required
-                              value={field.value}
-                            />
-                          )}
-                          control={control}
-                          name="interfaces.0.ipv4.vpc"
-                        />
-                      )}
+                    {showIPv6Fields && (
+                      <Controller
+                        control={control}
+                        name="interfaces.0.ipv6.slaac.0.range"
+                        render={({ field, fieldState }) => (
+                          <VPCIPv6Address
+                            errorMessage={fieldState.error?.message}
+                            fieldValue={field.value}
+                            onBlur={field.onBlur}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                    )}
+                  </Stack>
+                  <Box>
+                    <Divider
+                      sx={(theme) => ({
+                        marginBottom: theme.spacingFunction(16),
+                      })}
+                    />
+                    <Typography sx={(theme) => ({ font: theme.font.bold })}>
+                      Public access
+                    </Typography>
                     <Controller
-                      render={({ field }) => (
-                        <FormControlLabel
-                          label={
-                            <Stack alignItems="center" direction="row">
-                              <Typography>
-                                Assign a public IPv4 address for this Linode
-                              </Typography>
-                              <TooltipIcon
-                                text={
-                                  'Access the internet through the public IPv4 address using static 1:1 NAT.'
-                                }
-                                status="help"
-                              />
-                            </Stack>
-                          }
-                          onChange={(e, checked) =>
-                            field.onChange(checked ? 'any' : null)
-                          }
-                          checked={field.value === 'any'}
-                          control={<Checkbox sx={{ ml: 0.5 }} />}
-                          sx={{ mt: 0 }}
-                        />
-                      )}
                       control={control}
                       name="interfaces.0.ipv4.nat_1_1"
+                      render={({ field, fieldState }) => (
+                        <PublicIPv4Access
+                          checked={Boolean(field.value)}
+                          errorMessage={fieldState.error?.message}
+                          isConfigInterface
+                          onChange={field.onChange}
+                        />
+                      )}
                     />
-                  </Stack>
-                  <Divider />
-                  <Typography fontFamily={(theme) => theme.font.bold}>
-                    Assign additional IPv4 ranges
-                  </Typography>
-                  {formState.errors.interfaces?.[1]?.ip_ranges?.message && (
-                    <Notice
-                      text={formState.errors.interfaces[1]?.ip_ranges?.message}
-                      variant="error"
+                    {showIPv6Fields && (
+                      <Controller
+                        control={control}
+                        name={`interfaces.0.ipv6.is_public`}
+                        render={({ field, fieldState }) => (
+                          <PublicIPv6Access
+                            checked={field.value === true}
+                            disabled={!regionSupportsVPCs}
+                            errorMessage={fieldState.error?.message}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                    )}
+                    <Divider
+                      sx={(theme) => ({ marginTop: theme.spacingFunction(16) })}
                     />
-                  )}
-                  <Typography>
-                    Assign additional IPv4 address ranges that the VPC can use
-                    to reach services running on this Linode.{' '}
-                    <Link to="https://techdocs.akamai.com/cloud-computing/docs/assign-a-compute-instance-to-a-vpc">
-                      Learn more
-                    </Link>
-                    .
-                  </Typography>
-                  {formState.errors.interfaces?.[0]?.ip_ranges?.message && (
-                    <Notice
-                      text={formState.errors.interfaces[0]?.ip_ranges?.message}
-                      variant="error"
-                    />
-                  )}
+                  </Box>
+                  {formState.errors.interfaces?.[1] &&
+                    formState.errors.interfaces[1] &&
+                    'ip_ranges' in formState.errors.interfaces[1] && (
+                      <Notice
+                        text={formState.errors.interfaces[1].ip_ranges?.message}
+                        variant="error"
+                      />
+                    )}
+                  <Box
+                    alignItems={showIPv6Fields ? 'center' : 'flex-start'}
+                    display="flex"
+                    flexDirection={showIPv6Fields ? 'row' : 'column'}
+                  >
+                    <Typography sx={(theme) => ({ font: theme.font.bold })}>
+                      {showIPv6Fields
+                        ? ASSIGN_IP_RANGES_TITLE
+                        : 'Assign additional IPv4 ranges'}
+                    </Typography>
+                    {showIPv6Fields ? (
+                      <TooltipIcon
+                        status="info"
+                        sxTooltipIcon={(theme) => ({
+                          padding: theme.spacingFunction(8),
+                        })}
+                        text={<DualStackVPCRangesDescription />}
+                      />
+                    ) : (
+                      <VPCRangesDescription />
+                    )}
+                  </Box>
                   <VPCRanges />
+                  {showIPv6Fields && <VPCIPv6Ranges />}
                 </>
               )}
             </>
@@ -315,6 +331,7 @@ export const VPC = () => {
         </Stack>
       </Stack>
       <VPCCreateDrawer
+        onClose={() => setIsCreateDrawerOpen(false)}
         onSuccess={(vpc) => {
           setValue('interfaces.0.vpc_id', vpc.id);
 
@@ -324,7 +341,6 @@ export const VPC = () => {
             setValue('interfaces.0.subnet_id', vpc.subnets[0].id);
           }
         }}
-        onClose={() => setIsCreateDrawerOpen(false)}
         open={isCreateDrawerOpen}
         selectedRegion={regionId}
       />

@@ -1,14 +1,15 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
+import {
+  useAllAccountMaintenanceQuery,
+  useAllLinodesQuery,
+} from '@linode/queries';
+import { useFormattedDate } from '@linode/utilities';
 import * as React from 'react';
 
 import { DownloadCSV } from 'src/components/DownloadCSV/DownloadCSV';
 import { PENDING_MAINTENANCE_FILTER } from 'src/features/Account/Maintenance/utilities';
-import { useFormattedDate } from 'src/hooks/useFormattedDate';
-import { useAllAccountMaintenanceQuery } from 'src/queries/account/maintenance';
-import { useAllLinodesQuery } from 'src/queries/linodes/linodes';
 
 export const LinodesLandingCSVDownload = () => {
-  const csvRef = React.useRef<any>();
+  const csvRef = React.useRef<any>(undefined);
   const formattedDate = useFormattedDate();
 
   const { data: linodes, refetch: getCSVData } = useAllLinodesQuery(

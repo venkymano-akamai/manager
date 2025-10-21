@@ -13,21 +13,29 @@
 // https://on.cypress.io/configuration
 // ***********************************************************
 
-import { queryClientFactory } from '@src/queries/base';
+import { queryClientFactory } from '@linode/queries';
 import { QueryClientProvider } from '@tanstack/react-query';
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router';
 import '@testing-library/cypress/add-commands';
 import 'cypress-axe';
-import { mount } from 'cypress/react18';
+import { mount } from 'cypress/react';
 import { LDProvider } from 'launchdarkly-react-client-sdk';
 import { SnackbarProvider } from 'notistack';
 import * as React from 'react';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
 
 import { LinodeThemeWrapper } from 'src/LinodeThemeWrapper';
 import { storeFactory } from 'src/store';
 
 import type { ThemeName } from '@linode/ui';
+import type { AnyRoute, AnyRouter } from '@tanstack/react-router';
+import type { Flags } from 'src/featureFlags';
 
 /**
  * Mounts a component with a Cloud Manager theme applied.
@@ -38,10 +46,26 @@ import type { ThemeName } from '@linode/ui';
 export const mountWithTheme = (
   jsx: React.ReactNode,
   theme: ThemeName = 'light',
-  flags: any = {}
+  flags: Partial<Flags> = {},
+  routeTree?: (parentRoute: AnyRoute) => AnyRoute[]
 ) => {
   const queryClient = queryClientFactory();
   const store = storeFactory();
+  const rootRoute = createRootRoute({});
+  const indexRoute = createRoute({
+    component: () => jsx,
+    getParentRoute: () => rootRoute,
+    path: '/',
+  });
+  const router: AnyRouter = createRouter({
+    defaultNotFoundComponent: () => <div>Not Found</div>,
+    history: createMemoryHistory({
+      initialEntries: ['/'],
+    }),
+    routeTree: routeTree
+      ? rootRoute.addChildren([indexRoute, ...routeTree(indexRoute)])
+      : rootRoute.addChildren([indexRoute]),
+  });
 
   return mount(
     <Provider store={store}>
@@ -54,7 +78,7 @@ export const mountWithTheme = (
             options={{ bootstrap: flags }}
           >
             <SnackbarProvider>
-              <MemoryRouter>{jsx}</MemoryRouter>
+              <RouterProvider router={router} />
             </SnackbarProvider>
           </LDProvider>
         </LinodeThemeWrapper>

@@ -1,9 +1,7 @@
-import { Box, IconButton, Stack, TextField } from '@linode/ui';
-import CloseIcon from '@mui/icons-material/Close';
+import { Box, CloseIcon, IconButton, Stack, TextField } from '@linode/ui';
+import { LinkButton } from '@linode/ui';
 import React from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
-
-import { LinkButton } from 'src/components/LinkButton';
 
 import type { CreateLinodeRequest } from '@linode/api-v4';
 
@@ -25,6 +23,8 @@ export const VPCRanges = () => {
           spacing={0.5}
         >
           <Controller
+            control={control}
+            name={`interfaces.0.ip_ranges.${index}`}
             render={({ field, fieldState }) => (
               <TextField
                 errorText={fieldState.error?.message}
@@ -32,13 +32,12 @@ export const VPCRanges = () => {
                 label={`IP Range ${index}`}
                 onBlur={field.onBlur}
                 onChange={field.onChange}
+                // eslint-disable-next-line sonarjs/no-hardcoded-ip
                 placeholder="10.0.0.0/24"
                 sx={{ minWidth: 290 }}
                 value={field.value}
               />
             )}
-            control={control}
-            name={`interfaces.0.ip_ranges.${index}`}
           />
           <IconButton
             aria-label={`Remove IP Range ${index}`}

@@ -23,9 +23,15 @@ const sxTextField = {
   height: 34,
   margin: '0 5px',
   minHeight: 30,
-  minWidth: 40,
-  width: 53,
+  minWidth: 53,
+  maxWidth: 70,
 };
+
+/**
+ * Using MUI's TextField component with type=number causes known issues, which MUI has documented: https://mui.com/material-ui/react-text-field/#type-quot-number-quot.
+ * Until MUI has a dedicated NumberInput component (https://github.com/mui/material-ui/issues/19154) or we redesign this one, this fixes the erroneous character issue.
+ */
+const charsToPrevent = ['+', '-', '.', 'e', 'E'];
 
 interface EnhancedNumberInputProps {
   /** Disables the input and the +/- buttons */
@@ -60,6 +66,12 @@ export const EnhancedNumberInput = React.memo(
       const parsedValue = +e.target.value;
       if (parsedValue >= min && parsedValue <= max) {
         setValue(+e.target.value);
+      } else {
+        if (e.target.value === '' && value === min) {
+          setValue(0);
+        } else {
+          setValue(min);
+        }
       }
     };
 
@@ -88,19 +100,14 @@ export const EnhancedNumberInput = React.memo(
           aria-label="Subtract 1"
           buttonType="outlined"
           data-testid={'decrement-button'}
-          disableFocusRipple
           disabled={disabled || value === min}
+          disableFocusRipple
           name="Subtract 1"
           onClick={decrementValue}
         >
           <MinusIcon />
         </StyledButton>
         <TextField
-          sx={{
-            ...sxTextField,
-            '.MuiInputBase-input': sxTextFieldBase,
-            '.MuiInputBase-root': sxTextField,
-          }}
           aria-live="polite"
           data-testid={'quantity-input'}
           disabled={disabled}
@@ -110,6 +117,16 @@ export const EnhancedNumberInput = React.memo(
           min={min}
           name="Quantity"
           onChange={onChange}
+          onKeyDown={(e) => {
+            if (charsToPrevent.includes(e.key)) {
+              e.preventDefault();
+            }
+          }}
+          sx={{
+            ...sxTextField,
+            '.MuiInputBase-input': sxTextFieldBase,
+            '.MuiInputBase-root': sxTextField,
+          }}
           type="number"
           value={value}
         />
@@ -117,8 +134,8 @@ export const EnhancedNumberInput = React.memo(
           aria-label="Add 1"
           buttonType="outlined"
           data-testid={'increment-button'}
-          disableFocusRipple
           disabled={disabled || value === max}
+          disableFocusRipple
           name="Add 1"
           onClick={incrementValue}
         >
@@ -142,7 +159,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
     border: 'none',
   },
   border: 'none',
-  borderRadius: theme.tokens.borderRadius.None,
+  borderRadius: theme.tokens.alias.Radius.Default,
   height: 34,
   minHeight: 'fit-content',
   minWidth: 30,
@@ -154,5 +171,6 @@ const MinusIcon = styled(Minus)({
 });
 
 const PlusIcon = styled(PlusSignIcon)({
-  width: 14,
+  width: 12,
+  height: 12,
 });

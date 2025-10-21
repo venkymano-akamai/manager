@@ -1,40 +1,114 @@
-import { Box, Button, Paper } from '@linode/ui';
-import { useMediaQuery } from '@mui/material';
+import { useAccountUsers, useProfile } from '@linode/queries';
+import { getAPIFilterFromQuery } from '@linode/search';
+import { Button, Paper, Select } from '@linode/ui';
+import { Grid, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import React from 'react';
 
 import { DebouncedSearchTextField } from 'src/components/DebouncedSearchTextField';
-import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFooter';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
-import { useOrder } from 'src/hooks/useOrder';
-import { usePagination } from 'src/hooks/usePagination';
-import { useAccountUsers } from 'src/queries/account/users';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 
+import { useIsIAMDelegationEnabled } from '../../hooks/useIsIAMEnabled';
+import { usePermissions } from '../../hooks/usePermissions';
+import { UserDeleteConfirmation } from '../../Shared/UserDeleteConfirmation';
+import { CreateUserDrawer } from './CreateUserDrawer';
 import { UsersLandingTableBody } from './UsersLandingTableBody';
 import { UsersLandingTableHead } from './UsersLandingTableHead';
 
 import type { Filter } from '@linode/api-v4';
+import type { SelectOption } from '@linode/ui';
+
+const ALL_USERS_OPTION: SelectOption = {
+  label: 'All User Types',
+  value: 'all',
+};
 
 export const UsersLanding = () => {
+  const navigate = useNavigate();
+  const { isIAMDelegationEnabled } = useIsIAMDelegationEnabled();
+  const { data: profile } = useProfile();
+
+  const { query } = useSearch({
+    from: '/iam',
+  });
+  const [isCreateDrawerOpen, setIsCreateDrawerOpen] =
+    React.useState<boolean>(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+  const [selectedUsername, setSelectedUsername] = React.useState('');
   const theme = useTheme();
-  const pagination = usePagination(1, 'account-users');
-  const order = useOrder();
+  const { data: permissions } = usePermissions('account', ['create_user']);
+  const pagination = usePaginationV2({
+    currentRoute: '/iam/users',
+    initialPage: 1,
+    preferenceKey: 'iam-account-users-pagination',
+  });
+  const order = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'username',
+      },
+      from: '/iam/users',
+    },
+    preferenceKey: 'iam-account-users-order',
+  });
+
+  const queryParams = new URLSearchParams(location.search);
+
+  const { error: searchError, filter } = getAPIFilterFromQuery(query, {
+    searchableFieldsWithoutOperator: ['username', 'email'],
+  });
+
+  // Determine if the current user is a child account with isIAMDelegationEnabled enabled
+  // If so, we need to show both 'child' and 'delegate_user' users in the table
+  const isChildWithDelegationEnabled =
+    isIAMDelegationEnabled && Boolean(profile?.user_type === 'child');
+
+  const [userType, setUserType] = React.useState<null | SelectOption>(
+    ALL_USERS_OPTION
+  );
 
   const usersFilter: Filter = {
     ['+order']: order.order,
     ['+order_by']: order.orderBy,
+    ...filter,
+    ...(isChildWithDelegationEnabled && userType && userType.value !== 'all'
+      ? {
+          user_type: userType.value === 'users' ? 'child' : 'delegate',
+        }
+      : {}),
   };
 
   // Since this query is disabled for restricted users, use isLoading.
-  const { data: users, error, isLoading } = useAccountUsers({
+  const {
+    data: users,
+    error,
+    isFetching,
+    isLoading,
+  } = useAccountUsers({
     filters: usersFilter,
     params: {
       page: pagination.page,
       page_size: pagination.pageSize,
     },
   });
+
+  const filterableOptions = [
+    ALL_USERS_OPTION,
+    {
+      label: 'Users',
+      value: 'users',
+    },
+    {
+      label: 'Delegate Users',
+      value: 'delegate',
+    },
+  ];
 
   const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
   const isLgDown = useMediaQuery(theme.breakpoints.up('lg'));
@@ -43,39 +117,98 @@ export const UsersLanding = () => {
 
   const numCols = isSmDown ? 2 : numColsLg;
 
-  const handleDelete = (username: string) => {
-    // mock
+  const handleSearch = (value: string) => {
+    queryParams.set('page', '1');
+    if (value) {
+      queryParams.set('query', value);
+    } else {
+      queryParams.delete('query');
+    }
+    navigate({
+      to: '/iam/users',
+      search: {
+        users: queryParams.get('users') ?? 'all',
+        query: value,
+      },
+    });
   };
 
-  const handleSearch = async (value: string) => {
-    // mock
+  const handleDelete = (username: string) => {
+    setIsDeleteDialogOpen(true);
+    setSelectedUsername(username);
   };
+
+  const canCreateUser = permissions.create_user;
 
   return (
     <React.Fragment>
-      <DocumentTitleSegment segment="Users & Grants" />
-      <Paper sx={(theme) => ({ marginTop: theme.spacing(2) })}>
-        <Box
-          sx={(theme) => ({
+      <Paper sx={(theme) => ({ marginTop: theme.tokens.spacing.S16 })}>
+        <Grid
+          container
+          direction="row"
+          rowSpacing={1}
+          sx={{
             alignItems: 'center',
-            display: 'flex',
             justifyContent: 'space-between',
-            marginBottom: theme.spacing(2),
-          })}
+            marginBottom: theme.tokens.spacing.S12,
+          }}
         >
-          <DebouncedSearchTextField
-            clearable
-            debounceTime={250}
-            hideLabel
-            label="Filter"
-            onSearch={handleSearch}
-            placeholder="Filter"
-            sx={{ width: 320 }}
-            value=""
-          />
-          <Button buttonType="primary">Add a User</Button>
-        </Box>
-        <Table aria-label="List of Users">
+          <Grid container direction="row" rowSpacing={1}>
+            <DebouncedSearchTextField
+              clearable
+              containerProps={{
+                sx: {
+                  width: '320px',
+                  marginRight: { md: 2, xs: 2 },
+                },
+              }}
+              debounceTime={250}
+              errorText={searchError?.message}
+              hideLabel
+              isSearching={isFetching}
+              label="Filter"
+              onSearch={handleSearch}
+              placeholder="Filter"
+              value={query ?? ''}
+            />
+            {isChildWithDelegationEnabled && (
+              <Select
+                hideLabel
+                label="Select user type"
+                onChange={(_, selected) => {
+                  pagination.handlePageChange(1);
+                  setUserType(selected ?? null);
+                  navigate({
+                    to: '/iam/users',
+                    search: {
+                      users: String(selected?.value ?? 'all'),
+                      query: queryParams.get('query') ?? '',
+                    },
+                  });
+                }}
+                options={filterableOptions}
+                placeholder="All User Types"
+                sx={{ minWidth: 250 }}
+                value={userType}
+              />
+            )}
+          </Grid>
+          <Grid sx={{ alignSelf: 'flex-start' }}>
+            <Button
+              buttonType="primary"
+              disabled={!canCreateUser}
+              onClick={() => setIsCreateDrawerOpen(true)}
+              tooltipText={
+                canCreateUser
+                  ? 'You cannot create other users as a restricted user.'
+                  : undefined
+              }
+            >
+              Add a User
+            </Button>
+          </Grid>
+        </Grid>
+        <Table aria-label="List of Users" sx={{ tableLayout: 'fixed' }}>
           <UsersLandingTableHead order={order} />
           <TableBody>
             <UsersLandingTableBody
@@ -83,7 +216,7 @@ export const UsersLanding = () => {
               isLoading={isLoading}
               numCols={numCols}
               onDelete={handleDelete}
-              users={users?.data}
+              users={users?.data ?? []}
             />
           </TableBody>
         </Table>
@@ -96,6 +229,15 @@ export const UsersLanding = () => {
           pageSize={pagination.pageSize}
         />
       </Paper>
+      <CreateUserDrawer
+        onClose={() => setIsCreateDrawerOpen(false)}
+        open={isCreateDrawerOpen}
+      />
+      <UserDeleteConfirmation
+        onClose={() => setIsDeleteDialogOpen(false)}
+        open={isDeleteDialogOpen}
+        username={selectedUsername}
+      />
     </React.Fragment>
   );
 };

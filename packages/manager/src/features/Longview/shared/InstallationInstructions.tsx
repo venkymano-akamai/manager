@@ -1,9 +1,11 @@
-import { Box, Typography } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import { Typography } from '@linode/ui';
+import Grid from '@mui/material/Grid';
+import { useTheme } from '@mui/material/styles';
 import * as React from 'react';
 
 import { CopyTooltip } from 'src/components/CopyTooltip/CopyTooltip';
 import { Link } from 'src/components/Link';
+import { MaskableText } from 'src/components/MaskableText/MaskableText';
 
 import {
   StyledContainerGrid,
@@ -17,6 +19,7 @@ interface Props {
 
 export const InstallationInstructions = React.memo((props: Props) => {
   const command = `curl -s https://lv.linode.com/${props.installationKey} | sudo bash`;
+  const theme = useTheme();
 
   return (
     <Grid container spacing={2}>
@@ -28,7 +31,7 @@ export const InstallationInstructions = React.memo((props: Props) => {
           receiving data.
         </Typography>
       </Grid>
-      <Grid xs={12}>
+      <Grid size={12}>
         <StyledContainerGrid spacing={2}>
           <Grid sx={{ padding: '8px' }}>
             <CopyTooltip text={command} />
@@ -41,20 +44,33 @@ export const InstallationInstructions = React.memo((props: Props) => {
               paddingTop: 0,
             }}
           >
-            <pre>
-              <code>{command}</code>
-            </pre>
+            <MaskableText
+              iconPosition="start"
+              isToggleable
+              sxVisibilityTooltip={{
+                '& svg': {
+                  height: 'auto',
+                  width: '20px',
+                },
+                marginRight: '24px',
+              }}
+              text={command}
+            >
+              <pre>
+                <code>{command}</code>
+              </pre>
+            </MaskableText>
           </Grid>
         </StyledContainerGrid>
       </Grid>
-      <Grid xs={12}>
+      <Grid size={12}>
         <Typography>
           This should work for most installations, but if you have issues,
           please consult our troubleshooting guide and manual installation
           instructions (API key required):
         </Typography>
       </Grid>
-      <Grid xs={12}>
+      <Grid size={12}>
         <Grid container spacing={2}>
           <StyledInstructionGrid>
             <Typography>
@@ -71,15 +87,16 @@ export const InstallationInstructions = React.memo((props: Props) => {
             </Typography>
           </StyledInstructionGrid>
           <StyledInstructionGrid>
-            <Typography data-testid="api-key">
-              API Key:{' '}
-              <Box
-                component="span"
-                sx={(theme) => ({ color: theme.color.grey1 })}
-              >
-                {props.APIKey}
-              </Box>
+            <Typography data-testid="api-key" sx={{ marginRight: 0.5 }}>
+              API Key:
             </Typography>
+            <MaskableText
+              iconPosition="start"
+              isToggleable
+              sxTypography={{ color: theme.color.grey1 }}
+              sxVisibilityTooltip={{ marginLeft: 1 }}
+              text={props.APIKey}
+            />
           </StyledInstructionGrid>
         </Grid>
       </Grid>

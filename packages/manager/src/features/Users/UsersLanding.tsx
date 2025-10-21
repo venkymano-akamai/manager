@@ -1,6 +1,8 @@
+import { useAccountUsers, useProfile } from '@linode/queries';
 import { Box, Button, Typography } from '@linode/ui';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
@@ -8,13 +10,12 @@ import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFoot
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
 import { PARENT_USER } from 'src/features/Account/constants';
-import { useOrder } from 'src/hooks/useOrder';
-import { usePagination } from 'src/hooks/usePagination';
+import { useFlags } from 'src/hooks/useFlags';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useAccountUsers } from 'src/queries/account/users';
-import { useProfile } from 'src/queries/profile/profile';
 
-import CreateUserDrawer from './CreateUserDrawer';
+import { CreateUserDrawer } from './CreateUserDrawer';
 import { UserDeleteConfirmationDialog } from './UserDeleteConfirmationDialog';
 import { UsersLandingProxyTableHead } from './UsersLandingProxyTableHead';
 import { UsersLandingTableBody } from './UsersLandingTableBody';
@@ -24,17 +25,32 @@ import type { Filter } from '@linode/api-v4';
 
 export const UsersLanding = () => {
   const theme = useTheme();
-  const [isCreateDrawerOpen, setIsCreateDrawerOpen] = React.useState<boolean>(
-    false
-  );
+  const navigate = useNavigate();
+  const [isCreateDrawerOpen, setIsCreateDrawerOpen] =
+    React.useState<boolean>(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [selectedUsername, setSelectedUsername] = React.useState('');
   const { data: profile } = useProfile();
   const matchesSmDown = useMediaQuery(theme.breakpoints.down('sm'));
   const matchesLgUp = useMediaQuery(theme.breakpoints.up('lg'));
 
-  const pagination = usePagination(1, 'account-users');
-  const order = useOrder();
+  const { iamRbacPrimaryNavChanges } = useFlags();
+
+  const pagination = usePaginationV2({
+    initialPage: 1,
+    currentRoute: iamRbacPrimaryNavChanges ? '/users' : '/account/users',
+    preferenceKey: 'account-users-pagination',
+  });
+  const order = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'username',
+      },
+      from: iamRbacPrimaryNavChanges ? '/users' : '/account/users',
+    },
+    preferenceKey: 'account-users-order',
+  });
 
   const showProxyUserTable =
     profile?.user_type === 'child' || profile?.user_type === 'proxy';
@@ -46,7 +62,12 @@ export const UsersLanding = () => {
   };
 
   // Since this query is disabled for restricted users, use isInitialLoading.
-  const { data: users, error, isInitialLoading, refetch } = useAccountUsers({
+  const {
+    data: users,
+    error,
+    isInitialLoading,
+    refetch,
+  } = useAccountUsers({
     filters: usersFilter,
     params: {
       page: pagination.page,
@@ -80,8 +101,8 @@ export const UsersLanding = () => {
       ? 6
       : 5
     : matchesSmDown
-    ? 3
-    : 4;
+      ? 3
+      : 4;
 
   // "last login" column omitted for proxy table.
   const proxyNumCols = matchesLgUp ? 4 : numCols;
@@ -145,14 +166,14 @@ export const UsersLanding = () => {
           </Typography>
         )}
         <Button
+          buttonType="primary"
+          disabled={isRestrictedUser}
+          onClick={() => setIsCreateDrawerOpen(true)}
           tooltipText={
             isRestrictedUser
               ? 'You cannot create other users as a restricted user.'
               : undefined
           }
-          buttonType="primary"
-          disabled={isRestrictedUser}
-          onClick={() => setIsCreateDrawerOpen(true)}
         >
           Add a User
         </Button>
@@ -181,6 +202,7 @@ export const UsersLanding = () => {
         pageSize={pagination.pageSize}
       />
       <CreateUserDrawer
+        navigate={navigate}
         onClose={() => setIsCreateDrawerOpen(false)}
         open={isCreateDrawerOpen}
         refetch={refetch}

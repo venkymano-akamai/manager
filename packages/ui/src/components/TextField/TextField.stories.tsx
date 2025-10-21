@@ -3,7 +3,7 @@ import React from 'react';
 import { InputAdornment } from '../InputAdornment';
 import { TextField } from './TextField';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof TextField> = {
   component: TextField,
@@ -81,6 +81,15 @@ export const Error: Story = {
   },
 };
 
+export const Disabled: Story = {
+  args: {
+    label: 'Label',
+    noMarginTop: true,
+    placeholder: 'Placeholder',
+    disabled: true,
+  },
+};
+
 export const Number: Story = {
   args: {
     label: 'Label for Number',
@@ -89,7 +98,32 @@ export const Number: Story = {
   },
 };
 
-export const WithTooltip: Story = {
+export const WithLabelTop: Story = {
+  args: {
+    label: 'Label',
+    noMarginTop: true,
+    labelPosition: 'top',
+  },
+};
+
+export const WithLabelLeft: Story = {
+  args: {
+    label: 'Label',
+    noMarginTop: true,
+    labelPosition: 'left',
+  },
+};
+
+export const WithFieldTooltip: Story = {
+  args: {
+    label: 'Label',
+    tooltipText: 'Tooltip Text',
+    noMarginTop: true,
+    placeholder: 'Placeholder',
+  },
+};
+
+export const WithLabelTooltip: Story = {
   args: {
     label: 'Label',
     labelTooltipText: 'Tooltip Text',
@@ -98,13 +132,32 @@ export const WithTooltip: Story = {
   },
 };
 
+export const WithLabelTooltipIconLeft: Story = {
+  args: {
+    label: 'Label',
+    labelTooltipText: 'Tooltip Text',
+    noMarginTop: true,
+    placeholder: 'Placeholder',
+    labelTooltipIconPosition: 'left',
+  },
+};
+
 export const WithAdornment: Story = {
   args: {
     InputProps: {
-      startAdornment: <InputAdornment position="end">$</InputAdornment>,
+      startAdornment: <InputAdornment position="start">$</InputAdornment>,
     },
     label: 'Label with an InputAdornment',
     noMarginTop: true,
     type: 'number',
+  },
+};
+
+export const WithCrossIcon: Story = {
+  args: {
+    clearable: true,
+    label: 'Label',
+    noMarginTop: true,
+    value: 'Input Text',
   },
 };

@@ -1,32 +1,38 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Autocomplete, Notice, TextField, Typography } from '@linode/ui';
+import {
+  useAccountAgreements,
+  useAccountSettings,
+  useMutateAccountAgreements,
+  useNetworkTransferPricesQuery,
+  useProfile,
+} from '@linode/queries';
+import {
+  ActionsPanel,
+  Autocomplete,
+  Drawer,
+  Notice,
+  TextField,
+  Typography,
+} from '@linode/ui';
 import { CreateBucketSchema } from '@linode/validation';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
 import { Link } from 'src/components/Link';
 import { BucketRateLimitTable } from 'src/features/ObjectStorage/BucketLanding/BucketRateLimitTable';
 import { useObjectStorageRegions } from 'src/features/ObjectStorage/hooks/useObjectStorageRegions';
-import {
-  reportAgreementSigningError,
-  useAccountAgreements,
-  useMutateAccountAgreements,
-} from 'src/queries/account/agreements';
-import { useAccountSettings } from 'src/queries/account/settings';
-import { useNetworkTransferPricesQuery } from 'src/queries/networkTransfer';
 import {
   useCreateBucketMutation,
   useObjectStorageBuckets,
   useObjectStorageTypesQuery,
 } from 'src/queries/object-storage/queries';
-import { useProfile } from 'src/queries/profile/profile';
 import { sendCreateBucketEvent } from 'src/utilities/analytics/customEventAnalytics';
 import { getGDPRDetails } from 'src/utilities/formatRegion';
 import { PRICES_RELOAD_ERROR_NOTICE_TEXT } from 'src/utilities/pricing/constants';
+import { reportAgreementSigningError } from 'src/utilities/reportAgreementSigningError';
 
 import { EnableObjectStorageModal } from '../EnableObjectStorageModal';
+import { QuotasInfoNotice } from '../QuotasInfoNotice';
 import { BucketRegions } from './BucketRegions';
 import { StyledEUAgreementCheckbox } from './OMC_CreateBucketDrawer.styles';
 import { OveragePricing } from './OveragePricing';
@@ -218,9 +224,8 @@ export const OMC_CreateBucketDrawer = (props: Props) => {
     };
   };
 
-  const filteredEndpointOptions:
-    | EndpointOption[]
-    | undefined = filteredEndpoints?.map(createEndpointOption);
+  const filteredEndpointOptions: EndpointOption[] | undefined =
+    filteredEndpoints?.map(createEndpointOption);
 
   const hasSingleEndpointType = filteredEndpointOptions?.length === 1;
 
@@ -280,6 +285,7 @@ export const OMC_CreateBucketDrawer = (props: Props) => {
   return (
     <Drawer onClose={handleClose} open={isOpen} title="Create Bucket">
       <form onSubmit={handleBucketFormSubmit}>
+        <QuotasInfoNotice action="creating a bucket" />
         {isRestrictedUser && (
           <Notice
             data-qa-permissions-notice
@@ -291,47 +297,56 @@ export const OMC_CreateBucketDrawer = (props: Props) => {
           <Notice text={errors.root?.message} variant="error" />
         )}
         <Controller
+          control={control}
+          name="label"
           render={({ field }) => (
             <TextField
               data-qa-cluster-label
               data-testid="label"
               disabled={isRestrictedUser}
               errorText={errors.label?.message}
-              label="Label"
+              label="Bucket Name"
               onBlur={field.onBlur}
               onChange={field.onChange}
               required
               value={field.value ?? ''}
             />
           )}
-          control={control}
-          name="label"
         />
         <Controller
+          control={control}
+          name="region"
           render={({ field }) => (
             <BucketRegions
-              onChange={(value) => {
-                field.onChange(value);
-              }}
               disabled={isRestrictedUser}
               error={errors.region?.message}
               onBlur={field.onBlur}
+              onChange={(value) => {
+                field.onChange(value);
+              }}
               required
               selectedRegion={field.value}
             />
           )}
-          control={control}
-          name="region"
         />
         {selectedRegion?.id && <OveragePricing regionId={selectedRegion.id} />}
         {Boolean(storageEndpoints) && selectedRegion && (
           <>
             <Controller
+              control={control}
+              name="endpoint_type"
               render={({ field }) => (
                 <Autocomplete
+                  disableClearable={hasSingleEndpointType}
+                  errorText={errors.endpoint_type?.message}
+                  label="Object Storage Endpoint Type"
+                  loading={isStorageEndpointsLoading}
+                  onBlur={field.onBlur}
                   onChange={(_, endpointOption) =>
                     updateEndpointType(endpointOption)
                   }
+                  options={filteredEndpointOptions ?? []}
+                  placeholder="Object Storage Endpoint Type"
                   textFieldProps={{
                     containerProps: {
                       sx: {
@@ -352,46 +367,39 @@ export const OMC_CreateBucketDrawer = (props: Props) => {
                     ),
                     helperTextPosition: 'top',
                   }}
-                  disableClearable={hasSingleEndpointType}
-                  errorText={errors.endpoint_type?.message}
-                  label="Object Storage Endpoint Type"
-                  loading={isStorageEndpointsLoading}
-                  onBlur={field.onBlur}
-                  options={filteredEndpointOptions ?? []}
-                  placeholder="Object Storage Endpoint Type"
                   value={selectedEndpointOption}
                 />
               )}
-              control={control}
-              name="endpoint_type"
             />
             {Boolean(storageEndpoints) && selectedEndpointOption && (
               <BucketRateLimitTable
+                endpointType={selectedEndpointOption?.endpoint_type}
                 typographyProps={{
                   marginTop: 1,
                   variant: 'inherit',
                 }}
-                endpointType={selectedEndpointOption?.endpoint_type}
               />
             )}
           </>
         )}
         {showGDPRCheckbox ? (
           <StyledEUAgreementCheckbox
+            checked={state.hasSignedAgreement}
             onChange={(e) =>
               setState((prev) => ({
                 ...prev,
                 hasSignedAgreement: e.target.checked,
               }))
             }
-            checked={state.hasSignedAgreement}
           />
         ) : null}
         <ActionsPanel
           primaryButtonProps={{
             'data-testid': 'create-bucket-button',
             disabled:
-              (showGDPRCheckbox && !state.hasSignedAgreement) || isErrorTypes,
+              (showGDPRCheckbox && !state.hasSignedAgreement) ||
+              isErrorTypes ||
+              isRestrictedUser,
             label: 'Create Bucket',
             loading: isPending || Boolean(selectedRegion?.id && isLoadingTypes),
             tooltipText:
@@ -403,13 +411,13 @@ export const OMC_CreateBucketDrawer = (props: Props) => {
           secondaryButtonProps={{ label: 'Cancel', onClick: handleClose }}
         />
         <EnableObjectStorageModal
+          handleSubmit={handleSubmit(onSubmit)}
           onClose={() =>
             setState((prev) => ({
               ...prev,
               isEnableObjDialogOpen: false,
             }))
           }
-          handleSubmit={handleSubmit(onSubmit)}
           open={state.isEnableObjDialogOpen}
           regionId={selectedRegion?.id}
         />

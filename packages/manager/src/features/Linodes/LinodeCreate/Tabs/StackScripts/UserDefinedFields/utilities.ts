@@ -22,7 +22,8 @@ export const separateUDFsByRequiredStatus = (udfs: UserDefinedField[] = []) => {
  * @returns true if a User Defined Field should be considered required
  */
 export const getIsUDFRequired = (udf: UserDefinedField) =>
-  !udf.hasOwnProperty('default') || udf.hasOwnProperty('required');
+  !Object.prototype.hasOwnProperty.call(udf, 'default') ||
+  Object.prototype.hasOwnProperty.call(udf, 'required');
 
 /**
  * Given an array of User Defined Fields, this returns an object of
@@ -66,4 +67,21 @@ export const getIsUDFMultiSelect = (udf: UserDefinedField) => {
  */
 export const getIsUDFHeader = (udf: UserDefinedField) => {
   return udf.header?.toLowerCase() === 'yes';
+};
+
+/**
+ * Gets the total number of nodes that will be created as part of a
+ * marketplace app cluster.
+ *
+ * - Marketplace app clusters use the user-defined-field `cluster_size` to
+ *   define the number of nodes.
+ * - Complex Marketplace App clusters will use `cluster_size` and other
+ *   fields like `{service}_cluster_size`
+ */
+export const getTotalClusterSize = (
+  userDefinedFields: Record<string, string>
+) => {
+  return Object.entries(userDefinedFields || {})
+    .filter(([key]) => key.endsWith('_cluster_size') || key === 'cluster_size')
+    .reduce((sum, [_, value]) => sum + Number(value), 0);
 };

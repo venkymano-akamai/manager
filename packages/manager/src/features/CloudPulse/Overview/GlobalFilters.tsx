@@ -1,20 +1,28 @@
-import { Divider } from '@linode/ui';
-import { IconButton, useTheme } from '@mui/material';
-import { Grid } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Box, Divider } from '@linode/ui';
+import { IconButton } from '@mui/material';
+import { GridLegacy } from '@mui/material';
 import * as React from 'react';
 
 import Reload from 'src/assets/icons/refresh.svg';
+import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 
+import { GlobalFilterGroupByRenderer } from '../GroupBy/GlobalFilterGroupByRenderer';
 import { CloudPulseDashboardFilterBuilder } from '../shared/CloudPulseDashboardFilterBuilder';
 import { CloudPulseDashboardSelect } from '../shared/CloudPulseDashboardSelect';
-import { CloudPulseTimeRangeSelect } from '../shared/CloudPulseTimeRangeSelect';
+import { CloudPulseDateTimeRangePicker } from '../shared/CloudPulseDateTimeRangePicker';
 import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
-import { DASHBOARD_ID, REFRESH, TIME_DURATION } from '../Utils/constants';
+import { convertToGmt } from '../Utils/CloudPulseDateTimePickerUtils';
+import {
+  DASHBOARD_ID,
+  GROUP_BY,
+  REFRESH,
+  RESOURCE_FILTER_MAP,
+  TIME_DURATION,
+} from '../Utils/constants';
 import { useAclpPreference } from '../Utils/UserPreference';
 
 import type { FilterValueType } from '../Dashboard/CloudPulseDashboardLanding';
-import type { AclpConfig, Dashboard, TimeDuration } from '@linode/api-v4';
+import type { AclpConfig, Dashboard, DateTimeWithPreset } from '@linode/api-v4';
 
 export interface GlobalFilterProperties {
   handleAnyFilterChange(
@@ -23,7 +31,8 @@ export interface GlobalFilterProperties {
     labels: string[]
   ): void;
   handleDashboardChange(dashboard: Dashboard | undefined): void;
-  handleTimeDurationChange(timeDuration: TimeDuration): void;
+  handleGroupByChange: (selectedValues: string[]) => void;
+  handleTimeDurationChange(timeDuration: DateTimeWithPreset): void;
   handleToggleAppliedFilter(isVisible: boolean): void;
 }
 
@@ -33,26 +42,25 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
     handleDashboardChange,
     handleTimeDurationChange,
     handleToggleAppliedFilter,
+    handleGroupByChange,
   } = props;
 
-  const {
-    preferences,
-    updateGlobalFilterPreference: updatePreferences,
-  } = useAclpPreference();
+  const { preferences, updateGlobalFilterPreference: updatePreferences } =
+    useAclpPreference();
   const [selectedDashboard, setSelectedDashboard] = React.useState<
     Dashboard | undefined
   >();
 
   const handleTimeRangeChange = React.useCallback(
-    (
-      timerDuration: TimeDuration,
-      timeDurationValue: string = 'Auto',
-      savePref: boolean = false
-    ) => {
+    (timeDuration: DateTimeWithPreset, savePref: boolean = false) => {
       if (savePref) {
-        updatePreferences({ [TIME_DURATION]: timeDurationValue });
+        updatePreferences({ [TIME_DURATION]: timeDuration });
       }
-      handleTimeDurationChange(timerDuration);
+      handleTimeDurationChange({
+        ...timeDuration,
+        end: convertToGmt(timeDuration.end, timeDuration.timeZone),
+        start: convertToGmt(timeDuration.start, timeDuration.timeZone),
+      });
     },
     []
   );
@@ -90,59 +98,87 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
     handleAnyFilterChange(REFRESH, Date.now(), []);
   }, []);
 
-  const theme = useTheme();
+  const { isLoading, isError } = useResourcesQuery(
+    selectedDashboard !== undefined,
+    selectedDashboard?.service_type ?? '',
+    {},
+
+    RESOURCE_FILTER_MAP[selectedDashboard?.service_type ?? ''] ?? {}
+  );
+
+  const onGroupByChange = React.useCallback(
+    (selectedValues: string[], savePref: boolean = false) => {
+      if (savePref) {
+        updatePreferences({ [GROUP_BY]: selectedValues });
+      }
+
+      handleGroupByChange(selectedValues);
+    },
+    []
+  );
 
   return (
-    <Grid container>
-      <Grid container item m={3} rowGap={1} xs={12}>
-        <Grid
-          columnSpacing={2}
-          container
-          item
+    <GridLegacy container>
+      <GridLegacy item xs={12}>
+        <Box
+          display="flex"
+          flexDirection={{ lg: 'row', xs: 'column' }}
+          flexWrap="wrap"
+          gap={2}
           justifyContent="space-between"
-          rowSpacing={2}
+          m={3}
         >
-          <Grid display={'flex'} item md={4} sm={5} xs={12}>
-            <CloudPulseDashboardSelect
-              defaultValue={preferences?.dashboardId}
-              handleDashboardChange={onDashboardChange}
-              savePreferences
-            />
-          </Grid>
-          <Grid display="flex" gap={1} item md={4} sm={5} xs={12}>
-            <CloudPulseTimeRangeSelect
-              defaultValue={preferences?.timeDuration}
+          <CloudPulseDashboardSelect
+            defaultValue={preferences?.dashboardId}
+            handleDashboardChange={onDashboardChange}
+            savePreferences
+          />
+          <Box
+            display="flex"
+            flexDirection={{ md: 'row', xs: 'column' }}
+            flexWrap="wrap"
+            gap={2}
+          >
+            <CloudPulseDateTimeRangePicker
+              defaultValue={preferences?.[TIME_DURATION]}
               handleStatsChange={handleTimeRangeChange}
-              label="Time Range"
               savePreferences
             />
+
             <CloudPulseTooltip placement="bottom-end" title="Refresh">
               <IconButton
-                sx={{
-                  marginBlockEnd: 'auto',
-                  marginTop: theme.spacing(3.5),
-                }}
                 aria-label="Refresh Dashboard Metrics"
+                color="inherit"
                 data-testid="global-refresh"
                 disabled={!selectedDashboard}
                 onClick={handleGlobalRefresh}
                 size="small"
+                sx={(theme) => ({
+                  marginBlockEnd: 'auto',
+                  marginTop: { md: theme.spacing(3.5) },
+                })}
               >
-                <StyledReload />
+                <Reload height="24px" width="24px" />
               </IconButton>
             </CloudPulseTooltip>
-          </Grid>
-        </Grid>
-      </Grid>
+            <GlobalFilterGroupByRenderer
+              handleChange={onGroupByChange}
+              preferenceGroupBy={preferences?.[GROUP_BY]}
+              savePreferences
+              selectedDashboard={selectedDashboard}
+            />
+          </Box>
+        </Box>
+      </GridLegacy>
       {selectedDashboard && (
-        <Grid item xs={12}>
+        <GridLegacy item xs={12}>
           <Divider
-            sx={{
+            sx={(theme) => ({
               borderColor: theme.color.grey5,
               margin: 0,
-            }}
+            })}
           />
-        </Grid>
+        </GridLegacy>
       )}
 
       {selectedDashboard && (
@@ -150,21 +186,12 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
           dashboard={selectedDashboard}
           emitFilterChange={emitFilterChange}
           handleToggleAppliedFilter={handleToggleAppliedFilter}
+          isError={isError}
+          isLoading={isLoading}
           isServiceAnalyticsIntegration={false}
           preferences={preferences}
         />
       )}
-    </Grid>
+    </GridLegacy>
   );
 });
-
-const StyledReload = styled(Reload, { label: 'StyledReload' })(({ theme }) => ({
-  '&:active': {
-    color: `${theme.palette.success}`,
-  },
-  '&:hover': {
-    cursor: 'pointer',
-  },
-  height: '24px',
-  width: '24px',
-}));

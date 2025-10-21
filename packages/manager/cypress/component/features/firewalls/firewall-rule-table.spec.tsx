@@ -417,13 +417,15 @@ componentTests('Firewall Rules Table', (mount) => {
         beforeEach(() => {
           mount(
             <FirewallRulesLanding
+              disabled={false}
+              firewallID={randomNumber()}
               rules={{
+                fingerprint: '8a545843',
                 inbound: mockInboundRules,
                 inbound_policy: 'ACCEPT',
                 outbound_policy: 'DROP',
+                version: 1,
               }}
-              disabled={false}
-              firewallID={randomNumber()}
             />
           );
           verifyFirewallWithRules({
@@ -477,13 +479,15 @@ componentTests('Firewall Rules Table', (mount) => {
         beforeEach(() => {
           mount(
             <FirewallRulesLanding
+              disabled={false}
+              firewallID={randomNumber()}
               rules={{
+                fingerprint: '8a545843',
                 inbound_policy: 'ACCEPT',
                 outbound: mockOutboundRules,
                 outbound_policy: 'DROP',
+                version: 1,
               }}
-              disabled={false}
-              firewallID={randomNumber()}
             />
           );
           verifyFirewallWithRules({
@@ -546,13 +550,15 @@ componentTests('Firewall Rules Table', (mount) => {
         beforeEach(() => {
           mount(
             <FirewallRulesLanding
+              disabled={false}
+              firewallID={randomNumber()}
               rules={{
+                fingerprint: '8a545843',
                 inbound: mockInboundRules,
                 inbound_policy: 'ACCEPT',
                 outbound_policy: 'DROP',
+                version: 1,
               }}
-              disabled={false}
-              firewallID={randomNumber()}
             />
           );
           verifyFirewallWithRules({
@@ -575,13 +581,15 @@ componentTests('Firewall Rules Table', (mount) => {
         beforeEach(() => {
           mount(
             <FirewallRulesLanding
+              disabled={false}
+              firewallID={randomNumber()}
               rules={{
+                fingerprint: '8a545843',
                 inbound_policy: 'ACCEPT',
                 outbound: mockOutboundRules,
                 outbound_policy: 'DROP',
+                version: 1,
               }}
-              disabled={false}
-              firewallID={randomNumber()}
             />
           );
           verifyFirewallWithRules({

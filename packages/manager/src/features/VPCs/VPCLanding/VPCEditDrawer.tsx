@@ -1,39 +1,26 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Notice, TextField } from '@linode/ui';
+import { useUpdateVPCMutation } from '@linode/queries';
+import { ActionsPanel, Drawer, Notice, TextField } from '@linode/ui';
 import { updateVPCSchema } from '@linode/validation';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { RegionSelect } from 'src/components/RegionSelect/RegionSelect';
-import { useGrants, useProfile } from 'src/queries/profile/profile';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useUpdateVPCMutation } from 'src/queries/vpcs/vpcs';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 
-import type { UpdateVPCPayload, VPC } from '@linode/api-v4';
+import type { APIError, UpdateVPCPayload, VPC } from '@linode/api-v4';
 
 interface Props {
+  isFetching: boolean;
   onClose: () => void;
   open: boolean;
   vpc?: VPC;
+  vpcError: APIError[] | null;
 }
 
-const REGION_HELPER_TEXT = 'Region cannot be changed during beta.';
-
 export const VPCEditDrawer = (props: Props) => {
-  const { onClose, open, vpc } = props;
+  const { isFetching, onClose, open, vpc, vpcError } = props;
 
-  const { data: profile } = useProfile();
-  const { data: grants } = useGrants();
-
-  const vpcPermissions = grants?.vpc.find((v) => v.id === vpc?.id);
-
-  // there isn't a 'view VPC/Subnet' grant that does anything, so all VPCs get returned even for restricted users
-  // with permissions set to 'None'. Therefore, we're treating those as read_only as well
-  const readOnly =
-    Boolean(profile?.restricted) &&
-    (vpcPermissions?.permissions === 'read_only' || grants?.vpc.length === 0);
+  const { data: permissions } = usePermissions('vpc', ['update_vpc'], vpc?.id);
 
   const {
     isPending,
@@ -51,8 +38,8 @@ export const VPCEditDrawer = (props: Props) => {
     mode: 'onBlur',
     resolver: yupResolver(updateVPCSchema),
     values: {
-      description: vpc?.description,
-      label: vpc?.label,
+      description: vpc?.description ?? '',
+      label: vpc?.label ?? '',
     },
   });
 
@@ -73,25 +60,31 @@ export const VPCEditDrawer = (props: Props) => {
     }
   };
 
-  const { data: regionsData, error: regionsError } = useRegionsQuery();
-
   return (
-    <Drawer onClose={handleDrawerClose} open={open} title="Edit VPC">
+    <Drawer
+      error={vpcError}
+      isFetching={isFetching}
+      onClose={handleDrawerClose}
+      open={open}
+      title="Edit VPC"
+    >
       {errors.root?.message && (
         <Notice text={errors.root.message} variant="error" />
       )}
-      {readOnly && (
+      {!permissions.update_vpc && (
         <Notice
-          important
           text={`You don't have permissions to edit ${vpc?.label}. Please contact an account administrator for details.`}
           variant="error"
         />
       )}
       <form onSubmit={handleSubmit(onSubmit)}>
         <Controller
+          control={control}
+          name="label"
           render={({ field, fieldState }) => (
             <TextField
-              disabled={readOnly}
+              data-testid="label"
+              disabled={!permissions.update_vpc}
               errorText={fieldState.error?.message}
               label="Label"
               name="label"
@@ -100,13 +93,14 @@ export const VPCEditDrawer = (props: Props) => {
               value={field.value}
             />
           )}
-          control={control}
-          name="label"
         />
         <Controller
+          control={control}
+          name="description"
           render={({ field, fieldState }) => (
             <TextField
-              disabled={readOnly}
+              data-testid="description"
+              disabled={!permissions.update_vpc}
               errorText={fieldState.error?.message}
               label="Description"
               multiline
@@ -116,24 +110,11 @@ export const VPCEditDrawer = (props: Props) => {
               value={field.value}
             />
           )}
-          control={control}
-          name="description"
         />
-        {regionsData && (
-          <RegionSelect
-            currentCapability="VPCs"
-            disabled // the Region field will not be editable during beta
-            errorText={(regionsError && regionsError[0].reason) || undefined}
-            helperText={REGION_HELPER_TEXT}
-            onChange={() => null}
-            regions={regionsData}
-            value={vpc?.region}
-          />
-        )}
         <ActionsPanel
           primaryButtonProps={{
             'data-testid': 'save-button',
-            disabled: !isDirty || readOnly,
+            disabled: !isDirty || !permissions.update_vpc,
             label: 'Save',
             loading: isPending || isSubmitting,
             type: 'submit',

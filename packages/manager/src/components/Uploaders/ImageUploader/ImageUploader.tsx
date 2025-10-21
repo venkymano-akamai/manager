@@ -1,15 +1,15 @@
 import { Box, Button, Stack, Typography } from '@linode/ui';
+import { readableBytes } from '@linode/utilities';
 import { styled } from '@mui/material';
 import { Duration } from 'luxon';
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
+import type { DropzoneProps } from 'react-dropzone';
 
 import { BarPercent } from 'src/components/BarPercent';
 import { MAX_FILE_SIZE_IN_BYTES } from 'src/components/Uploaders/reducer';
-import { readableBytes } from 'src/utilities/unitConversions';
 
 import type { AxiosProgressEvent } from 'axios';
-import type { DropzoneProps } from 'react-dropzone';
 
 interface Props extends Partial<DropzoneProps> {
   /**
@@ -27,18 +27,14 @@ interface Props extends Partial<DropzoneProps> {
  */
 export const ImageUploader = React.memo((props: Props) => {
   const { isUploading, progress, ...dropzoneProps } = props;
-  const {
-    acceptedFiles,
-    getInputProps,
-    getRootProps,
-    isDragActive,
-  } = useDropzone({
-    accept: ['application/x-gzip', 'application/gzip'], // Uploaded files must be compressed using gzip.
-    maxFiles: 1,
-    maxSize: MAX_FILE_SIZE_IN_BYTES,
-    ...dropzoneProps,
-    disabled: dropzoneProps.disabled || isUploading,
-  });
+  const { acceptedFiles, getInputProps, getRootProps, isDragActive } =
+    useDropzone({
+      accept: ['application/x-gzip', 'application/gzip'], // Uploaded files must be compressed using gzip.
+      maxFiles: 1,
+      maxSize: MAX_FILE_SIZE_IN_BYTES,
+      ...dropzoneProps,
+      disabled: dropzoneProps.disabled || isUploading,
+    });
 
   return (
     <Dropzone active={isDragActive} {...getRootProps()}>
@@ -73,7 +69,8 @@ export const ImageUploader = React.memo((props: Props) => {
             justifyContent="space-between"
           >
             <Typography>
-              {readableBytes(progress?.rate ?? 0, { base10: true }).formatted}/s{' '}
+              {readableBytes(progress?.rate ?? 0, { base10: true }).formatted}
+              /s{' '}
             </Typography>
             <Typography>
               {Duration.fromObject({ seconds: progress?.estimated }).toHuman({
@@ -96,7 +93,7 @@ export const ImageUploader = React.memo((props: Props) => {
 });
 
 const Dropzone = styled('div')<{ active: boolean }>(({ active, theme }) => ({
-  borderColor: 'gray',
+  borderColor: theme.tokens.color.Neutrals[60],
   borderStyle: 'dashed',
   borderWidth: 1,
   display: 'flex',

@@ -1,11 +1,9 @@
-import { Accordion, Notice, TextField, Typography } from '@linode/ui';
+import { useImageQuery, useRegionsQuery } from '@linode/queries';
+import { Accordion, Notice, TextField } from '@linode/ui';
 import React, { useMemo } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 
-import { Link } from 'src/components/Link';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useImageQuery } from 'src/queries/images';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 
 import { UserDataHeading } from './UserDataHeading';
 
@@ -39,14 +37,12 @@ export const UserData = () => {
     );
   };
 
-  const region = useMemo(() => regions?.find((r) => r.id === regionId), [
-    regions,
-    regionId,
-  ]);
+  const region = useMemo(
+    () => regions?.find((r) => r.id === regionId),
+    [regions, regionId]
+  );
 
-  const isLinodeCreateRestricted = useRestrictedGlobalGrantCheck({
-    globalGrantType: 'add_linodes',
-  });
+  const { data: permissions } = usePermissions('account', ['create_linode']);
 
   if (!region?.capabilities.includes('Metadata')) {
     return null;
@@ -58,25 +54,22 @@ export const UserData = () => {
 
   return (
     <Accordion heading={<UserDataHeading />} sx={{ m: '0 !important', p: 1 }}>
-      <Typography>
-        User data is a feature of the Metadata service that enables you to
-        perform system configuration tasks (such as adding users and installing
-        software) by providing custom instructions or scripts to cloud-init. Any
-        user data should be added at this step and cannot be modified after the
-        the Linode has been created.{' '}
-        <Link to="https://techdocs.akamai.com/cloud-computing/docs/overview-of-the-metadata-service">
-          Learn more
-        </Link>
-        .
-      </Typography>
       {formatWarning && (
         <Notice spacingBottom={16} spacingTop={16} variant="warning">
           The user data may be formatted incorrectly.
         </Notice>
       )}
       <Controller
+        control={control}
+        name="metadata.user_data"
         render={({ field, fieldState }) => (
           <TextField
+            disabled={!permissions.create_linode}
+            errorText={fieldState.error?.message}
+            expand
+            label="User Data"
+            labelTooltipText="Compatible formats include cloud-config data and executable scripts."
+            multiline
             onBlur={(e) => {
               field.onBlur();
               checkFormat({
@@ -91,18 +84,10 @@ export const UserData = () => {
                 userData: e.target.value,
               });
             }}
-            disabled={isLinodeCreateRestricted}
-            errorText={fieldState.error?.message}
-            expand
-            label="User Data"
-            labelTooltipText="Compatible formats include cloud-config data and executable scripts."
-            multiline
             rows={1}
             value={field.value ?? ''}
           />
         )}
-        control={control}
-        name="metadata.user_data"
       />
     </Accordion>
   );

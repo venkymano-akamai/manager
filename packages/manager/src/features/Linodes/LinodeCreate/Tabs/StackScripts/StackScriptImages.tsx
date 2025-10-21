@@ -1,11 +1,11 @@
+import { useStackScriptQuery } from '@linode/queries';
 import { Paper, Typography } from '@linode/ui';
 import React from 'react';
 import { Controller, useWatch } from 'react-hook-form';
 
 import { ImageSelect } from 'src/components/ImageSelect/ImageSelect';
-import { useStackScriptQuery } from 'src/queries/stackscripts';
 
-import { useLinodeCreateQueryParams } from '../../utilities';
+import { useGetLinodeCreateType } from '../utils/useGetLinodeCreateType';
 
 import type { CreateLinodeRequest, Image } from '@linode/api-v4';
 
@@ -14,7 +14,7 @@ export const StackScriptImages = () => {
     name: 'stackscript_id',
   });
 
-  const { params } = useLinodeCreateQueryParams();
+  const createType = useGetLinodeCreateType();
 
   const hasStackScriptSelected =
     stackscriptId !== null && stackscriptId !== undefined;
@@ -34,7 +34,7 @@ export const StackScriptImages = () => {
 
   const helperText = !hasStackScriptSelected
     ? `Select ${
-        params.type === 'One-Click' ? 'an app' : 'a StackScript'
+        createType === 'One-Click' ? 'an app' : 'a StackScript'
       } to see compatible Images.`
     : undefined;
 
@@ -42,6 +42,7 @@ export const StackScriptImages = () => {
     <Paper>
       <Typography variant="h2">Select an Image</Typography>
       <Controller<CreateLinodeRequest, 'image'>
+        name="image"
         render={({ field, fieldState }) => (
           <ImageSelect
             disabled={!hasStackScriptSelected}
@@ -55,7 +56,6 @@ export const StackScriptImages = () => {
             variant={imageSelectVariant}
           />
         )}
-        name="image"
       />
     </Paper>
   );

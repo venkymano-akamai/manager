@@ -1,13 +1,14 @@
-import { Button, TextField } from '@linode/ui';
-import Close from '@mui/icons-material/Close';
+import { Button, CloseIcon, Select, TextField } from '@linode/ui';
+import Grid from '@mui/material/Grid';
 import { styled } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
 import * as React from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 
 import {
-  RESERVED_IP_NUMBER,
   calculateAvailableIPv4sRFC1918,
+  calculateAvailableIPv6Linodes,
+  RESERVED_IP_NUMBER,
+  SUBNET_IPV6_PREFIX_LENGTHS,
 } from 'src/utilities/subnets';
 
 import type { CreateVPCPayload } from '@linode/api-v4';
@@ -17,11 +18,11 @@ interface Props {
   idx: number;
   isCreateVPCDrawer?: boolean;
   remove: (index?: number | number[]) => void;
+  shouldDisplayIPv6?: boolean;
 }
 
-// @TODO VPC: currently only supports IPv4, must update when/if IPv6 is also supported
 export const SubnetNode = (props: Props) => {
-  const { disabled, idx, isCreateVPCDrawer, remove } = props;
+  const { disabled, idx, shouldDisplayIPv6, isCreateVPCDrawer, remove } = props;
 
   const { control } = useFormContext<CreateVPCPayload>();
 
@@ -29,7 +30,7 @@ export const SubnetNode = (props: Props) => {
 
   const numberOfAvailIPs = calculateAvailableIPv4sRFC1918(ipv4 ?? '');
 
-  const availableIPHelperText = numberOfAvailIPs
+  const availableIPv4HelperText = numberOfAvailIPs
     ? `Number of Available IP Addresses: ${
         numberOfAvailIPs > 4
           ? (numberOfAvailIPs - RESERVED_IP_NUMBER).toLocaleString()
@@ -37,16 +38,22 @@ export const SubnetNode = (props: Props) => {
       }`
     : undefined;
 
+  const numberOfAvailableIPv4Linodes =
+    numberOfAvailIPs && numberOfAvailIPs > 4
+      ? numberOfAvailIPs - RESERVED_IP_NUMBER
+      : 0;
   const showRemoveButton = !(isCreateVPCDrawer && idx === 0);
 
   return (
     <Grid key={idx} sx={{ maxWidth: 460 }}>
       <Grid container direction="row" spacing={2}>
         <Grid
+          size={showRemoveButton ? 11 : 12}
           sx={{ ...(!showRemoveButton && { width: '100%' }), flexGrow: 1 }}
-          xs={showRemoveButton ? 11 : 12}
         >
           <Controller
+            control={control}
+            name={`subnets.${idx}.label`}
             render={({ field, fieldState }) => (
               <TextField
                 aria-label="Enter a subnet label"
@@ -60,34 +67,60 @@ export const SubnetNode = (props: Props) => {
                 value={field.value}
               />
             )}
-            control={control}
-            name={`subnets.${idx}.label`}
           />
           <Controller
+            control={control}
+            name={`subnets.${idx}.ipv4`}
             render={({ field, fieldState }) => (
               <TextField
                 aria-label="Enter an IPv4"
                 disabled={disabled}
                 errorText={fieldState.error?.message}
-                helperText={availableIPHelperText}
+                helperText={!shouldDisplayIPv6 && availableIPv4HelperText}
                 inputId={`subnet-ipv4-${idx}`}
-                label="Subnet IP Address Range"
+                label="Subnet IPv4 Range (CIDR)"
                 onBlur={field.onBlur}
                 onChange={field.onChange}
                 value={field.value}
               />
             )}
-            control={control}
-            name={`subnets.${idx}.ipv4`}
           />
+          {shouldDisplayIPv6 && (
+            <Controller
+              control={control}
+              name={`subnets.${idx}.ipv6.0.range`}
+              render={({ field, fieldState }) => (
+                <Select
+                  errorText={fieldState.error?.message}
+                  helperText={`Number of Linodes: ${Math.min(
+                    numberOfAvailableIPv4Linodes,
+                    calculateAvailableIPv6Linodes(field.value)
+                  )}`}
+                  label="Subnet IPv6 Prefix Length"
+                  onChange={(_, option) => field.onChange(option.value)}
+                  options={SUBNET_IPV6_PREFIX_LENGTHS}
+                  sx={{
+                    width: 140,
+                    '& .MuiInputLabel-root': {
+                      overflow: 'visible',
+                    },
+                  }}
+                  value={SUBNET_IPV6_PREFIX_LENGTHS.find(
+                    (option) => option.value === field.value
+                  )}
+                />
+              )}
+            />
+          )}
         </Grid>
         {showRemoveButton && (
-          <Grid xs={1}>
+          <Grid size={1}>
             <StyledButton
               aria-label={`Remove Subnet ${label !== '' ? label : idx}`}
+              disabled={disabled}
               onClick={() => remove(idx)}
             >
-              <Close data-testid={`delete-subnet-${idx}`} />
+              <CloseIcon data-testid={`delete-subnet-${idx}`} />
             </StyledButton>
           </Grid>
         )}
@@ -97,14 +130,14 @@ export const SubnetNode = (props: Props) => {
 };
 
 const StyledButton = styled(Button, { label: 'StyledButton' })(({ theme }) => ({
-  '& :hover, & :focus': {
-    backgroundColor: theme.color.grey2,
-  },
   '& > span': {
     padding: 2,
   },
+  height: 20,
+  width: 20,
+  borderRadius: '50%',
   color: theme.textColors.tableHeader,
-  marginTop: theme.spacing(6),
+  marginTop: 52,
   minHeight: 'auto',
   minWidth: 'auto',
   padding: 0,

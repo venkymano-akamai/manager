@@ -1,3 +1,9 @@
+import {
+  useAllLinodeDisksQuery,
+  useLinodeQuery,
+  useStartLinodeMutationMutation,
+  useTypeQuery,
+} from '@linode/queries';
 import { Notice, Typography } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import { useSnackbar } from 'notistack';
@@ -5,13 +11,9 @@ import * as React from 'react';
 
 import { MBpsIntraDC } from 'src/constants';
 import { useEventsPollingActions } from 'src/queries/events/events';
-import { useStartLinodeMutationMutation } from 'src/queries/linodes/actions';
-import { useAllLinodeDisksQuery } from 'src/queries/linodes/disks';
-import { useLinodeQuery } from 'src/queries/linodes/linodes';
-import { useTypeQuery } from 'src/queries/types';
 
-import { addUsedDiskSpace } from '../LinodeStorage/LinodeDisks';
 import { MutateDrawer } from '../MutateDrawer/MutateDrawer';
+import { addUsedDiskSpace } from '../utilities';
 
 interface Props {
   linodeId: number;
@@ -72,7 +74,7 @@ export const MutationNotification = (props: Props) => {
 
   return (
     <>
-      <Notice important variant="warning">
+      <Notice variant="warning">
         <Typography>
           You have a pending upgrade. The estimated time to complete this
           upgrade is
@@ -83,12 +85,12 @@ export const MutationNotification = (props: Props) => {
           {estimatedTimeToUpgradeInMins < 1 ? ` minute` : ` minutes`}. To learn
           more,&nbsp;
           <StyledSpan
+            onClick={() => setIsMutationDrawerOpen(true)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 setIsMutationDrawerOpen(true);
               }
             }}
-            onClick={() => setIsMutationDrawerOpen(true)}
             role="button"
             tabIndex={0}
           >
@@ -105,10 +107,16 @@ export const MutationNotification = (props: Props) => {
           transfer: currentTypeInfo.transfer,
           vcpus: currentTypeInfo.vcpus,
         }}
+        error={error?.[0].reason}
+        estimatedTimeToUpgradeInMins={estimatedTimeToUpgradeInMins}
+        handleClose={() => setIsMutationDrawerOpen(false)}
+        initMutation={initMutation}
         isMovingFromSharedToDedicated={isMovingFromSharedToDedicated(
           currentTypeInfo.id,
           successorTypeInfo.id
         )}
+        linodeId={linodeId}
+        loading={isPending}
         mutateInfo={{
           disk: successorTypeInfo.disk !== disk ? successorTypeInfo.disk : null,
           memory:
@@ -126,12 +134,6 @@ export const MutationNotification = (props: Props) => {
           vcpus:
             successorTypeInfo.vcpus !== vcpus ? successorTypeInfo.vcpus : null,
         }}
-        error={error?.[0].reason}
-        estimatedTimeToUpgradeInMins={estimatedTimeToUpgradeInMins}
-        handleClose={() => setIsMutationDrawerOpen(false)}
-        initMutation={initMutation}
-        linodeId={linodeId}
-        loading={isPending}
         open={isMutationDrawerOpen}
       />
     </>

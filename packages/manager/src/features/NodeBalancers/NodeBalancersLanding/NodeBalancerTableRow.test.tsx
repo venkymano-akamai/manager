@@ -1,12 +1,34 @@
 import { breakpoints } from '@linode/ui';
+import { nodeBalancerFactory } from '@linode/utilities';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import { nodeBalancerFactory } from 'src/factories';
 import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
 import { renderWithTheme, resizeScreenSize } from 'src/utilities/testHelpers';
 
 import { NodeBalancerTableRow } from './NodeBalancerTableRow';
+
+const navigate = vi.fn();
+const queryMocks = vi.hoisted(() => ({
+  useNavigate: vi.fn(() => navigate),
+  userPermissions: vi.fn(() => ({
+    data: {
+      delete_nodebalancer: false,
+    },
+  })),
+}));
+
+vi.mock('src/features/IAM/hooks/usePermissions', () => ({
+  usePermissions: queryMocks.userPermissions,
+}));
+
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
+  return {
+    ...actual,
+    useNavigate: queryMocks.useNavigate,
+  };
+});
 
 vi.mock('src/hooks/useIsResourceRestricted');
 
@@ -43,11 +65,16 @@ describe('NodeBalancerTableRow', () => {
   });
 
   it('deletes the NodeBalancer', async () => {
+    queryMocks.userPermissions.mockReturnValue({
+      data: {
+        delete_nodebalancer: true,
+      },
+    });
     const { getByText } = renderWithTheme(<NodeBalancerTableRow {...props} />);
 
     const deleteButton = getByText('Delete');
     await userEvent.click(deleteButton);
-    expect(props.onDelete).toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalled();
   });
 
   it('does not delete the NodeBalancer if the delete button is disabled', async () => {
@@ -55,7 +82,9 @@ describe('NodeBalancerTableRow', () => {
     const { getByText } = renderWithTheme(<NodeBalancerTableRow {...props} />);
 
     const deleteButton = getByText('Delete');
+    expect(deleteButton).toBeDisabled(); // Add this assertion
+
     await userEvent.click(deleteButton);
-    expect(props.onDelete).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

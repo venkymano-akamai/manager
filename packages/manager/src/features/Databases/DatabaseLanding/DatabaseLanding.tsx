@@ -1,10 +1,9 @@
-import { CircleProgress } from '@linode/ui';
+import { useDatabasesQuery, useDatabaseTypesQuery } from '@linode/queries';
+import { CircleProgress, ErrorState } from '@linode/ui';
 import { Box } from '@mui/material';
-import { createLazyRoute } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
 
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
 import { Tab } from 'src/components/Tabs/Tab';
@@ -16,21 +15,26 @@ import { DatabaseEmptyState } from 'src/features/Databases/DatabaseLanding/Datab
 import DatabaseLandingTable from 'src/features/Databases/DatabaseLanding/DatabaseLandingTable';
 import { useIsDatabasesEnabled } from 'src/features/Databases/utilities';
 import { DatabaseClusterInfoBanner } from 'src/features/GlobalNotifications/DatabaseClusterInfoBanner';
-import { useOrder } from 'src/hooks/useOrder';
-import { usePagination } from 'src/hooks/usePagination';
+import { DatabaseMigrationInfoBanner } from 'src/features/GlobalNotifications/DatabaseMigrationInfoBanner';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import {
-  useDatabaseTypesQuery,
-  useDatabasesQuery,
-} from 'src/queries/databases/databases';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 const preferenceKey = 'databases';
 
-const DatabaseLanding = () => {
-  const history = useHistory();
-  const newDatabasesPagination = usePagination(1, preferenceKey, 'new');
-  const legacyDatabasesPagination = usePagination(1, preferenceKey, 'legacy');
+export const DatabaseLanding = () => {
+  const navigate = useNavigate();
+  const newDatabasesPagination = usePaginationV2({
+    currentRoute: '/databases',
+    preferenceKey,
+    queryParamsPrefix: 'new',
+  });
+  const legacyDatabasesPagination = usePaginationV2({
+    currentRoute: '/databases',
+    preferenceKey,
+    queryParamsPrefix: 'legacy',
+  });
   const isRestricted = useRestrictedGlobalGrantCheck({
     globalGrantType: 'add_databases',
   });
@@ -53,13 +57,16 @@ const DatabaseLanding = () => {
     handleOrderChange: newDatabaseHandleOrderChange,
     order: newDatabaseOrder,
     orderBy: newDatabaseOrderBy,
-  } = useOrder(
-    {
-      order: 'desc',
-      orderBy: 'label',
+  } = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'label',
+      },
+      from: '/databases',
     },
-    `new-${preferenceKey}-order`
-  );
+    preferenceKey: `new-${preferenceKey}-order`,
+  });
 
   const newDatabasesFilter: Record<string, string> = {
     ['+order']: newDatabaseOrder,
@@ -84,13 +91,16 @@ const DatabaseLanding = () => {
     handleOrderChange: legacyDatabaseHandleOrderChange,
     order: legacyDatabaseOrder,
     orderBy: legacyDatabaseOrderBy,
-  } = useOrder(
-    {
-      order: 'desc',
-      orderBy: 'label',
+  } = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'label',
+      },
+      from: '/databases',
     },
-    `legacy-${preferenceKey}-order`
-  );
+    preferenceKey: `legacy-${preferenceKey}-order`,
+  });
 
   const legacyDatabasesFilter: Record<string, string> = {
     ['+order']: legacyDatabaseOrder,
@@ -147,9 +157,9 @@ const DatabaseLanding = () => {
       <DatabaseLandingTable
         data={legacyDatabases?.data}
         handleOrderChange={legacyDatabaseHandleOrderChange}
-        results={legacyDatabases?.results}
         order={legacyDatabaseOrder}
         orderBy={legacyDatabaseOrderBy}
+        results={legacyDatabases?.results}
       />
     );
   };
@@ -157,13 +167,13 @@ const DatabaseLanding = () => {
   const defaultTable = () => {
     return (
       <DatabaseLandingTable
-        results={newDatabases?.results}
         data={newDatabases?.data}
         handleOrderChange={newDatabaseHandleOrderChange}
         isNewDatabase={true}
-        showSuspend={showSuspend}
         order={newDatabaseOrder}
         orderBy={newDatabaseOrderBy}
+        results={newDatabases?.results}
+        showSuspend={showSuspend}
       />
     );
   };
@@ -185,10 +195,11 @@ const DatabaseLanding = () => {
         createButtonText="Create Database Cluster"
         disabledCreateButton={isRestricted}
         docsLink={docsLink}
-        onButtonClick={() => history.push('/databases/create')}
+        onButtonClick={() => navigate({ to: '/databases/create' })}
         title="Database Clusters"
       />
       {showTabs && !isDatabasesV2GA && <DatabaseClusterInfoBanner />}
+      {showTabs && isDatabasesV2GA && <DatabaseMigrationInfoBanner />}
       <Box>
         {showTabs ? (
           <Tabs>
@@ -208,9 +219,3 @@ const DatabaseLanding = () => {
     </React.Fragment>
   );
 };
-
-export const databaseLandingLazyRoute = createLazyRoute('/databases')({
-  component: DatabaseLanding,
-});
-
-export default React.memo(DatabaseLanding);

@@ -1,15 +1,15 @@
+import {
+  useLinodeVolumesQuery,
+  useNotificationsQuery,
+  useVolumesMigrateMutation,
+} from '@linode/queries';
 import { Button, Notice, Stack, Typography } from '@linode/ui';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
-import { VolumeUpgradeCopy } from 'src/features/Volumes/UpgradeVolumeDialog';
+import { VolumeUpgradeCopy } from 'src/features/Volumes/Dialogs/UpgradeVolumeDialog';
 import { getUpgradeableVolumeIds } from 'src/features/Volumes/utils';
-import { useNotificationsQuery } from 'src/queries/account/notifications';
-import {
-  useLinodeVolumesQuery,
-  useVolumesMigrateMutation,
-} from 'src/queries/volumes/volumes';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import type { Linode } from '@linode/api-v4';
@@ -63,12 +63,12 @@ export const UpgradeVolumesDialog = (props: Props) => {
 
   return (
     <ConfirmationDialog
+      actions={actions}
       error={
         error
           ? getAPIErrorOrDefault(error, 'Unable to migrate volumes.')[0].reason
           : undefined
       }
-      actions={actions}
       onClose={onClose}
       open={open}
       title={`Upgrade Volume${numUpgradeableVolumes === 1 ? '' : 's'}`}

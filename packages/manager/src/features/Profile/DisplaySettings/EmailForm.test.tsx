@@ -1,15 +1,15 @@
+import { profileFactory } from '@linode/utilities';
 import { waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
-import { profileFactory } from 'src/factories';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { EmailForm } from './EmailForm';
 
 describe('EmailForm', () => {
-  it('renders a label and input', () => {
+  it('renders a label and input', async () => {
     const { getByLabelText, getByText } = renderWithTheme(<EmailForm />);
 
     expect(getByLabelText('Email')).toBeVisible();

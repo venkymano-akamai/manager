@@ -1,5 +1,6 @@
 import { Stack } from '@linode/ui';
 import * as React from 'react';
+import type { JSX } from 'react';
 import zxcvbn from 'zxcvbn';
 
 import { StrengthIndicator } from '../PasswordInput/StrengthIndicator';
@@ -13,7 +14,7 @@ interface Props extends TextFieldProps {
   hideValidation?: boolean;
 }
 
-const PasswordInput = (props: Props) => {
+export const PasswordInput = React.memo((props: Props) => {
   const {
     disabledReason,
     hideStrengthLabel,
@@ -42,7 +43,7 @@ const PasswordInput = (props: Props) => {
       )}
     </Stack>
   );
-};
+});
 
 const maybeStrength = (value: Props['value']) => {
   if (!value) {
@@ -51,5 +52,3 @@ const maybeStrength = (value: Props['value']) => {
 
   return zxcvbn(String(value)).score;
 };
-
-export default React.memo(PasswordInput);

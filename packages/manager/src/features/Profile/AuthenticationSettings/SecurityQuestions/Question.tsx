@@ -1,8 +1,8 @@
 import { Autocomplete, InputLabel, Typography } from '@linode/ui';
-import { MaskableText } from 'linode-manager/src/components/MaskableText/MaskableText';
+import { LinkButton } from '@linode/ui';
 import * as React from 'react';
 
-import { LinkButton } from 'src/components/LinkButton';
+import { MaskableText } from 'src/components/MaskableText/MaskableText';
 
 import type { SecurityQuestion } from '@linode/api-v4/lib/profile';
 
@@ -61,6 +61,10 @@ export const Question = (props: Props) => {
   }
   return (
     <Autocomplete
+      autoHighlight
+      defaultValue={currentOption}
+      disableClearable
+      label={label}
       onChange={(_, item) => {
         setFieldValue(`security_questions[${index}]`, {
           id: item.value,
@@ -68,10 +72,6 @@ export const Question = (props: Props) => {
           response: '',
         });
       }}
-      autoHighlight
-      defaultValue={currentOption}
-      disableClearable
-      label={label}
       options={options}
       placeholder="Select a question"
       value={options.find((option) => option.value === questionResponse?.id)}

@@ -1,21 +1,62 @@
+import { useAccount, useRegionsQuery } from '@linode/queries';
+import { isFeatureEnabledV2 } from '@linode/utilities';
+import React from 'react';
+
 import { convertData } from 'src/features/Longview/shared/formatters';
 import { useFlags } from 'src/hooks/useFlags';
-import { useAccount } from 'src/queries/account/account';
-import { isFeatureEnabledV2 } from 'src/utilities/accountCapabilities';
+
+import { arraysEqual } from '../Alerts/Utils/utils';
+import {
+  INTERFACE_ID,
+  INTERFACE_IDS_CONSECUTIVE_COMMAS_ERROR_MESSAGE,
+  INTERFACE_IDS_ERROR_MESSAGE,
+  INTERFACE_IDS_LEADING_COMMA_ERROR_MESSAGE,
+  INTERFACE_IDS_LIMIT_ERROR_MESSAGE,
+  PORT,
+  PORTS_CONSECUTIVE_COMMAS_ERROR_MESSAGE,
+  PORTS_ERROR_MESSAGE,
+  PORTS_LEADING_COMMA_ERROR_MESSAGE,
+  PORTS_LEADING_ZERO_ERROR_MESSAGE,
+  PORTS_LIMIT_ERROR_MESSAGE,
+  PORTS_RANGE_ERROR_MESSAGE,
+  RESOURCE_ID,
+} from './constants';
+import { FILTER_CONFIG } from './FilterConfig';
 
 import type {
+  Alert,
   APIError,
+  Capabilities,
+  CloudPulseAlertsPayload,
+  CloudPulseServiceType,
   Dashboard,
+  MonitoringCapabilities,
   ResourcePage,
-  ServiceTypes,
+  Service,
   ServiceTypesList,
   TimeDuration,
 } from '@linode/api-v4';
 import type { UseQueryResult } from '@tanstack/react-query';
+import type { AclpServices } from 'src/featureFlags';
 import type {
   StatWithDummyPoint,
   WithStartAndEnd,
 } from 'src/features/Longview/request.types';
+
+interface AclpSupportedRegionProps {
+  /**
+   * The capability to check ('Linodes', 'NodeBalancers', etc)
+   */
+  capability: Capabilities;
+  /**
+   * Region ID to check
+   */
+  regionId: string | undefined;
+  /**
+   * The type of monitoring capability to check
+   */
+  type: keyof MonitoringCapabilities;
+}
 
 /**
  *
@@ -24,20 +65,88 @@ import type {
 export const useIsACLPEnabled = (): {
   isACLPEnabled: boolean;
 } => {
-  const { data: account, error } = useAccount();
+  const { data: account } = useAccount();
   const flags = useFlags();
 
-  if (error || !flags) {
+  if (!flags) {
     return { isACLPEnabled: false };
   }
 
-  const isACLPEnabled = isFeatureEnabledV2(
-    'Akamai Cloud Pulse',
-    Boolean(flags.aclp?.enabled),
-    account?.capabilities ?? []
-  );
+  const isACLPEnabled =
+    (flags.aclp?.enabled && flags.aclp?.bypassAccountCapabilities) ||
+    isFeatureEnabledV2(
+      'Akamai Cloud Pulse',
+      Boolean(flags.aclp?.enabled),
+      account?.capabilities ?? []
+    );
 
   return { isACLPEnabled };
+};
+
+/**
+ * @param alerts List of alerts to be displayed
+ * @param entityId Id of the selected entity
+ * @returns enabledAlerts, setEnabledAlerts, hasUnsavedChanges, initialState, resetToInitialState
+ */
+export const useContextualAlertsState = (
+  alerts: Alert[],
+  entityId?: string
+) => {
+  const calculateInitialState = React.useCallback(
+    (alerts: Alert[], entityId?: string): CloudPulseAlertsPayload => {
+      const initialStates: CloudPulseAlertsPayload = {
+        system_alerts: [],
+        user_alerts: [],
+      };
+
+      alerts.forEach((alert) => {
+        const isAccountOrRegion =
+          alert.scope === 'region' || alert.scope === 'account';
+
+        // include alerts which has either account or region level scope or entityId is present in the alert's entity_ids
+        const shouldInclude = entityId
+          ? isAccountOrRegion || alert.entity_ids.includes(entityId)
+          : isAccountOrRegion;
+
+        if (shouldInclude) {
+          const payloadAlertType =
+            alert.type === 'system' ? 'system_alerts' : 'user_alerts';
+          initialStates[payloadAlertType]?.push(alert.id);
+        }
+      });
+
+      return initialStates;
+    },
+    []
+  );
+
+  const initialState = React.useMemo(
+    () => calculateInitialState(alerts, entityId),
+    [alerts, entityId, calculateInitialState]
+  );
+
+  const [enabledAlerts, setEnabledAlerts] = React.useState(initialState);
+
+  // Reset function to sync with latest initial state
+  const resetToInitialState = React.useCallback(() => {
+    setEnabledAlerts(initialState);
+  }, [initialState]);
+
+  // Check if the enabled alerts have changed from the initial state
+  const hasUnsavedChanges = React.useMemo(() => {
+    return (
+      !arraysEqual(enabledAlerts.system_alerts, initialState.system_alerts) ||
+      !arraysEqual(enabledAlerts.user_alerts, initialState.user_alerts)
+    );
+  }, [enabledAlerts, initialState]);
+
+  return {
+    enabledAlerts,
+    setEnabledAlerts,
+    hasUnsavedChanges,
+    initialState,
+    resetToInitialState,
+  };
 };
 
 /**
@@ -54,7 +163,7 @@ export const convertStringToCamelCasesWithSpaces = (
     .join(' ');
 };
 
-export const createObjectCopy = <T>(object: T): T | null => {
+export const createObjectCopy = <T>(object: T): null | T => {
   if (!object) {
     return null;
   }
@@ -117,15 +226,23 @@ export const seriesDataFormatter = (
 /**
  *
  * @param rawServiceTypes list of service types returned from api response
- * @returns converted service types list into string array
+ * @param aclpServices list of services with their statuses
+ * @returns enabled service types
  */
-export const formattedServiceTypes = (
-  rawServiceTypes: ServiceTypesList | undefined
-): string[] => {
+export const getEnabledServiceTypes = (
+  rawServiceTypes: ServiceTypesList | undefined,
+  aclpServices: Partial<AclpServices> | undefined
+): CloudPulseServiceType[] => {
   if (rawServiceTypes === undefined || rawServiceTypes.data.length === 0) {
     return [];
   }
-  return rawServiceTypes.data.map((obj: ServiceTypes) => obj.service_type);
+  // Return the service types that are enabled in the aclpServices flag
+  return rawServiceTypes.data
+    .filter(
+      (obj: Service) =>
+        aclpServices?.[obj.service_type]?.metrics?.enabled ?? false
+    )
+    .map((obj: Service) => obj.service_type);
 };
 
 /**
@@ -136,7 +253,7 @@ export const formattedServiceTypes = (
  */
 export const getAllDashboards = (
   queryResults: UseQueryResult<ResourcePage<Dashboard>, APIError[]>[],
-  serviceTypes: string[]
+  serviceTypes: CloudPulseServiceType[]
 ) => {
   let error = '';
   let isLoading = false;
@@ -157,4 +274,141 @@ export const getAllDashboards = (
     error,
     isLoading,
   };
+};
+
+/**
+ * @param port
+ * @returns error message string
+ * @description Validates a single port and returns the error message
+ */
+export const isValidPort = (port: string): string | undefined => {
+  if (port === '') {
+    return undefined;
+  }
+
+  // Check for leading zeros
+  if (port.startsWith('0') && port !== '0') {
+    return PORTS_LEADING_ZERO_ERROR_MESSAGE;
+  }
+
+  const convertedPort = parseInt(port, 10);
+  if (!(1 <= convertedPort && convertedPort <= 65535)) {
+    return PORTS_RANGE_ERROR_MESSAGE;
+  }
+
+  return undefined;
+};
+
+/**
+ * @param ports
+ * @returns error message string
+ * @description Validates a comma-separated list of ports and sets the error message
+ */
+export const arePortsValid = (ports: string): string | undefined => {
+  if (ports === '') {
+    return undefined;
+  }
+
+  if (ports.length > 100) {
+    return PORTS_LIMIT_ERROR_MESSAGE;
+  }
+
+  if (ports.startsWith(',')) {
+    return PORTS_LEADING_COMMA_ERROR_MESSAGE;
+  }
+
+  if (ports.includes(',,')) {
+    return PORTS_CONSECUTIVE_COMMAS_ERROR_MESSAGE;
+  }
+
+  if (!/^[\d,]+$/.test(ports)) {
+    return PORTS_ERROR_MESSAGE;
+  }
+
+  const portList = ports.split(',');
+
+  for (const port of portList) {
+    const result = isValidPort(port);
+    if (result !== undefined) {
+      return result;
+    }
+  }
+
+  return undefined;
+};
+
+/**
+ * @param interfaceIds
+ * @returns error message string
+ * @description Validates a comma-separated list of interface ids and sets the error message
+ */
+export const areValidInterfaceIds = (
+  interfaceIds: string
+): string | undefined => {
+  if (interfaceIds === '') {
+    return undefined;
+  }
+
+  if (interfaceIds.length > 100) {
+    return INTERFACE_IDS_LIMIT_ERROR_MESSAGE;
+  }
+
+  if (interfaceIds.startsWith(',')) {
+    return INTERFACE_IDS_LEADING_COMMA_ERROR_MESSAGE;
+  }
+
+  if (interfaceIds.includes(',,')) {
+    return INTERFACE_IDS_CONSECUTIVE_COMMAS_ERROR_MESSAGE;
+  }
+  if (!/^[\d,]+$/.test(interfaceIds)) {
+    return INTERFACE_IDS_ERROR_MESSAGE;
+  }
+
+  return undefined;
+};
+
+/**
+ * @param filterKey
+ * @returns validation function for the filter key
+ */
+export const validationFunction: Record<
+  string,
+  (value: string) => string | undefined
+> = {
+  [PORT]: arePortsValid,
+  [INTERFACE_ID]: areValidInterfaceIds,
+};
+
+/**
+ * Checks if the selected region is ACLP-supported for the given capability and type.
+ * @param props Contains regionId, capability and type to check against the regions data.
+ * @returns boolean indicating if the selected region is ACLP-supported for the given capability and type.
+ */
+export const useIsAclpSupportedRegion = (
+  props: AclpSupportedRegionProps
+): boolean => {
+  const { regionId, capability, type } = props;
+
+  const { data: regions } = useRegionsQuery();
+
+  const region = regions?.find(({ id }) => id === regionId);
+
+  return region?.monitors?.[type]?.includes(capability) ?? false;
+};
+
+/**
+ * @param dashboardId The id of the dashboard
+ * @returns The associated entity type for the dashboard
+ */
+export const getAssociatedEntityType = (dashboardId: number | undefined) => {
+  if (!dashboardId) {
+    return 'both';
+  }
+  // Get the associated entity type for the dashboard
+  const filterConfig = FILTER_CONFIG.get(dashboardId);
+  return (
+    filterConfig?.filters.find(
+      (filter) => filter.configuration.filterKey === RESOURCE_ID
+    )?.configuration.associatedEntityType ?? 'both'
+  );
 };

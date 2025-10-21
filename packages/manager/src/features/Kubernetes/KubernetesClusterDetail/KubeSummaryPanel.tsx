@@ -1,18 +1,22 @@
-import { Box, Chip, Stack, StyledActionButton, Typography } from '@linode/ui';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import {
+  ActionsPanel,
+  Box,
+  Stack,
+  StyledActionButton,
+  Typography,
+} from '@linode/ui';
+import { Hidden } from '@linode/ui';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
+import ExternalLinkIcon from 'src/assets/icons/external-link.svg';
 import { ActionMenu } from 'src/components/ActionMenu/ActionMenu';
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
 import { EntityDetail } from 'src/components/EntityDetail/EntityDetail';
 import { EntityHeader } from 'src/components/EntityHeader/EntityHeader';
-import { Hidden } from 'src/components/Hidden';
 import { KubeClusterSpecs } from 'src/features/Kubernetes/KubernetesClusterDetail/KubeClusterSpecs';
-import { getKubeControlPlaneACL } from 'src/features/Kubernetes/kubeUtils';
+import { useIsLkeEnterpriseEnabled } from 'src/features/Kubernetes/kubeUtils';
 import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
-import { useAccount } from 'src/queries/account/account';
 import {
   useKubernetesControlPlaneACLQuery,
   useKubernetesDashboardQuery,
@@ -20,6 +24,7 @@ import {
 } from 'src/queries/kubernetes';
 import { getErrorStringOrDefault } from 'src/utilities/errorUtils';
 
+import { ClusterChips } from '../ClusterList/ClusterChips';
 import { DeleteKubernetesClusterDialog } from './DeleteKubernetesClusterDialog';
 import { KubeConfigDisplay } from './KubeConfigDisplay';
 import { KubeConfigDrawer } from './KubeConfigDrawer';
@@ -35,22 +40,16 @@ interface Props {
 export const KubeSummaryPanel = React.memo((props: Props) => {
   const { cluster } = props;
 
-  const { data: account } = useAccount();
-  const { showControlPlaneACL } = getKubeControlPlaneACL(account);
-
   const { enqueueSnackbar } = useSnackbar();
 
   const [drawerOpen, setDrawerOpen] = React.useState<boolean>(false);
-  const [
-    isControlPlaneACLDrawerOpen,
-    setControlPlaneACLDrawerOpen,
-  ] = React.useState<boolean>(false);
+  const [isControlPlaneACLDrawerOpen, setControlPlaneACLDrawerOpen] =
+    React.useState<boolean>(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
-  const {
-    data: dashboard,
-    error: dashboardError,
-  } = useKubernetesDashboardQuery(cluster.id);
+  // Access to the Kubernetes Dashboard is not supported for LKE-E clusters.
+  const { data: dashboard, error: dashboardError } =
+    useKubernetesDashboardQuery(cluster.id, cluster.tier !== 'enterprise');
 
   const {
     error: resetKubeConfigError,
@@ -58,9 +57,15 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
     mutateAsync: resetKubeConfig,
   } = useResetKubeConfigMutation();
 
-  const isClusterReadOnly = useIsResourceRestricted({
+  const areClusterLinodesReadOnly = useIsResourceRestricted({
     grantLevel: 'read_only',
     grantType: 'linode',
+    id: cluster.id,
+  });
+
+  const isClusterReadOnly = useIsResourceRestricted({
+    grantLevel: 'read_only',
+    grantType: 'lkecluster',
     id: cluster.id,
   });
 
@@ -68,12 +73,12 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
     data: aclData,
     error: isErrorKubernetesACL,
     isLoading: isLoadingKubernetesACL,
-  } = useKubernetesControlPlaneACLQuery(cluster.id, !!showControlPlaneACL);
+  } = useKubernetesControlPlaneACLQuery(cluster.id);
 
-  const [
-    resetKubeConfigDialogOpen,
-    setResetKubeConfigDialogOpen,
-  ] = React.useState(false);
+  const { isLkeEnterpriseLAFeatureEnabled } = useIsLkeEnterpriseEnabled();
+
+  const [resetKubeConfigDialogOpen, setResetKubeConfigDialogOpen] =
+    React.useState(false);
 
   const handleResetKubeConfig = () => {
     return resetKubeConfig({ id: cluster.id }).then(() => {
@@ -93,15 +98,15 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
       <EntityDetail
         body={
           <Stack
+            direction="row"
+            flexWrap="wrap"
+            gap={2}
             sx={(theme) => ({
               padding: theme.spacing(2),
               [theme.breakpoints.down('sm')]: {
                 padding: theme.spacing(1),
               },
             })}
-            direction="row"
-            flexWrap="wrap"
-            gap={2}
           >
             <KubeClusterSpecs cluster={cluster} />
             <KubeConfigDisplay
@@ -111,23 +116,25 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
               isResettingKubeConfig={isResettingKubeConfig}
               setResetKubeConfigDialogOpen={setResetKubeConfigDialogOpen}
             />
-            {cluster.control_plane.high_availability && (
-              <Chip
-                sx={(theme) => ({
-                  borderColor: theme.color.green,
-                  position: 'absolute',
-                  right: theme.spacing(3),
-                })}
-                label="HA CLUSTER"
-                size="small"
-                variant="outlined"
-              />
-            )}
+            <ClusterChips
+              cluster={cluster}
+              sx={(theme) => ({
+                position: 'absolute',
+                right: theme.spacing(3),
+                [theme.breakpoints.down('sm')]: {
+                  '& .MuiChip-root': {
+                    marginRight: 0,
+                  },
+                  flexDirection: 'column',
+                },
+              })}
+            />
           </Stack>
         }
         footer={
           <KubeEntityDetailFooter
             aclData={aclData}
+            areClusterLinodesReadOnly={areClusterLinodesReadOnly}
             clusterCreated={cluster.created}
             clusterId={cluster.id}
             clusterLabel={cluster.label}
@@ -136,7 +143,7 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
             isClusterReadOnly={isClusterReadOnly}
             isLoadingKubernetesACL={isLoadingKubernetesACL}
             setControlPlaneACLDrawerOpen={setControlPlaneACLDrawerOpen}
-            showControlPlaneACL={!!showControlPlaneACL}
+            vpcId={cluster.vpc_id}
           />
         }
         header={
@@ -172,14 +179,22 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
                 />
               </Hidden>
               <Hidden smDown>
+                {isLkeEnterpriseLAFeatureEnabled &&
+                cluster.tier === 'enterprise' ? undefined : (
+                  <StyledActionButton
+                    disabled={
+                      Boolean(dashboardError) || !dashboard || isClusterReadOnly
+                    }
+                    endIcon={<ExternalLinkIcon sx={{ height: '14px' }} />}
+                    onClick={() => window.open(dashboard?.url, '_blank')}
+                  >
+                    Kubernetes Dashboard
+                  </StyledActionButton>
+                )}
                 <StyledActionButton
-                  disabled={Boolean(dashboardError) || !dashboard}
-                  endIcon={<OpenInNewIcon sx={{ height: '14px' }} />}
-                  onClick={() => window.open(dashboard?.url, '_blank')}
+                  disabled={isClusterReadOnly}
+                  onClick={() => setIsDeleteDialogOpen(true)}
                 >
-                  Kubernetes Dashboard
-                </StyledActionButton>
-                <StyledActionButton onClick={() => setIsDeleteDialogOpen(true)}>
                   Delete Cluster
                 </StyledActionButton>
               </Hidden>
@@ -200,6 +215,7 @@ export const KubeSummaryPanel = React.memo((props: Props) => {
         clusterId={cluster.id}
         clusterLabel={cluster.label}
         clusterMigrated={!isErrorKubernetesACL}
+        clusterTier={cluster.tier ?? 'standard'} // TODO LKE: remove fallback once LKE-E is in GA and tier is required
         open={isControlPlaneACLDrawerOpen}
       />
       <DeleteKubernetesClusterDialog

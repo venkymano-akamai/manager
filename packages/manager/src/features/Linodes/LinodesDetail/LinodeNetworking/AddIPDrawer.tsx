@@ -1,33 +1,38 @@
-import { FormControlLabel, Typography } from '@linode/ui';
 import {
+  useAllocateIPMutation,
+  useCreateIPv6RangeMutation,
+  useLinodeIPsQuery,
+} from '@linode/queries';
+import {
+  ActionsPanel,
   Box,
   Divider,
+  Drawer,
+  FormControlLabel,
   Notice,
   Radio,
   RadioGroup,
   Stack,
   Tooltip,
+  Typography,
 } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
 import { Link } from 'src/components/Link';
-import {
-  useAllocateIPMutation,
-  useLinodeIPsQuery,
-} from 'src/queries/linodes/networking';
-import { useCreateIPv6RangeMutation } from 'src/queries/networking/networking';
 
 import { ExplainerCopy } from './ExplainerCopy';
 
 import type { IPv6Prefix } from '@linode/api-v4/lib/networking';
-import type { Item } from 'src/components/EnhancedSelect/Select';
 
 export type IPType = 'v4Private' | 'v4Public';
 
-const ipOptions: Item<IPType>[] = [
+type IPOption = {
+  label: string;
+  value: IPType;
+};
+
+const ipOptions: IPOption[] = [
   { label: 'Public', value: 'v4Public' },
   { label: 'Private', value: 'v4Private' },
 ];
@@ -66,13 +71,8 @@ interface Props {
 }
 
 export const AddIPDrawer = (props: Props) => {
-  const {
-    linodeId,
-    linodeIsInDistributedRegion,
-    onClose,
-    open,
-    readOnly,
-  } = props;
+  const { linodeId, linodeIsInDistributedRegion, onClose, open, readOnly } =
+    props;
 
   const {
     error: ipv4Error,
@@ -90,10 +90,8 @@ export const AddIPDrawer = (props: Props) => {
 
   const [selectedIPv4, setSelectedIPv4] = React.useState<IPType | null>(null);
 
-  const [
-    selectedIPv6Prefix,
-    setSelectedIPv6Prefix,
-  ] = React.useState<IPv6Prefix | null>(null);
+  const [selectedIPv6Prefix, setSelectedIPv6Prefix] =
+    React.useState<IPv6Prefix | null>(null);
 
   const { data: ips } = useLinodeIPsQuery(linodeId, open);
 
@@ -179,11 +177,11 @@ export const AddIPDrawer = (props: Props) => {
           <Box>
             {ipOptions.map((option, idx) => (
               <FormControlLabel
+                control={<Radio />}
+                data-qa-radio={option.label}
                 disabled={
                   option.value === 'v4Private' && linodeIsInDistributedRegion
                 }
-                control={<Radio />}
-                data-qa-radio={option.label}
                 key={idx}
                 label={option.label}
                 value={option.value}
@@ -279,7 +277,7 @@ const StyledRadioGroup = styled(RadioGroup, {
     minWidth: 100,
   },
   '& p': {
-    fontFamily: theme.font.bold,
+    font: theme.font.bold,
   },
   marginBottom: '0 !important',
 }));

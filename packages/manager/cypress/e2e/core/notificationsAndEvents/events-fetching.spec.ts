@@ -2,12 +2,14 @@
  * @file Integration tests for Cloud Manager's events fetching and polling behavior.
  */
 
-import { mockGetEvents, mockGetEventsPolling } from 'support/intercepts/events';
 import { DateTime } from 'luxon';
-import { eventFactory } from 'src/factories';
-import { randomNumber } from 'support/util/random';
-import { Interception } from 'cypress/types/net-stubbing';
+import { mockGetEvents, mockGetEventsPolling } from 'support/intercepts/events';
 import { mockGetVolumes } from 'support/intercepts/volumes';
+import { randomNumber } from 'support/util/random';
+
+import { eventFactory } from 'src/factories';
+
+import type { Interception } from 'support/cypress-exports';
 
 describe('Event fetching and polling', () => {
   /**
@@ -16,20 +18,30 @@ describe('Event fetching and polling', () => {
    */
   it('Makes initial fetch to events endpoint', () => {
     const mockNow = DateTime.now();
-
     mockGetEvents([]).as('getEvents');
 
-    cy.clock(mockNow.toJSDate());
     cy.visitWithLogin('/');
+    cy.clock(mockNow.toJSDate());
     cy.wait('@getEvents').then((xhr) => {
       const filters = xhr.request.headers['x-filter'];
       const lastWeekTimestamp = mockNow
         .minus({ weeks: 1 })
         .toUTC()
-        .startOf('second') // Helps with matching the timestamp at the start of the second
+        .startOf('second'); // Helps with matching the timestamp at the start of the second
+
+      const ts1 = lastWeekTimestamp.toFormat("yyyy-MM-dd'T'HH:mm:ss");
+      const ts2 = lastWeekTimestamp
+        .plus({ seconds: 1 })
         .toFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-      const timestampFilter = `"created":{"+gt":"${lastWeekTimestamp}"`;
+      const timestampfilter1 = `"created":{"+gt":"${ts1}"`;
+      const timestampfilter2 = `"created":{"+gt":"${ts2}"`;
+
+      // M3-10512: There is a small delay between between setting
+      // the clock and the app's filter generation.
+      // In the event that the delay causes the timestamp to roll
+      // over to the next second, we should accept either timestamp
+      // in the test.
 
       /*
        * Confirm that initial fetch request contains filters to achieve
@@ -40,7 +52,10 @@ describe('Event fetching and polling', () => {
        * - Sort events by their created date.
        * - Only retrieve events created within the past week.
        */
-      expect(filters).to.contain(timestampFilter);
+      expect(filters).to.satisfy(
+        (f: string) =>
+          f.includes(timestampfilter1) || f.includes(timestampfilter2)
+      );
       expect(filters).to.contain('"+neq":"profile_update"');
       expect(filters).to.contain('"+order_by":"id"');
     });
@@ -52,15 +67,15 @@ describe('Event fetching and polling', () => {
    */
   it('Polls events endpoint after initial fetch', () => {
     const mockEvent = eventFactory.build({
-      id: randomNumber(10000, 99999),
       created: DateTime.now()
         .minus({ minutes: 5 })
         .toUTC()
         .startOf('second') // Helps with matching the timestamp at the start of the second
         .toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       duration: null,
-      rate: null,
+      id: randomNumber(10000, 99999),
       percent_complete: null,
+      rate: null,
     });
 
     mockGetEvents([mockEvent]).as('getEvents');
@@ -109,22 +124,21 @@ describe('Event fetching and polling', () => {
       .toFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     const mockEvent = eventFactory.build({
-      id: randomNumber(10000, 99999),
       created: DateTime.now()
         .minus({ minutes: 5 })
         .toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       duration: null,
-      rate: null,
+      id: randomNumber(10000, 99999),
       percent_complete: null,
+      rate: null,
     });
 
     mockGetEvents([mockEvent]).as('getEventsInitialFetches');
 
+    cy.visitWithLogin('/');
     // We need access to the `clock` object directly since we cannot call `cy.clock()` inside
     // a `should(() => {})` callback because Cypress commands are disallowed there.
     cy.clock(mockNow.toJSDate()).then((clock) => {
-      cy.visitWithLogin('/');
-
       // Confirm that Cloud manager polls the requests endpoint no more than
       // once every 16 seconds.
       mockGetEventsPolling([mockEvent], mockNowTimestamp).as('getEventsPoll');
@@ -164,22 +178,22 @@ describe('Event fetching and polling', () => {
       .toFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     const mockEventBasic = eventFactory.build({
-      id: randomNumber(10000, 99999),
       created: DateTime.now()
         .minus({ minutes: 5 })
         .startOf('second') // Helps with matching the timestamp at the start of the second
         .toFormat("yyyy-MM-dd'T'HH:mm:ss"),
       duration: null,
-      rate: null,
+      id: randomNumber(10000, 99999),
       percent_complete: null,
+      rate: null,
     });
 
     const mockEventInProgress = eventFactory.build({
-      id: randomNumber(10000, 99999),
       created: DateTime.now().minus({ minutes: 6 }).toISO(),
       duration: 0,
-      rate: null,
+      id: randomNumber(10000, 99999),
       percent_complete: 50,
+      rate: null,
     });
 
     const mockEvents = [mockEventBasic, mockEventInProgress];
@@ -189,11 +203,11 @@ describe('Event fetching and polling', () => {
     // initial polling request.
     mockGetEvents(mockEvents).as('getEventsInitialFetches');
 
+    cy.visitWithLogin('/');
+
     // We need access to the `clock` object directly since we cannot call `cy.clock()` inside
     // a `should(() => {})` callback because Cypress commands are disallowed there.
     cy.clock(Date.now()).then((clock) => {
-      cy.visitWithLogin('/');
-
       // Confirm that Cloud manager polls the requests endpoint no more than once
       // every 2 seconds.
       mockGetEventsPolling(mockEvents, mockNowTimestamp).as('getEventsPoll');

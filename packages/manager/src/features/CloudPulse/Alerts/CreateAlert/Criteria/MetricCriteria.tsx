@@ -1,15 +1,22 @@
-import { Box, Button, Stack, Typography } from '@linode/ui';
+import { Button, Stack, Typography } from '@linode/ui';
 import * as React from 'react';
-import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
+import {
+  Controller,
+  useFieldArray,
+  useFormContext,
+  useWatch,
+} from 'react-hook-form';
+import type { FieldPathByValue } from 'react-hook-form';
 
 import { useGetCloudPulseMetricDefinitionsByServiceType } from 'src/queries/cloudpulse/services';
 
+import { MULTILINE_ERROR_SEPARATOR } from '../../constants';
+import { AlertListNoticeMessages } from '../../Utils/AlertListNoticeMessages';
 import { convertToSeconds } from '../utilities';
 import { Metric } from './Metric';
 
 import type { CreateAlertDefinitionForm, MetricCriteriaForm } from '../types';
-import type { AlertServiceType } from '@linode/api-v4';
-import type { FieldPathByValue } from 'react-hook-form';
+import type { CloudPulseServiceType } from '@linode/api-v4';
 
 interface MetricCriteriaProps {
   /**
@@ -19,7 +26,7 @@ interface MetricCriteriaProps {
   /**
    * serviceType used by the api to fetch the metric definitions
    */
-  serviceType: AlertServiceType | null;
+  serviceType: CloudPulseServiceType | null;
   /**
    * function used to pass the scrape interval value to the parent component
    * @param maxInterval number value that takes the maximum scrape interval from the list of selected metrics
@@ -36,7 +43,9 @@ export const MetricCriteriaField = (props: MetricCriteriaProps) => {
     isLoading: isMetricDefinitionLoading,
   } = useGetCloudPulseMetricDefinitionsByServiceType(
     serviceType!,
-    serviceType !== null
+    serviceType !== null,
+    {},
+    { is_alertable: true }
   );
 
   const { control } = useFormContext<CreateAlertDefinitionForm>();
@@ -62,49 +71,64 @@ export const MetricCriteriaField = (props: MetricCriteriaProps) => {
     control,
     name,
   });
+
   return (
-    <Box sx={(theme) => ({ marginTop: theme.spacing(3) })}>
-      <Box
-        alignItems="center"
-        display="flex"
-        justifyContent="space-between"
-        sx={{ marginBottom: 1 }}
-      >
-        <Typography variant="h2">2. Criteria</Typography>
-      </Box>
-      <Stack spacing={2} sx={(theme) => ({ marginTop: theme.spacing(3) })}>
-        {fields !== null &&
-          fields.length !== 0 &&
-          fields.map((field, index) => {
-            return (
-              <Metric
-                data={metricDefinitions ? metricDefinitions.data : []}
-                isMetricDefinitionError={isMetricDefinitionError}
-                isMetricDefinitionLoading={isMetricDefinitionLoading}
-                key={field.id}
-                name={`rule_criteria.rules.${index}`}
-                onMetricDelete={() => remove(index)}
-                showDeleteIcon={fields.length > 1}
+    <Controller
+      control={control}
+      name={name}
+      render={({ fieldState, formState }) => (
+        <Stack mt={3} spacing={2}>
+          <Typography variant="h2">3. Criteria</Typography>
+          {formState.isSubmitted &&
+            fieldState.error &&
+            fieldState.error.message?.length && (
+              <AlertListNoticeMessages
+                errorMessage={fieldState.error.message}
+                separator={MULTILINE_ERROR_SEPARATOR}
+                variant="error"
               />
-            );
-          })}
-      </Stack>
-      <Button
-        onClick={() =>
-          append({
-            aggregation_type: null,
-            dimension_filters: [],
-            metric: null,
-            operator: null,
-            threshold: 0,
-          })
-        }
-        buttonType="outlined"
-        size="medium"
-        sx={(theme) => ({ marginTop: theme.spacing(2) })}
-      >
-        Add metric
-      </Button>
-    </Box>
+            )}
+          <Stack spacing={2}>
+            {fields !== null &&
+              fields.length !== 0 &&
+              fields.map((field, index) => {
+                return (
+                  <Metric
+                    data={metricDefinitions ? metricDefinitions.data : []}
+                    isMetricDefinitionError={isMetricDefinitionError}
+                    isMetricDefinitionLoading={isMetricDefinitionLoading}
+                    key={field.id}
+                    name={`rule_criteria.rules.${index}`}
+                    onMetricDelete={() => remove(index)}
+                    showDeleteIcon={fields.length > 1}
+                  />
+                );
+              })}
+          </Stack>
+          <Button
+            buttonType="outlined"
+            disabled={
+              serviceType === null || metricCriteriaWatcher.length === 5
+            }
+            onClick={() =>
+              append({
+                aggregate_function: null,
+                dimension_filters: [],
+                metric: null,
+                operator: null,
+                threshold: 0,
+              })
+            }
+            size="medium"
+            sx={{
+              width: '130px',
+            }}
+            tooltipText="You can add up to 5 metrics."
+          >
+            Add metric
+          </Button>
+        </Stack>
+      )}
+    />
   );
 };

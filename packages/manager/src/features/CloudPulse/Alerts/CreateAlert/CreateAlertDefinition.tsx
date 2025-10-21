@@ -1,35 +1,54 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Paper, TextField, Typography } from '@linode/ui';
+import { isEmpty } from '@linode/api-v4';
+import { ActionsPanel, Paper, TextField, Typography } from '@linode/ui';
+import { scrollErrorIntoView } from '@linode/utilities';
+import { useNavigate } from '@tanstack/react-router';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
-import { useHistory } from 'react-router-dom';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { Breadcrumb } from 'src/components/Breadcrumb/Breadcrumb';
+import { DocumentTitleSegment } from 'src/components/DocumentTitle';
+import { useFlags } from 'src/hooks/useFlags';
 import { useCreateAlertDefinition } from 'src/queries/cloudpulse/alerts';
+import { useCloudPulseServiceByServiceType } from 'src/queries/cloudpulse/services';
 
+import {
+  CREATE_ALERT_ERROR_FIELD_MAP,
+  CREATE_ALERT_SUCCESS_MESSAGE,
+  MULTILINE_ERROR_SEPARATOR,
+  SINGLELINE_ERROR_SEPARATOR,
+} from '../constants';
+import {
+  getSchemaWithEntityIdValidation,
+  handleMultipleError,
+} from '../Utils/utils';
 import { MetricCriteriaField } from './Criteria/MetricCriteria';
+import { TriggerConditions } from './Criteria/TriggerConditions';
+import { EntityScopeRenderer } from './EntityScopeRenderer';
+import { AlertEntityScopeSelect } from './GeneralInformation/AlertEntityScopeSelect';
 import { CloudPulseAlertSeveritySelect } from './GeneralInformation/AlertSeveritySelect';
-import { EngineOption } from './GeneralInformation/EngineOption';
-import { CloudPulseRegionSelect } from './GeneralInformation/RegionSelect';
-import { CloudPulseMultiResourceSelect } from './GeneralInformation/ResourceMultiSelect';
 import { CloudPulseServiceSelect } from './GeneralInformation/ServiceTypeSelect';
-import { CreateAlertDefinitionFormSchema } from './schemas';
+import { AddChannelListing } from './NotificationChannels/AddChannelListing';
+import { alertDefinitionFormSchema } from './schemas';
 import { filterFormValues } from './utilities';
 
-import type { CreateAlertDefinitionForm, MetricCriteriaForm } from './types';
-import type { TriggerCondition } from '@linode/api-v4/lib/cloudpulse/types';
-import type { ObjectSchema } from 'yup';
+import type {
+  CreateAlertDefinitionForm,
+  MetricCriteriaForm,
+  TriggerConditionForm,
+} from './types';
+import type { APIError } from '@linode/api-v4';
+import type { CrumbOverridesProps } from 'src/components/Breadcrumb/Crumbs';
 
-const triggerConditionInitialValues: TriggerCondition = {
+const triggerConditionInitialValues: TriggerConditionForm = {
   criteria_condition: 'ALL',
-  evaluation_period_seconds: 0,
-  polling_interval_seconds: 0,
+  evaluation_period_seconds: null,
+  polling_interval_seconds: null,
   trigger_occurrences: 0,
 };
 const criteriaInitialValues: MetricCriteriaForm = {
-  aggregation_type: null,
+  aggregate_function: null,
   dimension_filters: [],
   metric: null,
   operator: null,
@@ -37,10 +56,7 @@ const criteriaInitialValues: MetricCriteriaForm = {
 };
 const initialValues: CreateAlertDefinitionForm = {
   channel_ids: [],
-  engineType: null,
-  entity_ids: [],
   label: '',
-  region: '',
   rule_criteria: {
     rules: [criteriaInitialValues],
   },
@@ -48,138 +64,198 @@ const initialValues: CreateAlertDefinitionForm = {
   severity: null,
   tags: [''],
   trigger_conditions: triggerConditionInitialValues,
+  entity_ids: [],
+  scope: null,
 };
 
-const overrides = [
+const overrides: CrumbOverridesProps[] = [
   {
     label: 'Definitions',
-    linkTo: '/monitor/alerts/definitions',
+    linkTo: '/alerts/definitions',
     position: 1,
-  },
-  {
-    label: 'Details',
-    linkTo: `/monitor/alerts/definitions/create`,
-    position: 2,
   },
 ];
 export const CreateAlertDefinition = () => {
-  const history = useHistory();
-  const alertCreateExit = () => history.push('/monitor/alerts/definitions');
+  const navigate = useNavigate();
+  const alertCreateExit = () => navigate({ to: '/alerts/definitions' });
+  const flags = useFlags();
+
+  // Default resolver
+  const [validationSchema, setValidationSchema] = React.useState(
+    getSchemaWithEntityIdValidation({
+      aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+      baseSchema: alertDefinitionFormSchema,
+      serviceTypeObj: null,
+    })
+  );
 
   const formMethods = useForm<CreateAlertDefinitionForm>({
     defaultValues: initialValues,
     mode: 'onBlur',
-    resolver: yupResolver(
-      CreateAlertDefinitionFormSchema as ObjectSchema<CreateAlertDefinitionForm>
-    ),
+    resolver: yupResolver(validationSchema),
   });
+  const {
+    control,
+    formState: { errors, isSubmitting, submitCount },
+    getValues,
+    handleSubmit,
+    setError,
+    resetField,
+  } = formMethods;
 
-  const { control, formState, getValues, handleSubmit, setError } = formMethods;
   const { enqueueSnackbar } = useSnackbar();
   const { mutateAsync: createAlert } = useCreateAlertDefinition(
     getValues('serviceType')!
   );
 
-  /**
-   * The maxScrapeInterval variable will be required for the Trigger Conditions part of the Critieria section.
-   */
+  const serviceTypeWatcher = useWatch({ control, name: 'serviceType' });
+  const {
+    data: serviceMetadata,
+    isLoading: serviceMetadataLoading,
+    error: serviceMetadataError,
+  } = useCloudPulseServiceByServiceType(
+    serviceTypeWatcher ?? '',
+    !!serviceTypeWatcher
+  );
+  const scopeWatcher = useWatch({ control, name: 'scope' });
   const [maxScrapeInterval, setMaxScrapeInterval] = React.useState<number>(0);
 
-  const serviceTypeWatcher = useWatch({ control, name: 'serviceType' });
   const onSubmit = handleSubmit(async (values) => {
     try {
       await createAlert(filterFormValues(values));
-      enqueueSnackbar('Alert successfully created', {
+      enqueueSnackbar(CREATE_ALERT_SUCCESS_MESSAGE, {
         variant: 'success',
       });
       alertCreateExit();
     } catch (errors) {
-      for (const error of errors) {
-        if (error.field) {
-          setError(error.field, { message: error.reason });
-        } else {
-          enqueueSnackbar(`Alert failed: ${error.reason}`, {
-            variant: 'error',
-          });
-          setError('root', { message: error.reason });
-        }
+      handleMultipleError<CreateAlertDefinitionForm>({
+        errorFieldMap: CREATE_ALERT_ERROR_FIELD_MAP,
+        errors,
+        multiLineErrorSeparator: MULTILINE_ERROR_SEPARATOR,
+        setError,
+        singleLineErrorSeparator: SINGLELINE_ERROR_SEPARATOR,
+      });
+
+      const rootError = errors.find((error: APIError) => !error.field);
+      if (rootError) {
+        enqueueSnackbar(`Creating alert failed: ${rootError.reason}`, {
+          variant: 'error',
+        });
       }
     }
   });
 
+  const previousSubmitCount = React.useRef<number>(0);
+  React.useEffect(() => {
+    if (!isEmpty(errors) && submitCount > previousSubmitCount.current) {
+      scrollErrorIntoView(undefined, { behavior: 'smooth' });
+    }
+  }, [errors, submitCount]);
+
+  const handleServiceTypeChange = React.useCallback(() => {
+    // Reset the criteria to initial state
+    resetField('rule_criteria.rules', {
+      defaultValue: [{ ...criteriaInitialValues }],
+    });
+    resetField('entity_ids', { defaultValue: [] });
+    resetField('trigger_conditions', {
+      defaultValue: triggerConditionInitialValues,
+    });
+    resetField('scope', { defaultValue: null });
+  }, [resetField]);
+
+  React.useEffect(() => {
+    setValidationSchema(
+      getSchemaWithEntityIdValidation({
+        aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
+        baseSchema: alertDefinitionFormSchema,
+        serviceTypeObj: serviceTypeWatcher,
+      })
+    );
+  }, [flags.aclpAlertServiceTypeConfig, serviceTypeWatcher]);
+
   return (
-    <Paper sx={{ paddingLeft: 1, paddingRight: 1, paddingTop: 2 }}>
-      <Breadcrumb crumbOverrides={overrides} pathname="/Definitions/Create" />
-      <FormProvider {...formMethods}>
-        <form onSubmit={onSubmit}>
-          <Typography marginTop={2} variant="h2">
-            1. General Information
-          </Typography>
-          <Controller
-            render={({ field, fieldState }) => (
-              <TextField
-                data-testid="alert-name"
-                errorText={fieldState.error?.message}
-                label="Name"
-                name="label"
-                onBlur={field.onBlur}
-                onChange={(e) => field.onChange(e.target.value)}
-                placeholder="Enter Name"
-                value={field.value ?? ''}
-              />
-            )}
-            control={control}
-            name="label"
-          />
-          <Controller
-            render={({ field, fieldState }) => (
-              <TextField
-                errorText={fieldState.error?.message}
-                label="Description"
-                name="description"
-                onBlur={field.onBlur}
-                onChange={(e) => field.onChange(e.target.value)}
-                optional
-                placeholder="Enter Description"
-                value={field.value ?? ''}
-              />
-            )}
-            control={control}
-            name="description"
-          />
-          <CloudPulseServiceSelect name="serviceType" />
-          {serviceTypeWatcher === 'dbaas' && <EngineOption name="engineType" />}
-          <CloudPulseRegionSelect name="region" />
-          <CloudPulseMultiResourceSelect
-            engine={useWatch({ control, name: 'engineType' })}
-            name="entity_ids"
-            region={useWatch({ control, name: 'region' })}
-            serviceType={serviceTypeWatcher}
-          />
-          <CloudPulseAlertSeveritySelect name="severity" />
-          <MetricCriteriaField
-            setMaxInterval={(interval: number) =>
-              setMaxScrapeInterval(interval)
-            }
-            name="rule_criteria.rules"
-            serviceType={serviceTypeWatcher!}
-          />
-          {/* This is just being displayed to pass the typecheck-manager test. In the next PR maxScrapeInterval will be used by another component */}
-          {maxScrapeInterval}
-          <ActionsPanel
-            primaryButtonProps={{
-              label: 'Submit',
-              loading: formState.isSubmitting,
-              type: 'submit',
-            }}
-            secondaryButtonProps={{
-              label: 'Cancel',
-              onClick: alertCreateExit,
-            }}
-            sx={{ display: 'flex', justifyContent: 'flex-end' }}
-          />
-        </form>
-      </FormProvider>
-    </Paper>
+    <React.Fragment>
+      <DocumentTitleSegment segment="Create an Alert" />
+      <Paper sx={{ paddingLeft: 1, paddingRight: 1, paddingTop: 2 }}>
+        <Breadcrumb crumbOverrides={overrides} pathname="/Definitions/Create" />
+        <FormProvider {...formMethods}>
+          <form onSubmit={onSubmit}>
+            <Typography marginTop={2} variant="h2">
+              1. General Information
+            </Typography>
+            <Controller
+              control={control}
+              name="label"
+              render={({ field, fieldState }) => (
+                <TextField
+                  data-testid="alert-name"
+                  errorText={fieldState.error?.message}
+                  label="Name"
+                  name="label"
+                  onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  placeholder="Enter a Name"
+                  value={field.value ?? ''}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="description"
+              render={({ field, fieldState }) => (
+                <TextField
+                  errorText={fieldState.error?.message}
+                  label="Description"
+                  name="description"
+                  onBlur={field.onBlur}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  optional
+                  placeholder="Enter a Description"
+                  value={field.value ?? ''}
+                />
+              )}
+            />
+            <CloudPulseServiceSelect
+              handleServiceTypeChange={handleServiceTypeChange}
+              name="serviceType"
+            />
+            <CloudPulseAlertSeveritySelect name="severity" />
+            <AlertEntityScopeSelect
+              name="scope"
+              serviceType={serviceTypeWatcher}
+            />
+            <EntityScopeRenderer scope={scopeWatcher} />
+            <MetricCriteriaField
+              name="rule_criteria.rules"
+              serviceType={serviceTypeWatcher!}
+              setMaxInterval={(interval: number) =>
+                setMaxScrapeInterval(interval)
+              }
+            />
+            <TriggerConditions
+              maxScrapingInterval={maxScrapeInterval}
+              name="trigger_conditions"
+              serviceMetadata={serviceMetadata?.alert ?? undefined}
+              serviceMetadataError={serviceMetadataError}
+              serviceMetadataLoading={serviceMetadataLoading}
+            />
+            <AddChannelListing name="channel_ids" />
+            <ActionsPanel
+              primaryButtonProps={{
+                label: 'Submit',
+                loading: isSubmitting,
+                type: 'submit',
+              }}
+              secondaryButtonProps={{
+                label: 'Cancel',
+                onClick: alertCreateExit,
+              }}
+              sx={{ display: 'flex', justifyContent: 'flex-end' }}
+            />
+          </form>
+        </FormProvider>
+      </Paper>
+    </React.Fragment>
   );
 };

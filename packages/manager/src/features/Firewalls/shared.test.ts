@@ -1,11 +1,11 @@
-import { FirewallRuleType } from '@linode/api-v4/lib/firewalls/types';
-
 import {
   allIPv4,
   allIPv6,
   generateAddressesLabel,
   predefinedFirewallFromRule,
 } from './shared';
+
+import type { FirewallRuleType } from '@linode/api-v4/lib/firewalls/types';
 
 const addresses = {
   ipv4: [allIPv4],

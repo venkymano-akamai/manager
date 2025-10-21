@@ -1,8 +1,8 @@
 import { Typography } from '@linode/ui';
+import Grid from '@mui/material/Grid';
 import { styled } from '@mui/material/styles';
-import Grid2 from '@mui/material/Unstable_Grid2/Grid2';
 
-export const StyledGridContainer = styled(Grid2, {
+export const StyledGridContainer = styled(Grid, {
   label: 'StyledGridContainer',
 })(({ theme }) => ({
   '&>*:nth-of-type(even)': {
@@ -28,17 +28,14 @@ export const StyledGridContainer = styled(Grid2, {
 export const StyledLabelTypography = styled(Typography, {
   label: 'StyledLabelTypography',
 })(({ theme }) => ({
-  background:
-    theme.palette.mode === 'dark'
-      ? theme.bg.tableHeader
-      : theme.palette.grey[200],
+  background: theme.tokens.alias.Background.Neutral,
   color: theme.palette.mode === 'dark' ? theme.color.grey6 : 'inherit',
-  fontFamily: theme.font.bold,
+  font: theme.font.bold,
   height: '100%',
   padding: `${theme.spacing(0.5)} 15px`,
 }));
 
-export const StyledValueGrid = styled(Grid2, {
+export const StyledValueGrid = styled(Grid, {
   label: 'StyledValueGrid',
 })(({ theme }) => ({
   alignItems: 'center',
@@ -46,5 +43,3 @@ export const StyledValueGrid = styled(Grid2, {
   display: 'flex',
   padding: `0 ${theme.spacing()}`,
 }));
-
-// theme.spacing() 8

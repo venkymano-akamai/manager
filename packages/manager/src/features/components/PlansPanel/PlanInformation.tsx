@@ -2,7 +2,6 @@ import { Notice, Typography } from '@linode/ui';
 import * as React from 'react';
 
 import { Link } from 'src/components/Link';
-import { StyledNoticeTypography } from 'src/features/components/PlansPanel/PlansAvailabilityNotice.styles';
 import { useFlags } from 'src/hooks/useFlags';
 
 import { APLNotice } from './APLNotice';
@@ -17,6 +16,7 @@ import {
 } from './constants';
 import { MetalNotice } from './MetalNotice';
 import { PlansAvailabilityNotice } from './PlansAvailabilityNotice';
+import { PlanNoticeTypography } from './PlansAvailabilityNotice.styles';
 import { planTabInfoContent } from './utils';
 
 import type { Region } from '@linode/api-v4';
@@ -28,22 +28,28 @@ interface ExtendedPlanType {
 }
 
 export interface PlanInformationProps extends ExtendedPlanType {
+  additionalBanners?: React.ReactNode[];
   disabledClasses?: LinodeTypeClass[];
+  flow: 'database' | 'kubernetes' | 'linode';
   hasMajorityOfPlansDisabled: boolean;
   hasSelectedRegion: boolean;
   hideLimitedAvailabilityBanner?: boolean;
   isAPLEnabled?: boolean;
+  isResize?: boolean;
   isSelectedRegionEligibleForPlan: boolean;
   regionsData?: Region[];
 }
 
 export const PlanInformation = (props: PlanInformationProps) => {
   const {
+    additionalBanners,
     disabledClasses,
+    flow,
     hasMajorityOfPlansDisabled,
     hasSelectedRegion,
     hideLimitedAvailabilityBanner,
     isAPLEnabled,
+    isResize,
     isSelectedRegionEligibleForPlan,
     planType,
     regionsData,
@@ -62,10 +68,7 @@ export const PlanInformation = (props: PlanInformationProps) => {
 
   const transferBanner = (
     <Notice spacingBottom={8} variant="warning">
-      <Typography
-        fontFamily={(theme: Theme) => theme.font.bold}
-        fontSize="1rem"
-      >
+      <Typography fontSize="1rem" sx={(theme) => ({ font: theme.font.bold })}>
         Some plans do not include bundled network transfer. If the transfer
         allotment is 0, all outbound network transfer is subject to charges.
         <br />
@@ -81,8 +84,8 @@ export const PlanInformation = (props: PlanInformationProps) => {
           {showGPUEgressBanner && (
             <Notice spacingBottom={8} variant="info">
               <Typography
-                fontFamily={(theme: Theme) => theme.font.bold}
                 fontSize="1rem"
+                sx={(theme) => ({ font: theme.font.bold })}
               >
                 New GPU instances are now generally available. Deploy an RTX
                 4000 Ada GPU instance in select core compute regions in North
@@ -96,7 +99,7 @@ export const PlanInformation = (props: PlanInformationProps) => {
               </Typography>
             </Notice>
           )}
-          {showTransferBanner && transferBanner}
+          {showTransferBanner && flow === 'linode' && transferBanner}
           <PlansAvailabilityNotice
             hasSelectedRegion={hasSelectedRegion}
             isSelectedRegionEligibleForPlan={isSelectedRegionEligibleForPlan}
@@ -127,7 +130,9 @@ export const PlanInformation = (props: PlanInformationProps) => {
       ) : null}
       {planType === 'premium' ? (
         <PlansAvailabilityNotice
+          flow={flow}
           hasSelectedRegion={hasSelectedRegion}
+          isResize={isResize}
           isSelectedRegionEligibleForPlan={isSelectedRegionEligibleForPlan}
           planType={planType}
           regionsData={regionsData || []}
@@ -135,20 +140,24 @@ export const PlanInformation = (props: PlanInformationProps) => {
       ) : null}
       {showLimitedAvailabilityBanner && (
         <Notice
+          dataTestId={limitedAvailabilityBannerTestId}
           sx={(theme: Theme) => ({
             marginBottom: theme.spacing(3),
             marginLeft: 0,
             marginTop: 0,
             padding: `${theme.spacing(0.5)} ${theme.spacing(2)}`,
           })}
-          dataTestId={limitedAvailabilityBannerTestId}
           variant="warning"
         >
-          <StyledNoticeTypography>
+          <PlanNoticeTypography>
             These plans have limited deployment availability.
-          </StyledNoticeTypography>
+          </PlanNoticeTypography>
         </Notice>
       )}
+      {additionalBanners &&
+        additionalBanners.map((banner, index) => (
+          <React.Fragment key={index}>{banner}</React.Fragment>
+        ))}
       <ClassDescriptionCopy planType={planType} />
     </>
   );
@@ -162,13 +171,17 @@ export const ClassDescriptionCopy = (props: ExtendedPlanType) => {
   let docLink: null | string;
 
   switch (planType) {
+    case 'accelerated':
+      planTypeLabel = 'Accelerated';
+      docLink = ACCELERATED_COMPUTE_INSTANCES_LINK;
+      break;
     case 'dedicated':
       planTypeLabel = 'Dedicated CPU';
       docLink = DEDICATED_COMPUTE_INSTANCES_LINK;
       break;
-    case 'shared':
-      planTypeLabel = 'Shared CPU';
-      docLink = SHARED_COMPUTE_INSTANCES_LINK;
+    case 'gpu':
+      planTypeLabel = 'GPU';
+      docLink = GPU_COMPUTE_INSTANCES_LINK;
       break;
     case 'highmem':
       planTypeLabel = 'High Memory';
@@ -178,13 +191,9 @@ export const ClassDescriptionCopy = (props: ExtendedPlanType) => {
       planTypeLabel = 'Premium CPU';
       docLink = PREMIUM_COMPUTE_INSTANCES_LINK;
       break;
-    case 'gpu':
-      planTypeLabel = 'GPU';
-      docLink = GPU_COMPUTE_INSTANCES_LINK;
-      break;
-    case 'accelerated':
-      planTypeLabel = 'Accelerated';
-      docLink = ACCELERATED_COMPUTE_INSTANCES_LINK;
+    case 'shared':
+      planTypeLabel = 'Shared CPU';
+      docLink = SHARED_COMPUTE_INSTANCES_LINK;
       break;
     default:
       planTypeLabel = null;

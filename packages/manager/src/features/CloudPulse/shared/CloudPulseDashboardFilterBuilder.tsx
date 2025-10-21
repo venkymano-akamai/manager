@@ -1,32 +1,44 @@
-import { Button } from '@linode/ui';
-import { Grid, Typography, useTheme } from '@mui/material';
+import { Button, CircleProgress, ErrorState, Typography } from '@linode/ui';
+import { GridLegacy, useTheme } from '@mui/material';
 import * as React from 'react';
 
-import KeyboardArrowDownIcon from 'src/assets/icons/arrow_down.svg';
-import KeyboardArrowRightIcon from 'src/assets/icons/arrow_right.svg';
+import KeyboardCaretDownIcon from 'src/assets/icons/caret_down.svg';
+import KeyboardCaretRightIcon from 'src/assets/icons/caret_right.svg';
 import InfoIcon from 'src/assets/icons/info.svg';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import NullComponent from 'src/components/NullComponent';
 
 import RenderComponent from '../shared/CloudPulseComponentRenderer';
 import {
   DASHBOARD_ID,
+  ENDPOINT,
+  INTERFACE_ID,
+  NODE_TYPE,
+  PARENT_ENTITY_REGION,
+  PORT,
   REGION,
-  RELATIVE_TIME_DURATION,
   RESOURCE_ID,
   RESOURCES,
+  TAGS,
 } from '../Utils/constants';
 import {
   getCustomSelectProperties,
+  getEndpointsProperties,
   getFilters,
+  getNodeTypeProperties,
   getRegionProperties,
   getResourcesProperties,
+  getTagsProperties,
+  getTextFilterProperties,
 } from '../Utils/FilterBuilder';
 import { FILTER_CONFIG } from '../Utils/FilterConfig';
+import { type CloudPulseServiceTypeFilters } from '../Utils/models';
 
-import type { FilterValueType } from '../Dashboard/CloudPulseDashboardLanding';
-import type { CloudPulseServiceTypeFilters } from '../Utils/models';
+import type {
+  CloudPulseMetricsFilter,
+  FilterValueType,
+} from '../Dashboard/CloudPulseDashboardLanding';
 import type { CloudPulseResources } from './CloudPulseResourcesSelect';
+import type { CloudPulseTags } from './CloudPulseTagsFilter';
 import type { AclpConfig, Dashboard } from '@linode/api-v4';
 
 export interface CloudPulseDashboardFilterBuilderProps {
@@ -50,6 +62,16 @@ export interface CloudPulseDashboardFilterBuilderProps {
   handleToggleAppliedFilter: (isVisible: boolean) => void;
 
   /**
+   * Is cluster Call
+   */
+  isError?: boolean;
+
+  /**
+   * Property to disable filters
+   */
+  isLoading?: boolean;
+
+  /**
    * this will handle the restrictions, if the parent of the component is going to be integrated in service analytics page
    */
   isServiceAnalyticsIntegration: boolean;
@@ -58,6 +80,11 @@ export interface CloudPulseDashboardFilterBuilderProps {
    * Last selected values from user preferences
    */
   preferences?: AclpConfig;
+
+  /**
+   * selected resource ids
+   */
+  resource_ids?: number[];
 }
 
 export const CloudPulseDashboardFilterBuilder = React.memo(
@@ -68,24 +95,24 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
       handleToggleAppliedFilter,
       isServiceAnalyticsIntegration,
       preferences,
+      resource_ids,
+      isError = false,
+      isLoading = false,
     } = props;
 
-    const [, setDependentFilters] = React.useState<{
-      [key: string]: FilterValueType;
-    }>({});
+    const [, setDependentFilters] = React.useState<CloudPulseMetricsFilter>({});
 
     const [showFilter, setShowFilter] = React.useState<boolean>(true);
 
     const theme = useTheme();
 
-    const dependentFilterReference: React.MutableRefObject<{
-      [key: string]: FilterValueType;
-    }> = React.useRef({});
+    const dependentFilterReference: React.MutableRefObject<CloudPulseMetricsFilter> =
+      React.useRef({});
 
     const checkAndUpdateDependentFilters = React.useCallback(
       (filterKey: string, value: FilterValueType) => {
         if (dashboard && dashboard.service_type) {
-          const serviceTypeConfig = FILTER_CONFIG.get(dashboard.service_type);
+          const serviceTypeConfig = FILTER_CONFIG.get(dashboard.id);
           const filters = serviceTypeConfig?.filters ?? [];
 
           for (const filter of filters) {
@@ -126,6 +153,60 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
       [emitFilterChange, checkAndUpdateDependentFilters]
     );
 
+    const handleTextFilterChange = React.useCallback(
+      (
+        port: string,
+        label: string[],
+        filterKey: string,
+        savePref: boolean = false
+      ) => {
+        const portList = port
+          .replace(/,$/, '')
+          .split(',')
+          .filter((p) => p !== '');
+        emitFilterChangeByFilterKey(
+          filterKey,
+          portList,
+          label.filter((l) => l !== ''),
+          savePref,
+          {
+            [filterKey]: port,
+          }
+        );
+      },
+      [emitFilterChangeByFilterKey]
+    );
+
+    const handleNodeTypeChange = React.useCallback(
+      (
+        nodeTypeId: string | undefined,
+        label: string[],
+        savePref: boolean = false
+      ) => {
+        emitFilterChangeByFilterKey(NODE_TYPE, nodeTypeId, label, savePref, {
+          [NODE_TYPE]: nodeTypeId,
+        });
+      },
+      [emitFilterChangeByFilterKey]
+    );
+
+    const handleTagsChange = React.useCallback(
+      (tags: CloudPulseTags[], savePref: boolean = false) => {
+        const selectedTags = tags.map((tag) => tag.label);
+        emitFilterChangeByFilterKey(
+          TAGS,
+          selectedTags,
+          selectedTags,
+          savePref,
+          {
+            [RESOURCE_ID]: undefined,
+            [TAGS]: selectedTags,
+          }
+        );
+      },
+      [emitFilterChangeByFilterKey]
+    );
+
     const handleResourceChange = React.useCallback(
       (resourceId: CloudPulseResources[], savePref: boolean = false) => {
         emitFilterChangeByFilterKey(
@@ -134,6 +215,8 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
           resourceId.map((resource) => resource.label),
           savePref,
           {
+            [NODE_TYPE]: undefined,
+            [PARENT_ENTITY_REGION]: undefined,
             [RESOURCES]: resourceId.map((resource: { id: string }) =>
               String(resource.id)
             ),
@@ -145,21 +228,39 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
 
     const handleRegionChange = React.useCallback(
       (
+        filterKey: string,
         region: string | undefined,
         labels: string[],
         savePref: boolean = false
       ) => {
-        const updatedPreferenceData = {
-          [REGION]: region,
-          [RESOURCES]: undefined,
-        };
+        const updatedPreferenceData =
+          filterKey === REGION
+            ? {
+                [filterKey]: region,
+                [ENDPOINT]: undefined,
+                [RESOURCES]: undefined,
+                [TAGS]: undefined,
+              }
+            : {
+                [filterKey]: region,
+              };
         emitFilterChangeByFilterKey(
-          REGION,
+          filterKey,
           region,
           labels,
           savePref,
           updatedPreferenceData
         );
+      },
+      [emitFilterChangeByFilterKey]
+    );
+
+    const handleEndpointsChange = React.useCallback(
+      (endpoints: string[], savePref: boolean = false) => {
+        emitFilterChangeByFilterKey(ENDPOINT, endpoints, endpoints, savePref, {
+          [ENDPOINT]: endpoints,
+          [RESOURCES]: undefined,
+        });
       },
       [emitFilterChangeByFilterKey]
     );
@@ -185,13 +286,41 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
 
     const getProps = React.useCallback(
       (config: CloudPulseServiceTypeFilters) => {
-        if (config.configuration.filterKey === REGION) {
+        if (config.configuration.filterKey === TAGS) {
+          return getTagsProperties(
+            {
+              config,
+              dashboard,
+              dependentFilters: dependentFilterReference.current,
+              isServiceAnalyticsIntegration,
+              preferences,
+              shouldDisable: isError || isLoading,
+            },
+            handleTagsChange
+          );
+        } else if (config.configuration.filterKey === REGION) {
           return getRegionProperties(
             {
               config,
               dashboard,
               isServiceAnalyticsIntegration,
               preferences,
+              dependentFilters: dependentFilterReference.current,
+              shouldDisable: isError || isLoading,
+            },
+            handleRegionChange
+          );
+        } else if (config.configuration.filterKey === PARENT_ENTITY_REGION) {
+          return getRegionProperties(
+            {
+              config,
+              dashboard,
+              isServiceAnalyticsIntegration,
+              preferences,
+              dependentFilters: resource_ids?.length
+                ? { [RESOURCE_ID]: resource_ids.map(String) }
+                : dependentFilterReference.current,
+              shouldDisable: isError || isLoading,
             },
             handleRegionChange
           );
@@ -203,17 +332,67 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
               dependentFilters: dependentFilterReference.current,
               isServiceAnalyticsIntegration,
               preferences,
+              shouldDisable: isError || isLoading,
             },
             handleResourceChange
           );
-        } else {
-          return getCustomSelectProperties(
+        } else if (config.configuration.filterKey === NODE_TYPE) {
+          return getNodeTypeProperties(
+            {
+              config,
+              dashboard,
+              dependentFilters: resource_ids?.length
+                ? { [RESOURCE_ID]: resource_ids }
+                : dependentFilterReference.current,
+              isServiceAnalyticsIntegration,
+              preferences,
+              resource_ids: resource_ids?.length
+                ? resource_ids
+                : (
+                    dependentFilterReference.current[RESOURCE_ID] as string[]
+                  )?.map((id: string) => Number(id)),
+              shouldDisable: isError || isLoading,
+            },
+            handleNodeTypeChange
+          );
+        } else if (
+          config.configuration.filterKey === PORT ||
+          config.configuration.filterKey === INTERFACE_ID
+        ) {
+          return getTextFilterProperties(
+            {
+              config,
+              dashboard,
+              isServiceAnalyticsIntegration,
+              preferences,
+              dependentFilters: dependentFilterReference.current,
+              shouldDisable: isError || isLoading,
+            },
+            handleTextFilterChange
+          );
+        } else if (config.configuration.filterKey === ENDPOINT) {
+          return getEndpointsProperties(
             {
               config,
               dashboard,
               dependentFilters: dependentFilterReference.current,
               isServiceAnalyticsIntegration,
               preferences,
+              shouldDisable: isError || isLoading,
+            },
+            handleEndpointsChange
+          );
+        } else {
+          return getCustomSelectProperties(
+            {
+              config,
+              dashboard,
+              dependentFilters: resource_ids?.length
+                ? { [RESOURCE_ID]: resource_ids }
+                : dependentFilterReference.current,
+              isServiceAnalyticsIntegration,
+              preferences,
+              shouldDisable: isError || isLoading,
             },
             handleCustomSelectChange
           );
@@ -221,11 +400,17 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
       },
       [
         dashboard,
+        handleNodeTypeChange,
+        handleTagsChange,
         handleRegionChange,
+        handleTextFilterChange,
         handleResourceChange,
+        handleEndpointsChange,
         handleCustomSelectChange,
         isServiceAnalyticsIntegration,
         preferences,
+        isError,
+        isLoading,
       ]
     );
 
@@ -248,58 +433,60 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
         );
       }
 
-      return filters
-        .filter(
-          (config) =>
-            isServiceAnalyticsIntegration
-              ? config.configuration.neededInServicePage
-              : config.configuration.filterKey !== RELATIVE_TIME_DURATION // time duration is always defined explicitly
-        )
-        .map((filter, index) => (
-          <Grid item key={filter.configuration.filterKey} md={4} sm={6} xs={12}>
-            {RenderComponent({
-              componentKey:
-                filter.configuration.type !== undefined
-                  ? 'customSelect'
-                  : filter.configuration.filterKey,
-              componentProps: { ...getProps(filter) },
-              key: index + filter.configuration.filterKey,
-            })}
-          </Grid>
-        ));
+      return filters.map((filter, index) => (
+        <GridLegacy
+          item
+          key={filter.configuration.filterKey}
+          md={4}
+          sm={6}
+          xs={12}
+        >
+          {RenderComponent({
+            componentKey:
+              filter.configuration.type !== undefined
+                ? 'customSelect'
+                : filter.configuration.filterKey,
+            componentProps: { ...getProps(filter) },
+            key: index + filter.configuration.filterKey,
+          })}
+        </GridLegacy>
+      ));
     }, [dashboard, getProps, isServiceAnalyticsIntegration]);
 
     if (
       !dashboard ||
       !dashboard.service_type ||
-      !FILTER_CONFIG.has(dashboard.service_type)
+      !FILTER_CONFIG.has(dashboard.id)
     ) {
       return <NullComponent />; // in this we don't want to show the filters at all
     }
 
     return (
-      <Grid
+      <GridLegacy
         container
         item
-        m={3}
-        paddingBottom={isServiceAnalyticsIntegration ? 3 : 0}
+        sx={{
+          m: 3,
+          paddingBottom: isServiceAnalyticsIntegration ? 3 : 0,
+        }}
         xs={12}
       >
-        <Grid
+        <GridLegacy
+          item
+          key="toggleFilter"
           sx={{
             m: 0,
             p: 0,
           }}
-          item
-          key="toggleFilter"
           xs={12}
         >
           <Button
+            onClick={toggleShowFilter}
             startIcon={
               showFilter ? (
-                <KeyboardArrowDownIcon />
+                <KeyboardCaretDownIcon />
               ) : (
-                <KeyboardArrowRightIcon />
+                <KeyboardCaretRightIcon />
               )
             }
             sx={{
@@ -313,25 +500,37 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
                 color: theme.color.grey4,
               },
             }}
-            onClick={toggleShowFilter}
           >
             <Typography variant="h3">Filters</Typography>
           </Button>
-        </Grid>
-        <Grid
-          columnSpacing={theme.spacing(2)}
-          container
-          display={showFilter ? 'flex' : 'none'}
-          item
-          maxHeight={theme.spacing(23)}
-          overflow={'auto'}
-          pr={{ sm: 0, xs: 2 }}
-          rowGap={theme.spacing(2)}
-          xs={12}
-        >
-          <RenderFilters />
-        </Grid>
-      </Grid>
+        </GridLegacy>
+        {isLoading ? (
+          <GridLegacy
+            alignItems="center"
+            container
+            display="flex"
+            justifyContent="center"
+          >
+            <CircleProgress size="md" />
+          </GridLegacy>
+        ) : (
+          <GridLegacy
+            columnSpacing={theme.spacingFunction(16)}
+            container
+            item
+            sx={{
+              display: showFilter ? 'flex' : 'none',
+              maxHeight: '184px',
+              overflow: 'auto',
+              pr: { sm: 0, xs: 2 },
+              rowGap: theme.spacingFunction(16),
+            }}
+            xs={12}
+          >
+            <RenderFilters />
+          </GridLegacy>
+        )}
+      </GridLegacy>
     );
   },
   compareProps
@@ -344,6 +543,8 @@ function compareProps(
   return (
     oldProps.dashboard?.id === newProps.dashboard?.id &&
     oldProps.preferences?.[DASHBOARD_ID] ===
-      newProps.preferences?.[DASHBOARD_ID]
+      newProps.preferences?.[DASHBOARD_ID] &&
+    oldProps.isLoading === newProps.isLoading &&
+    oldProps.isError === newProps.isError
   );
 }

@@ -1,8 +1,7 @@
-import { CircleProgress } from '@linode/ui';
-import { Grid } from '@mui/material';
+import { CircleProgress, ErrorState } from '@linode/ui';
+import { GridLegacy } from '@mui/material';
 import React from 'react';
 
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { useCloudPulseDashboardByIdQuery } from 'src/queries/cloudpulse/dashboards';
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 import {
@@ -10,11 +9,20 @@ import {
   useGetCloudPulseMetricDefinitionsByServiceType,
 } from 'src/queries/cloudpulse/services';
 
+import { RESOURCE_FILTER_MAP } from '../Utils/constants';
 import { useAclpPreference } from '../Utils/UserPreference';
-import { RenderWidgets } from '../Widget/CloudPulseWidgetRenderer';
+import { getAssociatedEntityType } from '../Utils/utils';
+import {
+  renderPlaceHolder,
+  RenderWidgets,
+} from '../Widget/CloudPulseWidgetRenderer';
 
 import type { CloudPulseMetricsAdditionalFilters } from '../Widget/CloudPulseWidget';
-import type { JWETokenPayLoad, TimeDuration } from '@linode/api-v4';
+import type {
+  CloudPulseServiceType,
+  DateTimeWithPreset,
+  JWETokenPayLoad,
+} from '@linode/api-v4';
 
 export interface DashboardProperties {
   /**
@@ -30,7 +38,17 @@ export interface DashboardProperties {
   /**
    * time duration to fetch the metrics data in this widget
    */
-  duration: TimeDuration;
+  duration: DateTimeWithPreset;
+
+  /**
+   * list of fields to group the metrics data by
+   */
+  groupBy: string[];
+
+  /**
+   * Selected linode region for the dashboard
+   */
+  linodeRegion?: string;
 
   /**
    * optional timestamp to pass as react query param to forcefully re-fetch data
@@ -51,6 +69,16 @@ export interface DashboardProperties {
    * optional flag to check whether changes should be stored in preferences or not (in case this component is reused)
    */
   savePref?: boolean;
+
+  /**
+   * Selected service type for the dashboard
+   */
+  serviceType: CloudPulseServiceType;
+
+  /**
+   * Selected tags for the dashboard
+   */
+  tags?: string[];
 }
 
 export const CloudPulseDashboard = (props: DashboardProperties) => {
@@ -61,13 +89,20 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
     manualRefreshTimeStamp,
     resources,
     savePref,
+    serviceType,
+    groupBy,
+    linodeRegion,
+    region,
   } = props;
 
   const { preferences } = useAclpPreference();
 
   const getJweTokenPayload = (): JWETokenPayLoad => {
+    if (serviceType === 'objectstorage') {
+      return {};
+    }
     return {
-      resource_ids: resources?.map((resource) => Number(resource)) ?? [],
+      entity_ids: resources?.map((resource) => Number(resource)) ?? [],
     };
   };
 
@@ -77,6 +112,9 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
     isLoading: isDashboardLoading,
   } = useCloudPulseDashboardByIdQuery(dashboardId);
 
+  // Get the associated entity type for the dashboard
+  const associatedEntityType = getAssociatedEntityType(dashboardId);
+
   const {
     data: resourceList,
     isError: isResourcesApiError,
@@ -85,7 +123,8 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
     Boolean(dashboard?.service_type),
     dashboard?.service_type,
     {},
-    dashboard?.service_type === 'dbaas' ? { platform: 'rdbms-default' } : {}
+    RESOURCE_FILTER_MAP[dashboard?.service_type ?? ''] ?? {},
+    associatedEntityType
   );
 
   const {
@@ -124,19 +163,33 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
   }
 
   if (isMetricDefinitionLoading || isDashboardLoading || isResourcesLoading) {
-    return <CircleProgress />;
+    return (
+      <CircleProgress
+        sx={(theme) => ({
+          padding: theme.spacingFunction(16),
+        })}
+      />
+    );
   }
 
+  if (!dashboard) {
+    return renderPlaceHolder(
+      'No visualizations are available at this moment. Create Dashboards to list here.'
+    );
+  }
   return (
     <RenderWidgets
       additionalFilters={additionalFilters}
       dashboard={dashboard}
       duration={duration}
+      groupBy={groupBy}
       isJweTokenFetching={isJweTokenFetching}
       jweToken={jweToken}
+      linodeRegion={linodeRegion}
       manualRefreshTimeStamp={manualRefreshTimeStamp}
       metricDefinitions={metricDefinitions}
       preferences={preferences}
+      region={region}
       resourceList={resourceList}
       resources={resources}
       savePref={savePref}
@@ -150,8 +203,8 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
  */
 const renderErrorState = (errorMessage: string) => {
   return (
-    <Grid item xs>
+    <GridLegacy item xs>
       <ErrorState errorText={errorMessage} />
-    </Grid>
+    </GridLegacy>
   );
 };

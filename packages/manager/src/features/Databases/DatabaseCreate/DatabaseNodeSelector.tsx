@@ -12,8 +12,6 @@ import { StyledChip } from 'src/features/components/PlansPanel/PlanSelection.sty
 import { determineInitialPlanCategoryTab } from 'src/features/components/PlansPanel/utils';
 import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
 
-import { useIsDatabasesEnabled } from '../utilities';
-
 import type {
   ClusterSize,
   DatabaseClusterSizeObject,
@@ -33,6 +31,7 @@ export interface NodePricing {
 interface Props {
   currentClusterSize?: ClusterSize | undefined;
   currentPlan?: PlanSelectionWithDatabaseType | undefined;
+  disabled?: boolean;
   displayTypes: PlanSelectionType[];
   error?: string;
   handleNodeChange: (value: ClusterSize) => void;
@@ -46,6 +45,7 @@ export const DatabaseNodeSelector = (props: Props) => {
   const {
     currentClusterSize,
     currentPlan,
+    disabled,
     displayTypes,
     error,
     handleNodeChange,
@@ -55,7 +55,6 @@ export const DatabaseNodeSelector = (props: Props) => {
     selectedTab,
   } = props;
 
-  const { isDatabasesV2Enabled } = useIsDatabasesEnabled();
   const isRestricted = useRestrictedGlobalGrantCheck({
     globalGrantType: 'add_databases',
   });
@@ -82,6 +81,8 @@ export const DatabaseNodeSelector = (props: Props) => {
       (type) => type.class === 'dedicated'
     );
 
+    const hasPremium = displayTypes.some((type) => type.class === 'premium');
+
     const currentChip = currentClusterSize && initialTab === selectedTab && (
       <StyledChip
         aria-label="This is your current number of nodes"
@@ -107,7 +108,12 @@ export const DatabaseNodeSelector = (props: Props) => {
       },
     ];
 
-    if (hasDedicated && selectedTab === 0 && isDatabasesV2Enabled) {
+    const isDedicated = hasDedicated && selectedTab === 0;
+    const isPremium = hasPremium && selectedTab === 2;
+
+    const displayTwoNodesOption = isDedicated || isPremium;
+
+    if (displayTwoNodesOption) {
       options.push({
         label: (
           <Typography component="div">
@@ -146,7 +152,6 @@ export const DatabaseNodeSelector = (props: Props) => {
     selectedTab,
     nodePricing,
     displayTypes,
-    isDatabasesV2Enabled,
     currentClusterSize,
     selectedClusterSize,
   ]);
@@ -161,14 +166,14 @@ export const DatabaseNodeSelector = (props: Props) => {
         upgrades and maintenance.
       </Typography>
       <FormControl
+        disabled={isRestricted || disabled}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           handleNodeChange(+e.target.value as ClusterSize);
         }}
-        disabled={isRestricted}
       >
         {error ? <Notice text={error} variant="error" /> : null}
         <RadioGroup
-          aria-disabled={isRestricted}
+          aria-disabled={isRestricted || disabled}
           data-testid="database-nodes"
           style={{ marginBottom: 0, marginTop: 0 }}
           value={selectedClusterSize ?? ''}

@@ -1,15 +1,15 @@
+import { useAccount } from '@linode/queries';
 import { Stack, Typography } from '@linode/ui';
+import { Hidden } from '@linode/ui';
+import { isFeatureEnabledV2 } from '@linode/utilities';
 import { styled } from '@mui/material/styles';
 import React from 'react';
 
 import { CopyTooltip } from 'src/components/CopyTooltip/CopyTooltip';
-import { Hidden } from 'src/components/Hidden';
 import { MaskableText } from 'src/components/MaskableText/MaskableText';
 import { TableCell } from 'src/components/TableCell';
 import { TableRow } from 'src/components/TableRow';
-import { useAccountManagement } from 'src/hooks/useAccountManagement';
 import { useFlags } from 'src/hooks/useFlags';
-import { isFeatureEnabledV2 } from 'src/utilities/accountCapabilities';
 
 import { AccessKeyActionMenu } from './AccessKeyActionMenu';
 import { HostNameTableCell } from './HostNameTableCell';
@@ -34,7 +34,7 @@ export const AccessKeyTableRow = (props: Props) => {
     storageKeyData,
   } = props;
 
-  const { account } = useAccountManagement();
+  const { data: account } = useAccount();
   const flags = useFlags();
 
   const isObjMultiClusterEnabled = isFeatureEnabledV2(
@@ -45,8 +45,8 @@ export const AccessKeyTableRow = (props: Props) => {
 
   return (
     <TableRow data-qa-table-row={storageKeyData.label} key={storageKeyData.id}>
-      <TableCell parentColumn="Label">{storageKeyData.label}</TableCell>
-      <TableCell parentColumn="Access Key">
+      <TableCell>{storageKeyData.label}</TableCell>
+      <TableCell>
         <Stack direction="row">
           <MaskableText isToggleable text={storageKeyData.access_key}>
             <Typography variant="body1">{storageKeyData.access_key}</Typography>
@@ -65,13 +65,13 @@ export const AccessKeyTableRow = (props: Props) => {
       )}
       <TableCell actionCell>
         <AccessKeyActionMenu
+          label={storageKeyData.label}
+          objectStorageKey={storageKeyData}
+          openDrawer={openDrawer}
           openHostnamesDrawer={() => {
             setShowHostNamesDrawers(true);
             setHostNames(storageKeyData.regions);
           }}
-          label={storageKeyData.label}
-          objectStorageKey={storageKeyData}
-          openDrawer={openDrawer}
           openRevokeDialog={openRevokeDialog}
         />
       </TableCell>

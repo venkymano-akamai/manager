@@ -1,4 +1,4 @@
-import { Box, TextField } from '@linode/ui';
+import { Box, InputAdornment, TextField } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
 
@@ -10,11 +10,11 @@ import type { TextFieldProps } from '@linode/ui';
 import type { CopyTooltipProps } from 'src/components/CopyTooltip/CopyTooltip';
 
 export interface CopyableTextFieldProps extends TextFieldProps {
+  className?: string;
   /**
    * Optional props that are passed to the underlying CopyTooltip component
    */
   CopyTooltipProps?: Partial<CopyTooltipProps>;
-  className?: string;
   hideIcons?: boolean;
   showDownloadIcon?: boolean;
 }
@@ -35,19 +35,21 @@ export const CopyableTextField = (props: CopyableTextFieldProps) => {
     <StyledTextField
       value={value}
       {...restProps}
-      InputProps={{
-        endAdornment: hideIcons ? undefined : (
-          <StyledIconBox>
-            {showDownloadIcon && (
-              <DownloadTooltip fileName={fileName} text={`${value}`} />
-            )}
-            <CopyTooltip text={`${value}`} {...CopyTooltipProps} />
-          </StyledIconBox>
-        ),
-      }}
       className={`${className} copy removeDisabledStyles`}
       data-qa-copy-tooltip
       disabled
+      InputProps={{
+        endAdornment: hideIcons ? undefined : (
+          <InputAdornment position="end">
+            <StyledIconBox>
+              {showDownloadIcon && (
+                <DownloadTooltip fileName={fileName} text={`${value}`} />
+              )}
+              <CopyTooltip text={`${value}`} {...CopyTooltipProps} />
+            </StyledIconBox>
+          </InputAdornment>
+        ),
+      }}
     />
   );
 };

@@ -1,18 +1,17 @@
-import { Box, CircleProgress, Typography } from '@linode/ui';
+import { useProfile } from '@linode/queries';
+import { Box, CircleProgress, ErrorState, Typography } from '@linode/ui';
+import { getUserTimezone } from '@linode/utilities';
 import { useTheme } from '@mui/material/styles';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { TabbedPanel } from 'src/components/TabbedPanel/TabbedPanel';
 import {
   convertNetworkToUnit,
   generateNetworkUnits,
 } from 'src/features/Longview/shared/utilities';
 import { useManagedStatsQuery } from 'src/queries/managed/managed';
-import { useProfile } from 'src/queries/profile/profile';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
-import { getUserTimezone } from 'src/utilities/getUserTimezone';
 
 import {
   StyledGraphControlsDiv,
@@ -85,15 +84,15 @@ const createTabs = (
                     dataKey: 'CPU %',
                   },
                 ]}
-                xAxis={{
-                  tickFormat: 'hh a',
-                  tickGap: 60,
-                }}
                 ariaLabel="CPU Usage Graph"
                 data={formatData2(data.cpu, 'CPU %')}
                 height={chartHeight}
                 timezone={timezone}
                 unit={'%'}
+                xAxis={{
+                  tickFormat: 'hh a',
+                  tickGap: 60,
+                }}
               />
             </Box>
           </StyledRootDiv>
@@ -118,16 +117,16 @@ const createTabs = (
                     dataKey: 'Network Traffic Out',
                   },
                 ]}
-                xAxis={{
-                  tickFormat: 'hh a',
-                  tickGap: 60,
-                }}
                 ariaLabel="Network Transfer Graph"
                 data={networkTransferData}
                 height={chartHeight}
                 showLegend
                 timezone={timezone}
                 unit={' Kb/s'}
+                xAxis={{
+                  tickFormat: 'hh a',
+                  tickGap: 60,
+                }}
               />
             </Box>
           </StyledRootDiv>
@@ -148,15 +147,15 @@ const createTabs = (
                     dataKey: 'Disk I/O',
                   },
                 ]}
-                xAxis={{
-                  tickFormat: 'hh a',
-                  tickGap: 60,
-                }}
                 ariaLabel="Disk I/O Graph"
                 data={formatData2(data.disk, 'Disk I/O')}
                 height={chartHeight}
                 timezone={timezone}
                 unit={' op/s'}
+                xAxis={{
+                  tickFormat: 'hh a',
+                  tickGap: 60,
+                }}
               />
             </Box>
           </StyledRootDiv>

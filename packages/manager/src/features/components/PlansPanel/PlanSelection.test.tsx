@@ -132,7 +132,7 @@ describe('PlanSelection (table, desktop)', () => {
             ...mockPlan,
             class: 'dedicated',
             id: 'g6-dedicated-edge-2',
-            // eslint-disable-next-line camelcase
+
             network_out: 4000,
           }}
           selectedRegionId={'us-den-1'}
@@ -198,7 +198,7 @@ describe('PlanSelection (table, desktop)', () => {
       wrapWithTableBody(<PlanSelection {...defaultProps} plan={bigPlanType} />)
     );
 
-    const button = getByTestId('disabled-plan-tooltip');
+    const button = getByTestId('tooltip-info-icon');
     fireEvent.mouseOver(button);
 
     await waitFor(() => {

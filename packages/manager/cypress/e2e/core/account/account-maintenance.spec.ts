@@ -1,6 +1,9 @@
 import { mockGetMaintenance } from 'support/intercepts/account';
-import { accountMaintenanceFactory } from 'src/factories';
+import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
+import { ui } from 'support/ui';
 import { parseCsv } from 'support/util/csv';
+
+import { accountMaintenanceFactory } from 'src/factories';
 
 describe('Maintenance', () => {
   /*
@@ -21,20 +24,34 @@ describe('Maintenance', () => {
         cy.log(`Failed to delete file: ${filePatterns}`);
       }
     });
+
+    // TODO When the Host & VM Maintenance feature rolls out, we want to enable the feature flag and update the test.
+    mockAppendFeatureFlags({
+      // TODO M3-10491 - Remove "iamRbacPrimaryNavChanges" feature flag mock once feature flag is deleted.
+      iamRbacPrimaryNavChanges: true,
+      vmHostMaintenance: {
+        enabled: false,
+      },
+    }).as('getFeatureFlags');
   });
 
   it('table empty when no maintenance', () => {
     mockGetMaintenance([], []).as('getMaintenance');
 
     cy.visitWithLogin('/linodes');
-    // user can navigate to account maintenance page via user menu.
-    cy.findByTestId('nav-group-profile').click();
-    cy.findByTestId('menu-item-Maintenance')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
-    cy.url().should('endWith', '/account/maintenance');
+    cy.wait('@getFeatureFlags');
 
+    // User can navigate to maintenance page via user menu.
+    ui.userMenuButton.find().should('be.visible').click();
+
+    ui.userMenu
+      .find()
+      .should('be.visible')
+      .within(() => {
+        cy.findByText('Maintenance').should('be.visible').click();
+      });
+
+    cy.url().should('endWith', '/maintenance');
     cy.wait('@getMaintenance');
 
     // Confirm correct messages shown in the table when no maintenance.
@@ -67,7 +84,7 @@ describe('Maintenance', () => {
 
     cy.visitWithLogin('/account/maintenance');
 
-    cy.wait('@getMaintenance');
+    cy.wait(['@getFeatureFlags', '@getMaintenance']);
 
     cy.contains('No pending maintenance').should('not.exist');
     cy.contains('No completed maintenance').should('not.exist');
@@ -152,9 +169,9 @@ describe('Maintenance', () => {
           (maintenance) => ({
             entity_label: maintenance.entity.label,
             entity_type: maintenance.entity.type,
-            type: maintenance.type,
-            status: maintenance.status,
             reason: maintenance.reason,
+            status: maintenance.status,
+            type: maintenance.type,
           })
         );
 
@@ -168,15 +185,14 @@ describe('Maintenance', () => {
               expectedPendingMigrationContent.length
             );
             // Map the parsedCsv to match the structure of expectedCsvContent
-            const actualPendingMigrationCsvContent = parsedCsvPendingMigration.map(
-              (entry: any) => ({
+            const actualPendingMigrationCsvContent =
+              parsedCsvPendingMigration.map((entry: any) => ({
                 entity_label: entry['Entity Label'],
                 entity_type: entry['Entity Type'],
-                type: entry['Type'],
-                status: entry['Status'],
                 reason: entry['Reason'],
-              })
-            );
+                status: entry['Status'],
+                type: entry['Type'],
+              }));
 
             expect(actualPendingMigrationCsvContent).to.deep.equal(
               expectedPendingMigrationContent
@@ -198,15 +214,14 @@ describe('Maintenance', () => {
           .click();
 
         // Map the expected CSV content to match the structure of the downloaded CSV
-        const expectedCompletedMigrationContent = accountcompletedMaintenance.map(
-          (maintenance) => ({
+        const expectedCompletedMigrationContent =
+          accountcompletedMaintenance.map((maintenance) => ({
             entity_label: maintenance.entity.label,
             entity_type: maintenance.entity.type,
-            type: maintenance.type,
-            status: maintenance.status,
             reason: maintenance.reason,
-          })
-        );
+            status: maintenance.status,
+            type: maintenance.type,
+          }));
 
         // Read the downloaded CSV and compare its content to the expected CSV content
         cy.readFile(`${downloadsFolder}/${fileName}`)
@@ -220,15 +235,14 @@ describe('Maintenance', () => {
             );
 
             // Map the parsedCsv to match the structure of expectedCsvContent
-            const actualCompletedMigrationCsvContent = parsedCsvCompletedMigration.map(
-              (entry: any) => ({
+            const actualCompletedMigrationCsvContent =
+              parsedCsvCompletedMigration.map((entry: any) => ({
                 entity_label: entry['Entity Label'],
                 entity_type: entry['Entity Type'],
-                type: entry['Type'],
-                status: entry['Status'],
                 reason: entry['Reason'],
-              })
-            );
+                status: entry['Status'],
+                type: entry['Type'],
+              }));
 
             expect(actualCompletedMigrationCsvContent).to.deep.equal(
               expectedCompletedMigrationContent

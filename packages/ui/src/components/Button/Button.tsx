@@ -1,26 +1,40 @@
-import HelpOutline from '@mui/icons-material/HelpOutline';
+import { styled, SvgIcon } from '@mui/material';
 import _Button from '@mui/material/Button';
-import { styled } from '@mui/material/styles';
 import * as React from 'react';
+import type { JSX } from 'react';
 
-import { ReloadIcon } from '../../assets';
-import { rotate360 } from '../../foundations';
+import InfoOutline from '../../assets/icons/info-outlined.svg';
 import { omittedProps } from '../../utilities';
 import { Tooltip } from '../Tooltip';
 
+import type { TooltipProps } from '../Tooltip';
 import type { ButtonProps as _ButtonProps } from '@mui/material/Button';
 import type { SxProps, Theme } from '@mui/material/styles';
 
 export type ButtonType = 'outlined' | 'primary' | 'secondary';
 
+const buttonTypeToColor: Record<ButtonType, _ButtonProps['color']> = {
+  outlined: 'secondary', // We're treating this as a secondary
+  primary: 'primary',
+  secondary: 'secondary',
+} as const;
+
+const buttonTypeToVariant: Record<ButtonType, _ButtonProps['variant']> = {
+  outlined: 'outlined',
+  primary: 'contained',
+  secondary: 'contained',
+} as const;
+
 export interface ButtonProps extends _ButtonProps {
+  /**
+   * Determines if tooltip for button should always be shown
+   */
+  alwaysShowTooltip?: boolean;
   /**
    * The button variant to render
    * * @default 'secondary'
    * */
   buttonType?: ButtonType;
-  /** Additional css class to pass to the component */
-  className?: string;
   /**
    * Reduce the padding on the x-axis
    * @default false
@@ -35,95 +49,55 @@ export interface ButtonProps extends _ButtonProps {
    * Optional test ID
    */
   'data-testid'?: string;
-  /**
-   * Show a loading indicator
-   * @default false
-   */
-  loading?: boolean;
-  /** The `sx` prop can be either object or function */
-  sx?: SxProps<Theme>;
   /** Pass specific CSS styling for the SVG icon. */
   sxEndIcon?: SxProps<Theme>;
   /** Tooltip analytics event */
   tooltipAnalyticsEvent?: () => void;
+  /**
+   * Optional props passed to the tooltip
+   */
+  TooltipProps?: Partial<TooltipProps>;
   /** Tooltip text */
-  tooltipText?: string;
+  tooltipText?: JSX.Element | string;
 }
 
 const StyledButton = styled(_Button, {
-  shouldForwardProp: omittedProps([
-    'compactX',
-    'compactY',
-    'loading',
-    'buttonType',
-  ]),
-})<ButtonProps>(({ theme, ...props }) => ({
-  ...(props.buttonType === 'secondary' && {
-    color: theme.textColors.linkActiveLight,
-  }),
-  ...(props.compactX && {
+  shouldForwardProp: omittedProps(['compactX', 'compactY', 'buttonType']),
+})<ButtonProps>(({ compactX, compactY, theme }) => ({
+  ...(compactX && {
     minWidth: 50,
     paddingLeft: 0,
     paddingRight: 0,
   }),
-  ...(props.compactY && {
+  ...(compactY && {
     minHeight: 20,
     paddingBottom: 0,
     paddingTop: 0,
   }),
-  ...(props.loading && {
-    '& svg': {
-      animation: `${rotate360} 2s linear infinite`,
-      height: `${theme.spacing(2)}`,
-      margin: '0 auto',
-      width: `${theme.spacing(2)}`,
-    },
-    '&:disabled': {
-      backgroundColor:
-        props.buttonType === 'primary' && theme.palette.text.primary,
-    },
-  }),
-}));
-
-const Span = styled('span')({
-  '@supports (-moz-appearance: none)': {
-    /* Fix text alignment for Firefox */
-    marginTop: 2,
+  '&:hover [data-testid="tooltip-info-icon"] *': {
+    color: theme.tokens.alias.Content.Icon.Primary.Hover,
   },
-  alignItems: 'center',
-  display: 'flex',
-});
+}));
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      alwaysShowTooltip,
       // default to secondary as some components never define a buttonType (usually buttons with icons)
       // and we end up with the wrong styles (purple color, see #6455)
       // It would be nice to remove this default and require the prop but this fixes the issue for now.
       buttonType = 'secondary',
-      children,
-      className,
-      compactX,
-      compactY,
+      color,
       disabled,
-      loading,
-      sx,
       sxEndIcon,
       tooltipAnalyticsEvent,
       tooltipText,
+      TooltipProps,
       ...rest
     },
-    ref
+    ref,
   ) => {
-    const color = buttonType === 'primary' ? 'primary' : 'secondary';
-    const showTooltip = disabled && Boolean(tooltipText);
-
-    const variant =
-      buttonType === 'primary' || buttonType === 'secondary'
-        ? 'contained'
-        : buttonType === 'outlined'
-        ? 'outlined'
-        : 'text';
+    const showTooltip = alwaysShowTooltip || (disabled && Boolean(tooltipText));
 
     const handleTooltipAnalytics = () => {
       if (tooltipAnalyticsEvent) {
@@ -141,49 +115,53 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       }
     };
 
-    const renderButton = (
+    const button = (
       <StyledButton
         {...rest}
         aria-describedby={
           showTooltip ? 'button-tooltip' : rest['aria-describedby']
         }
-        endIcon={
-          (showTooltip && <HelpOutline sx={sxEndIcon} />) || rest.endIcon
-        }
         aria-disabled={disabled}
         buttonType={buttonType}
-        className={className}
-        color={color}
-        compactX={compactX}
-        compactY={compactY}
+        color={(color === 'error' && color) || buttonTypeToColor[buttonType]}
         data-testid={rest['data-testid'] || 'button'}
-        disableRipple={disabled}
-        disabled={loading}
-        loading={loading}
+        disableRipple={disabled || rest.disableRipple}
+        endIcon={
+          (showTooltip && (
+            <SvgIcon
+              component={InfoOutline}
+              data-testid="tooltip-info-icon"
+              sx={{
+                ...sxEndIcon,
+                top: 1,
+                position: 'relative',
+              }}
+            />
+          )) ||
+          rest.endIcon
+        }
         onClick={disabled ? (e) => e.preventDefault() : rest.onClick}
         onKeyDown={disabled ? handleDisabledKeyDown : rest.onKeyDown}
         ref={ref}
-        sx={sx}
-        variant={variant}
-      >
-        <Span data-testid="loadingIcon">
-          {loading ? <ReloadIcon /> : children}
-        </Span>
-      </StyledButton>
+        variant={buttonTypeToVariant[buttonType] || 'text'}
+      />
     );
 
-    return showTooltip ? (
-      <Tooltip
-        aria-label={rest['aria-label']}
-        data-testid="Tooltip"
-        id="button-tooltip"
-        onClick={handleTooltipAnalytics}
-        title={tooltipText}
-      >
-        {renderButton}
-      </Tooltip>
-    ) : (
-      renderButton
-    );
-  }
+    if (showTooltip) {
+      return (
+        <Tooltip
+          aria-label={rest['aria-label']}
+          data-testid="Tooltip"
+          id="button-tooltip"
+          onClick={handleTooltipAnalytics}
+          title={tooltipText}
+          {...TooltipProps}
+        >
+          {button}
+        </Tooltip>
+      );
+    }
+
+    return button;
+  },
 );

@@ -30,8 +30,8 @@ export const PlacementGroupsSummary = (props: Props) => {
   return (
     <Box sx={{ mb: 3, mt: 1 }}>
       {!placementGroup.is_compliant && (
-        <Notice spacingBottom={20} spacingTop={24} variant="warning">
-          <Typography fontFamily={theme.font.bold}>
+        <Notice spacingBottom={24} spacingTop={24} variant="warning">
+          <Typography sx={{ font: theme.font.bold }}>
             {`Placement Group ${placementGroup.label} is non-compliant. We are working to resolve compliance issues so that you can continue assigning Linodes to this Placement Group. `}
             <Link
               className="secondaryLink"
@@ -54,6 +54,8 @@ export const PlacementGroupsSummary = (props: Props) => {
 
         <Box display="flex">
           <DescriptionList
+            displayMode="grid"
+            gridProps={{ columns: 2 }}
             items={[
               {
                 description: `${linodesCount} of ${region?.placement_group_limits.maximum_linodes_per_pg}`,
@@ -77,8 +79,6 @@ export const PlacementGroupsSummary = (props: Props) => {
                 title: 'Placement Group Policy',
               },
             ]}
-            displayMode="grid"
-            gridProps={{ columns: 2 }}
             stackAt={theme.breakpoints.values.sm}
           />
         </Box>
@@ -90,7 +90,7 @@ export const PlacementGroupsSummary = (props: Props) => {
 export const StyledLabel = styled(Typography, {
   label: 'StyledLabel',
 })(({ theme }) => ({
-  fontFamily: theme.font.bold,
+  font: theme.font.bold,
   marginRight: theme.spacing(8),
   width: theme.spacing(10),
 }));

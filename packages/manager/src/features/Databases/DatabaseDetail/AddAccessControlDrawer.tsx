@@ -1,10 +1,9 @@
-import { Notice, Typography } from '@linode/ui';
+import { useDatabaseMutation } from '@linode/queries';
+import { ActionsPanel, Drawer, Notice, Typography } from '@linode/ui';
 import { useFormik } from 'formik';
 import * as React from 'react';
 import { makeStyles } from 'tss-react/mui';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
 import { Link } from 'src/components/Link';
 import { MultipleIPInput } from 'src/components/MultipleIPInput/MultipleIPInput';
 import {
@@ -17,7 +16,6 @@ import {
 } from 'src/features/Databases/constants';
 import { isDefaultDatabase } from 'src/features/Databases/utilities';
 import { enforceIPMasks } from 'src/features/Firewalls/FirewallDetail/Rules/FirewallRuleDrawer.utils';
-import { useDatabaseMutation } from 'src/queries/databases/databases';
 import { handleAPIErrors } from 'src/utilities/formikErrorUtils';
 import {
   extendedIPToString,
@@ -145,22 +143,17 @@ const AddAccessControlDrawer = (props: CombinedProps) => {
     };
   };
 
-  const {
-    handleSubmit,
-    isSubmitting,
-    resetForm,
-    setValues,
-    values,
-  } = useFormik({
-    enableReinitialize: true,
-    initialValues: {
-      _allowList: database?.allow_list?.map(stringToExtendedIP),
-    },
-    onSubmit: handleUpdateAccessControlsClick,
-    validate: (values: Values) => onValidate(values),
-    validateOnBlur: false,
-    validateOnChange: false,
-  });
+  const { handleSubmit, isSubmitting, resetForm, setValues, values } =
+    useFormik({
+      enableReinitialize: true,
+      initialValues: {
+        _allowList: database?.allow_list?.map(stringToExtendedIP),
+      },
+      onSubmit: handleUpdateAccessControlsClick,
+      validate: (values: Values) => onValidate(values),
+      validateOnBlur: false,
+      validateOnChange: false,
+    });
 
   const handleIPChange = React.useCallback(
     (_ips: ExtendedIP[]) => {
@@ -203,21 +196,21 @@ const AddAccessControlDrawer = (props: CombinedProps) => {
         </Typography>
         <form onSubmit={handleSubmit}>
           <MultipleIPInput
+            aria-label="Allowed IP Addresses or Ranges"
             buttonText={
               values._allowList && values._allowList.length > 0
                 ? 'Add Another IP'
                 : 'Add an IP'
             }
-            placeholder={
-              isDefaultDB ? ipV6FieldPlaceholder : ipFieldPlaceholder
-            }
-            aria-label="Allowed IP Addresses or Ranges"
             className={classes.ipSelect}
             forDatabaseAccessControls
             inputProps={{ autoFocus: true }}
             ips={values._allowList!}
             onBlur={handleIPBlur}
             onChange={handleIPChange}
+            placeholder={
+              isDefaultDB ? ipV6FieldPlaceholder : ipFieldPlaceholder
+            }
             title="Allowed IP Addresses or Ranges"
           />
           <ActionsPanel

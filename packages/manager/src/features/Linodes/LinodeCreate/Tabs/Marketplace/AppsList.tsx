@@ -1,10 +1,8 @@
-import { Box, CircleProgress, Stack } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import { Box, CircleProgress, ErrorState, Stack, useTheme } from '@linode/ui';
+import Grid from '@mui/material/Grid';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 import { useController, useFormContext } from 'react-hook-form';
-
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 
 import { getGeneratedLinodeLabel } from '../../utilities';
 import { getDefaultUDFData } from '../StackScripts/UserDefinedFields/utilities';
@@ -39,6 +37,9 @@ export const AppsList = (props: Props) => {
   const { category, onOpenDetailsDrawer, query } = props;
   const { apps, error, isLoading } = useMarketplaceApps();
   const queryClient = useQueryClient();
+
+  const theme = useTheme();
+  const isDarkMode = theme.name === 'dark';
 
   const {
     formState: {
@@ -98,16 +99,24 @@ export const AppsList = (props: Props) => {
 
     return (
       <Grid container spacing={2}>
-        {filteredApps?.map((app) => (
-          <AppSelectionCard
-            checked={field.value === app.stackscript.id}
-            iconUrl={`/assets/${app.details.logo_url}`}
-            key={app.stackscript.id}
-            label={app.stackscript.label}
-            onOpenDetailsDrawer={() => onOpenDetailsDrawer(app.stackscript.id)}
-            onSelect={() => onSelect(app.stackscript)}
-          />
-        ))}
+        {filteredApps?.map((app) => {
+          const iconUrl = isDarkMode
+            ? `/assets/white/${app.details.logo_url}`
+            : `/assets/${app.details.logo_url}`;
+
+          return (
+            <AppSelectionCard
+              checked={field.value === app.stackscript.id}
+              iconUrl={iconUrl}
+              key={app.stackscript.id}
+              label={app.stackscript.label}
+              onOpenDetailsDrawer={() =>
+                onOpenDetailsDrawer(app.stackscript.id)
+              }
+              onSelect={() => onSelect(app.stackscript)}
+            />
+          );
+        })}
       </Grid>
     );
   }

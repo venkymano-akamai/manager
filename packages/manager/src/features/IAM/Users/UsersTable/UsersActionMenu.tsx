@@ -1,64 +1,115 @@
+import { useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
 
 import { ActionMenu } from 'src/components/ActionMenu/ActionMenu';
-import { useProfile } from 'src/queries/profile/profile';
+import { useIsIAMDelegationEnabled } from 'src/features/IAM/hooks/useIsIAMEnabled';
 
+import { useDelegationRole } from '../../hooks/useDelegationRole';
+
+import type { PickPermissions, UserType } from '@linode/api-v4';
 import type { Action } from 'src/components/ActionMenu/ActionMenu';
 
+type UserActionMenuPermissions = PickPermissions<
+  'delete_user' | 'is_account_admin'
+>;
+
 interface Props {
-  isProxyUser: boolean;
   onDelete: (username: string) => void;
+  permissions: Record<UserActionMenuPermissions, boolean>;
   username: string;
+  userType?: UserType;
 }
 
-export const UsersActionMenu = ({ isProxyUser, onDelete, username }: Props) => {
-  const history = useHistory();
+export const UsersActionMenu = (props: Props) => {
+  const { onDelete, permissions, username, userType } = props;
+  const { isIAMDelegationEnabled } = useIsIAMDelegationEnabled();
 
-  const { data: profile } = useProfile();
-  const profileUsername = profile?.username;
+  const navigate = useNavigate();
+  const { isChildAccount, isParentAccount, profileUserName } =
+    useDelegationRole();
 
-  const proxyUserActions: Action[] = [
+  const isAccountAdmin = permissions.is_account_admin;
+  const canDeleteUser = permissions.delete_user;
+  const isDelegateUser = userType === 'delegate';
+
+  // Determine if the current account is a child account with isIAMDelegationEnabled enabled
+  // If so, we need to hide 'View User Details', 'Delete User', 'View Account Delegations' in the menu
+  const shouldHideForChildDelegate =
+    isIAMDelegationEnabled && isChildAccount && isDelegateUser;
+
+  const actions: Action[] = [
     {
       onClick: () => {
-        history.push(`/iam/users/${username}/roles`);
+        navigate({
+          to: '/iam/users/$username/details',
+          params: { username },
+        });
       },
-      title: 'Manage Access',
-    },
-  ];
-
-  const nonProxyUserActions: Action[] = [
-    {
-      onClick: () => {
-        history.push(`/iam/users/${username}/details`);
-      },
+      hidden: shouldHideForChildDelegate,
+      disabled: !isAccountAdmin,
+      tooltip: !isAccountAdmin
+        ? 'You do not have permission to view user details.'
+        : undefined,
       title: 'View User Details',
     },
     {
       onClick: () => {
-        history.push(`/iam/users/${username}/roles`);
+        navigate({
+          to: '/iam/users/$username/roles',
+          params: { username },
+        });
       },
-      title: 'View User Roles',
+      disabled: !isAccountAdmin,
+      tooltip: !isAccountAdmin
+        ? 'You do not have permission to view assigned roles.'
+        : undefined,
+      title: 'View Assigned Roles',
     },
     {
-      disabled: username === profileUsername,
+      onClick: () => {
+        navigate({
+          to: '/iam/users/$username/entities',
+          params: { username },
+        });
+      },
+      disabled: !isAccountAdmin,
+      tooltip: !isAccountAdmin
+        ? 'You do not have permission to view entity access.'
+        : undefined,
+      title: 'View Entity Access',
+    },
+    {
+      disabled: false,
+      hidden: !isIAMDelegationEnabled || !isParentAccount,
+      onClick: () => {
+        navigate({
+          to: '/iam/users/$username/delegations',
+          params: { username },
+        });
+      },
+      title: 'View Account Delegations',
+      tooltip: undefined,
+    },
+    {
+      disabled: username === profileUserName || !canDeleteUser,
       onClick: () => {
         onDelete(username);
       },
+      hidden: shouldHideForChildDelegate,
       title: 'Delete User',
       tooltip:
-        username === profileUsername
+        username === profileUserName
           ? "You can't delete the currently active user."
-          : undefined,
+          : !canDeleteUser
+            ? 'You do not have permission to delete this user.'
+            : undefined,
     },
   ];
-
-  const actions = isProxyUser ? proxyUserActions : nonProxyUserActions;
 
   return (
     <ActionMenu
       actionsList={actions}
-      ariaLabel={`Action menu for user ${profileUsername}`}
+      ariaLabel={`Action menu for user ${profileUserName}`}
     />
   );
 };

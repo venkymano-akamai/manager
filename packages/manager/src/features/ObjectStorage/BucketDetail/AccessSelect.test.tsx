@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { AccessSelect } from './AccessSelect';
@@ -14,8 +14,6 @@ const CORS_ENABLED_TEXT = 'CORS Enabled';
 const AUTHENTICATED_READ_TEXT = 'Authenticated Read';
 const BUCKET_ACCESS_URL = '*object-storage/buckets/*/*/access';
 const OBJECT_ACCESS_URL = '*object-storage/buckets/*/*/object-acl';
-
-vi.mock('src/components/EnhancedSelect/Select');
 
 const defaultProps: Props = {
   clusterOrRegion: 'in-maa',
@@ -30,9 +28,6 @@ describe('AccessSelect', () => {
       flags: { objectStorageGen2: { enabled: true } },
     });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
   it.each([
     ['bucket', 'E0', true],
     ['bucket', 'E1', true],

@@ -1,16 +1,22 @@
 import { enableManaged } from '@linode/api-v4/lib/managed';
-import { Accordion, Button, Typography } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import { updateAccountSettingsData, useLinodesQuery } from '@linode/queries';
+import {
+  ActionsPanel,
+  Box,
+  Button,
+  Paper,
+  Stack,
+  Typography,
+} from '@linode/ui';
+import { pluralize } from '@linode/utilities';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
 import { Link } from 'src/components/Link';
 import { SupportLink } from 'src/components/SupportLink';
-import { updateAccountSettingsData } from 'src/queries/account/settings';
-import { useLinodesQuery } from 'src/queries/linodes/linodes';
-import { pluralize } from 'src/utilities/pluralize';
+
+import { usePermissions } from '../IAM/hooks/usePermissions';
 
 import type { APIError } from '@linode/api-v4/lib/types';
 
@@ -26,6 +32,7 @@ interface ContentProps {
 export const ManagedContent = (props: ContentProps) => {
   const { isManaged, openConfirmationModal } = props;
 
+  const { data: permissions } = usePermissions('account', ['enable_managed']);
   if (isManaged) {
     return (
       <Typography>
@@ -37,21 +44,23 @@ export const ManagedContent = (props: ContentProps) => {
   }
 
   return (
-    <Grid container direction="column" spacing={2}>
-      <Grid>
-        <Typography variant="body1">
-          Linode Managed includes Backups, Longview Pro, cPanel, and
-          round-the-clock monitoring to help keep your systems up and running.
-          +$100/month per Linode.{'  '}
-          <Link to="https://linode.com/managed">Learn more</Link>.
-        </Typography>
-      </Grid>
-      <Grid>
-        <Button buttonType="outlined" onClick={openConfirmationModal}>
+    <Stack spacing={2}>
+      <Typography variant="body1">
+        Linode Managed includes Backups, Longview Pro, cPanel, and
+        round-the-clock monitoring to help keep your systems up and running.
+        +$100/month per Linode.{'  '}
+        <Link to="https://linode.com/managed">Learn more</Link>.
+      </Typography>
+      <Box>
+        <Button
+          buttonType="outlined"
+          disabled={!permissions.enable_managed}
+          onClick={openConfirmationModal}
+        >
           Add Linode Managed
         </Button>
-      </Grid>
-    </Grid>
+      </Box>
+    </Stack>
   );
 };
 
@@ -63,6 +72,7 @@ export const EnableManaged = (props: Props) => {
   const [error, setError] = React.useState<string | undefined>();
   const [isLoading, setLoading] = React.useState<boolean>(false);
 
+  const { data: permissions } = usePermissions('account', ['enable_managed']);
   const linodeCount = linodes?.results ?? 0;
 
   const handleClose = () => {
@@ -92,6 +102,7 @@ export const EnableManaged = (props: Props) => {
         'data-testid': 'submit-managed-enrollment',
         label: 'Add Linode Managed',
         loading: isLoading,
+        disabled: !permissions.enable_managed,
         onClick: handleSubmit,
       }}
       secondaryButtonProps={{
@@ -104,12 +115,15 @@ export const EnableManaged = (props: Props) => {
 
   return (
     <>
-      <Accordion defaultExpanded={true} heading="Linode Managed">
+      <Paper>
+        <Typography marginBottom={1} variant="h2">
+          Linode Managed
+        </Typography>
         <ManagedContent
           isManaged={isManaged}
           openConfirmationModal={() => setOpen(true)}
         />
-      </Accordion>
+      </Paper>
       <ConfirmationDialog
         actions={actions}
         error={error}

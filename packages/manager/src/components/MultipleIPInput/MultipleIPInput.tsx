@@ -1,17 +1,19 @@
 import {
   Button,
+  CloseIcon,
+  IconButton,
   InputLabel,
+  LinkButton,
   Notice,
+  Stack,
   TextField,
   TooltipIcon,
   Typography,
 } from '@linode/ui';
-import Close from '@mui/icons-material/Close';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import * as React from 'react';
 import { makeStyles } from 'tss-react/mui';
 
-import { LinkButton } from 'src/components/LinkButton';
 import { StyledLinkButtonBox } from 'src/components/SelectFirewallPanel/SelectFirewallPanel';
 
 import type { InputBaseProps } from '@mui/material/InputBase';
@@ -27,10 +29,6 @@ const useStyles = makeStyles()((theme: Theme) => ({
     paddingTop: theme.spacing(1.5),
   },
   button: {
-    '& :hover, & :focus': {
-      backgroundColor: theme.palette.primary.main,
-      color: theme.tokens.color.Neutrals.White,
-    },
     '& > span': {
       padding: 2,
     },
@@ -53,7 +51,7 @@ const useStyles = makeStyles()((theme: Theme) => ({
     flexDirection: 'row',
   },
   required: {
-    fontFamily: theme.font.normal,
+    font: theme.font.normal,
   },
   root: {
     marginTop: theme.spacing(),
@@ -61,6 +59,12 @@ const useStyles = makeStyles()((theme: Theme) => ({
 }));
 
 export interface MultipeIPInputProps {
+  /**
+   * Tightens spacing when used in VPC Dual Stack contexts.
+   * @default false
+   */
+  adjustSpacingForVPCDualStack?: boolean;
+
   /**
    * Text displayed on the button.
    */
@@ -92,7 +96,7 @@ export interface MultipeIPInputProps {
    * Indicates if the input is for VPC IPv4 ranges.
    * @default false
    */
-  forVPCIPv4Ranges?: boolean;
+  forVPCIPRanges?: boolean;
 
   /**
    * Helper text for additional guidance.
@@ -149,12 +153,13 @@ export interface MultipeIPInputProps {
 
 export const MultipleIPInput = React.memo((props: MultipeIPInputProps) => {
   const {
+    adjustSpacingForVPCDualStack,
     buttonText,
     className,
     disabled,
     error,
     forDatabaseAccessControls,
-    forVPCIPv4Ranges,
+    forVPCIPRanges,
     helperText,
     ips,
     isLinkStyled,
@@ -204,9 +209,20 @@ export const MultipleIPInput = React.memo((props: MultipeIPInputProps) => {
   }
 
   const addIPButton =
-    forVPCIPv4Ranges || isLinkStyled ? (
-      <StyledLinkButtonBox sx={{ marginTop: isLinkStyled ? '8px' : '12px' }}>
-        <LinkButton onClick={addNewInput}>{buttonText}</LinkButton>
+    forVPCIPRanges || isLinkStyled ? (
+      <StyledLinkButtonBox
+        sx={{
+          marginTop:
+            adjustSpacingForVPCDualStack && ips.length === 0
+              ? '0px'
+              : isLinkStyled
+                ? '8px'
+                : '12px',
+        }}
+      >
+        <LinkButton disabled={disabled} onClick={addNewInput}>
+          {buttonText}
+        </LinkButton>
       </StyledLinkButtonBox>
     ) : (
       <Button
@@ -222,77 +238,92 @@ export const MultipleIPInput = React.memo((props: MultipeIPInputProps) => {
 
   return (
     <div className={cx(classes.root, className)}>
-      {tooltip ? (
+      {tooltip && title ? (
         <div className={classes.ipNetmaskTooltipSection}>
           <InputLabel>{title}</InputLabel>
           <TooltipIcon
+            status="info"
             sxTooltipIcon={{
               marginLeft: '-4px',
               marginTop: '-15px',
             }}
-            status="help"
             text={tooltip}
             tooltipPosition="right"
           />
         </div>
       ) : (
-        <InputLabel>
-          {title}
-          {required ? (
-            <span className={classes.required}> (required)</span>
-          ) : null}
-        </InputLabel>
+        // There are a couple of instances in the codebase where an empty string is passed as the title so a title isn't displayed.
+        // Having this check ensures we don't render an empty label element (which can still impact spacing) in those cases.
+        title && (
+          <InputLabel>
+            {title}
+            {required ? (
+              <span className={classes.required}> (required)</span>
+            ) : null}
+          </InputLabel>
+        )
       )}
       {helperText && (
         <Typography className={classes.helperText}>{helperText}</Typography>
       )}
       {error && <Notice spacingTop={8} text={error} variant="error" />}
-      {ips.map((thisIP, idx) => (
-        <Grid
-          container
-          data-testid="domain-transfer-input"
-          direction="row"
-          justifyContent="center"
-          key={`domain-transfer-ip-${idx}`}
-          maxWidth={forVPCIPv4Ranges ? '415px' : undefined}
-          spacing={2}
-        >
-          <Grid xs={11}>
-            <TextField
-              InputProps={{
-                'aria-label': `${title} ip-address-${idx}`,
-                disabled,
-                ...props.inputProps,
-              }}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleChange(e, idx)
-              }
-              className={classes.input}
-              errorText={thisIP.error}
-              hideLabel
-              // Prevent unique ID errors, since TextField sets the input element's ID to the label
-              label={`domain-transfer-ip-${idx}`}
-              onBlur={(e) => handleBlur(e, idx)}
-              placeholder={placeholder}
-              value={thisIP.address}
-            />
+      <Stack spacing={1}>
+        {ips.map((thisIP, idx) => (
+          <Grid
+            container
+            data-testid="domain-transfer-input"
+            direction="row"
+            key={`domain-transfer-ip-${idx}`}
+            spacing={2}
+            sx={{
+              justifyContent: 'center',
+              maxWidth: forVPCIPRanges ? '415px' : undefined,
+            }}
+          >
+            <Grid size={11}>
+              <TextField
+                className={classes.input}
+                errorText={thisIP.error}
+                hideLabel
+                InputProps={{
+                  'aria-label': `${title} ip-address-${idx}`,
+                  disabled,
+                  ...props.inputProps,
+                }}
+                // Prevent unique ID errors, since TextField sets the input element's ID to the label
+                label={`domain-transfer-ip-${idx}`}
+                onBlur={(e) => handleBlur(e, idx)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleChange(e, idx)
+                }
+                placeholder={placeholder}
+                value={thisIP.address}
+              />
+            </Grid>
+            {/** Don't show the button for the first input since it won't do anything, unless this component is
+             * used in DBaaS or for Linode VPC interfaces
+             */}
+            <Grid size={1}>
+              {(idx > 0 || forDatabaseAccessControls || forVPCIPRanges) && (
+                <IconButton
+                  aria-disabled={disabled}
+                  className={classes.button}
+                  data-testid="button"
+                  disabled={disabled}
+                  onClick={() => removeInput(idx)}
+                  sx={(theme) => ({
+                    height: 20,
+                    width: 20,
+                    marginTop: `${theme.spacingFunction(8)} !important`,
+                  })}
+                >
+                  <CloseIcon data-testid={`delete-ip-${idx}`} />
+                </IconButton>
+              )}
+            </Grid>
           </Grid>
-          {/** Don't show the button for the first input since it won't do anything, unless this component is
-           * used in DBaaS or for Linode VPC interfaces
-           */}
-          <Grid xs={1}>
-            {(idx > 0 || forDatabaseAccessControls || forVPCIPv4Ranges) && (
-              <Button
-                className={classes.button}
-                disabled={disabled}
-                onClick={() => removeInput(idx)}
-              >
-                <Close data-testid={`delete-ip-${idx}`} />
-              </Button>
-            )}
-          </Grid>
-        </Grid>
-      ))}
+        ))}
+      </Stack>
       {addIPButton}
     </div>
   );

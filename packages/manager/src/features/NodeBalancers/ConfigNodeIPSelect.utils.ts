@@ -1,8 +1,8 @@
-import { isPrivateIP } from 'src/utilities/ipUtils';
+import { listToItemsByID } from '@linode/queries';
 
-import type { Linode } from '@linode/api-v4';
+import type { Linode, Subnet, VPCIP } from '@linode/api-v4';
 
-interface PrivateIPOption {
+export interface PrivateIPOption {
   /**
    * A private IPv4 address
    */
@@ -11,6 +11,13 @@ interface PrivateIPOption {
    * The Linode associated with the private IPv4 address
    */
   linode: Linode;
+}
+
+export interface VPCIPOption extends PrivateIPOption {
+  /**
+   * The Subnet associated with the VPC IPv4 address
+   */
+  subnet: Subnet;
 }
 
 /**
@@ -26,10 +33,46 @@ export const getPrivateIPOptions = (linodes: Linode[] | undefined) => {
 
   for (const linode of linodes) {
     for (const ip of linode.ipv4) {
-      if (isPrivateIP(ip)) {
+      if (ip.startsWith('192.168.')) {
         options.push({ label: ip, linode });
       }
     }
+  }
+  return options;
+};
+
+export const getVPCIPOptions = (
+  vpcIps: undefined | VPCIP[],
+  linodes: Linode[] | undefined,
+  subnets: Subnet[] | undefined
+) => {
+  if (!vpcIps || !subnets) {
+    return [];
+  }
+
+  const linodesMap = listToItemsByID(linodes ?? [], 'id');
+  const subnetsMap = listToItemsByID(subnets ?? [], 'id');
+
+  const options: VPCIPOption[] = [];
+
+  for (const ip of vpcIps) {
+    if (!ip.address || !ip.linode_id) {
+      continue;
+    }
+
+    const subnet = subnetsMap[ip.subnet_id];
+    const linode = linodesMap[ip.linode_id];
+
+    if (!linode || !subnet) {
+      // Safeguard against linode or subnet being undefined
+      continue;
+    }
+
+    options.push({
+      label: ip.address,
+      subnet,
+      linode,
+    });
   }
 
   return options;

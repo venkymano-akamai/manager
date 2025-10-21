@@ -1,21 +1,23 @@
-import Grid from '@mui/material/Unstable_Grid2';
-import * as React from 'react';
+import React from 'react';
+import { useStyles } from 'tss-react/mui';
 
-import { CheckIcon, AlertIcon as Error, WarningIcon } from '../../assets/icons';
+import {
+  CheckIcon,
+  ErrorIcon,
+  InfoIcon,
+  LightBulbIcon,
+  WarningIcon,
+} from '../../assets/icons';
+import { Box } from '../Box';
 import { Typography } from '../Typography';
-import { useStyles } from './Notice.styles';
+import { StyledIconBox, StyledNoticeBox } from './Notice.styles';
 
+import type { BoxProps } from '../Box';
 import type { TypographyProps } from '../Typography';
-import type { Grid2Props } from '@mui/material/Unstable_Grid2';
 
-export type NoticeVariant =
-  | 'error'
-  | 'info'
-  | 'marketing'
-  | 'success'
-  | 'warning';
+export type NoticeVariant = 'error' | 'info' | 'success' | 'tip' | 'warning';
 
-export interface NoticeProps extends Grid2Props {
+export interface NoticeProps extends BoxProps {
   /**
    * If true, the error will be treated as "static" and will not be included in the error group.
    * This will essentially disable the scroll to error behavior.
@@ -31,9 +33,13 @@ export interface NoticeProps extends Grid2Props {
    */
   errorGroup?: string;
   /**
-   * If true, an icon will be displayed to the left of the error, reflecting the variant of the error.
+   * If true, the width of the notice will only span the content instead of the container.
    */
-  important?: boolean;
+  fitContentWidth?: boolean;
+  /**
+   * If true, the important icon will be vertically centered with the text no matter the height of the text.
+   */
+  forceImportantIconVerticalCenter?: boolean;
   /**
    * The amount of spacing to apply to the bottom of the error.
    */
@@ -47,7 +53,7 @@ export interface NoticeProps extends Grid2Props {
    */
   spacingTop?: 0 | 4 | 8 | 12 | 16 | 24 | 32;
   /**
-   * The text to display in the error. If this is not provided, props.children will be used.
+   * The text to display in the notice. If this is not provided, props.children will be used.
    */
   text?: string;
   /**
@@ -55,7 +61,7 @@ export interface NoticeProps extends Grid2Props {
    */
   typeProps?: TypographyProps;
   /**
-   * The variant of the error. This will determine the color treatment of the error.
+   * The variant of the notice. This will determine the color treatment of the error.
    */
   variant?: NoticeVariant;
 }
@@ -70,20 +76,20 @@ export interface NoticeProps extends Grid2Props {
 
 ## Types of Notices:
 
-- Success/Marketing (green line)
+- Success (green line)
 - Info (blue line)
-- Error/critical (red line)
+- Error (red line)
 - Warning (yellow line)
  */
 export const Notice = (props: NoticeProps) => {
   const {
     bypassValidation = false,
+    fitContentWidth = false,
     children,
     className,
     dataTestId,
     errorGroup,
-    important,
-    onClick,
+    forceImportantIconVerticalCenter = false,
     spacingBottom,
     spacingLeft,
     spacingTop,
@@ -91,104 +97,70 @@ export const Notice = (props: NoticeProps) => {
     text,
     typeProps,
     variant,
+    ...rest
   } = props;
 
-  const { classes, cx } = useStyles();
-
-  const innerText = text ? (
-    <Typography
-      {...typeProps}
-      className={`${classes.noticeText} noticeText`}
-      onClick={onClick}
-    >
-      {text}
-    </Typography>
-  ) : null;
-
-  const variantMap = {
-    error: variant === 'error',
-    info: variant === 'info',
-    marketing: variant === 'marketing',
-    success: variant === 'success',
-    warning: variant === 'warning',
-  };
-
-  /**
-   * There are some cases where the message
-   * can be either a string or JSX. In those
-   * cases we should use props.children, but
-   * we want to make sure the string is wrapped
-   * in Typography and formatted as it would be
-   * if it were passed as props.text.
-   */
-  const _children =
-    typeof children === 'string' ? (
-      <Typography className={`${classes.noticeText} noticeText`}>
-        {children}
-      </Typography>
-    ) : (
-      children
-    );
+  const { cx } = useStyles();
 
   const errorScrollClassName = bypassValidation
     ? ''
     : errorGroup
-    ? `error-for-scroll-${errorGroup}`
-    : `error-for-scroll`;
+      ? `error-for-scroll-${errorGroup}`
+      : `error-for-scroll`;
 
-  const dataAttributes = !variantMap.error
-    ? {
-        'data-qa-notice': true,
-      }
-    : {
-        'data-qa-error': true,
-        'data-qa-notice': true,
-      };
+  const dataAttributes =
+    variant !== 'error'
+      ? {
+          'data-qa-notice': true,
+        }
+      : {
+          'data-qa-error': true,
+          'data-qa-notice': true,
+        };
 
   return (
-    <Grid
-      className={cx({
-        [classes.error]: variantMap.error,
-        [classes.errorList]: variantMap.error,
-        [classes.important]: important,
-        [classes.info]: variantMap.info,
-        [classes.infoList]: variantMap.info,
-        [classes.marketing]: variantMap.marketing,
-        [classes.root]: true,
-        [classes.success]: variantMap.success,
-        [classes.successList]: variantMap.success,
-        [classes.warning]: variantMap.warning,
-        [classes.warningList]: variantMap.warning,
-        [errorScrollClassName]: variantMap.error,
-        notice: true,
-        ...(className && { [className]: true }),
-      })}
-      data-testid={`notice${variant ? `-${variant}` : ''}${
-        important ? '-important' : ''
-      }`}
-      sx={(theme) => ({
-        marginBottom:
-          spacingBottom !== undefined ? `${spacingBottom}px` : theme.spacing(3),
-        marginLeft: spacingLeft !== undefined ? `${spacingLeft}px` : 0,
-        marginTop: spacingTop !== undefined ? `${spacingTop}px` : 0,
-        sx,
-      })}
-      {...dataAttributes}
+    <StyledNoticeBox
+      className={cx(
+        'notice',
+        { [errorScrollClassName]: variant === 'error' },
+        className,
+      )}
+      data-testid={dataTestId ?? `notice${variant ? `-${variant}` : ''}`}
       role="alert"
+      sx={[
+        (theme) => ({
+          marginBottom:
+            spacingBottom !== undefined
+              ? `${spacingBottom}px`
+              : theme.spacingFunction(16),
+          marginLeft: spacingLeft !== undefined ? `${spacingLeft}px` : 0,
+          marginTop: spacingTop !== undefined ? `${spacingTop}px` : 0,
+          width: fitContentWidth ? 'fit-content' : '100%',
+        }),
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
+      variant={variant ?? 'info'}
+      {...dataAttributes}
+      {...rest}
     >
-      {important &&
-        ((variantMap.success && (
-          <CheckIcon className={classes.icon} data-qa-success-img />
-        )) ||
-          ((variantMap.warning || variantMap.info) && (
-            <WarningIcon className={classes.icon} data-qa-warning-img />
-          )) ||
-          (variantMap.error && (
-            <Error className={classes.icon} data-qa-error-img />
-          )))}
-      <div className={classes.inner} data-testid={dataTestId}>
-        {innerText || _children}
-      </div>
-    </Grid>
+      <StyledIconBox
+        sx={{
+          alignSelf: forceImportantIconVerticalCenter ? 'center' : 'flex-start',
+        }}
+      >
+        {variant === 'error' && <ErrorIcon />}
+        {variant === 'info' && <InfoIcon />}
+        {variant === 'success' && <CheckIcon />}
+        {variant === 'tip' && <LightBulbIcon />}
+        {variant === 'warning' && <WarningIcon />}
+      </StyledIconBox>
+      <Box sx={{ width: '100%' }}>
+        {text || typeof children === 'string' ? (
+          <Typography {...typeProps}>{text ?? children}</Typography>
+        ) : (
+          children
+        )}
+      </Box>
+    </StyledNoticeBox>
   );
 };

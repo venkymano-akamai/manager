@@ -1,17 +1,23 @@
-import { Button, Paper } from '@linode/ui';
-import { Box, Grid, Stack, Typography, useTheme } from '@mui/material';
+import { Button, useProfile } from '@linode/queries';
+import { Box, Paper, Typography } from '@linode/ui';
+import { GridLegacy, Stack, useTheme } from '@mui/material';
 import { DateTime } from 'luxon';
 import React from 'react';
 
 import { useFlags } from 'src/hooks/useFlags';
 import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
-import { useProfile } from 'src/queries/profile/profile';
 
+import { WidgetFilterGroupByRenderer } from '../GroupBy/WidgetFilterGroupByRenderer';
 import {
   generateGraphData,
   getCloudPulseMetricRequest,
 } from '../Utils/CloudPulseWidgetUtils';
-import { AGGREGATE_FUNCTION, SIZE, TIME_GRANULARITY } from '../Utils/constants';
+import {
+  AGGREGATE_FUNCTION,
+  GROUP_BY,
+  SIZE,
+  TIME_GRANULARITY,
+} from '../Utils/constants';
 import { constructAdditionalRequestFilters } from '../Utils/FilterBuilder';
 import { generateCurrentUnit } from '../Utils/unitConversion';
 import { useAclpPreference } from '../Utils/UserPreference';
@@ -23,19 +29,21 @@ import { ZoomIcon } from './components/Zoomer';
 
 import type { FilterValueType } from '../Dashboard/CloudPulseDashboardLanding';
 import type { CloudPulseResources } from '../shared/CloudPulseResourcesSelect';
-import type { Widgets } from '@linode/api-v4';
 import type {
+  CloudPulseServiceType,
+  DateTimeWithPreset,
+  Filters,
   MetricDefinition,
-  TimeDuration,
   TimeGranularity,
+  Widgets,
 } from '@linode/api-v4';
-import type { DataSet } from 'src/components/AreaChart/AreaChart';
+import type { Metrics } from '@linode/utilities';
 import type {
   AreaProps,
   ChartVariant,
+  DataSet,
 } from 'src/components/AreaChart/AreaChart';
 import type { MetricsDisplayRow } from 'src/components/LineGraph/MetricsDisplay';
-import type { Metrics } from 'src/utilities/statMetrics';
 
 export interface CloudPulseWidgetProperties {
   /**
@@ -59,9 +67,19 @@ export interface CloudPulseWidgetProperties {
   availableMetrics: MetricDefinition | undefined;
 
   /**
+   * ID of the selected dashboard
+   */
+  dashboardId: number;
+
+  /**
    * time duration to fetch the metrics data in this widget
    */
-  duration: TimeDuration;
+  duration: DateTimeWithPreset;
+
+  /**
+   * entity ids selected by user to show metrics for
+   */
+  entityIds: string[];
 
   /**
    * Any error to be shown in this widget
@@ -69,14 +87,24 @@ export interface CloudPulseWidgetProperties {
   errorLabel?: string;
 
   /**
+   * Group by selected on global filter
+   */
+  globalFilterGroupBy: string[];
+
+  /**
    * Jwe token fetching status check
    */
   isJweTokenFetching: boolean;
 
   /**
-   * resources ids selected by user to show metrics for
+   * Selected linode region for the widget
    */
-  resourceIds: string[];
+  linodeRegion?: string;
+
+  /**
+   * Selected region for the widget
+   */
+  region?: string;
 
   /**
    * List of resources available of selected service type
@@ -91,7 +119,7 @@ export interface CloudPulseWidgetProperties {
   /**
    * Service type selected by user
    */
-  serviceType: string;
+  serviceType: CloudPulseServiceType;
 
   /**
    * optional timestamp to pass as react query param to forcefully re-fetch data
@@ -102,7 +130,6 @@ export interface CloudPulseWidgetProperties {
    * this should come from dashboard, which maintains map for service types in a separate API call
    */
   unit: string;
-
   /**
    * color index to be selected from available them if not theme is provided by user
    */
@@ -129,33 +156,49 @@ export interface LegendRow {
 export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
   const { updateWidgetPreference: updatePreferences } = useAclpPreference();
   const { data: profile } = useProfile();
-  const timezone = profile?.timezone ?? DateTime.local().zoneName;
 
   const [widget, setWidget] = React.useState<Widgets>({ ...props.widget });
 
   const [zoomCount, setZoomCount] = React.useState<number>(0);
-
+  const [groupBy, setGroupBy] = React.useState<string[] | undefined>(
+    props.widget.group_by
+  );
   const theme = useTheme();
 
   const {
+    globalFilterGroupBy,
     additionalFilters,
     ariaLabel,
     authToken,
     availableMetrics,
     duration,
+    entityIds,
     isJweTokenFetching,
-    resourceIds,
     resources,
     savePref,
     serviceType,
     timeStamp,
     unit,
     widget: widgetProp,
+    linodeRegion,
+    dashboardId,
+    region,
   } = props;
+
+  const timezone =
+    duration.timeZone ?? profile?.timezone ?? DateTime.local().zoneName;
+
   const flags = useFlags();
   const scaledWidgetUnit = React.useRef(generateCurrentUnit(unit));
 
   const jweTokenExpiryError = 'Token expired';
+  const filters: Filters[] | undefined =
+    additionalFilters?.length || widget?.filters?.length
+      ? [
+        ...constructAdditionalRequestFilters(additionalFilters ?? []),
+        ...(widget.filters ?? []),
+      ]
+      : undefined;
 
   /**
    *
@@ -221,7 +264,17 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     },
     []
   );
-
+  const handleGroupByChange = React.useCallback(
+    (selectedGroupBy: string[], savePreferences?: boolean) => {
+      if (savePreferences) {
+        updatePreferences(widget.label, {
+          [GROUP_BY]: selectedGroupBy,
+        });
+      }
+      setGroupBy(selectedGroupBy);
+    },
+    []
+  );
   const {
     data: metricsList,
     error,
@@ -232,11 +285,15 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     {
       ...getCloudPulseMetricRequest({
         duration,
-        resourceIds,
+        entityIds,
         resources,
         widget,
+        groupBy: [...globalFilterGroupBy, ...(groupBy ?? [])],
+        linodeRegion,
+        region,
+        serviceType,
       }),
-      filters: constructAdditionalRequestFilters(additionalFilters ?? []), // any additional dimension filters will be constructed and passed here
+      filters, // any additional dimension filters will be constructed and passed here
     },
     {
       authToken,
@@ -254,13 +311,14 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
   const variant: ChartVariant = widget.chart_type;
   if (!isLoading && metricsList) {
     const generatedData = generateGraphData({
-      flags,
       label: widget.label,
       metricsList,
       resources,
-      serviceType,
       status,
       unit,
+      serviceType,
+      groupBy: [...globalFilterGroupBy, ...(groupBy ?? [])],
+      metricLabel: availableMetrics?.label,
     });
 
     data = generatedData.dimensions;
@@ -271,36 +329,51 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
   }
 
   const metricsApiCallError = error?.[0]?.reason;
-
-  const tickFormat =
-    duration.unit === 'min' || duration.unit === 'hr' ? 'hh:mm a' : 'LLL dd';
+  const start = DateTime.fromISO(duration.start, { zone: 'GMT' });
+  const end = DateTime.fromISO(duration.end, { zone: 'GMT' });
+  const hours = end.diff(start, 'hours').hours;
+  const tickFormat = hours <= 24 ? 'hh:mm a' : 'LLL dd';
   return (
-    <Grid container item lg={widget.size} xs={12}>
-      <Stack flexGrow={1} spacing={2}>
+    <GridLegacy container item lg={widget.size} xs={12}>
+      <Stack
+        spacing={2}
+        sx={{
+          flexGrow: 1,
+        }}
+      >
         <Paper
           data-qa-widget={convertStringToCamelCasesWithSpaces(widget.label)}
           sx={{ flexGrow: 1 }}
         >
           <Stack
-            alignItems={'center'}
             direction={{ sm: 'row' }}
-            gap={{ sm: 0, xs: 2 }}
-            justifyContent={{ sm: 'space-between' }}
-            marginBottom={1}
-            padding={1}
+            sx={{
+              alignItems: 'center',
+              gap: { sm: 0, xs: 2 },
+              justifyContent: { sm: 'space-between' },
+              marginBottom: 1,
+              padding: 1,
+            }}
           >
-            <Typography marginLeft={1} variant="h2">
+            <Typography flex={{ sm: 2, xs: 0 }} marginLeft={1} variant="h2">
               {convertStringToCamelCasesWithSpaces(widget.label)} (
               {scaledWidgetUnit.current}
-              {unit.endsWith('ps') ? '/s' : ''})
+              {unit.endsWith('ps') && !scaledWidgetUnit.current.endsWith('ps')
+                ? '/s'
+                : ''}
+              )
             </Typography>
             <Stack
-              alignItems={'center'}
               direction={{ sm: 'row' }}
-              gap={2}
-              maxHeight={`calc(${theme.spacing(10)} + 5px)`}
-              overflow="auto"
-              width={{ sm: 'inherit', xs: '100%' }}
+              sx={{
+                flex: { sm: 3, xs: 0 },
+                justifyContent: 'end',
+                alignItems: 'center',
+                gap: 2,
+                maxHeight: `calc(${theme.spacing(10)} + 5px)`,
+                overflow: 'auto',
+                width: { sm: 'inherit', xs: '100%' },
+              }}
             >
               {availableMetrics?.scrape_interval && (
                 <CloudPulseIntervalSelect
@@ -312,15 +385,24 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
               {Boolean(
                 availableMetrics?.available_aggregate_functions?.length
               ) && (
-                <CloudPulseAggregateFunction
-                  availableAggregateFunctions={
-                    availableMetrics!.available_aggregate_functions
-                  }
-                  defaultAggregateFunction={widgetProp?.aggregate_function}
-                  onAggregateFuncChange={handleAggregateFunctionChange}
+                  <CloudPulseAggregateFunction
+                    availableAggregateFunctions={
+                      availableMetrics!.available_aggregate_functions
+                    }
+                    defaultAggregateFunction={widgetProp?.aggregate_function}
+                    onAggregateFuncChange={handleAggregateFunctionChange}
+                  />
+                )}
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <WidgetFilterGroupByRenderer
+                  dashboardId={dashboardId}
+                  handleChange={handleGroupByChange}
+                  label={widget.label}
+                  metric={widget.metric}
+                  preferenceGroupBy={groupBy}
+                  savePreferences={savePref}
+                  serviceType={serviceType}
                 />
-              )}
-              <Box sx={{ display: { lg: 'flex', xs: 'none' } }}>
                 <ZoomIcon
                   handleZoomToggle={handleZoomToggle}
                   zoomIn={widget?.size === 12}
@@ -333,7 +415,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   }}
                   buttonType="primary"
                   sx={{
-                    maxHeight:'20px'
+                    maxHeight: '20px'
                   }}
                 >
                   Reset Zoom
@@ -342,32 +424,32 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
             </Stack>
           </Stack>
           <CloudPulseLineGraph
+            areas={areas}
+            ariaLabel={ariaLabel ? ariaLabel : ''}
+            data={data}
+            dotRadius={1.5}
             error={
               status === 'error' && metricsApiCallError !== jweTokenExpiryError // show the error only if the error is not related to token expiration
-                ? metricsApiCallError ?? 'Error while rendering graph'
+                ? (metricsApiCallError ?? 'Error while rendering graph')
                 : undefined
             }
+            height={424}
+            legendRows={legendRows}
             loading={
               isLoading ||
               metricsApiCallError === jweTokenExpiryError ||
               isJweTokenFetching
             } // keep loading until we are trying to fetch the refresh token
-            areas={areas}
-            ariaLabel={ariaLabel ? ariaLabel : ''}
-            data={data}
-            dotRadius={1.5}
-            height={424}
-            legendRows={legendRows}
             showDot
             showLegend={data.length !== 0}
             timezone={timezone}
-            unit={currentUnit}
+            unit={`${currentUnit}${unit.endsWith('ps') ? '/s' : ''}`}
             variant={variant}
             xAxis={{ tickFormat, tickGap: 60 }}
             zoomReset={zoomCount}
           />
         </Paper>
       </Stack>
-    </Grid>
+    </GridLegacy>
   );
 };

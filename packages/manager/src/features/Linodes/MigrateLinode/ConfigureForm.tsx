@@ -1,14 +1,15 @@
+import { useRegionsQuery, useTypeQuery } from '@linode/queries';
+import { useIsGeckoEnabled } from '@linode/shared';
 import { Notice, Typography } from '@linode/ui';
 import * as React from 'react';
 
 import { Flag } from 'src/components/Flag';
 import { PlacementGroupsSelect } from 'src/components/PlacementGroupsSelect/PlacementGroupsSelect';
 import { RegionSelect } from 'src/components/RegionSelect/RegionSelect';
+import { MTC_SUPPORTED_REGIONS } from 'src/features/components/PlansPanel/constants';
 import { NO_PLACEMENT_GROUPS_IN_SELECTED_REGION_MESSAGE } from 'src/features/PlacementGroups/constants';
 import { useIsPlacementGroupsEnabled } from 'src/features/PlacementGroups/utils';
 import { useFlags } from 'src/hooks/useFlags';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useTypeQuery } from 'src/queries/types';
 import { getRegionCountryGroup } from 'src/utilities/formatRegion';
 import { getLinodeBackupPrice } from 'src/utilities/pricing/backups';
 import { PRICES_RELOAD_ERROR_NOTICE_TEXT } from 'src/utilities/pricing/constants';
@@ -33,9 +34,10 @@ interface Props {
   backupEnabled: Linode['backups']['enabled'];
   currentRegion: string;
   errorText?: string;
-  handlePlacementGroupChange: (selected: PlacementGroup | null) => void;
+  handlePlacementGroupChange: (selected: null | PlacementGroup) => void;
   handleSelectRegion: (id: string) => void;
   helperText?: string;
+  isMTCLinode?: boolean;
   linodeType: Linode['type'];
   selectedRegion: string | undefined;
 }
@@ -50,11 +52,16 @@ export const ConfigureForm = React.memo((props: Props) => {
     handlePlacementGroupChange,
     handleSelectRegion,
     helperText,
+    isMTCLinode,
     linodeType,
     selectedRegion,
   } = props;
 
   const flags = useFlags();
+  const { isGeckoLAEnabled } = useIsGeckoEnabled(
+    flags.gecko2?.enabled,
+    flags.gecko2?.la
+  );
   const { isPlacementGroupsEnabled } = useIsPlacementGroupsEnabled();
   const { data: regions } = useRegionsQuery();
 
@@ -63,10 +70,8 @@ export const ConfigureForm = React.memo((props: Props) => {
     Boolean(linodeType)
   );
 
-  const [
-    selectedPlacementGroup,
-    setSelectedPlacementGroup,
-  ] = React.useState<PlacementGroup | null>(null);
+  const [selectedPlacementGroup, setSelectedPlacementGroup] =
+    React.useState<null | PlacementGroup>(null);
 
   React.useEffect(() => {
     handlePlacementGroupSelection(null);
@@ -90,14 +95,14 @@ export const ConfigureForm = React.memo((props: Props) => {
     !newRegion || !hasRegionPlacementGroupCapability;
 
   const handlePlacementGroupSelection = (
-    placementGroup: PlacementGroup | null
+    placementGroup: null | PlacementGroup
   ) => {
     setSelectedPlacementGroup(placementGroup);
     handlePlacementGroupChange(placementGroup);
   };
 
   const country =
-    regions?.find((thisRegion) => thisRegion.id == currentRegion)?.country ??
+    regions?.find((thisRegion) => thisRegion.id === currentRegion)?.country ??
     'us';
 
   const shouldDisplayPriceComparison = Boolean(
@@ -143,6 +148,26 @@ export const ConfigureForm = React.memo((props: Props) => {
   const linodeIsInDistributedRegion =
     currentActualRegion?.site_type === 'distributed';
 
+  const filteredRegions =
+    regions?.filter((eachRegion) => {
+      // Ignore current region.
+      if (eachRegion.id === currentRegion) {
+        return false;
+      }
+
+      // If mtc2025 flag is enabled, apply MTC region filtering.
+      if (flags.mtc2025) {
+        const isMtcRegion = MTC_SUPPORTED_REGIONS.includes(eachRegion.id);
+
+        // For MTC Linodes, only show MTC regions.
+        // For non-MTC Linodes, exclude MTC regions.
+        return isMTCLinode ? isMtcRegion : !isMtcRegion;
+      }
+
+      // If flag is disabled, show all regions.
+      return true;
+    }) ?? [];
+
   return (
     <StyledPaper>
       <Typography variant="h3">Configure Migration</Typography>
@@ -163,25 +188,22 @@ export const ConfigureForm = React.memo((props: Props) => {
         </StyledMigrationBox>
         <StyledMigrationBox>
           <RegionSelect
+            currentCapability="Linodes"
+            disableClearable
+            errorText={errorText}
+            isGeckoLAEnabled={isGeckoLAEnabled}
+            label="New Region"
+            onChange={(e, region) => handleSelectRegion(region.id)}
             regionFilter={
               flags.gecko2?.enabled && linodeIsInDistributedRegion
                 ? 'distributed'
                 : 'core'
             }
-            regions={
-              regions?.filter(
-                (eachRegion) => eachRegion.id !== currentRegion
-              ) ?? []
-            }
+            regions={filteredRegions}
             textFieldProps={{
               helperText,
             }}
-            currentCapability="Linodes"
-            disableClearable
-            errorText={errorText}
-            label="New Region"
-            onChange={(e, region) => handleSelectRegion(region.id)}
-            value={selectedRegion}
+            value={selectedRegion ?? null}
           />
           {shouldDisplayPriceComparison && selectedRegion && (
             <MigrationPricing
@@ -190,9 +212,15 @@ export const ConfigureForm = React.memo((props: Props) => {
           )}
           {isPlacementGroupsEnabled && (
             <PlacementGroupsSelect
+              disabled={isPlacementGroupSelectDisabled}
               handlePlacementGroupChange={(placementGroup) => {
                 handlePlacementGroupSelection(placementGroup);
               }}
+              key={selectedRegion}
+              label={placementGroupSelectLabel}
+              noOptionsMessage={NO_PLACEMENT_GROUPS_IN_SELECTED_REGION_MESSAGE}
+              selectedPlacementGroupId={selectedPlacementGroup?.id ?? null}
+              selectedRegion={newRegion}
               textFieldProps={{
                 helperText:
                   'If your Linode already belongs to a placement group, it will be automatically unassigned during the migration. You can choose to move it to a new placement group in the same region here.',
@@ -200,12 +228,6 @@ export const ConfigureForm = React.memo((props: Props) => {
                   ? ''
                   : 'Placement Groups are not available in this region.',
               }}
-              disabled={isPlacementGroupSelectDisabled}
-              key={selectedRegion}
-              label={placementGroupSelectLabel}
-              noOptionsMessage={NO_PLACEMENT_GROUPS_IN_SELECTED_REGION_MESSAGE}
-              selectedPlacementGroupId={selectedPlacementGroup?.id ?? null}
-              selectedRegion={newRegion}
             />
           )}
         </StyledMigrationBox>

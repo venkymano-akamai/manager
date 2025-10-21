@@ -1,27 +1,31 @@
-import { Box, CircleProgress, StyledLinkButton } from '@linode/ui';
+import { useProfile, useVPCQuery } from '@linode/queries';
+import { Box, CircleProgress, LinkButton } from '@linode/ui';
+import { pluralize } from '@linode/utilities';
+import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
-import { useSnackbar } from 'notistack';
+import { enqueueSnackbar } from 'notistack';
 import * as React from 'react';
 
+import { CopyTooltip } from 'src/components/CopyTooltip/CopyTooltip';
+import { Link } from 'src/components/Link';
 import { TagCell } from 'src/components/TagCell/TagCell';
 import {
-  StyledBox,
   StyledLabelBox,
   StyledListItem,
   sxLastListItem,
   sxListItemFirstChild,
 } from 'src/features/Linodes/LinodeEntityDetail.styles';
 import { useKubernetesClusterMutation } from 'src/queries/kubernetes';
-import { useProfile } from 'src/queries/profile/profile';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 import { formatDate } from 'src/utilities/formatDate';
-import { pluralize } from 'src/utilities/pluralize';
+
+import { useIsLkeEnterpriseEnabled } from '../kubeUtils';
 
 import type { KubernetesControlPlaneACLPayload } from '@linode/api-v4';
-
+import type { SxProps } from '@mui/material/styles';
 interface FooterProps {
   aclData: KubernetesControlPlaneACLPayload | undefined;
+  areClusterLinodesReadOnly: boolean;
   clusterCreated: string;
   clusterId: number;
   clusterLabel: string;
@@ -30,7 +34,8 @@ interface FooterProps {
   isClusterReadOnly: boolean;
   isLoadingKubernetesACL: boolean;
   setControlPlaneACLDrawerOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  showControlPlaneACL: boolean;
+  sx?: SxProps;
+  vpcId: null | number | undefined;
 }
 
 export const KubeEntityDetailFooter = React.memo((props: FooterProps) => {
@@ -40,15 +45,19 @@ export const KubeEntityDetailFooter = React.memo((props: FooterProps) => {
   const {
     aclData,
     clusterCreated,
-    clusterId,
     clusterLabel,
     clusterTags,
+    areClusterLinodesReadOnly,
+    clusterId,
     clusterUpdated,
-    isClusterReadOnly,
     isLoadingKubernetesACL,
+    isClusterReadOnly,
     setControlPlaneACLDrawerOpen,
-    showControlPlaneACL,
+    vpcId,
   } = props;
+
+  const { isLkeEnterprisePhase2BYOVPCFeatureEnabled } =
+    useIsLkeEnterpriseEnabled();
 
   const enabledACL = aclData?.acl.enabled ?? false;
   const totalIPv4 = aclData?.acl.addresses?.ipv4?.length ?? 0;
@@ -59,11 +68,13 @@ export const KubeEntityDetailFooter = React.memo((props: FooterProps) => {
     ? `Enabled (${pluralize('IP Address', 'IP Addresses', totalNumberIPs)})`
     : 'Enable';
 
-  const { mutateAsync: updateKubernetesCluster } = useKubernetesClusterMutation(
-    clusterId
+  const { data: vpc } = useVPCQuery(
+    vpcId ?? -1,
+    isLkeEnterprisePhase2BYOVPCFeatureEnabled && Boolean(vpcId)
   );
 
-  const { enqueueSnackbar } = useSnackbar();
+  const { mutateAsync: updateKubernetesCluster } =
+    useKubernetesClusterMutation(clusterId);
 
   const handleUpdateTags = React.useCallback(
     (newTags: string[]) => {
@@ -83,44 +94,78 @@ export const KubeEntityDetailFooter = React.memo((props: FooterProps) => {
 
   return (
     <Grid
+      container
+      data-qa-kube-entity-footer
+      direction="column"
       sx={{
         flex: 1,
-        padding: 0,
+        paddingTop: theme.spacingFunction(8),
       }}
-      alignItems="center"
-      container
-      direction="row"
-      justifyContent="space-between"
-      spacing={2}
     >
       <Grid
+        container
+        direction="row"
+        spacing={2}
         sx={{
           alignItems: 'center',
-          display: 'flex',
+          flex: 1,
+          justifyContent: 'space-between',
           padding: 0,
-          [theme.breakpoints.down('lg')]: {
-            padding: '8px',
-          },
-          [theme.breakpoints.down('md')]: {
-            display: 'grid',
-            gridTemplateColumns: '50% 2fr',
-          },
         }}
-        alignItems="flex-start"
-        lg={10}
-        xs={12}
       >
-        <StyledBox>
-          <StyledListItem sx={{ ...sxListItemFirstChild }}>
-            <StyledLabelBox component="span">Cluster ID:</StyledLabelBox>{' '}
-            {clusterId}
-          </StyledListItem>
-          {showControlPlaneACL && (
-            <StyledListItem
-              sx={{
-                alignItems: 'center',
-              }}
-            >
+        <Grid
+          size={{
+            lg: 'auto',
+            xs: 12,
+          }}
+          sx={{
+            alignItems: 'center',
+            display: 'flex',
+            padding: 0,
+
+            [theme.breakpoints.down('lg')]: {
+              padding: '8px',
+            },
+
+            [theme.breakpoints.between('md', 'xs')]: {
+              display: 'grid',
+              gridTemplateColumns: '50% 2fr',
+            },
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              rowGap: 1,
+            }}
+          >
+            <StyledListItem sx={{ ...sxListItemFirstChild }}>
+              <StyledLabelBox component="span">Cluster ID:</StyledLabelBox>{' '}
+              <CopyTooltip copyableText text={String(clusterId)} />
+            </StyledListItem>
+            {isLkeEnterprisePhase2BYOVPCFeatureEnabled && vpc && (
+              <StyledListItem
+                sx={{
+                  alignItems: 'center',
+                }}
+              >
+                <StyledLabelBox component="span">VPC: </StyledLabelBox>{' '}
+                <Link
+                  data-testid="assigned-lke-cluster-label"
+                  to={`/vpcs/${vpcId}`}
+                >
+                  {vpc?.label ?? `${vpcId}`}
+                </Link>
+                &nbsp;
+                {vpcId && vpc?.label && (
+                  <span>
+                    (ID: <CopyTooltip copyableText text={String(vpcId)} />)
+                  </span>
+                )}
+              </StyledListItem>
+            )}
+            <StyledListItem>
               <StyledLabelBox component="span">
                 Control Plane ACL:{' '}
               </StyledLabelBox>{' '}
@@ -129,51 +174,55 @@ export const KubeEntityDetailFooter = React.memo((props: FooterProps) => {
                   <CircleProgress noPadding size="sm" />
                 </Box>
               ) : (
-                <StyledLinkButton
+                <LinkButton
                   disabled={isClusterReadOnly}
                   onClick={() => setControlPlaneACLDrawerOpen(true)}
+                  sx={(theme) => ({
+                    '&:disabled': {
+                      '& g': {
+                        stroke:
+                          theme.tokens.alias.Content.Icon.Primary.Disabled,
+                      },
+                      color: theme.tokens.alias.Content.Text.Primary.Disabled,
+                    },
+                  })}
                 >
                   {buttonCopyACL}
-                </StyledLinkButton>
+                </LinkButton>
               )}
             </StyledListItem>
-          )}
-        </StyledBox>
-        <StyledBox>
-          <StyledListItem
-            sx={{
-              ...sxListItemFirstChild,
-            }}
-          >
-            <StyledLabelBox component="span">Created:</StyledLabelBox>{' '}
-            {formatDate(clusterCreated, {
-              timezone: profile?.timezone,
-            })}
-          </StyledListItem>
-          <StyledListItem sx={{ ...sxLastListItem }}>
-            <StyledLabelBox component="span">Updated:</StyledLabelBox>{' '}
-            {formatDate(clusterUpdated, {
-              timezone: profile?.timezone,
-            })}
-          </StyledListItem>
-        </StyledBox>
+            <StyledListItem>
+              <StyledLabelBox component="span">Created:</StyledLabelBox>{' '}
+              {formatDate(clusterCreated, {
+                timezone: profile?.timezone,
+              })}
+            </StyledListItem>
+            <StyledListItem sx={{ ...sxLastListItem }}>
+              <StyledLabelBox component="span">Updated:</StyledLabelBox>{' '}
+              {formatDate(clusterUpdated, {
+                timezone: profile?.timezone,
+              })}
+            </StyledListItem>
+          </Box>
+        </Grid>
       </Grid>
       <Grid
-        sx={{
-          [theme.breakpoints.down('lg')]: {
-            display: 'flex',
-            justifyContent: 'flex-start',
-          },
+        size={{
+          lg: 12,
+          xs: 12,
         }}
-        lg={2}
-        xs={12}
+        sx={{
+          marginLeft: 'auto',
+          marginTop: theme.spacingFunction(8),
+        }}
       >
         <TagCell
+          disabled={areClusterLinodesReadOnly}
+          entity="Kubernetes Cluster"
+          entityLabel={clusterLabel}
           sx={{
             width: '100%',
           }}
-          disabled={isClusterReadOnly}
-          entityLabel={clusterLabel}
           tags={clusterTags}
           updateTags={handleUpdateTags}
           view="inline"

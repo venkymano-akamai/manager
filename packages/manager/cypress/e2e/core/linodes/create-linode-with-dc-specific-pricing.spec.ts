@@ -1,18 +1,19 @@
-import { ui } from 'support/ui';
-import { randomLabel } from 'support/util/random';
-import { getRegionById } from 'support/util/regions';
-import { linodeFactory } from '@src/factories';
+import { linodeFactory, regionFactory } from '@linode/utilities';
 import {
-  dcPricingPlanPlaceholder,
-  dcPricingMockLinodeTypes,
   dcPricingDocsLabel,
   dcPricingDocsUrl,
+  dcPricingMockLinodeTypes,
+  dcPricingPlanPlaceholder,
 } from 'support/constants/dc-specific-pricing';
 import {
   mockCreateLinode,
   mockGetLinodeType,
   mockGetLinodeTypes,
 } from 'support/intercepts/linodes';
+import { mockGetRegions } from 'support/intercepts/regions';
+import { ui } from 'support/ui';
+import { randomLabel } from 'support/util/random';
+import { extendRegion } from 'support/util/regions';
 
 describe('Create Linode with DC-specific pricing', () => {
   /*
@@ -22,27 +23,42 @@ describe('Create Linode with DC-specific pricing', () => {
    */
   it('shows DC-specific pricing information during create flow', () => {
     const linodeLabel = randomLabel();
-    const initialRegion = getRegionById('us-west');
-    const newRegion = getRegionById('us-east');
+    const initialRegion = extendRegion(
+      regionFactory.build({
+        id: 'us-west',
+        label: 'Fremont, CA',
+        capabilities: ['Backups', 'Linodes'],
+      })
+    );
+    const newRegion = extendRegion(
+      regionFactory.build({
+        id: 'us-east',
+        label: 'Newark, NJ',
+        capabilities: ['Backups', 'Linodes'],
+      })
+    );
 
     const mockLinode = linodeFactory.build({
       label: linodeLabel,
       region: initialRegion.id,
       type: dcPricingMockLinodeTypes[0].id,
     });
-
+    const mockRegions = [initialRegion, newRegion];
+    mockGetRegions(mockRegions).as('getRegions');
     const currentPrice = dcPricingMockLinodeTypes[0].region_prices.find(
       (regionPrice) => regionPrice.id === initialRegion.id
     )!;
-    const currentBackupPrice = dcPricingMockLinodeTypes[0].addons.backups.region_prices.find(
-      (regionPrice) => regionPrice.id === initialRegion.id
-    )!;
+    const currentBackupPrice =
+      dcPricingMockLinodeTypes[0].addons.backups.region_prices.find(
+        (regionPrice) => regionPrice.id === initialRegion.id
+      )!;
     const newPrice = dcPricingMockLinodeTypes[1].region_prices.find(
       (linodeType) => linodeType.id === newRegion.id
     )!;
-    const newBackupPrice = dcPricingMockLinodeTypes[1].addons.backups.region_prices.find(
-      (regionPrice) => regionPrice.id === newRegion.id
-    )!;
+    const newBackupPrice =
+      dcPricingMockLinodeTypes[1].addons.backups.region_prices.find(
+        (regionPrice) => regionPrice.id === newRegion.id
+      )!;
 
     // Mock requests to get individual types.
     mockGetLinodeType(dcPricingMockLinodeTypes[0]);
@@ -51,11 +67,11 @@ describe('Create Linode with DC-specific pricing', () => {
 
     // intercept request
     cy.visitWithLogin('/linodes/create');
-    cy.wait(['@getLinodeTypes']);
+    cy.wait(['@getLinodeTypes', '@getRegions']);
 
     mockCreateLinode(mockLinode).as('linodeCreated');
 
-    cy.get('[data-qa-header="Create"]').should('have.text', 'Create');
+    cy.get('[data-qa-header="OS"]').should('have.text', 'OS');
 
     ui.button.findByTitle('Create Linode').click();
 
@@ -72,7 +88,9 @@ describe('Create Linode with DC-specific pricing', () => {
     // Check the 'Backups' add on
     cy.get('[data-testid="backups"]').should('be.visible').click();
     ui.regionSelect.find().click();
-    ui.regionSelect.findItemByRegionLabel(initialRegion.label).click();
+    ui.regionSelect
+      .findItemByRegionLabel(initialRegion.label, mockRegions)
+      .click();
     cy.findByText('Shared CPU').click();
     cy.get(`[id="${dcPricingMockLinodeTypes[0].id}"]`).click();
     // Confirm that the backup prices are displayed as expected.

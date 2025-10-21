@@ -1,5 +1,7 @@
-import { StyledLinkButton, TooltipIcon, Typography } from '@linode/ui';
-import { Grid, styled } from '@mui/material';
+import { useDatabaseEnginesQuery } from '@linode/queries';
+import { TooltipIcon, Typography } from '@linode/ui';
+import { GridLegacy, styled } from '@mui/material';
+import { Button } from 'akamai-cds-react-components';
 import * as React from 'react';
 
 import {
@@ -7,7 +9,6 @@ import {
   hasPendingUpdates,
   upgradableVersions,
 } from 'src/features/Databases/utilities';
-import { useDatabaseEnginesQuery } from 'src/queries/databases/databases';
 
 import type { Engine, PendingUpdates } from '@linode/api-v4';
 
@@ -33,20 +34,22 @@ export const DatabaseSettingsMaintenance = (props: Props) => {
   const hasUpdates = hasPendingUpdates(databasePendingUpdates);
 
   return (
-    <Grid container data-qa-settings-section="Maintenance">
-      <Grid item xs={6}>
+    <GridLegacy container data-qa-settings-section="Maintenance">
+      <GridLegacy item xs={6}>
         <StyledTypography variant="h3">Maintenance</StyledTypography>
         <BoldTypography>Version</BoldTypography>
         <StyledTypography>{engineVersion}</StyledTypography>
-        <StyledLinkButton
+        <Button
           data-testid="upgrade"
           disabled={!versions?.length || hasUpdates}
           onClick={onUpgradeVersion}
+          variant="link"
         >
           Upgrade Version
-        </StyledLinkButton>
+        </Button>
         {hasUpdates && (
           <TooltipIcon
+            status="info"
             sxTooltipIcon={{
               padding: '0px 8px',
             }}
@@ -57,10 +60,9 @@ export const DatabaseSettingsMaintenance = (props: Props) => {
                 the next maintenance window.
               </Typography>
             }
-            status="help"
           />
         )}
-      </Grid>
+      </GridLegacy>
       {/*
         TODO Uncomment and provide value when the EOL is returned by the API.
         Currently, it is not supported, however they are working on returning it since it has value to the end user
@@ -68,15 +70,19 @@ export const DatabaseSettingsMaintenance = (props: Props) => {
           <StyledTypography variant="h3">End of life</StyledTypography>
         </Grid>
       */}
-      <Grid item xs={6}>
+      <GridLegacy item xs={6}>
         <StyledTypography variant="h3">Maintenance updates</StyledTypography>
         {hasUpdates ? (
           <BoldTypography>
             One or more minor version upgrades or patches will be applied during
             the next maintenance window.{' '}
-            <StyledLinkButton data-testid="review" onClick={onReviewUpdates}>
+            <Button
+              data-testid="review"
+              onClick={onReviewUpdates}
+              variant="link"
+            >
               Click to review
-            </StyledLinkButton>
+            </Button>
           </BoldTypography>
         ) : (
           <BoldTypography>
@@ -84,8 +90,8 @@ export const DatabaseSettingsMaintenance = (props: Props) => {
             maintenance window.{' '}
           </BoldTypography>
         )}
-      </Grid>
-    </Grid>
+      </GridLegacy>
+    </GridLegacy>
   );
 };
 
@@ -94,5 +100,5 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 const BoldTypography = styled(StyledTypography)(({ theme }) => ({
-  fontFamily: theme.font.bold,
+  font: theme.font.bold,
 }));

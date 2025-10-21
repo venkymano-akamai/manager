@@ -10,10 +10,10 @@ import {
   deleteAllTestAccessKeys,
   deleteAllTestBuckets,
 } from 'support/api/objectStorage';
+import { deleteAllTestSSHKeys } from 'support/api/profile';
 import { deleteAllTestStackScripts } from 'support/api/stackscripts';
 import { deleteAllTestTags } from 'support/api/tags';
 import { deleteAllTestVolumes } from 'support/api/volumes';
-import { deleteAllTestSSHKeys } from 'support/api/profile';
 
 /** Types of resources that can be cleaned up. */
 export type CleanUpResource =
@@ -27,8 +27,8 @@ export type CleanUpResource =
   | 'obj-access-keys'
   | 'obj-buckets'
   | 'service-transfers'
-  | 'stackscripts'
   | 'ssh-keys'
+  | 'stackscripts'
   | 'tags'
   | 'volumes';
 
@@ -72,7 +72,6 @@ export const cleanUp = (resources: CleanUpResource | CleanUpResource[]) => {
     for (const resource of resourcesArray) {
       const cleanFunction = cleanUpMap[resource];
       // Perform clean-up sequentially to avoid API rate limiting.
-      // eslint-disable-next-line no-await-in-loop
       await cleanFunction();
     }
   };

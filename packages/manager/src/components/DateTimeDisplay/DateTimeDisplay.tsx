@@ -1,9 +1,10 @@
+import { useProfile } from '@linode/queries';
 import { Typography } from '@linode/ui';
 import * as React from 'react';
 
-import { useProfile } from 'src/queries/profile/profile';
 import { formatDate } from 'src/utilities/formatDate';
 
+import type { SxProps, Theme } from '@linode/ui';
 import type { TimeInterval } from 'src/utilities/formatDate';
 
 export interface DateTimeDisplayProps {
@@ -24,16 +25,20 @@ export interface DateTimeDisplayProps {
    */
   humanizeCutoff?: TimeInterval;
   /**
+   * Styles to pass through to the sx prop.
+   */
+  sx?: SxProps<Theme>;
+  /**
    * The date and time string to display
    */
   value: string;
 }
 
 const DateTimeDisplay = (props: DateTimeDisplayProps) => {
-  const { className, displayTime, format, humanizeCutoff, value } = props;
+  const { className, displayTime, format, humanizeCutoff, value, sx } = props;
   const { data: profile } = useProfile();
   return (
-    <Typography className={className} component="span">
+    <Typography className={className} component="span" sx={sx}>
       {formatDate(value, {
         displayTime,
         format,

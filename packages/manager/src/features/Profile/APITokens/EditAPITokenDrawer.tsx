@@ -1,10 +1,8 @@
-import { Notice, TextField } from '@linode/ui';
+import { useUpdatePersonalAccessTokenMutation } from '@linode/queries';
+import { ActionsPanel, Drawer, Notice, TextField } from '@linode/ui';
 import { useFormik } from 'formik';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { useUpdatePersonalAccessTokenMutation } from 'src/queries/profile/tokens';
 import { getErrorMap } from 'src/utilities/errorUtils';
 
 import type { Token, TokenRequest } from '@linode/api-v4';

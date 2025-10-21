@@ -1,10 +1,10 @@
-import { action } from '@storybook/addon-actions';
-import { useArgs } from '@storybook/preview-api';
 import * as React from 'react';
+import { action } from 'storybook/actions';
+import { useArgs } from 'storybook/preview-api';
 
 import { EditableText } from './EditableText';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 type Story = StoryObj<typeof EditableText>;
 
@@ -43,13 +43,14 @@ export const WithSuffix: Story = {
 };
 
 /**
- * Pretend this is `react-router-dom`'s Link component.
+ * Pretend this is `@tanstack/react-router`'s Link component.
  * This is just an example to show usage with `EditableText`
  */
 const Link = (
-  props: React.PropsWithChildren<{ className?: string; to?: string }>
+  props: React.PropsWithChildren<{ className?: string; to?: string }>,
 ) => {
-  return <a {...props} href={props.to} target="_blank" />;
+  // eslint-disable-next-line jsx-a11y/anchor-has-content
+  return <a {...props} href={props.to} rel="noreferrer" target="_blank" />;
 };
 
 export const WithCustomLinkComponent: Story = {

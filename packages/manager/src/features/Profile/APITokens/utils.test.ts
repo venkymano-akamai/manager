@@ -1,13 +1,14 @@
 import { DateTime } from 'luxon';
 
-import { ExcludedScope } from './CreateAPITokenDrawer';
 import {
-  Permission,
   allScopesAreTheSame,
   hasAccessBeenSelectedForAllScopes,
   isWayInTheFuture,
   scopeStringToPermTuples,
 } from './utils';
+
+import type { ExcludedScope } from './CreateAPITokenDrawer';
+import type { Permission } from './utils';
 
 describe('isWayInTheFuture', () => {
   it('should return true if past 100 years in the future', () => {
@@ -436,6 +437,11 @@ describe('hasAccessBeenSelectedForAllScopes', () => {
     ['vpc', 0],
   ];
 
+  const allExceptChildAccountSelectedScopes: Permission[] = [
+    ...allSelectedScopes,
+    ['child_account', -1],
+  ];
+
   it('should return false if scopes are all set to a default of no selection', () => {
     expect(hasAccessBeenSelectedForAllScopes(defaultScopes)).toBe(false);
   });
@@ -446,5 +452,12 @@ describe('hasAccessBeenSelectedForAllScopes', () => {
   });
   it('should return true if all scopes have a valid selection', () => {
     expect(hasAccessBeenSelectedForAllScopes(allSelectedScopes)).toBe(true);
+  });
+  it('should return true if all scopes except those excluded have a valid selection', () => {
+    expect(
+      hasAccessBeenSelectedForAllScopes(allExceptChildAccountSelectedScopes, [
+        'child_account',
+      ])
+    ).toBe(true);
   });
 });

@@ -1,11 +1,9 @@
-import { Button, Typography } from '@linode/ui';
-import { styled } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
-import { createLazyRoute } from '@tanstack/react-router';
+import { useSSHKeysQuery } from '@linode/queries';
+import { Box, Button, Stack, Typography } from '@linode/ui';
+import { Hidden } from '@linode/ui';
 import * as React from 'react';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { Hidden } from 'src/components/Hidden';
 import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFooter';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
@@ -15,15 +13,14 @@ import { TableRow } from 'src/components/TableRow';
 import { TableRowEmpty } from 'src/components/TableRowEmpty/TableRowEmpty';
 import { TableRowError } from 'src/components/TableRowError/TableRowError';
 import { TableRowLoading } from 'src/components/TableRowLoading/TableRowLoading';
-import DeleteSSHKeyDialog from 'src/features/Profile/SSHKeys/DeleteSSHKeyDialog';
-import SSHKeyActionMenu from 'src/features/Profile/SSHKeys/SSHKeyActionMenu';
-import { usePagination } from 'src/hooks/usePagination';
-import { useSSHKeysQuery } from 'src/queries/profile/profile';
+import { DeleteSSHKeyDialog } from 'src/features/Profile/SSHKeys/DeleteSSHKeyDialog';
+import { SSHKeyActionMenu } from 'src/features/Profile/SSHKeys/SSHKeyActionMenu';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 import { parseAPIDate } from 'src/utilities/date';
 import { getSSHKeyFingerprint } from 'src/utilities/ssh-fingerprint';
 
 import { CreateSSHKeyDrawer } from './CreateSSHKeyDrawer';
-import EditSSHKeyDrawer from './EditSSHKeyDrawer';
+import { EditSSHKeyDrawer } from './EditSSHKeyDrawer';
 
 const PREFERENCE_KEY = 'ssh-keys';
 
@@ -33,7 +30,11 @@ export const SSHKeys = () => {
   const [isEditDrawerOpen, setIsEditDrawerOpen] = React.useState(false);
   const [selectedKeyId, setSelectedKeyId] = React.useState(-1);
 
-  const pagination = usePagination(1, PREFERENCE_KEY);
+  const pagination = usePaginationV2({
+    currentRoute: '/profile/keys',
+    initialPage: 1,
+    preferenceKey: PREFERENCE_KEY,
+  });
 
   const params = {
     page: pagination.page,
@@ -95,27 +96,16 @@ export const SSHKeys = () => {
   }, [data, error, isLoading]);
 
   return (
-    <>
+    <Stack spacing={1}>
       <DocumentTitleSegment segment="SSH Keys" />
-      <Grid
-        sx={{
-          margin: 0,
-          width: '100%',
-        }}
-        alignItems="flex-end"
-        container
-        justifyContent="flex-end"
-        spacing={2}
-      >
-        <StyledAddNewWrapperGridItem>
-          <Button
-            buttonType="primary"
-            onClick={() => setIsCreateDrawerOpen(true)}
-          >
-            Add an SSH Key
-          </Button>
-        </StyledAddNewWrapperGridItem>
-      </Grid>
+      <Box display="flex" justifyContent="flex-end">
+        <Button
+          buttonType="primary"
+          onClick={() => setIsCreateDrawerOpen(true)}
+        >
+          Add an SSH Key
+        </Button>
+      </Box>
       <Table>
         <TableHead>
           <TableRow>
@@ -152,19 +142,6 @@ export const SSHKeys = () => {
         onClose={() => setIsCreateDrawerOpen(false)}
         open={isCreateDrawerOpen}
       />
-    </>
+    </Stack>
   );
 };
-
-const StyledAddNewWrapperGridItem = styled(Grid)(({ theme }) => ({
-  paddingRight: 0,
-  paddingTop: 0,
-
-  [theme.breakpoints.down('md')]: {
-    marginRight: theme.spacing(),
-  },
-}));
-
-export const SSHKeysLazyRoute = createLazyRoute('/profile/keys')({
-  component: SSHKeys,
-});

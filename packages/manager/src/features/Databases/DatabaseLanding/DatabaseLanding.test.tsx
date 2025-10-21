@@ -1,15 +1,18 @@
-import { screen, within } from '@testing-library/react';
-import { fireEvent } from '@testing-library/react';
-import { waitForElementToBeRemoved } from '@testing-library/react';
+import { capitalize } from '@linode/utilities';
+import {
+  fireEvent,
+  screen,
+  waitForElementToBeRemoved,
+  within,
+} from '@testing-library/react';
 import { DateTime } from 'luxon';
 import * as React from 'react';
 
 import { accountFactory, databaseInstanceFactory } from 'src/factories';
-import DatabaseLanding from 'src/features/Databases/DatabaseLanding/DatabaseLanding';
+import { DatabaseLanding } from 'src/features/Databases/DatabaseLanding/DatabaseLanding';
 import DatabaseRow from 'src/features/Databases/DatabaseLanding/DatabaseRow';
 import { makeResourcePage } from 'src/mocks/serverHandlers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
-import { capitalize } from 'src/utilities/capitalize';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { formatDate } from 'src/utilities/formatDate';
 import {
   mockMatchMedia,
@@ -21,8 +24,8 @@ const queryMocks = vi.hoisted(() => ({
   useProfile: vi.fn().mockReturnValue({ data: { restricted: false } }),
 }));
 
-vi.mock('src/queries/profile/profile', async () => {
-  const actual = await vi.importActual('src/queries/profile/profile');
+vi.mock('@linode/queries', async () => {
+  const actual = await vi.importActual('@linode/queries');
   return {
     ...actual,
     useProfile: queryMocks.useProfile,
@@ -32,7 +35,7 @@ vi.mock('src/queries/profile/profile', async () => {
 beforeAll(() => mockMatchMedia());
 
 const loadingTestId = 'circle-progress';
-const accountEndpoint = '*/v4/account';
+const accountEndpoint = '*/v4*/account';
 const databaseInstancesEndpoint = '*/databases/instances';
 
 const managedDBBetaCapability = 'Managed Databases Beta';
@@ -42,7 +45,7 @@ const newDBTabTitle = 'New Database Clusters';
 const legacyDBTabTitle = 'Legacy Database Clusters';
 
 describe('Database Table Row', () => {
-  it('should render a database row', () => {
+  it('should render a database row', async () => {
     const database = databaseInstanceFactory.build();
 
     const { getByText } = renderWithTheme(
@@ -55,7 +58,7 @@ describe('Database Table Row', () => {
     getByText(capitalize(database.status));
   });
 
-  it('should render a relative time in the created column if the database was created in the last 3 days', () => {
+  it('should render a relative time in the created column if the database was created in the last 3 days', async () => {
     const database = databaseInstanceFactory.build({
       created: DateTime.local().minus({ days: 1 }).toISO(),
     });

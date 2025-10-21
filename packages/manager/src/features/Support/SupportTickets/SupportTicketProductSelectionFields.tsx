@@ -1,16 +1,18 @@
+import {
+  useAllDatabasesQuery,
+  useAllDomainsQuery,
+  useAllFirewallsQuery,
+  useAllLinodesQuery,
+  useAllNodeBalancersQuery,
+  useAllVolumesQuery,
+  useAllVPCsQuery,
+} from '@linode/queries';
 import { Autocomplete, FormHelperText, TextField } from '@linode/ui';
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { useAllDatabasesQuery } from 'src/queries/databases/databases';
-import { useAllDomainsQuery } from 'src/queries/domains';
-import { useAllFirewallsQuery } from 'src/queries/firewalls';
 import { useAllKubernetesClustersQuery } from 'src/queries/kubernetes';
-import { useAllLinodesQuery } from 'src/queries/linodes/linodes';
-import { useAllNodeBalancersQuery } from 'src/queries/nodebalancers';
 import { useObjectStorageBuckets } from 'src/queries/object-storage/queries';
-import { useAllVolumesQuery } from 'src/queries/volumes/volumes';
-import { useAllVPCsQuery } from 'src/queries/vpcs/vpcs';
 
 import {
   ACCOUNT_LIMIT_FIELD_NAME_TO_LABEL_MAP,
@@ -72,7 +74,9 @@ export const SupportTicketProductSelectionFields = (props: Props) => {
     data: clusters,
     error: clustersError,
     isLoading: clustersLoading,
-  } = useAllKubernetesClustersQuery(entityType === 'lkecluster_id');
+  } = useAllKubernetesClustersQuery({
+    enabled: entityType === 'lkecluster_id',
+  });
 
   const {
     data: linodes,
@@ -169,7 +173,7 @@ export const SupportTicketProductSelectionFields = (props: Props) => {
   };
 
   const errorMap: Record<EntityType, APIError[] | null> = {
-    bucket: bucketsError,
+    bucket: bucketsError ? [{ reason: bucketsError.message }] : null,
     database_id: databasesError,
     domain_id: domainsError,
     firewall_id: firewallsError,
@@ -184,7 +188,7 @@ export const SupportTicketProductSelectionFields = (props: Props) => {
 
   const entityOptions = getEntityOptions();
   const areEntitiesLoading = loadingMap[entityType];
-  const entityError = Boolean(errorMap[entityType])
+  const entityError = errorMap[entityType]
     ? `Error loading ${ENTITY_ID_TO_NAME_MAP[entityType]}s`
     : undefined;
 
@@ -221,29 +225,34 @@ export const SupportTicketProductSelectionFields = (props: Props) => {
     <>
       {ticketType === 'accountLimit' ? (
         <Controller
+          control={control}
+          name="numberOfEntities"
           render={({ field, fieldState }) => (
             <TextField
+              data-qa-ticket-number-of-entities
+              errorText={fieldState.error?.message}
+              helperText={`Current number of ${_entityType}: ${entityOptions.length}`}
               label={ACCOUNT_LIMIT_FIELD_NAME_TO_LABEL_MAP.numberOfEntities.replace(
                 'entities',
                 _entityType
               )}
-              data-qa-ticket-number-of-entities
-              errorText={fieldState.error?.message}
-              helperText={`Current number of ${_entityType}: ${entityOptions.length}`}
               name="numberOfEntities"
               onChange={field.onChange}
               placeholder={`Enter total number of ${_entityType}`}
               value={field.value}
             />
           )}
-          control={control}
-          name="numberOfEntities"
         />
       ) : (
         <>
           <Controller
+            control={control}
+            name="entityType"
             render={({ field }) => (
               <Autocomplete
+                data-qa-ticket-entity-type
+                disableClearable
+                label="What is this regarding?"
                 onChange={(_e, type) => {
                   // Don't reset things if the type hasn't changed.
                   if (type.value === entityType) {
@@ -254,44 +263,39 @@ export const SupportTicketProductSelectionFields = (props: Props) => {
                   setValue('entityInputValue', '');
                   clearErrors('entityId');
                 }}
-                data-qa-ticket-entity-type
-                disableClearable
-                label="What is this regarding?"
                 options={topicOptions}
                 value={selectedTopic}
               />
             )}
-            control={control}
-            name="entityType"
           />
           {!['general', 'none'].includes(entityType) && (
             <>
               <Controller
+                control={control}
+                name="entityInputValue"
                 render={({ field, fieldState }) => (
                   <Autocomplete
+                    data-qa-ticket-entity-id
+                    disabled={entityOptions.length === 0}
                     errorText={
                       entityError ||
                       fieldState.error?.message ||
                       errors.entityId?.message
                     }
+                    inputValue={entityInputValue}
+                    label={ENTITY_ID_TO_NAME_MAP[entityType] ?? 'Entity Select'}
+                    loading={areEntitiesLoading}
                     onChange={(e, id) =>
                       setValue('entityId', id ? String(id?.value) : '')
                     }
                     onInputChange={(e, value) =>
                       field.onChange(value ? value : '')
                     }
-                    data-qa-ticket-entity-id
-                    disabled={entityOptions.length === 0}
-                    inputValue={entityInputValue}
-                    label={ENTITY_ID_TO_NAME_MAP[entityType] ?? 'Entity Select'}
-                    loading={areEntitiesLoading}
                     options={entityOptions}
                     placeholder={`Select a ${ENTITY_ID_TO_NAME_MAP[entityType]}`}
                     value={selectedEntity}
                   />
                 )}
-                control={control}
-                name="entityInputValue"
               />
               {!areEntitiesLoading && entityOptions.length === 0 ? (
                 <FormHelperText>

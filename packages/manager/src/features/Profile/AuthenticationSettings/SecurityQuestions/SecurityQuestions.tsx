@@ -1,3 +1,7 @@
+import {
+  useMutateSecurityQuestions,
+  useSecurityQuestions,
+} from '@linode/queries';
 import { Box, Button, CircleProgress, Typography } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import { useFormik } from 'formik';
@@ -5,10 +9,6 @@ import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
 import { Link } from 'src/components/Link';
-import {
-  useMutateSecurityQuestions,
-  useSecurityQuestions,
-} from 'src/queries/profile/securityQuestions';
 
 import { QuestionAndAnswerPair } from './QuestionAndAnswerPair';
 import { getAnsweredQuestions, securityQuestionsToItems } from './utilities';
@@ -19,13 +19,11 @@ import type { FormikConfig } from 'formik';
 export const SecurityQuestions = ({
   securityQuestionRef,
 }: {
-  securityQuestionRef?: React.RefObject<HTMLInputElement>;
+  securityQuestionRef?: React.RefObject<HTMLInputElement | null>;
 }) => {
   const { data: securityQuestionsData, isLoading } = useSecurityQuestions();
-  const {
-    isPending: isUpdating,
-    mutateAsync: updateSecurityQuestions,
-  } = useMutateSecurityQuestions();
+  const { isPending: isUpdating, mutateAsync: updateSecurityQuestions } =
+    useMutateSecurityQuestions();
   const { enqueueSnackbar } = useSnackbar();
 
   const answeredQuestions = getAnsweredQuestions(securityQuestionsData);
@@ -133,42 +131,42 @@ export const SecurityQuestions = ({
       </StyledCopy>
       <StyledForm onSubmit={handleSubmit}>
         <QuestionAndAnswerPair
+          edit={questionEditStates[0]}
+          index={0}
+          onEdit={() => onEdit(0)}
           options={options.filter((option) => {
             return (
               option.value !== values.security_questions[1]?.id &&
               option.value !== values.security_questions[2]?.id
             );
           })}
-          edit={questionEditStates[0]}
-          index={0}
-          onEdit={() => onEdit(0)}
           questionResponse={values.security_questions[0]}
           securityQuestionRef={securityQuestionRef}
           {...qaProps}
         />
         <QuestionAndAnswerPair
+          edit={questionEditStates[1]}
+          index={1}
+          onEdit={() => onEdit(1)}
           options={options.filter((option) => {
             return (
               option.value !== values.security_questions[0]?.id &&
               option.value !== values.security_questions[2]?.id
             );
           })}
-          edit={questionEditStates[1]}
-          index={1}
-          onEdit={() => onEdit(1)}
           questionResponse={values.security_questions[1]}
           {...qaProps}
         />
         <QuestionAndAnswerPair
+          edit={questionEditStates[2]}
+          index={2}
+          onEdit={() => onEdit(2)}
           options={options.filter((option) => {
             return (
               option.value !== values.security_questions[0]?.id &&
               option.value !== values.security_questions[1]?.id
             );
           })}
-          edit={questionEditStates[2]}
-          index={2}
-          onEdit={() => onEdit(2)}
           questionResponse={values.security_questions[2]}
           {...qaProps}
         />

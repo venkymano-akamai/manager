@@ -1,17 +1,21 @@
-import { Typography } from '@linode/ui';
+import {
+  useAllListMyDelegatedChildAccountsQuery,
+  useChildAccountsInfiniteQuery,
+} from '@linode/queries';
 import {
   Box,
   Button,
   CircleProgress,
+  LinkButton,
   Notice,
   Stack,
-  StyledLinkButton,
+  Typography,
 } from '@linode/ui';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Waypoint } from 'react-waypoint';
 
 import ErrorStateCloud from 'src/assets/icons/error-state-cloud.svg';
-import { useChildAccountsInfiniteQuery } from 'src/queries/account/account';
+import { useIsIAMDelegationEnabled } from 'src/features/IAM/hooks/useIsIAMEnabled';
 
 import type { Filter, UserType } from '@linode/api-v4';
 
@@ -24,10 +28,10 @@ interface ChildAccountListProps {
     euuid: string;
     event: React.MouseEvent<HTMLButtonElement, MouseEvent>;
     onClose: () => void;
-    userType: UserType | undefined;
+    userType: undefined | UserType;
   }) => void;
   searchQuery: string;
-  userType: UserType | undefined;
+  userType: undefined | UserType;
 }
 
 export const ChildAccountList = React.memo(
@@ -39,16 +43,16 @@ export const ChildAccountList = React.memo(
     searchQuery,
     userType,
   }: ChildAccountListProps) => {
+    const { isIAMDelegationEnabled } = useIsIAMDelegationEnabled();
+
     const filter: Filter = {
       ['+order']: 'asc',
       ['+order_by']: 'company',
       ...(searchQuery && { company: { '+contains': searchQuery } }),
     };
 
-    const [
-      isSwitchingChildAccounts,
-      setIsSwitchingChildAccounts,
-    ] = useState<boolean>(false);
+    const [isSwitchingChildAccounts, setIsSwitchingChildAccounts] =
+      useState<boolean>(false);
     const {
       data,
       fetchNextPage,
@@ -58,22 +62,54 @@ export const ChildAccountList = React.memo(
       isInitialLoading,
       isRefetching,
       refetch: refetchChildAccounts,
-    } = useChildAccountsInfiniteQuery({
-      filter,
-      headers:
-        userType === 'proxy'
-          ? {
-              Authorization: currentTokenWithBearer,
-            }
-          : undefined,
+    } = useChildAccountsInfiniteQuery(
+      {
+        filter,
+        headers:
+          userType === 'proxy'
+            ? {
+                Authorization: currentTokenWithBearer,
+              }
+            : undefined,
+      },
+      isIAMDelegationEnabled === false
+    );
+    const {
+      data: allChildAccounts,
+      error: allChildAccountsError,
+      isLoading: allChildAccountsLoading,
+      isRefetching: allChildAccountsIsRefetching,
+      refetch: refetchAllChildAccounts,
+    } = useAllListMyDelegatedChildAccountsQuery({
+      params: {},
+      enabled: isIAMDelegationEnabled,
     });
-    const childAccounts = data?.pages.flatMap((page) => page.data);
+
+    const refetchFn = isIAMDelegationEnabled
+      ? refetchAllChildAccounts
+      : refetchChildAccounts;
+
+    const childAccounts = useMemo(() => {
+      if (isIAMDelegationEnabled) {
+        if (searchQuery && allChildAccounts) {
+          // Client-side filter: match company field with searchQuery (case-insensitive, contains)
+          const normalizedQuery = searchQuery.toLowerCase();
+          return allChildAccounts.filter((account) =>
+            account.company?.toLowerCase().includes(normalizedQuery)
+          );
+        }
+        return allChildAccounts;
+      }
+      return data?.pages.flatMap((page) => page.data);
+    }, [isIAMDelegationEnabled, searchQuery, allChildAccounts, data]);
 
     if (
       isInitialLoading ||
       isLoading ||
       isSwitchingChildAccounts ||
-      isRefetching
+      isRefetching ||
+      allChildAccountsLoading ||
+      allChildAccountsIsRefetching
     ) {
       return (
         <Box display="flex" justifyContent="center">
@@ -82,11 +118,11 @@ export const ChildAccountList = React.memo(
       );
     }
 
-    if (childAccounts?.length === 0) {
+    if (childAccounts && childAccounts.length === 0) {
       return (
         <Notice variant="info">
           There are no child accounts
-          {filter.hasOwnProperty('company')
+          {Object.prototype.hasOwnProperty.call(filter, 'company')
             ? ' that match this query'
             : undefined}
           .
@@ -94,7 +130,7 @@ export const ChildAccountList = React.memo(
       );
     }
 
-    if (isError) {
+    if (isError || allChildAccountsError) {
       return (
         <Stack alignItems="center" gap={1} justifyContent="center">
           <ErrorStateCloud />
@@ -103,11 +139,11 @@ export const ChildAccountList = React.memo(
             Try again or contact support if the issue persists.
           </Typography>
           <Button
+            buttonType="primary"
+            onClick={() => refetchFn()}
             sx={(theme) => ({
               marginTop: theme.spacing(2),
             })}
-            buttonType="primary"
-            onClick={() => refetchChildAccounts()}
           >
             Try again
           </Button>
@@ -118,7 +154,9 @@ export const ChildAccountList = React.memo(
     const renderChildAccounts = childAccounts?.map((childAccount, idx) => {
       const euuid = childAccount.euuid;
       return (
-        <StyledLinkButton
+        <LinkButton
+          disabled={isSwitchingChildAccounts}
+          key={`child-account-link-button-${idx}`}
           onClick={(event) => {
             setIsSwitchingChildAccounts(true);
             onSwitchAccount({
@@ -132,11 +170,9 @@ export const ChildAccountList = React.memo(
           sx={(theme) => ({
             marginBottom: theme.spacing(2),
           })}
-          disabled={isSwitchingChildAccounts}
-          key={`child-account-link-button-${idx}`}
         >
           {childAccount.company}
-        </StyledLinkButton>
+        </LinkButton>
       );
     });
 

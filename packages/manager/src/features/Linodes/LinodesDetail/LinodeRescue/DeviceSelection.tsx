@@ -1,5 +1,4 @@
 import { Autocomplete, FormControl } from '@linode/ui';
-import { defaultTo } from 'ramda';
 import * as React from 'react';
 
 import { titlecase } from 'src/features/Linodes/presentation';
@@ -31,17 +30,10 @@ interface Props {
 }
 
 export const DeviceSelection = (props: Props) => {
-  const {
-    devices,
-    disabled,
-    errorText,
-    getSelected,
-    onChange,
-    rescue,
-    slots,
-  } = props;
+  const { devices, disabled, errorText, getSelected, onChange, rescue, slots } =
+    props;
 
-  const counter = defaultTo(0, props.counter) as number;
+  const counter = props.counter ?? 0;
 
   const diskOrVolumeInErrReason = errorText
     ? extractDiskOrVolumeId(errorText)
@@ -75,18 +67,18 @@ export const DeviceSelection = (props: Props) => {
         return counter < idx ? null : (
           <FormControl fullWidth key={slot}>
             <Autocomplete
+              autoHighlight
+              clearIcon={null}
+              disabled={disabled}
               errorText={
                 selectedDevice?.value === diskOrVolumeInErrReason && errorText
                   ? adjustedErrorText(errorText, selectedDevice.label)
                   : undefined
               }
+              groupBy={(option) => option.deviceType}
               isOptionEqualToValue={(option, value) =>
                 option.label === value.label
               }
-              autoHighlight
-              clearIcon={null}
-              disabled={disabled}
-              groupBy={(option) => option.deviceType}
               label={`/dev/${slot}`}
               noMarginTop
               onChange={(_, selected) => onChange(slot, selected?.value)}
@@ -101,8 +93,8 @@ export const DeviceSelection = (props: Props) => {
         <FormControl fullWidth>
           <Autocomplete
             disabled
-            id="rescueDevice_sdh"
-            label="/dev/sdh"
+            id="rescueDevice"
+            label={`dev/${slots[slots.length - 1]}`}
             noMarginTop
             onChange={() => null}
             options={[]}

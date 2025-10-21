@@ -1,8 +1,7 @@
-import { CircleProgress } from '@linode/ui';
+import { CircleProgress, ErrorState } from '@linode/ui';
 import * as React from 'react';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { Placeholder } from 'src/components/Placeholder/Placeholder';
 
 import { useGraphs } from '../OverviewGraphs/useGraphs';
@@ -22,12 +21,8 @@ interface Props {
 }
 
 const Disks = (props: Props) => {
-  const {
-    clientAPIKey,
-    clientLastUpdated,
-    lastUpdated,
-    lastUpdatedError,
-  } = props;
+  const { clientAPIKey, clientLastUpdated, lastUpdated, lastUpdatedError } =
+    props;
 
   const [time, setTimeBox] = React.useState<WithStartAndEnd>({
     end: 0,
@@ -105,7 +100,6 @@ const Disks = (props: Props) => {
           handleStatsChange={handleStatsChange}
           hideLabel
           label="Select Time Range"
-          small
         />
       </StyledBox>
       {renderContent()}

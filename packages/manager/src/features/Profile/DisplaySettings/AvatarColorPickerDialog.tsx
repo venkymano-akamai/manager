@@ -1,16 +1,9 @@
-import { Stack } from '@linode/ui';
-import { Typography } from '@mui/material';
-import React from 'react';
-import { useState } from 'react';
+import { useMutatePreferences, usePreferences } from '@linode/queries';
+import { ActionsPanel, Dialog, Stack, Typography } from '@linode/ui';
+import React, { useState } from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { Avatar } from 'src/components/Avatar/Avatar';
 import { ColorPicker } from 'src/components/ColorPicker/ColorPicker';
-import { Dialog } from 'src/components/Dialog/Dialog';
-import {
-  useMutatePreferences,
-  usePreferences,
-} from 'src/queries/profile/preferences';
 
 export interface AvatarColorPickerDialogProps {
   handleClose: () => void;
@@ -24,7 +17,9 @@ export const AvatarColorPickerDialog = (
 
   const [avatarColor, setAvatarColor] = useState<string>();
 
-  const { data: preferences } = usePreferences();
+  const { data: avatarColorPreference } = usePreferences(
+    (preferences) => preferences?.avatarColor
+  );
   const { mutateAsync: updatePreferences } = useMutatePreferences();
 
   return (
@@ -34,7 +29,7 @@ export const AvatarColorPickerDialog = (
           Select a background color for your avatar:
         </Typography>
         <ColorPicker
-          defaultColor={preferences?.avatarColor}
+          defaultColor={avatarColorPreference}
           inputStyles={{ height: 30, width: 30 }}
           label="Avatar color picker"
           onChange={(color: string) => setAvatarColor(color)}
@@ -51,7 +46,7 @@ export const AvatarColorPickerDialog = (
 
       <ActionsPanel
         primaryButtonProps={{
-          disabled: !avatarColor || preferences?.avatarColor === avatarColor,
+          disabled: !avatarColor || avatarColorPreference === avatarColor,
           label: 'Save',
           onClick: () => {
             if (avatarColor) {

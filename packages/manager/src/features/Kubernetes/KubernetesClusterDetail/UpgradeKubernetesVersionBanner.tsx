@@ -1,28 +1,24 @@
 import { Button, Typography } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
 import * as React from 'react';
 
 import { DismissibleBanner } from 'src/components/DismissibleBanner/DismissibleBanner';
+import { useKubernetesTieredVersionsQuery } from 'src/queries/kubernetes';
 
-import {
-  getNextVersion,
-  useLkeStandardOrEnterpriseVersions,
-} from '../kubeUtils';
+import { getNextVersion } from '../kubeUtils';
 import UpgradeVersionModal from '../UpgradeVersionModal';
 
 import type { KubernetesTier } from '@linode/api-v4';
 
 interface Props {
   clusterID: number;
-  clusterLabel: string;
   clusterTier: KubernetesTier;
   currentVersion: string;
 }
 
 export const UpgradeKubernetesVersionBanner = (props: Props) => {
-  const { clusterID, clusterLabel, clusterTier, currentVersion } = props;
+  const { clusterID, clusterTier, currentVersion } = props;
 
-  const { versions } = useLkeStandardOrEnterpriseVersions(clusterTier);
+  const { data: versions } = useKubernetesTieredVersionsQuery(clusterTier);
   const nextVersion = getNextVersion(currentVersion, versions ?? []);
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -37,28 +33,17 @@ export const UpgradeKubernetesVersionBanner = (props: Props) => {
       {nextVersion ? (
         <DismissibleBanner
           actionButton={actionButton}
+          forceImportantIconVerticalCenter
           preferenceKey={`${clusterID}-${currentVersion}`}
           variant="info"
         >
-          <Grid
-            alignItems="center"
-            container
-            direction="row"
-            justifyContent="space-between"
-          >
-            <Grid>
-              <Typography>
-                A new version of Kubernetes is available ({nextVersion}).
-              </Typography>
-            </Grid>
-          </Grid>
+          <Typography>
+            A new version of Kubernetes is available ({nextVersion}).
+          </Typography>
         </DismissibleBanner>
       ) : null}
       <UpgradeVersionModal
         clusterID={clusterID}
-        clusterLabel={clusterLabel}
-        clusterTier={clusterTier}
-        currentVersion={currentVersion}
         isOpen={dialogOpen}
         onClose={() => setDialogOpen(false)}
       />

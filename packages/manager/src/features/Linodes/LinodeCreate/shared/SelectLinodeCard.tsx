@@ -1,16 +1,16 @@
+import { useImageQuery, useRegionsQuery, useTypeQuery } from '@linode/queries';
 import { Button, Stack } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import {
+  formatStorageUnits,
+  getFormattedStatus,
+  isNotNullOrUndefined,
+} from '@linode/utilities';
+import Grid from '@mui/material/Grid';
 import React from 'react';
 
 import { SelectionCard } from 'src/components/SelectionCard/SelectionCard';
 import { StatusIcon } from 'src/components/StatusIcon/StatusIcon';
-import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
-import { useImageQuery } from 'src/queries/images';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useTypeQuery } from 'src/queries/types';
-import { capitalizeAllWords } from 'src/utilities/capitalize';
-import { formatStorageUnits } from 'src/utilities/formatStorageUnits';
-import { isNotNullOrUndefined } from 'src/utilities/nullOrUndefined';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 
 import { getLinodeIconStatus } from '../../LinodesLanding/utils';
 
@@ -45,11 +45,11 @@ export const SelectLinodeCard = ({
     Boolean(linode?.image)
   );
 
-  const isLinodesGrantReadOnly = useIsResourceRestricted({
-    grantLevel: 'read_only',
-    grantType: 'linode',
-    id: linode?.id,
-  });
+  const { data: permissions } = usePermissions(
+    'linode',
+    ['shutdown_linode', 'clone_linode'],
+    linode.id
+  );
 
   const iconStatus = getLinodeIconStatus(linode?.status);
   const shouldShowPowerButton =
@@ -58,21 +58,30 @@ export const SelectLinodeCard = ({
   const type = linodeType ? formatStorageUnits(linodeType?.label) : linode.type;
   const image = linodeImage?.label ?? linode.image;
   const region =
-    regions?.find((region) => region.id == linode.region)?.label ??
+    regions?.find((region) => region.id === linode.region)?.label ??
     linode.region;
 
   const renderVariant = () => (
-    <Grid paddingTop={0} xs={12}>
+    <Grid
+      size={12}
+      sx={{
+        paddingTop: 0,
+      }}
+    >
       <Stack direction="row" justifyContent="space-between" marginBottom={1}>
         <Stack alignItems="center" direction="row" height={34}>
           <StatusIcon
             aria-label={`Linode status ${linode?.status ?? iconStatus}`}
             status={iconStatus}
           />
-          {capitalizeAllWords(linode.status.replace('_', ' '))}
+          {getFormattedStatus(linode.status)}
         </Stack>
         {shouldShowPowerButton && (
-          <Button buttonType="outlined" onClick={handlePowerOff}>
+          <Button
+            buttonType="outlined"
+            disabled={!permissions.shutdown_linode}
+            onClick={handlePowerOff}
+          >
             Power Off
           </Button>
         )}
@@ -82,15 +91,15 @@ export const SelectLinodeCard = ({
 
   return (
     <SelectionCard
-      subheadings={[
-        [type, image, region].filter(isNotNullOrUndefined).join(', '),
-      ]}
       checked={selected}
-      disabled={isLinodesGrantReadOnly || disabled}
+      disabled={!permissions.clone_linode || disabled}
       heading={linode.label}
       key={`selection-card-${linode.id}`}
       onClick={handleSelection}
       renderVariant={renderVariant}
+      subheadings={[
+        [type, image, region].filter(isNotNullOrUndefined).join(', '),
+      ]}
     />
   );
 };

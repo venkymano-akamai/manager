@@ -1,59 +1,72 @@
 import { isEmpty } from '@linode/api-v4';
-import { Stack } from '@linode/ui';
-import { useQueryClient } from '@tanstack/react-query';
-import { createLazyRoute } from '@tanstack/react-router';
-import { useSnackbar } from 'notistack';
-import React, { useEffect, useRef } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-import { useHistory } from 'react-router-dom';
-
-import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { LandingHeader } from 'src/components/LandingHeader';
-import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
-import { Tab } from 'src/components/Tabs/Tab';
-import { TabList } from 'src/components/Tabs/TabList';
-import { TabPanels } from 'src/components/Tabs/TabPanels';
-import { Tabs } from 'src/components/Tabs/Tabs';
-import { useSecureVMNoticesEnabled } from 'src/hooks/useSecureVMNoticesEnabled';
-import { useMutateAccountAgreements } from 'src/queries/account/agreements';
 import {
   useCloneLinodeMutation,
   useCreateLinodeMutation,
-} from 'src/queries/linodes/linodes';
-import { useProfile } from 'src/queries/profile/profile';
+  useMutateAccountAgreements,
+  useProfile,
+} from '@linode/queries';
+import { CircleProgress, Notice, Stack } from '@linode/ui';
+import { scrollErrorIntoView } from '@linode/utilities';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router';
+import { useSnackbar } from 'notistack';
+import React, { useEffect, useRef } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
+import type { SubmitHandler } from 'react-hook-form';
+
+import { DocumentTitleSegment } from 'src/components/DocumentTitle';
+import { LandingHeader } from 'src/components/LandingHeader';
+import { TabPanels } from 'src/components/Tabs/TabPanels';
+import { Tabs } from 'src/components/Tabs/Tabs';
+import { TanStackTabLinkList } from 'src/components/Tabs/TanStackTabLinkList';
+import {
+  getRestrictedResourceText,
+  useVMHostMaintenanceEnabled,
+} from 'src/features/Account/utils';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
+import {
+  getLinodeCreateType,
+  useGetLinodeCreateType,
+} from 'src/features/Linodes/LinodeCreate/Tabs/utils/useGetLinodeCreateType';
+import { useFlags } from 'src/hooks/useFlags';
+import { useSecureVMNoticesEnabled } from 'src/hooks/useSecureVMNoticesEnabled';
+import { useTabs } from 'src/hooks/useTabs';
+import { useVPCDualStack } from 'src/hooks/useVPCDualStack';
 import {
   sendLinodeCreateFormInputEvent,
   sendLinodeCreateFormSubmitEvent,
 } from 'src/utilities/analytics/formEventAnalytics';
-import { scrollErrorIntoView } from 'src/utilities/scrollErrorIntoView';
+import {
+  useIsLinodeCloneFirewallEnabled,
+  useIsLinodeInterfacesEnabled,
+} from 'src/utilities/linodes';
 
 import { Actions } from './Actions';
+import { AdditionalOptions } from './AdditionalOptions/AdditionalOptions';
 import { Addons } from './Addons/Addons';
 import { Details } from './Details/Details';
-import { Error } from './Error';
+import { LinodeCreateError } from './Error';
 import { EUAgreement } from './EUAgreement';
 import { Firewall } from './Firewall';
 import { FirewallAuthorization } from './FirewallAuthorization';
+import { Networking } from './Networking/Networking';
+import { transformLegacyInterfaceErrorsToLinodeInterfaceErrors } from './Networking/utilities';
 import { Plan } from './Plan';
 import { getLinodeCreateResolver } from './resolvers';
 import { Security } from './Security';
 import { SMTP } from './SMTP';
 import { Summary } from './Summary/Summary';
-import { Backups } from './Tabs/Backups/Backups';
-import { Clone } from './Tabs/Clone/Clone';
-import { Images } from './Tabs/Images';
-import { Marketplace } from './Tabs/Marketplace/Marketplace';
-import { OperatingSystems } from './Tabs/OperatingSystems';
-import { StackScripts } from './Tabs/StackScripts/StackScripts';
 import { UserData } from './UserData/UserData';
 import {
   captureLinodeCreateAnalyticsEvent,
   defaultValues,
   getLinodeCreatePayload,
-  getTabIndex,
-  tabs,
   useHandleLinodeCreateAnalyticsFormError,
-  useLinodeCreateQueryParams,
 } from './utilities';
 import { VLAN } from './VLAN/VLAN';
 import { VPC } from './VPC/VPC';
@@ -62,61 +75,115 @@ import type {
   LinodeCreateFormContext,
   LinodeCreateFormValues,
 } from './utilities';
-import type { SubmitHandler } from 'react-hook-form';
 
 export const LinodeCreate = () => {
-  const { params, setParams } = useLinodeCreateQueryParams();
+  const location = useLocation();
+  const search = useSearch({
+    from: '/linodes/create',
+  });
   const { secureVMNoticesEnabled } = useSecureVMNoticesEnabled();
+  const { isLinodeInterfacesEnabled } = useIsLinodeInterfacesEnabled();
   const { data: profile } = useProfile();
+  const { isLinodeCloneFirewallEnabled } = useIsLinodeCloneFirewallEnabled();
+  const { isVMHostMaintenanceEnabled } = useVMHostMaintenanceEnabled();
+  const linodeCreateType = useGetLinodeCreateType();
+
+  const { aclpServices } = useFlags();
+
+  // In Create flow, alerts always default to 'legacy' mode
+  const [isAclpAlertsBetaCreateFlow, setIsAclpAlertsBetaCreateFlow] =
+    React.useState<boolean>(false);
 
   const queryClient = useQueryClient();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const { isDualStackEnabled } = useVPCDualStack();
 
   const form = useForm<LinodeCreateFormValues, LinodeCreateFormContext>({
-    context: { profile, secureVMNoticesEnabled },
-    defaultValues: () => defaultValues(params, queryClient),
+    context: { isLinodeInterfacesEnabled, profile, secureVMNoticesEnabled },
+    defaultValues: () =>
+      defaultValues(linodeCreateType, search, queryClient, {
+        isLinodeInterfacesEnabled,
+        isVMHostMaintenanceEnabled,
+      }),
     mode: 'onBlur',
-    resolver: getLinodeCreateResolver(params.type, queryClient),
+    resolver: getLinodeCreateResolver(linodeCreateType, queryClient),
     shouldFocusError: false, // We handle this ourselves with `scrollErrorIntoView`
   });
 
-  const history = useHistory();
-  const { enqueueSnackbar } = useSnackbar();
-
+  const navigate = useNavigate();
   const { mutateAsync: createLinode } = useCreateLinodeMutation();
   const { mutateAsync: cloneLinode } = useCloneLinodeMutation();
   const { mutateAsync: updateAccountAgreements } = useMutateAccountAgreements();
 
-  const {
-    handleLinodeCreateAnalyticsFormError,
-  } = useHandleLinodeCreateAnalyticsFormError(params.type ?? 'OS');
+  const { handleLinodeCreateAnalyticsFormError } =
+    useHandleLinodeCreateAnalyticsFormError(linodeCreateType ?? 'OS');
 
-  const currentTabIndex = getTabIndex(params.type);
+  const { data: permissions } = usePermissions('account', ['create_linode']);
+
+  const { tabs, handleTabChange, tabIndex } = useTabs([
+    {
+      title: 'OS',
+      to: '/linodes/create/os',
+    },
+    {
+      title: 'Marketplace',
+      to: '/linodes/create/marketplace',
+    },
+    {
+      title: 'StackScripts',
+      to: '/linodes/create/stackscripts',
+    },
+    {
+      title: 'Images',
+      to: '/linodes/create/images',
+    },
+    {
+      title: 'Backups',
+      to: '/linodes/create/backups',
+    },
+    {
+      title: 'Clone Linode',
+      to: '/linodes/create/clone',
+    },
+  ]);
 
   const onTabChange = (index: number) => {
-    if (index !== currentTabIndex) {
+    handleTabChange(index);
+
+    if (index !== tabIndex) {
       const newTab = tabs[index];
-      defaultValues({ ...params, type: newTab }, queryClient).then((values) => {
-        // Reset the form values
-        form.reset(values);
-        // Update tab "type" query param. (This changes the selected tab)
-        setParams({ type: newTab });
-      });
+      const newLinodeCreateType = getLinodeCreateType(newTab.to);
+      // Get the default values for the new tab and reset the form
+      defaultValues(newLinodeCreateType, search, queryClient, {
+        isLinodeInterfacesEnabled,
+        isVMHostMaintenanceEnabled,
+      }).then(form.reset);
     }
   };
 
   const onSubmit: SubmitHandler<LinodeCreateFormValues> = async (values) => {
-    const payload = getLinodeCreatePayload(values);
+    const payload = getLinodeCreatePayload(values, {
+      isDualStackEnabled,
+      isShowingNewNetworkingUI: isLinodeInterfacesEnabled,
+      isAclpIntegration: aclpServices?.linode?.alerts?.enabled,
+      isAclpAlertsPreferenceBeta: isAclpAlertsBetaCreateFlow,
+    });
 
     try {
       const linode =
-        params.type === 'Clone Linode'
+        linodeCreateType === 'Clone Linode'
           ? await cloneLinode({
               sourceLinodeId: values.linode?.id ?? -1,
               ...payload,
             })
           : await createLinode(payload);
 
-      history.push(`/linodes/${linode.id}`);
+      navigate({
+        to: `/linodes/$linodeId`,
+        params: { linodeId: linode.id },
+        search: undefined,
+      });
 
       enqueueSnackbar(`Your Linode ${linode.label} is being created.`, {
         variant: 'success',
@@ -125,12 +192,12 @@ export const LinodeCreate = () => {
       captureLinodeCreateAnalyticsEvent({
         queryClient,
         secureVMNoticesEnabled,
-        type: params.type ?? 'OS',
+        type: linodeCreateType ?? 'OS',
         values,
       });
 
       sendLinodeCreateFormSubmitEvent({
-        createType: params.type ?? 'OS',
+        createType: linodeCreateType ?? 'OS',
       });
 
       if (values.hasSignedEUAgreement) {
@@ -140,6 +207,9 @@ export const LinodeCreate = () => {
         });
       }
     } catch (errors) {
+      if (isLinodeInterfacesEnabled) {
+        transformLegacyInterfaceErrorsToLinodeInterfaceErrors(errors);
+      }
       for (const error of errors) {
         if (error.field) {
           form.setError(error.field, { message: error.reason });
@@ -163,73 +233,81 @@ export const LinodeCreate = () => {
     previousSubmitCount.current = form.formState.submitCount;
   }, [form.formState, handleLinodeCreateAnalyticsFormError]);
 
+  if (form.formState.isLoading) {
+    return <CircleProgress />;
+  }
+
+  if (location.pathname === '/linodes/create') {
+    navigate({
+      to: '/linodes/create/os',
+    });
+  }
+
   return (
     <FormProvider {...form}>
       <DocumentTitleSegment segment="Create a Linode" />
       <LandingHeader
+        breadcrumbProps={{
+          labelTitle: linodeCreateType,
+        }}
+        docsLabel="Getting Started"
+        docsLink="https://techdocs.akamai.com/cloud-computing/docs/getting-started"
         onDocsClick={() =>
           sendLinodeCreateFormInputEvent({
-            createType: params.type ?? 'OS',
+            createType: linodeCreateType ?? 'OS',
             interaction: 'click',
             label: 'Getting Started',
           })
         }
-        docsLabel="Getting Started"
-        docsLink="https://techdocs.akamai.com/cloud-computing/docs/getting-started"
+        spacingBottom={4}
         title="Create"
       />
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Error />
+        <LinodeCreateError />
         <Stack gap={3}>
-          <Tabs index={currentTabIndex} onChange={onTabChange}>
-            <TabList>
-              <Tab>OS</Tab>
-              <Tab>Marketplace</Tab>
-              <Tab>StackScripts</Tab>
-              <Tab>Images</Tab>
-              <Tab>Backups</Tab>
-              <Tab>Clone Linode</Tab>
-            </TabList>
+          <Tabs index={tabIndex} onChange={onTabChange}>
+            <TanStackTabLinkList tabs={tabs} />
+            {!permissions.create_linode && (
+              <Notice
+                sx={{ marginBottom: 2 }}
+                text={getRestrictedResourceText({
+                  action: 'create',
+                  isSingular: false,
+                  resourceType: 'Linodes',
+                })}
+                variant="error"
+              />
+            )}
             <TabPanels>
-              <SafeTabPanel index={0}>
-                <OperatingSystems />
-              </SafeTabPanel>
-              <SafeTabPanel index={1}>
-                <Marketplace />
-              </SafeTabPanel>
-              <SafeTabPanel index={2}>
-                <StackScripts />
-              </SafeTabPanel>
-              <SafeTabPanel index={3}>
-                <Images />
-              </SafeTabPanel>
-              <SafeTabPanel index={4}>
-                <Backups />
-              </SafeTabPanel>
-              <SafeTabPanel index={5}>
-                <Clone />
-              </SafeTabPanel>
+              <Outlet />
             </TabPanels>
           </Tabs>
           <Plan />
           <Details />
-          {params.type !== 'Clone Linode' && <Security />}
-          <VPC />
-          <Firewall />
-          {params.type !== 'Clone Linode' && <VLAN />}
+          {linodeCreateType !== 'Clone Linode' && <Security />}
+          {!isLinodeInterfacesEnabled &&
+            linodeCreateType !== 'Clone Linode' && <VPC />}
+          {!isLinodeInterfacesEnabled &&
+            (linodeCreateType !== 'Clone Linode' ||
+              isLinodeCloneFirewallEnabled) && <Firewall />}
+          {!isLinodeInterfacesEnabled &&
+            linodeCreateType !== 'Clone Linode' && <VLAN />}
           <UserData />
+          {isLinodeInterfacesEnabled && linodeCreateType !== 'Clone Linode' && (
+            <Networking />
+          )}
+          <AdditionalOptions
+            isAlertsBetaMode={isAclpAlertsBetaCreateFlow}
+            onAlertsModeChange={setIsAclpAlertsBetaCreateFlow}
+          />
           <Addons />
           <EUAgreement />
-          <Summary />
+          <Summary isAlertsBetaMode={isAclpAlertsBetaCreateFlow} />
           <SMTP />
-          <FirewallAuthorization />
-          <Actions />
+          {secureVMNoticesEnabled && <FirewallAuthorization />}
+          <Actions isAlertsBetaMode={isAclpAlertsBetaCreateFlow} />
         </Stack>
       </form>
     </FormProvider>
   );
 };
-
-export const linodeCreateLazyRoute = createLazyRoute('/linodes/create')({
-  component: LinodeCreate,
-});

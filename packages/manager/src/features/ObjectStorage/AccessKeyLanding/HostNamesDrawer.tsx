@@ -1,8 +1,7 @@
-import { Box } from '@linode/ui';
+import { Box, Drawer } from '@linode/ui';
 import * as React from 'react';
 
 import { CopyableTextField } from 'src/components/CopyableTextField/CopyableTextField';
-import { Drawer } from 'src/components/Drawer';
 import { useObjectStorageRegions } from 'src/features/ObjectStorage/hooks/useObjectStorageRegions';
 
 import { CopyAllHostnames } from './CopyAllHostnames';
@@ -54,6 +53,9 @@ export const HostNamesDrawer = (props: Props) => {
 
           return (
             <CopyableTextField
+              hideLabel
+              key={index}
+              label={`${region.id}${endpointTypeLabel}: ${region.s3_endpoint}`}
               sx={{
                 backgroundColor: 'unset',
                 border: 'none',
@@ -62,9 +64,6 @@ export const HostNamesDrawer = (props: Props) => {
               value={`${
                 regionsByIdMap[region.id]?.label
               }${endpointTypeLabel}: ${region.s3_endpoint}`}
-              hideLabel
-              key={index}
-              label={`${region.id}${endpointTypeLabel}: ${region.s3_endpoint}`}
             />
           );
         })}

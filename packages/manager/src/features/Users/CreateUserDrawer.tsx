@@ -1,18 +1,26 @@
 import { createUser } from '@linode/api-v4/lib/account';
-import { FormControlLabel, Notice, TextField, Toggle } from '@linode/ui';
+import {
+  ActionsPanel,
+  Drawer,
+  FormControlLabel,
+  Notice,
+  TextField,
+  Toggle,
+} from '@linode/ui';
+import { useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { withRouter } from 'react-router-dom';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
+import { useFlags } from 'src/hooks/useFlags';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 import { getAPIErrorFor } from 'src/utilities/getAPIErrorFor';
 
 import type { User } from '@linode/api-v4/lib/account';
 import type { APIError } from '@linode/api-v4/lib/types';
-import type { RouteComponentProps } from 'react-router-dom';
+import type { UseNavigateResult } from '@tanstack/react-router';
 
-interface Props {
+interface CreateUserDrawerProps {
+  iamRbacPrimaryNavChanges?: boolean;
+  navigate: UseNavigateResult<'/account/users'>;
   onClose: () => void;
   open: boolean;
   refetch: () => void;
@@ -26,9 +34,46 @@ interface State {
   username: string;
 }
 
-interface CreateUserDrawerProps extends Props, RouteComponentProps<{}> {}
+const withNavigation = (
+  WrappedComponent: React.ComponentType<CreateUserDrawerProps>
+) => {
+  return (props: CreateUserDrawerProps) => {
+    const navigate = useNavigate();
+    const { iamRbacPrimaryNavChanges } = useFlags();
+    return (
+      <WrappedComponent
+        {...props}
+        iamRbacPrimaryNavChanges={iamRbacPrimaryNavChanges}
+        navigate={navigate}
+      />
+    );
+  };
+};
 
-class CreateUserDrawer extends React.Component<CreateUserDrawerProps, State> {
+class CreateUserDrawerComponent extends React.Component<
+  CreateUserDrawerProps,
+  State
+> {
+  state: State = {
+    email: '',
+    errors: [],
+    restricted: false,
+    submitting: false,
+    username: '',
+  };
+
+  componentDidUpdate(prevProps: CreateUserDrawerProps) {
+    if (this.props.open === true && prevProps.open === false) {
+      this.setState({
+        email: '',
+        errors: [],
+        restricted: false,
+        submitting: false,
+        username: '',
+      });
+    }
+  }
+
   handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({
       email: e.target.value,
@@ -52,11 +97,7 @@ class CreateUserDrawer extends React.Component<CreateUserDrawerProps, State> {
   };
 
   onSubmit = () => {
-    const {
-      history: { push },
-      onClose,
-      refetch,
-    } = this.props;
+    const { onClose, refetch, navigate, iamRbacPrimaryNavChanges } = this.props;
     const { email, restricted, username } = this.state;
     this.setState({ errors: [], submitting: true });
     createUser({ email, restricted, username })
@@ -64,8 +105,11 @@ class CreateUserDrawer extends React.Component<CreateUserDrawerProps, State> {
         this.setState({ submitting: false });
         onClose();
         if (user.restricted) {
-          push(`/account/users/${username}/permissions`, {
-            newUsername: user.username,
+          navigate({
+            to: iamRbacPrimaryNavChanges
+              ? '/users/$username/permissions'
+              : '/account/users/$username/permissions',
+            params: { username: user.username },
           });
         }
         refetch();
@@ -78,26 +122,6 @@ class CreateUserDrawer extends React.Component<CreateUserDrawerProps, State> {
         this.setState({ errors, submitting: false });
       });
   };
-
-  state: State = {
-    email: '',
-    errors: [],
-    restricted: false,
-    submitting: false,
-    username: '',
-  };
-
-  componentDidUpdate(prevProps: CreateUserDrawerProps) {
-    if (this.props.open === true && prevProps.open === false) {
-      this.setState({
-        email: '',
-        errors: [],
-        restricted: false,
-        submitting: false,
-        username: '',
-      });
-    }
-  }
 
   render() {
     const { onClose, open } = this.props;
@@ -173,4 +197,4 @@ class CreateUserDrawer extends React.Component<CreateUserDrawerProps, State> {
   }
 }
 
-export default withRouter(CreateUserDrawer);
+export const CreateUserDrawer = withNavigation(CreateUserDrawerComponent);

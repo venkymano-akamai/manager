@@ -1,8 +1,8 @@
+import { queryClientFactory } from '@linode/queries';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
-import { HttpResponse, http, server } from 'src/mocks/testServer';
-import { queryClientFactory } from 'src/queries/base';
-import { wrapWithThemeAndRouter } from 'src/utilities/testHelpers';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
+import { wrapWithTheme } from 'src/utilities/testHelpers';
 
 import { useOrderV2 } from './useOrderV2';
 
@@ -21,7 +21,7 @@ vi.mock('@tanstack/react-router', async () => {
 });
 
 const queryClient = queryClientFactory();
-const defaultProps: UseOrderV2Props = {
+const defaultProps: UseOrderV2Props<unknown> = {
   initialRoute: {
     defaultOrder: {
       order: 'asc',
@@ -47,12 +47,14 @@ describe('useOrderV2', () => {
     const { result } = renderHook(
       () => useOrderV2({ ...defaultProps, prefix: 'test' }),
       {
-        wrapper: (ui) => wrapWithThemeAndRouter(ui.children, { queryClient }),
+        wrapper: (ui) => wrapWithTheme(ui.children, { queryClient }),
       }
     );
 
     await waitFor(() => {
       expect(result.current.order).toBe('desc');
+    });
+    await waitFor(() => {
       expect(result.current.orderBy).toBe('status');
     });
   });
@@ -74,11 +76,13 @@ describe('useOrderV2', () => {
     );
 
     const { result } = renderHook(() => useOrderV2(defaultProps), {
-      wrapper: (ui) => wrapWithThemeAndRouter(ui.children, { queryClient }),
+      wrapper: (ui) => wrapWithTheme(ui.children, { queryClient }),
     });
 
     await waitFor(() => {
       expect(result.current.order).toBe('desc');
+    });
+    await waitFor(() => {
       expect(result.current.orderBy).toBe('size');
     });
   });
@@ -93,13 +97,15 @@ describe('useOrderV2', () => {
     );
 
     const { result } = renderHook(() => useOrderV2(defaultProps), {
-      wrapper: (ui) => wrapWithThemeAndRouter(ui.children, { queryClient }),
+      wrapper: (ui) => wrapWithTheme(ui.children, { queryClient }),
     });
 
     await waitFor(() => {
       expect(result.current.order).toBe(
         defaultProps.initialRoute.defaultOrder.order
       );
+    });
+    await waitFor(() => {
       expect(result.current.orderBy).toBe(
         defaultProps.initialRoute.defaultOrder.orderBy
       );
@@ -119,7 +125,7 @@ describe('useOrderV2', () => {
     mockUseSearch.mockReturnValue({});
 
     const { result } = renderHook(() => useOrderV2(defaultProps), {
-      wrapper: (ui) => wrapWithThemeAndRouter(ui.children, { queryClient }),
+      wrapper: (ui) => wrapWithTheme(ui.children, { queryClient }),
     });
 
     act(() => {
@@ -138,6 +144,8 @@ describe('useOrderV2', () => {
           to: '/',
         })
       );
+    });
+    await waitFor(() => {
       expect(mutatePreferencesMock).toHaveBeenCalledWith(
         expect.objectContaining({
           sortKeys: expect.objectContaining({
@@ -148,7 +156,11 @@ describe('useOrderV2', () => {
           }),
         })
       );
+    });
+    await waitFor(() => {
       expect(result.current.order).toBe('desc');
+    });
+    await waitFor(() => {
       expect(result.current.orderBy).toBe('size');
     });
   });

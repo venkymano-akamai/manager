@@ -1,5 +1,8 @@
+import { useCreateOAuthClientMutation } from '@linode/queries';
 import {
+  ActionsPanel,
   Checkbox,
+  Drawer,
   FormControl,
   FormControlLabel,
   Notice,
@@ -8,9 +11,6 @@ import {
 import { useFormik } from 'formik';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { useCreateOAuthClientMutation } from 'src/queries/account/oauth';
 import { getAPIErrorFor } from 'src/utilities/getAPIErrorFor';
 
 import type { OAuthClientRequest } from '@linode/api-v4';
@@ -31,7 +31,7 @@ export const CreateOAuthClientDrawer = ({
   const formik = useFormik<OAuthClientRequest>({
     initialValues: {
       label: '',
-      public: false,
+      public: true,
       redirect_uri: '',
     },
     async onSubmit(values) {

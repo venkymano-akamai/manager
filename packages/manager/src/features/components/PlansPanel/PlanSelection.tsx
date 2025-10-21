@@ -1,20 +1,20 @@
+import { useLinodeQuery } from '@linode/queries';
 import { Chip, FormControlLabel, Radio } from '@linode/ui';
+import { Hidden } from '@linode/ui';
+import { convertMegabytesTo } from '@linode/utilities';
 import * as React from 'react';
 
 import { Currency } from 'src/components/Currency';
-import { Hidden } from 'src/components/Hidden';
 import { SelectionCard } from 'src/components/SelectionCard/SelectionCard';
 import { TableCell } from 'src/components/TableCell';
 import { TableRow } from 'src/components/TableRow';
 import { LINODE_NETWORK_IN } from 'src/constants';
-import { useLinodeQuery } from 'src/queries/linodes/linodes';
 import {
   PRICE_ERROR_TOOLTIP_TEXT,
   UNKNOWN_PRICE,
 } from 'src/utilities/pricing/constants';
 import { renderMonthlyPriceToCorrectDecimalPlace } from 'src/utilities/pricing/dynamicPricing';
 import { getLinodeRegionPrice } from 'src/utilities/pricing/linodes';
-import { convertMegabytesTo } from 'src/utilities/unitConversions';
 
 import { DisabledPlanSelectionTooltip } from './DisabledPlanSelectionTooltip';
 import { StyledChip, StyledRadioCell } from './PlanSelection.styles';
@@ -59,6 +59,7 @@ export const PlanSelection = (props: PlanSelectionProps) => {
     planBelongsToDisabledClass,
     planHasLimitedAvailability,
     planIsDisabled512Gb,
+    planResizeNotSupported,
     planIsSmallerThanUsage,
     planIsTooSmall,
   } = plan;
@@ -88,12 +89,14 @@ export const PlanSelection = (props: PlanSelectionProps) => {
     planBelongsToDisabledClass ||
     planIsDisabled512Gb ||
     planHasLimitedAvailability ||
+    planResizeNotSupported ||
     wholePanelIsDisabled;
 
   const disabledPlanReasonCopy = getDisabledPlanReasonCopy({
     planBelongsToDisabledClass,
     planHasLimitedAvailability,
     planIsDisabled512Gb,
+    planResizeNotSupported,
     planIsSmallerThanUsage,
     planIsTooSmall,
     wholePanelIsDisabled,
@@ -110,7 +113,8 @@ export const PlanSelection = (props: PlanSelectionProps) => {
       planIsDisabled512Gb ||
       planHasLimitedAvailability ||
       planIsTooSmall ||
-      planIsSmallerThanUsage);
+      planIsSmallerThanUsage ||
+      planResizeNotSupported);
 
   const isDistributedPlan =
     plan.id.includes('dedicated-edge') || plan.id.includes('nanode-edge');
@@ -126,6 +130,7 @@ export const PlanSelection = (props: PlanSelectionProps) => {
           data-qa-plan-row={plan.formattedLabel}
           key={plan.id}
           onClick={() => (!rowIsDisabled ? onSelect(plan.id) : undefined)}
+          selected={Boolean(plan.id === String(selectedId))}
         >
           <StyledRadioCell>
             {(!isSamePlan || (isDatabaseFlow && isSamePlan)) && (
@@ -133,6 +138,7 @@ export const PlanSelection = (props: PlanSelectionProps) => {
                 aria-label={`${plan.heading} ${
                   rowIsDisabled ? `- ${disabledPlanReasonCopy}` : ''
                 }`}
+                className={'label-visually-hidden'}
                 control={
                   <Radio
                     checked={
@@ -147,9 +153,9 @@ export const PlanSelection = (props: PlanSelectionProps) => {
                     }
                     id={plan.id}
                     onChange={() => onSelect(plan.id)}
+                    size="small"
                   />
                 }
-                className={'label-visually-hidden'}
                 label={plan.heading}
               />
             )}
@@ -157,6 +163,7 @@ export const PlanSelection = (props: PlanSelectionProps) => {
           <TableCell
             className={rowIsDisabled ? 'hasTooltip' : ''}
             data-qa-plan-name
+            sx={{ paddingLeft: 0.5 }}
           >
             {plan.heading} &nbsp;
             {showDisabledTooltip && (
@@ -228,12 +235,14 @@ export const PlanSelection = (props: PlanSelectionProps) => {
       {/* Displays SelectionCard for small screens */}
       <Hidden lgUp={isCreate} mdUp={!isCreate}>
         <SelectionCard
+          checked={plan.id === String(selectedId)}
           disabled={
             isSamePlan ||
             wholePanelIsDisabled ||
             rowIsDisabled ||
             planBelongsToDisabledClass
           }
+          heading={plan.heading}
           headingDecoration={
             isSamePlan || plan.id === selectedLinodePlanType ? (
               <StyledChip
@@ -243,6 +252,8 @@ export const PlanSelection = (props: PlanSelectionProps) => {
               />
             ) : undefined
           }
+          key={plan.id}
+          onClick={() => onSelect(plan.id)}
           subheadings={[
             ...plan.subHeadings,
             planHasLimitedAvailability || planIsDisabled512Gb ? (
@@ -251,10 +262,6 @@ export const PlanSelection = (props: PlanSelectionProps) => {
               ''
             ),
           ]}
-          checked={plan.id === String(selectedId)}
-          heading={plan.heading}
-          key={plan.id}
-          onClick={() => onSelect(plan.id)}
           tooltip={rowIsDisabled ? disabledPlanReasonCopy : undefined}
         />
       </Hidden>

@@ -1,7 +1,6 @@
-import { InputAdornment, TextField } from '@linode/ui';
-import Close from '@mui/icons-material/Close';
+import { CloseIcon, InputAdornment, TextField } from '@linode/ui';
 import CloudUpload from '@mui/icons-material/CloudUpload';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import * as React from 'react';
 import { makeStyles } from 'tss-react/mui';
 
@@ -57,35 +56,36 @@ export const AttachFileListItem = (props: Props) => {
     <Grid container spacing={2}>
       <Grid>
         <TextField
+          aria-label="Disabled Text Field"
+          className={classes.attachmentField}
+          data-testid="attached-file"
+          errorText={err}
+          hideLabel
           InputProps={{
             endAdornment: (
               <InputAdornment
+                aria-label={`Remove file ${file.name}`}
                 className={classes.closeIcon}
                 data-qa-inline-delete
                 data-testid="delete-button"
                 onClick={() => removeFile(fileIdx)}
                 position="end"
               >
-                <Close />
+                <CloseIcon />
               </InputAdornment>
             ),
             startAdornment: (
-              <InputAdornment position="end">
+              <InputAdornment position="start">
                 <CloudUpload />
               </InputAdornment>
             ),
           }}
-          aria-label="Disabled Text Field"
-          className={classes.attachmentField}
-          data-testid="attached-file"
-          errorText={err}
-          hideLabel
           label="File Attached"
           value={file.name}
         />
       </Grid>
       {file.uploading && (
-        <Grid xs={12}>
+        <Grid size={12}>
           <LinearProgress
             className={classes.uploadProgress}
             variant="indeterminate"

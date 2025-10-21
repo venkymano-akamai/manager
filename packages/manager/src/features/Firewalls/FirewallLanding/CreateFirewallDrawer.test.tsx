@@ -2,9 +2,27 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
+import { accountFactory } from 'src/factories';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { CreateFirewallDrawer } from './CreateFirewallDrawer';
+
+const queryMocks = vi.hoisted(() => ({
+  userPermissions: vi.fn(() => ({
+    data: { create_firewall: true },
+  })),
+  useQueryWithPermissions: vi.fn().mockReturnValue({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+}));
+
+vi.mock('src/features/IAM/hooks/usePermissions', () => ({
+  usePermissions: queryMocks.userPermissions,
+  useQueryWithPermissions: queryMocks.useQueryWithPermissions,
+}));
 
 const props = {
   createFlow: undefined,
@@ -26,6 +44,12 @@ describe('Create Firewall Drawer', () => {
       'Create Firewall'
     );
     expect(title).toBeVisible();
+  });
+
+  it('should always show the label field', () => {
+    renderWithTheme(<CreateFirewallDrawer {...props} />);
+    const label = screen.getByText('Label');
+    expect(label).toBeVisible();
   });
 
   it('should render radio buttons for default inbound/outbound policies', () => {
@@ -53,5 +77,64 @@ describe('Create Firewall Drawer', () => {
       /Label must be between 3 and 32 characters./i
     );
     expect(error).toBeInTheDocument();
+  });
+
+  it('shows custom firewall radio group if Linode Interfaces is enabled and can toggle radio group', async () => {
+    const account = accountFactory.build({
+      capabilities: ['Linode Interfaces'],
+    });
+
+    server.use(http.get('*/v4*/account', () => HttpResponse.json(account)));
+
+    const { getByLabelText, findByTestId } = renderWithTheme(
+      <CreateFirewallDrawer {...props} />,
+      {
+        flags: { linodeInterfaces: { enabled: true } },
+      }
+    );
+
+    const createFirewallForm = await findByTestId(
+      'create-firewall-from-radio-group'
+    );
+
+    expect(createFirewallForm).toBeVisible();
+
+    const templateRadio = getByLabelText('From a Template');
+    await userEvent.click(templateRadio);
+    expect(getByLabelText('Firewall Template')).toBeVisible();
+  });
+
+  it('should not show the custom firewall radio group if Linode Interfaces flag is not enabled', () => {
+    const { queryByLabelText, queryByTestId } = renderWithTheme(
+      <CreateFirewallDrawer {...props} />,
+      {
+        flags: { linodeInterfaces: { enabled: false } },
+      }
+    );
+
+    expect(
+      queryByTestId('create-firewall-from-radio-group')
+    ).not.toBeInTheDocument();
+    expect(queryByLabelText('Firewall Template')).not.toBeInTheDocument();
+  });
+
+  it('enables the submit button if the user has create_firewall permission', () => {
+    queryMocks.userPermissions.mockReturnValue({
+      data: { create_firewall: true },
+    });
+
+    renderWithTheme(<CreateFirewallDrawer {...props} />);
+    const submitButton = screen.getByTestId('submit');
+    expect(submitButton).toBeEnabled();
+  });
+
+  it('disables the submit button if the user does not have create_firewall permission', () => {
+    queryMocks.userPermissions.mockReturnValue({
+      data: { create_firewall: false },
+    });
+
+    renderWithTheme(<CreateFirewallDrawer {...props} />);
+    const submitButton = screen.getByTestId('submit');
+    expect(submitButton).toBeDisabled();
   });
 });

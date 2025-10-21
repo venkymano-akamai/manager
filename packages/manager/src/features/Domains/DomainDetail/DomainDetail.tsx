@@ -1,22 +1,29 @@
-import { CircleProgress, Notice, Paper, Typography } from '@linode/ui';
-import { styled } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
-import { useLocation, useNavigate, useParams } from '@tanstack/react-router';
-import * as React from 'react';
-
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
-import { LandingHeader } from 'src/components/LandingHeader';
-import { TagCell } from 'src/components/TagCell/TagCell';
-import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
 import {
   useDomainQuery,
   useDomainRecordsQuery,
   useUpdateDomainMutation,
-} from 'src/queries/domains';
+} from '@linode/queries';
+import {
+  Button,
+  CircleProgress,
+  ErrorState,
+  Notice,
+  Paper,
+  Stack,
+  Typography,
+} from '@linode/ui';
+import Grid from '@mui/material/Grid';
+import { styled } from '@mui/material/styles';
+import { useLocation, useNavigate, useParams } from '@tanstack/react-router';
+import * as React from 'react';
 
-import { DeleteDomain } from '../DeleteDomain';
-import DomainRecords from '../DomainRecords';
+import { LandingHeader } from 'src/components/LandingHeader';
+import { TagCell } from 'src/components/TagCell/TagCell';
+import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
+
+import { DeleteDomainDialog } from '../DeleteDomainDialog';
 import { DownloadDNSZoneFileButton } from '../DownloadDNSZoneFileButton';
+import { DomainRecords } from './DomainRecords/DomainRecords';
 
 import type { DomainState } from 'src/routes/domains';
 
@@ -26,10 +33,12 @@ export const DomainDetail = () => {
   const domainId = params.domainId;
   const location = useLocation();
   const locationState = location.state as DomainState;
-  const { data: domain, error, isLoading } = useDomainQuery(
-    domainId,
-    !!domainId
-  );
+  const {
+    data: domain,
+    error,
+    isFetching: isFetchingDomain,
+    isLoading,
+  } = useDomainQuery(domainId, !!domainId);
   const { mutateAsync: updateDomain } = useUpdateDomainMutation();
   const {
     data: records,
@@ -45,6 +54,8 @@ export const DomainDetail = () => {
   });
 
   const [updateError, setUpdateError] = React.useState<string | undefined>();
+  const [isDeleteDomainDialogOpen, setDeleteDomainDialogOpen] =
+    React.useState(false);
 
   const handleLabelChange = (label: string) => {
     setUpdateError(undefined);
@@ -104,21 +115,21 @@ export const DomainDetail = () => {
           },
           pathname: location.pathname,
         }}
+        docsLabel="Docs"
+        docsLink="https://techdocs.akamai.com/cloud-computing/docs/dns-manager"
         extraActions={
           <DownloadDNSZoneFileButton
             domainId={domain.id}
             domainLabel={domain.domain}
           />
         }
-        docsLabel="Docs"
-        docsLink="https://techdocs.akamai.com/cloud-computing/docs/dns-manager"
         title="Domain Details"
       />
       {locationState?.recordError && (
         <StyledNotice text={locationState.recordError} variant="error" />
       )}
-      <StyledRootGrid container>
-        <StyledMainGrid xs={12}>
+      <Stack spacing={3}>
+        <StyledMainGrid size={{ xs: 12 }}>
           <DomainRecords
             domain={domain}
             domainRecords={records}
@@ -126,27 +137,38 @@ export const DomainDetail = () => {
             updateRecords={refetchRecords}
           />
         </StyledMainGrid>
-        <StyledTagSectionGrid xs={12}>
+        <StyledTagSectionGrid size={{ xs: 12 }}>
           <StyledPaper>
             <StyledTypography data-qa-title variant="h3">
               Tags
             </StyledTypography>
             <TagCell
               disabled={isDomainReadOnly}
+              entity="Domain"
               tags={domain.tags}
               updateTags={handleUpdateTags}
               view="panel"
             />
           </StyledPaper>
           <StyledDiv>
-            <DeleteDomain
+            <StyledButton
+              buttonType="outlined"
+              onClick={() => setDeleteDomainDialogOpen(true)}
+            >
+              Delete Domain
+            </StyledButton>
+            <DeleteDomainDialog
+              domainError={error}
               domainId={domain.id}
               domainLabel={domain.domain}
+              isFetching={isFetchingDomain}
+              onClose={() => setDeleteDomainDialogOpen(false)}
               onSuccess={() => navigate({ to: '/domains' })}
+              open={isDeleteDomainDialogOpen}
             />
           </StyledDiv>
         </StyledTagSectionGrid>
-      </StyledRootGrid>
+      </Stack>
     </>
   );
 };
@@ -169,14 +191,6 @@ const StyledNotice = styled(Notice, { label: 'StyledNotice' })(({ theme }) => ({
   marginTop: `${theme.spacing(3)} !important`,
 }));
 
-const StyledRootGrid = styled(Grid, { label: 'StyledRootGrid' })(
-  ({ theme }) => ({
-    marginBottom: theme.spacing(3),
-    marginLeft: 0,
-    marginRight: 0,
-  })
-);
-
 const StyledMainGrid = styled(Grid, { label: 'StyledMainGrid' })(
   ({ theme }) => ({
     '&.MuiGrid-item': {
@@ -194,6 +208,7 @@ const StyledTagSectionGrid = styled(Grid, { label: 'StyledTagGrid' })(
       paddingLeft: 0,
       paddingRight: 0,
     },
+    marginBottom: theme.spacing(2),
     [theme.breakpoints.up('md')]: {
       marginTop: theme.spacing(2),
       order: 2,
@@ -206,5 +221,11 @@ const StyledDiv = styled('div', { label: 'StyledDiv' })(({ theme }) => ({
   justifyContent: 'flex-end',
   [theme.breakpoints.down('lg')]: {
     marginLeft: theme.spacing(),
+  },
+}));
+
+const StyledButton = styled(Button, { label: 'StyledButton' })(({ theme }) => ({
+  [theme.breakpoints.down('lg')]: {
+    marginRight: theme.spacing(),
   },
 }));

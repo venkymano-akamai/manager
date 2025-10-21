@@ -1,8 +1,8 @@
+import { linodeFactory } from '@linode/utilities';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
-import { linodeFactory } from 'src/factories';
 import { renderWithThemeAndHookFormContext } from 'src/utilities/testHelpers';
 
 import { CloudPulseMultiResourceSelect } from './ResourceMultiSelect';
@@ -29,19 +29,17 @@ describe('ResourceMultiSelect component tests', () => {
       isLoading: false,
       status: 'success',
     });
-    const {
-      getByPlaceholderText,
-      getByTestId,
-    } = renderWithThemeAndHookFormContext({
-      component: (
-        <CloudPulseMultiResourceSelect
-          engine="mysql"
-          name="entity_ids"
-          region={undefined}
-          serviceType={null}
-        />
-      ),
-    });
+    const { getByPlaceholderText, getByTestId } =
+      renderWithThemeAndHookFormContext({
+        component: (
+          <CloudPulseMultiResourceSelect
+            engine="mysql"
+            name="entity_ids"
+            region={undefined}
+            serviceType={null}
+          />
+        ),
+      });
     expect(getByTestId('resource-select')).toBeInTheDocument();
     expect(getByPlaceholderText('Select Resources')).toBeInTheDocument();
   });
@@ -207,7 +205,7 @@ describe('ResourceMultiSelect component tests', () => {
         />
       ),
     });
-    expect(getByLabelText('Clusters'));
+    expect(getByLabelText('Database Clusters'));
   });
 
   it('should render error messages when there is an API call failure', () => {

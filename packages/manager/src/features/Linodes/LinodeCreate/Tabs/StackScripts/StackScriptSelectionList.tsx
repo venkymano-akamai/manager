@@ -1,23 +1,26 @@
+import {
+  useStackScriptQuery,
+  useStackScriptsInfiniteQuery,
+} from '@linode/queries';
 import { getAPIFilterFromQuery } from '@linode/search';
-import { Typography } from '@linode/ui';
 import {
   Box,
   Button,
   CircleProgress,
+  CloseIcon,
   IconButton,
   InputAdornment,
   Stack,
   TextField,
   TooltipIcon,
 } from '@linode/ui';
-import CloseIcon from '@mui/icons-material/Close';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import React, { useState } from 'react';
 import { useController, useFormContext } from 'react-hook-form';
 import { Waypoint } from 'react-waypoint';
 import { debounce } from 'throttle-debounce';
 
-import { Code } from 'src/components/Code/Code';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
 import { TableCell } from 'src/components/TableCell/TableCell';
@@ -27,16 +30,10 @@ import { TableRowEmpty } from 'src/components/TableRowEmpty/TableRowEmpty';
 import { TableRowError } from 'src/components/TableRowError/TableRowError';
 import { TableRowLoading } from 'src/components/TableRowLoading/TableRowLoading';
 import { TableSortCell } from 'src/components/TableSortCell';
-import { useOrder } from 'src/hooks/useOrder';
-import {
-  useStackScriptQuery,
-  useStackScriptsInfiniteQuery,
-} from 'src/queries/stackscripts';
+import { StackScriptSearchHelperText } from 'src/features/StackScripts/Partials/StackScriptSearchHelperText';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
 
-import {
-  getGeneratedLinodeLabel,
-  useLinodeCreateQueryParams,
-} from '../../utilities';
+import { getGeneratedLinodeLabel } from '../../utilities';
 import { StackScriptDetailsDialog } from './StackScriptDetailsDialog';
 import { StackScriptSelectionRow } from './StackScriptSelectionRow';
 import { getDefaultUDFData } from './UserDefinedFields/utilities';
@@ -45,8 +42,8 @@ import {
   communityStackScriptFilter,
 } from './utilities';
 
+import type { LinodeCreateFormValues } from '../../utilities';
 import type { StackScriptTabType } from './utilities';
-import type { CreateLinodeRequest } from '@linode/api-v4';
 
 interface Props {
   type: StackScriptTabType;
@@ -54,12 +51,27 @@ interface Props {
 
 export const StackScriptSelectionList = ({ type }: Props) => {
   const [query, setQuery] = useState<string>();
+  const search = useSearch({
+    strict: false,
+  });
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const queryClient = useQueryClient();
 
-  const { handleOrderChange, order, orderBy } = useOrder({
-    order: 'desc',
-    orderBy: 'deployments_total',
+  const { handleOrderChange, order, orderBy } = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'deployments_total',
+      },
+      from: location.pathname.includes('/linodes/create')
+        ? '/linodes/create/stackscripts'
+        : location.pathname === '/linodes'
+          ? '/linodes'
+          : '/linodes/$linodeId',
+    },
+    preferenceKey: 'linode-clone-stackscripts',
   });
 
   const {
@@ -69,7 +81,7 @@ export const StackScriptSelectionList = ({ type }: Props) => {
     },
     getValues,
     setValue,
-  } = useFormContext<CreateLinodeRequest>();
+  } = useFormContext<LinodeCreateFormValues>();
 
   const { field } = useController({
     control,
@@ -78,26 +90,23 @@ export const StackScriptSelectionList = ({ type }: Props) => {
 
   const [selectedStackScriptId, setSelectedStackScriptId] = useState<number>();
 
-  const { params, updateParams } = useLinodeCreateQueryParams();
+  const hasPreselectedStackScript = Boolean(search.stackScriptID);
 
-  const hasPreselectedStackScript = Boolean(params.stackScriptID);
-
-  const { data: stackscript } = useStackScriptQuery(
-    params.stackScriptID ?? -1,
-    hasPreselectedStackScript
-  );
+  const { data: stackscript, isLoading: isSelectedStackScriptLoading } =
+    useStackScriptQuery(
+      search.stackScriptID ? Number(search.stackScriptID) : -1,
+      hasPreselectedStackScript
+    );
 
   const filter =
     type === 'Community'
       ? communityStackScriptFilter
       : accountStackScriptFilter;
 
-  const {
-    error: searchParseError,
-    filter: searchFilter,
-  } = getAPIFilterFromQuery(query, {
-    searchableFieldsWithoutOperator: ['username', 'label', 'description'],
-  });
+  const { error: searchParseError, filter: searchFilter } =
+    getAPIFilterFromQuery(query, {
+      searchableFieldsWithoutOperator: ['username', 'label', 'description'],
+    });
 
   const {
     data,
@@ -133,11 +142,13 @@ export const StackScriptSelectionList = ({ type }: Props) => {
           <TableBody>
             {stackscript && (
               <StackScriptSelectionRow
-                disabled
                 isSelected={field.value === stackscript.id}
                 onOpenDetails={() => setSelectedStackScriptId(stackscript.id)}
                 stackscript={stackscript}
               />
+            )}
+            {isSelectedStackScriptLoading && (
+              <TableRowLoading columns={3} rows={1} />
             )}
           </TableBody>
         </Table>
@@ -146,25 +157,36 @@ export const StackScriptSelectionList = ({ type }: Props) => {
             onClick={() => {
               field.onChange(null);
               setValue('image', null);
-              updateParams({ stackScriptID: undefined });
+              navigate({
+                to: `/linodes/create/stackscripts`,
+                search: {
+                  stackScriptID: undefined,
+                },
+              });
             }}
           >
             Choose Another StackScript
           </Button>
         </Box>
+        <StackScriptDetailsDialog
+          id={selectedStackScriptId}
+          onClose={() => setSelectedStackScriptId(undefined)}
+          open={Boolean(selectedStackScriptId)}
+        />
       </Stack>
     );
   }
 
   return (
-    <Box sx={{ height: 500, overflow: 'auto' }}>
+    <Box sx={{ maxHeight: 500, overflow: 'auto' }}>
       <TextField
+        hideLabel
         InputProps={{
           endAdornment: query && (
             <InputAdornment position="end">
               {isFetching && <CircleProgress size="sm" />}
               {searchParseError && (
-                <TooltipIcon status="error" text={searchParseError.message} />
+                <TooltipIcon status="warning" text={searchParseError.message} />
               )}
               <IconButton
                 aria-label="Clear"
@@ -176,36 +198,11 @@ export const StackScriptSelectionList = ({ type }: Props) => {
             </InputAdornment>
           ),
         }}
-        tooltipText={
-          <Stack spacing={1}>
-            <Typography>
-              You can search for a specific item by prepending your search term
-              with "username:", "label:", or "description:".
-            </Typography>
-            <Box>
-              <Typography fontFamily={(theme) => theme.font.bold}>
-                Examples
-              </Typography>
-              <Typography fontSize="0.8rem">
-                <Code>username: linode</Code>
-              </Typography>
-              <Typography fontSize="0.8rem">
-                <Code>label: sql</Code>
-              </Typography>
-              <Typography fontSize="0.8rem">
-                <Code>description: "ubuntu server"</Code>
-              </Typography>
-              <Typography fontSize="0.8rem">
-                <Code>label: sql or label: php</Code>
-              </Typography>
-            </Box>
-          </Stack>
-        }
-        hideLabel
         label="Search"
         onChange={debounce(400, (e) => setQuery(e.target.value))}
         placeholder="Search StackScripts"
         spellCheck={false}
+        tooltipText={<StackScriptSearchHelperText />}
         tooltipWidth={300}
         value={query}
       />
@@ -227,6 +224,9 @@ export const StackScriptSelectionList = ({ type }: Props) => {
         <TableBody>
           {stackscripts?.map((stackscript) => (
             <StackScriptSelectionRow
+              isSelected={field.value === stackscript.id}
+              key={stackscript.id}
+              onOpenDetails={() => setSelectedStackScriptId(stackscript.id)}
               onSelect={async () => {
                 setValue('image', null);
                 setValue(
@@ -246,9 +246,6 @@ export const StackScriptSelectionList = ({ type }: Props) => {
                   );
                 }
               }}
-              isSelected={field.value === stackscript.id}
-              key={stackscript.id}
-              onOpenDetails={() => setSelectedStackScriptId(stackscript.id)}
               stackscript={stackscript}
             />
           ))}
@@ -264,7 +261,7 @@ export const StackScriptSelectionList = ({ type }: Props) => {
       <StackScriptDetailsDialog
         id={selectedStackScriptId}
         onClose={() => setSelectedStackScriptId(undefined)}
-        open={selectedStackScriptId !== undefined}
+        open={Boolean(selectedStackScriptId)}
       />
     </Box>
   );

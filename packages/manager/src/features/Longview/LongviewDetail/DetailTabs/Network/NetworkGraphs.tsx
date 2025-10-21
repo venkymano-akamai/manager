@@ -1,8 +1,7 @@
-import { CircleProgress } from '@linode/ui';
+import { CircleProgress, ErrorState } from '@linode/ui';
 import { useTheme } from '@mui/material/styles';
 import * as React from 'react';
 
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { LongviewLineGraph } from 'src/components/LongviewLineGraph/LongviewLineGraph';
 import { Placeholder } from 'src/components/Placeholder/Placeholder';
 import {
@@ -77,6 +76,7 @@ export const NetworkGraphs = (props: Props) => {
           <GraphCard key={`network-interface-card-${idx}`} title={name}>
             <div style={{ paddingTop: theme.spacing(2) }}>
               <LongviewLineGraph
+                ariaLabel="Network Traffic Graph"
                 data={[
                   {
                     backgroundColor: theme.graphs.darkGreen,
@@ -91,11 +91,10 @@ export const NetworkGraphs = (props: Props) => {
                     label: 'Outbound',
                   },
                 ]}
+                error={error}
                 formatData={(value: number) =>
                   convertNetworkToUnit(value * 8, maxUnit)
                 }
-                ariaLabel="Network Traffic Graph"
-                error={error}
                 formatTooltip={formatNetworkTooltip}
                 loading={loading}
                 nativeLegend

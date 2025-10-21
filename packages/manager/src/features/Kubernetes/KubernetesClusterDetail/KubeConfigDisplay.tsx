@@ -1,4 +1,5 @@
-import { Box, CircleProgress, Stack, Typography } from '@linode/ui';
+import { Box, CircleProgress, LinkButton, Stack, Typography } from '@linode/ui';
+import { downloadFile } from '@linode/utilities';
 import copy from 'copy-to-clipboard';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
@@ -9,11 +10,11 @@ import CopyIcon from 'src/assets/icons/copy.svg';
 import DownloadIcon from 'src/assets/icons/lke-download.svg';
 import ResetIcon from 'src/assets/icons/reset.svg';
 import { MaskableText } from 'src/components/MaskableText/MaskableText';
+import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
 import {
   useAllKubernetesClusterAPIEndpointsQuery,
   useKubernetesKubeConfigQuery,
 } from 'src/queries/kubernetes';
-import { downloadFile } from 'src/utilities/downloadFile';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import type { APIError } from '@linode/api-v4';
@@ -30,30 +31,36 @@ interface Props {
 const useStyles = makeStyles()((theme: Theme) => ({
   disabled: {
     '& g': {
-      stroke: theme.palette.text.secondary,
+      stroke: theme.tokens.alias.Content.Icon.Primary.Disabled,
     },
-    color: theme.palette.text.secondary,
+    color: theme.tokens.alias.Content.Text.Primary.Disabled,
     pointer: 'default',
     pointerEvents: 'none',
   },
   kubeconfigElement: {
-    '&:first-child': {
+    '&:first-of-type': {
       borderLeft: 'none',
+      paddingLeft: 0,
     },
     '&:hover': {
       opacity: 0.7,
+      textDecoration: 'none',
+    },
+    '&:hover:not(:disabled)': {
+      textDecoration: 'none',
     },
     alignItems: 'center',
     borderLeft: `1px solid ${theme.tokens.color.Neutrals[40]}`,
     cursor: 'pointer',
     display: 'flex',
+    marginBottom: theme.spacing(1),
+    padding: `0 ${theme.spacing(0.6)}`,
   },
   kubeconfigElements: {
     alignItems: 'center',
     color: theme.palette.primary.main,
     display: 'flex',
     flexWrap: 'wrap',
-    gap: theme.spacing(1),
   },
   kubeconfigFileText: {
     color: theme.textColors.linkActiveLight,
@@ -61,13 +68,13 @@ const useStyles = makeStyles()((theme: Theme) => ({
     whiteSpace: 'nowrap',
   },
   kubeconfigIcons: {
-    height: 16,
+    height: 14,
     margin: `0 ${theme.spacing(1)}`,
     objectFit: 'contain',
-    width: 16,
+    width: 14,
   },
   label: {
-    fontFamily: theme.font.bold,
+    font: theme.font.bold,
     marginBottom: `calc(${theme.spacing(1)} - 3px)`,
   },
 }));
@@ -105,13 +112,16 @@ export const KubeConfigDisplay = (props: Props) => {
   const { enqueueSnackbar } = useSnackbar();
   const { classes, cx } = useStyles();
 
-  const { isFetching, refetch: getKubeConfig } = useKubernetesKubeConfigQuery(
+  const { refetch: getKubeConfig } = useKubernetesKubeConfigQuery(
     clusterId,
     false
   );
+  const [isCopyTokenLoading, setIsCopyTokenLoading] =
+    React.useState<boolean>(false);
 
   const onCopyToken = async () => {
     try {
+      setIsCopyTokenLoading(true);
       const { data } = await getKubeConfig();
       const token = data && data.match(/token:\s*(\S+)/);
       if (token && token[1]) {
@@ -122,11 +132,13 @@ export const KubeConfigDisplay = (props: Props) => {
           variant: 'error',
         });
       }
+      setIsCopyTokenLoading(false);
     } catch (error) {
       enqueueSnackbar({
         message: (error as APIError[])[0].reason,
         variant: 'error',
       });
+      setIsCopyTokenLoading(false);
     }
   };
 
@@ -136,27 +148,55 @@ export const KubeConfigDisplay = (props: Props) => {
     isLoading: endpointsLoading,
   } = useAllKubernetesClusterAPIEndpointsQuery(clusterId);
 
+  const isClusterReadOnly = useIsResourceRestricted({
+    grantLevel: 'read_only',
+    grantType: 'lkecluster',
+    id: clusterId,
+  });
+
   const downloadKubeConfig = async () => {
     try {
-      const { data } = await getKubeConfig();
+      const queryResult = await getKubeConfig();
 
-      if (data) {
-        downloadFile(`${clusterLabel}-kubeconfig.yaml`, data);
+      if (
+        Array.isArray(queryResult.error) &&
+        queryResult.error[0]?.reason?.includes(
+          'kubeconfig is not yet available'
+        )
+      ) {
+        enqueueSnackbar(
+          'Your cluster is still provisioning. Please try again in a few minutes.',
+          { variant: 'error' }
+        );
+        return;
       }
+
+      if (queryResult.isError) {
+        throw queryResult.error;
+      }
+
+      if (!queryResult.data) {
+        throw new Error('No kubeconfig data available');
+      }
+
+      downloadFile(`${clusterLabel}-kubeconfig.yaml`, queryResult.data);
     } catch (error) {
-      const errorText = getAPIErrorOrDefault(
-        error,
-        'Unable to download your kubeconfig'
-      )[0].reason;
+      const errorText =
+        error instanceof Error
+          ? error.message
+          : getAPIErrorOrDefault(error, 'Unable to download your kubeconfig')[0]
+              .reason;
 
       enqueueSnackbar(errorText, { variant: 'error' });
     }
   };
 
   const getEndpointToDisplay = (endpoints: string[]) => {
-    // Per discussions with the API team and UX, we should display only the endpoint with port 443, so we are matching on that.
-    return endpoints.find((thisResponse) =>
-      thisResponse.match(/linodelke\.net:443$/i)
+    // We are returning the endpoint with port 443 to be the most user-friendly, but if it doesn't exist, return the first endpoint available
+    return (
+      endpoints.find((thisResponse) =>
+        thisResponse.match(/linodelke\.net:443$/i)
+      ) ?? endpoints[0]
     );
   };
 
@@ -179,58 +219,100 @@ export const KubeConfigDisplay = (props: Props) => {
           Kubeconfig:
         </Typography>
         <div className={classes.kubeconfigElements}>
-          <Box
+          <LinkButton
+            aria-label={`Download kubeconfig for ${clusterLabel}`}
             className={classes.kubeconfigElement}
+            disabled={isClusterReadOnly}
             onClick={downloadKubeConfig}
           >
             <DownloadIcon
-              className={classes.kubeconfigIcons}
+              className={cx({
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
+                [classes.kubeconfigIcons]: true,
+              })}
               style={{ marginLeft: 0 }}
             />
-            <Typography className={classes.kubeconfigFileText}>
+            <Typography
+              className={cx({
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
+                [classes.kubeconfigFileText]: !isClusterReadOnly,
+              })}
+            >
               {`${clusterLabel}-kubeconfig.yaml`}
             </Typography>
-          </Box>
-          <Box className={classes.kubeconfigElement} onClick={handleOpenDrawer}>
-            <DetailsIcon className={classes.kubeconfigIcons} />
-            <Typography className={classes.kubeconfigFileText}>View</Typography>
-          </Box>
-          <Box
+          </LinkButton>
+          <LinkButton
+            aria-label="View kubeconfig details"
             className={classes.kubeconfigElement}
-            onClick={onCopyToken}
-            sx={{ marginLeft: isFetching ? 1.25 : 0 }}
+            disabled={isClusterReadOnly}
+            onClick={handleOpenDrawer}
           >
-            {isFetching ? (
-              <CircleProgress noPadding={true} size="xs" />
-            ) : (
-              <CopyIcon className={classes.kubeconfigIcons} />
-            )}
-            <Box
-              className={classes.kubeconfigFileText}
-              sx={{ marginLeft: isFetching ? 1 : 0 }}
-            >
-              Copy Token
-            </Box>
-          </Box>
-          <Box
-            className={classes.kubeconfigElement}
-            onClick={() => setResetKubeConfigDialogOpen(true)}
-          >
-            <ResetIcon
+            <DetailsIcon
               className={cx({
-                [classes.disabled]: isResettingKubeConfig,
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
                 [classes.kubeconfigIcons]: true,
               })}
             />
             <Typography
               className={cx({
-                [classes.disabled]: isResettingKubeConfig,
-                [classes.kubeconfigFileText]: true,
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
+                [classes.kubeconfigFileText]: !isClusterReadOnly,
+              })}
+            >
+              View
+            </Typography>
+          </LinkButton>
+          <LinkButton
+            aria-label="Copy kubeconfig token"
+            className={classes.kubeconfigElement}
+            disabled={isClusterReadOnly}
+            onClick={onCopyToken}
+          >
+            {isCopyTokenLoading ? (
+              <CircleProgress
+                className={classes.kubeconfigIcons}
+                noPadding
+                size="xs"
+              />
+            ) : (
+              <CopyIcon
+                className={cx({
+                  [classes.disabled]:
+                    isResettingKubeConfig || isClusterReadOnly,
+                  [classes.kubeconfigIcons]: true,
+                })}
+              />
+            )}
+            <Box
+              className={cx({
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
+                [classes.kubeconfigFileText]: !isClusterReadOnly,
+              })}
+            >
+              Copy Token
+            </Box>
+          </LinkButton>
+          <LinkButton
+            aria-label="Reset kubeconfig"
+            className={classes.kubeconfigElement}
+            disabled={isClusterReadOnly}
+            onClick={() => setResetKubeConfigDialogOpen(true)}
+          >
+            <ResetIcon
+              className={cx({
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
+                [classes.kubeconfigIcons]: true,
+              })}
+            />
+            <Typography
+              className={cx({
+                [classes.disabled]: isResettingKubeConfig || isClusterReadOnly,
+                [classes.kubeconfigFileText]: !isClusterReadOnly,
               })}
             >
               Reset
             </Typography>
-          </Box>
+          </LinkButton>
         </div>
       </Box>
     </Stack>

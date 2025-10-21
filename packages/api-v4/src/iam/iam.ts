@@ -1,57 +1,102 @@
 import { BETA_API_ROOT } from '../constants';
 import Request, { setData, setMethod, setURL } from '../request';
-import { IamUserPermissions, IamAccountPermissions } from './types';
+
+import type {
+  AccessType,
+  IamAccountRoles,
+  IamUserRoles,
+  PermissionType,
+} from './types';
 
 /**
- * getUserPermissions
+ * getUserRoles
  *
  * Returns the full permissions structure for this User. This includes all entities on
  * the Account alongside what level of access this User has to each of them.
  *
- * @param username { number } the username to look up.
+ * @param username { string } the username to look up.
  *
  */
-export const getUserPermissions = (username: string) =>
-  Request<IamUserPermissions>(
+export const getUserRoles = (username: string) =>
+  Request<IamUserRoles>(
     setURL(
-      `${BETA_API_ROOT}/iam/role-permissions/users/${encodeURIComponent(
-        username
-      )}`
+      `${BETA_API_ROOT}/iam/users/${encodeURIComponent(
+        username,
+      )}/role-permissions`,
     ),
-    setMethod('GET')
-  );
-/**
- * updateUserPermissions
- *
- * Update the permissions a User has.
- *
- * @param username { number } ID of the client to be viewed.
- * @param data { object } the Permissions object to update.
- *
- */
-export const updateUserPermissions = (
-  username: string,
-  data: Partial<IamUserPermissions>
-) =>
-  Request<IamUserPermissions>(
-    setURL(
-      `${BETA_API_ROOT}/iam/role-permissions/users/${encodeURIComponent(
-        username
-      )}`
-    ),
-    setMethod('PUT'),
-    setData(data)
+    setMethod('GET'),
   );
 
 /**
- * getAccountPermissions
+ * updateUserRoles
  *
- * Return all permissions for account.
+ * Update the roles a User has.
+ *
+ * @param username { string } username of the user to be updated.
+ * @param data { object } the Roles object to update.
  *
  */
-export const getAccountPermissions = () => {
-  return Request<IamAccountPermissions>(
+export const updateUserRoles = (username: string, data: IamUserRoles) =>
+  Request<IamUserRoles>(
+    setURL(
+      `${BETA_API_ROOT}/iam/users/${encodeURIComponent(
+        username,
+      )}/role-permissions`,
+    ),
+    setMethod('PUT'),
+    setData(data),
+  );
+
+/**
+ * getAccountRoles
+ *
+ * Return all roles for account.
+ *
+ */
+export const getAccountRoles = () => {
+  return Request<IamAccountRoles>(
     setURL(`${BETA_API_ROOT}/iam/role-permissions`),
-    setMethod('GET')
+    setMethod('GET'),
   );
 };
+
+/**
+ * getUserAccountPermissions
+ *
+ * Returns the current permissions for this User on the account.
+ *
+ * @param username { string } the username to look up.
+ *
+ */
+export const getUserAccountPermissions = (username: string) =>
+  Request<PermissionType[]>(
+    setURL(
+      `${BETA_API_ROOT}/iam/users/${encodeURIComponent(
+        username,
+      )}/permissions/account`,
+    ),
+    setMethod('GET'),
+  );
+
+/**
+ * getUserEntityPermissions
+ *
+ * Returns the current permissions for this User on the entity.
+ *
+ * @param username { string } the username to look up.
+ * @param entityType { AccessType } the entityType to look up.
+ * @param entityId { number } the entityId to look up.
+ */
+export const getUserEntityPermissions = (
+  username: string,
+  entityType: AccessType,
+  entityId: number | string,
+) =>
+  Request<PermissionType[]>(
+    setURL(
+      `${BETA_API_ROOT}/iam/users/${encodeURIComponent(
+        username,
+      )}/permissions/${entityType}/${entityId}`,
+    ),
+    setMethod('GET'),
+  );

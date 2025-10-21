@@ -1,4 +1,7 @@
+import { useCloneDomainMutation, useGrants, useProfile } from '@linode/queries';
 import {
+  ActionsPanel,
+  Drawer,
   FormControlLabel,
   Notice,
   Radio,
@@ -9,29 +12,27 @@ import { useNavigate } from '@tanstack/react-router';
 import { useFormik } from 'formik';
 import React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { useCloneDomainMutation } from 'src/queries/domains';
-import { useGrants, useProfile } from 'src/queries/profile/profile';
-
-import type { Domain } from '@linode/api-v4';
+import type { APIError, Domain } from '@linode/api-v4';
 
 interface CloneDomainDrawerProps {
   domain: Domain | undefined;
+  domainError: APIError[] | null;
   isFetching: boolean;
   onClose: () => void;
   open: boolean;
 }
 
 export const CloneDomainDrawer = (props: CloneDomainDrawerProps) => {
-  const { domain, isFetching, onClose: _onClose, open } = props;
+  const { domain, domainError, isFetching, onClose: _onClose, open } = props;
 
   const { data: profile } = useProfile();
   const { data: grants } = useGrants();
 
-  const { error, mutateAsync: cloneDomain, reset } = useCloneDomainMutation(
-    domain?.id ?? 0
-  );
+  const {
+    error,
+    mutateAsync: cloneDomain,
+    reset,
+  } = useCloneDomainMutation(domain?.id ?? 0);
 
   const navigate = useNavigate();
 
@@ -57,6 +58,7 @@ export const CloneDomainDrawer = (props: CloneDomainDrawerProps) => {
 
   return (
     <Drawer
+      error={domainError}
       isFetching={isFetching}
       onClose={onClose}
       open={open}

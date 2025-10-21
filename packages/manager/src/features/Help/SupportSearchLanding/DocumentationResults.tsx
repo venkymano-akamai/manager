@@ -1,5 +1,6 @@
 import { ListItem, Paper, Typography } from '@linode/ui';
 import * as React from 'react';
+import type { JSX } from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import { Link } from 'src/components/Link';
@@ -21,7 +22,7 @@ const useStyles = makeStyles()((theme: Theme) => ({
   },
   link: {
     display: 'inline-block',
-    fontFamily: theme.font.bold,
+    font: theme.font.bold,
     marginTop: theme.spacing(2),
   },
   noResultsContainer: {

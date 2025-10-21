@@ -1,19 +1,18 @@
-import { Box, CircleProgress, Stack } from '@linode/ui';
-import { createLazyRoute } from '@tanstack/react-router';
+import { useAccount } from '@linode/queries';
+import { Box, CircleProgress, ErrorState, Notice, Stack } from '@linode/ui';
+import { useLocation, useParams } from '@tanstack/react-router';
 import * as React from 'react';
-import { useLocation, useParams } from 'react-router-dom';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { LandingHeader } from 'src/components/LandingHeader';
-import { getKubeHighAvailability } from 'src/features/Kubernetes/kubeUtils';
+import { getRestrictedResourceText } from 'src/features/Account/utils';
 import { useAPLAvailability } from 'src/features/Kubernetes/kubeUtils';
-import { useAccount } from 'src/queries/account/account';
+import { getKubeHighAvailability } from 'src/features/Kubernetes/kubeUtils';
+import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
 import {
   useKubernetesClusterMutation,
   useKubernetesClusterQuery,
 } from 'src/queries/kubernetes';
-import { useRegionsQuery } from 'src/queries/regions/regions';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import { APLSummaryPanel } from './APLSummaryPanel';
@@ -24,25 +23,36 @@ import UpgradeKubernetesVersionBanner from './UpgradeKubernetesVersionBanner';
 
 export const KubernetesClusterDetail = () => {
   const { data: account } = useAccount();
-  const { clusterID } = useParams<{ clusterID: string }>();
-  const id = Number(clusterID);
+  const { clusterId: id } = useParams({
+    from: '/kubernetes/clusters/$clusterId',
+  });
   const location = useLocation();
   const { showAPL } = useAPLAvailability();
 
-  const { data: cluster, error, isLoading } = useKubernetesClusterQuery(id);
-  const { data: regionsData } = useRegionsQuery();
-
-  const { mutateAsync: updateKubernetesCluster } = useKubernetesClusterMutation(
-    id
-  );
-
   const {
-    isClusterHighlyAvailable,
-    showHighAvailability,
-  } = getKubeHighAvailability(account, cluster);
+    data: cluster,
+    error,
+    isLoading,
+  } = useKubernetesClusterQuery({
+    id,
+  });
+
+  const { mutateAsync: updateKubernetesCluster } =
+    useKubernetesClusterMutation(id);
+
+  const { isClusterHighlyAvailable } = getKubeHighAvailability(
+    account,
+    cluster
+  );
 
   const [updateError, setUpdateError] = React.useState<string | undefined>();
   const [isUpgradeToHAOpen, setIsUpgradeToHAOpen] = React.useState(false);
+
+  const isClusterReadOnly = useIsResourceRestricted({
+    grantLevel: 'read_only',
+    grantType: 'lkecluster',
+    id: cluster?.id,
+  });
 
   if (error) {
     return (
@@ -77,16 +87,27 @@ export const KubernetesClusterDetail = () => {
   };
 
   return (
-    <Box>
+    <>
       <DocumentTitleSegment
         segment={`${cluster?.label} | Kubernetes Cluster`}
       />
-      <UpgradeKubernetesVersionBanner
-        clusterID={cluster?.id}
-        clusterLabel={cluster?.label}
-        clusterTier={cluster?.tier ?? 'standard'} // TODO LKE: remove fallback once LKE-E is in GA and tier is required
-        currentVersion={cluster?.k8s_version}
-      />
+      {!isClusterReadOnly && (
+        <UpgradeKubernetesVersionBanner
+          clusterID={cluster?.id}
+          clusterTier={cluster?.tier ?? 'standard'} // TODO LKE: remove fallback once LKE-E is in GA and tier is required
+          currentVersion={cluster?.k8s_version}
+        />
+      )}
+      {isClusterReadOnly && (
+        <Notice
+          text={getRestrictedResourceText({
+            action: 'edit',
+            resourceType: 'LKE Clusters',
+            isSingular: true,
+          })}
+          variant="warning"
+        />
+      )}
       <LandingHeader
         breadcrumbProps={{
           breadcrumbDataAttrs: { 'data-qa-breadcrumb': true },
@@ -99,49 +120,48 @@ export const KubernetesClusterDetail = () => {
           },
           pathname: location.pathname,
         }}
-        onButtonClick={
-          showHighAvailability && !isClusterHighlyAvailable
-            ? handleUpgradeToHA
-            : undefined
-        }
         createButtonText="Upgrade to HA"
         docsLabel="Docs"
         docsLink="https://techdocs.akamai.com/cloud-computing/docs/getting-started-with-lke-linode-kubernetes-engine"
+        onButtonClick={
+          !isClusterHighlyAvailable && !isClusterReadOnly
+            ? handleUpgradeToHA
+            : undefined
+        }
         title="Kubernetes Cluster Details"
       />
-      <Stack spacing={1}>
-        <KubeSummaryPanel cluster={cluster} />
-        {showAPL && cluster.apl_enabled && (
-          <Box>
-            <LandingHeader
-              docsLabel="Docs"
-              docsLink="https://apl-docs.net/"
-              removeCrumbX={[1, 2, 3]}
-              title="Application Platform for LKE"
-            />
+      <Box>
+        <Stack spacing={1}>
+          <KubeSummaryPanel cluster={cluster} />
+          {showAPL && cluster.apl_enabled && (
+            <Box>
+              <LandingHeader
+                docsLabel="Docs"
+                docsLink="https://apl-docs.net/"
+                removeCrumbX={[1, 2, 3]}
+                title="Application Platform for LKE"
+              />
 
-            <APLSummaryPanel cluster={cluster} />
-          </Box>
-        )}
-        <NodePoolsDisplay
+              <APLSummaryPanel cluster={cluster} />
+            </Box>
+          )}
+          <NodePoolsDisplay
+            clusterCreated={cluster.created}
+            clusterID={cluster.id}
+            clusterLabel={cluster.label}
+            clusterRegionId={cluster.region}
+            clusterTier={cluster.tier ?? 'standard'}
+            clusterVersion={cluster.k8s_version}
+            isLkeClusterRestricted={isClusterReadOnly}
+          />
+        </Stack>
+        <UpgradeKubernetesClusterToHADialog
           clusterID={cluster.id}
-          clusterLabel={cluster.label}
-          clusterRegionId={cluster.region}
-          regionsData={regionsData || []}
+          onClose={() => setIsUpgradeToHAOpen(false)}
+          open={isUpgradeToHAOpen}
+          regionID={cluster.region}
         />
-      </Stack>
-      <UpgradeKubernetesClusterToHADialog
-        clusterID={cluster.id}
-        onClose={() => setIsUpgradeToHAOpen(false)}
-        open={isUpgradeToHAOpen}
-        regionID={cluster.region}
-      />
-    </Box>
+      </Box>
+    </>
   );
 };
-
-export const kubernetesClusterDetailLazyRoute = createLazyRoute(
-  '/kubernetes/clusters/$clusterID'
-)({
-  component: KubernetesClusterDetail,
-});

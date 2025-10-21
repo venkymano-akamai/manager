@@ -1,11 +1,9 @@
-import { Box, Notice } from '@linode/ui';
+import { ActionsPanel, Box, Drawer, Notice } from '@linode/ui';
+import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
 import * as React from 'react';
 import { FormProvider } from 'react-hook-form';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
 import { CannotCreateVPCNotice } from 'src/features/VPCs/VPCCreate/FormComponents/CannotCreateVPCNotice';
 import { SubnetContent } from 'src/features/VPCs/VPCCreate/FormComponents/SubnetContent';
 import { VPCTopSectionContent } from 'src/features/VPCs/VPCCreate/FormComponents/VPCTopSectionContent';

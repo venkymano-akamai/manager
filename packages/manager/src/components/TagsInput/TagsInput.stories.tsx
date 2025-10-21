@@ -1,11 +1,11 @@
 import { Box } from '@linode/ui';
-import { useArgs } from '@storybook/preview-api';
 import React from 'react';
+import { useArgs } from 'storybook/preview-api';
 
 import { TagsInput } from './TagsInput';
 
-import type { Tag, TagsInputProps } from './TagsInput';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { TagOption, TagsInputProps } from './TagsInput';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 export const Default: StoryObj<TagsInputProps> = {
   args: {
@@ -23,7 +23,7 @@ export const Default: StoryObj<TagsInputProps> = {
   render: (args) => {
     const TagsInputWrapper = () => {
       const [, setTags] = useArgs();
-      const handleUpdateTags = (selected: Tag[]) => {
+      const handleUpdateTags = (selected: TagOption[]) => {
         return setTags({ value: selected });
       };
 

@@ -5,16 +5,12 @@ const config: StorybookConfig = {
   stories: [
     '../src/components/**/*.@(mdx|stories.@(js|ts|jsx|tsx))',
     '../src/features/**/*.@(mdx|stories.@(js|ts|jsx|tsx))',
+    '../../shared/src/**/*.@(mdx|stories.@(js|ts|jsx|tsx))',
     '../../ui/src/components/**/*.@(mdx|stories.@(js|ts|jsx|tsx))',
   ],
   addons: [
+    '@vueless/storybook-dark-mode',
     '@storybook/addon-docs',
-    '@storybook/addon-controls',
-    '@storybook/addon-viewport',
-    '@storybook/addon-measure',
-    '@storybook/addon-actions',
-    'storybook-dark-mode',
-    '@storybook/addon-storysource',
     '@storybook/addon-a11y',
   ],
   staticDirs: ['../public'],
@@ -42,25 +38,12 @@ const config: StorybookConfig = {
     reactDocgen: 'react-docgen-typescript',
   },
   docs: {
-    autodocs: true,
     defaultName: 'Documentation',
   },
   async viteFinal(config) {
     return mergeConfig(config, {
-      base: './',
-      resolve: {
-        preserveSymlinks: true,
-      },
-      define: {
-        'process.env': {},
-      },
       optimizeDeps: {
-        include: [
-          '@storybook/react',
-          '@storybook/react-vite',
-          'react',
-          'react-dom',
-        ],
+        include: ['@storybook/react-vite', 'react', 'react-dom'],
         esbuildOptions: {
           target: 'esnext',
         },

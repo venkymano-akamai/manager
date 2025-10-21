@@ -1,23 +1,23 @@
-import { Grid, Paper } from '@mui/material';
+import { GridLegacy, Paper } from '@mui/material';
 import React from 'react';
 
 import CloudPulseIcon from 'src/assets/icons/entityIcons/monitor.svg';
-import { StyledPlaceholder } from 'src/features/StackScripts/StackScriptBase/StackScriptBase.styles';
+import { Placeholder } from 'src/components/Placeholder/Placeholder';
 
 export const CloudPulseErrorPlaceholder = React.memo(
   (props: { errorMessage: string }) => {
     const { errorMessage } = props;
     return (
-      <Grid item xs={12}>
+      <GridLegacy item xs={12}>
         <Paper>
-          <StyledPlaceholder
+          <Placeholder
             icon={CloudPulseIcon}
             isEntity
             subtitle={errorMessage}
             title=""
           />
         </Paper>
-      </Grid>
+      </GridLegacy>
     );
   }
 );

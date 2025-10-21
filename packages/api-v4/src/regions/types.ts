@@ -1,4 +1,4 @@
-import { COUNTRY_CODE_TO_CONTINENT_CODE } from './constants';
+import type { COUNTRY_CODE_TO_CONTINENT_CODE } from './constants';
 
 export type Capabilities =
   | 'Backups'
@@ -12,17 +12,26 @@ export type Capabilities =
   | 'GPU Linodes'
   | 'Kubernetes'
   | 'Kubernetes Enterprise'
+  | 'LA Disk Encryption' // @TODO LDE: Remove once LDE is fully rolled out in every DC
+  | 'Linode Interfaces'
   | 'Linodes'
+  | 'Maintenance Policy'
   | 'Managed Databases'
   | 'Metadata'
-  | 'NodeBalancers'
   | 'NETINT Quadra T1U'
+  | 'NodeBalancers'
   | 'Object Storage'
   | 'Placement Group'
   | 'Premium Plans'
+  | 'StackScripts'
   | 'Vlans'
-  | 'VPCs'
-  | 'StackScripts';
+  | 'VPC Dual Stack'
+  | 'VPCs';
+
+export interface MonitoringCapabilities {
+  alerts: Capabilities[];
+  metrics: Capabilities[];
+}
 
 export interface DNSResolvers {
   ipv4: string; // Comma-separated IP addresses
@@ -34,22 +43,35 @@ export type RegionStatus = 'ok' | 'outage';
 export type RegionSite = 'core' | 'distributed';
 
 export interface Region {
+  capabilities: Capabilities[];
+  country: Country;
   id: string;
   label: string;
-  country: Country;
-  capabilities: Capabilities[];
+  /**
+   * CloudPulse monitoring capabilities that are available in the region.
+   *
+   * **Upcoming Feature Notice:** this property may not be available to all customers
+   * and may change in subsequent releases.
+   */
+  monitors?: MonitoringCapabilities;
   placement_group_limits: {
-    maximum_pgs_per_customer: number | null; // This value can be unlimited for some customers, for which the API returns the `null` value.
     maximum_linodes_per_pg: number;
+    maximum_pgs_per_customer: null | number; // This value can be unlimited for some customers, for which the API returns the `null` value.
   };
-  status: RegionStatus;
   resolvers: DNSResolvers;
   site_type: RegionSite;
+  status: RegionStatus;
 }
 
 export interface RegionAvailability {
   available: boolean;
   plan: string;
+  region: string;
+}
+
+export interface RegionVPCAvailability {
+  available: boolean; // True if Region has VPC capabilities
+  available_ipv6_prefix_lengths: number[];
   region: string;
 }
 

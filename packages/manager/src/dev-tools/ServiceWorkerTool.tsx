@@ -12,7 +12,13 @@ import { SeedOptions } from './components/SeedOptions';
 import {
   getBaselinePreset,
   getCustomAccountData,
+  getCustomEventsData,
+  getCustomGrantsData,
+  getCustomMaintenanceData,
+  getCustomNotificationsData,
   getCustomProfileData,
+  getCustomUserAccountPermissionsData,
+  getCustomUserEntityPermissionsData,
   getExtraPresets,
   getExtraPresetsMap,
   getSeeders,
@@ -20,7 +26,13 @@ import {
   isMSWEnabled,
   saveBaselinePreset,
   saveCustomAccountData,
+  saveCustomEventsData,
+  saveCustomGrantsData,
+  saveCustomMaintenanceData,
+  saveCustomNotificationsData,
   saveCustomProfileData,
+  saveCustomUserAccountPermissionsData,
+  saveCustomUserEntityPermissionsData,
   saveExtraPresets,
   saveExtraPresetsMap,
   saveMSWEnabled,
@@ -28,7 +40,15 @@ import {
   saveSeedsCountMap,
 } from './utils';
 
-import type { Account, Profile } from '@linode/api-v4';
+import type {
+  Account,
+  AccountMaintenance,
+  Event,
+  Grants,
+  Notification,
+  PermissionType,
+  Profile,
+} from '@linode/api-v4';
 import type {
   MockPresetBaselineId,
   MockPresetCrudId,
@@ -52,19 +72,38 @@ export const ServiceWorkerTool = () => {
   const loadedSeeders = getSeeders(dbSeeders);
   const loadedSeedsCountMap = getSeedsCountMap();
   const loadedPresetsMap = getExtraPresetsMap();
-  const [
-    baselinePreset,
-    setBaselinePreset,
-  ] = React.useState<MockPresetBaselineId>(loadedBaselinePreset);
-  const [extraPresets, setExtraPresets] = React.useState<string[]>(
-    loadedExtraPresets
-  );
+  const [baselinePreset, setBaselinePreset] =
+    React.useState<MockPresetBaselineId>(loadedBaselinePreset);
+  const [extraPresets, setExtraPresets] =
+    React.useState<string[]>(loadedExtraPresets);
   const [customAccountData, setCustomAccountData] = React.useState<
     Account | null | undefined
   >(getCustomAccountData());
   const [customProfileData, setCustomProfileData] = React.useState<
-    Profile | null | undefined
+    null | Profile | undefined
   >(getCustomProfileData());
+  const [
+    customUserAccountPermissionsData,
+    setCustomUserAccountPermissionsData,
+  ] = React.useState<null | PermissionType[] | undefined>(
+    getCustomUserAccountPermissionsData()
+  );
+  const [customUserEntityPermissionsData, setCustomUserEntityPermissionsData] =
+    React.useState<null | PermissionType[] | undefined>(
+      getCustomUserEntityPermissionsData()
+    );
+  const [customEventsData, setCustomEventsData] = React.useState<
+    Event[] | null | undefined
+  >(getCustomEventsData());
+  const [customGrantsData, setCustomGrantsData] = React.useState<
+    Grants | null | undefined
+  >(getCustomGrantsData());
+  const [customMaintenanceData, setCustomMaintenanceData] = React.useState<
+    AccountMaintenance[] | null | undefined
+  >(getCustomMaintenanceData());
+  const [customNotificationsData, setCustomNotificationsData] = React.useState<
+    Notification[] | null | undefined
+  >(getCustomNotificationsData());
   const [presetsCountMap, setPresetsCountMap] = React.useState<{
     [key: string]: number;
   }>(loadedPresetsMap);
@@ -85,19 +124,62 @@ export const ServiceWorkerTool = () => {
 
   React.useEffect(() => {
     const currentAccountData = getCustomAccountData();
+    const currentGrantsData = getCustomGrantsData();
     const currentProfileData = getCustomProfileData();
+    const currentUserAccountPermissionsData =
+      getCustomUserAccountPermissionsData();
+    const currentUserEntityPermissionsData =
+      getCustomUserEntityPermissionsData();
+    const currentEventsData = getCustomEventsData();
+    const currentMaintenanceData = getCustomMaintenanceData();
+    const currentNotificationsData = getCustomNotificationsData();
     const hasCustomAccountChanges =
       JSON.stringify(currentAccountData) !== JSON.stringify(customAccountData);
+    const hasCustomGrantsChanges =
+      JSON.stringify(currentGrantsData) !== JSON.stringify(customGrantsData);
     const hasCustomProfileChanges =
       JSON.stringify(currentProfileData) !== JSON.stringify(customProfileData);
+    const hasCustomEventsChanges =
+      JSON.stringify(currentEventsData) !== JSON.stringify(customEventsData);
+    const hasCustomMaintenanceChanges =
+      JSON.stringify(currentMaintenanceData) !==
+      JSON.stringify(customMaintenanceData);
+    const hasCustomNotificationsChanges =
+      JSON.stringify(currentNotificationsData) !==
+      JSON.stringify(customNotificationsData);
 
-    if (hasCustomAccountChanges || hasCustomProfileChanges) {
+    const hasCustomUserAccountPermissionsChanges =
+      JSON.stringify(currentUserAccountPermissionsData) !==
+      JSON.stringify(customUserAccountPermissionsData);
+    const hasCustomUserEntityPermissionsChanges =
+      JSON.stringify(currentUserEntityPermissionsData) !==
+      JSON.stringify(customUserEntityPermissionsData);
+
+    if (
+      hasCustomAccountChanges ||
+      hasCustomGrantsChanges ||
+      hasCustomProfileChanges ||
+      hasCustomEventsChanges ||
+      hasCustomMaintenanceChanges ||
+      hasCustomNotificationsChanges ||
+      hasCustomUserAccountPermissionsChanges ||
+      hasCustomUserEntityPermissionsChanges
+    ) {
       setSaveState((prev) => ({
         ...prev,
         hasUnsavedChanges: true,
       }));
     }
-  }, [customAccountData, customProfileData]);
+  }, [
+    customAccountData,
+    customEventsData,
+    customMaintenanceData,
+    customGrantsData,
+    customNotificationsData,
+    customProfileData,
+    customUserAccountPermissionsData,
+    customUserEntityPermissionsData,
+  ]);
 
   const globalHandlers = {
     applyChanges: () => {
@@ -112,8 +194,40 @@ export const ServiceWorkerTool = () => {
         saveCustomAccountData(customAccountData);
       }
 
-      if (extraPresets.includes('profile:custom') && customProfileData) {
-        saveCustomProfileData(customProfileData);
+      if (extraPresets.includes('profile-grants:custom')) {
+        if (customProfileData) {
+          saveCustomProfileData(customProfileData);
+        }
+        if (customGrantsData) {
+          saveCustomGrantsData(customGrantsData);
+        }
+      }
+      if (extraPresets.includes('events:custom') && customEventsData) {
+        saveCustomEventsData(customEventsData);
+      }
+      if (
+        extraPresets.includes('maintenance:custom') &&
+        customMaintenanceData
+      ) {
+        saveCustomMaintenanceData(customMaintenanceData);
+      }
+      if (
+        extraPresets.includes('notifications:custom') &&
+        customNotificationsData
+      ) {
+        saveCustomNotificationsData(customNotificationsData);
+      }
+      if (
+        extraPresets.includes('userAccountPermissions:custom') &&
+        customUserAccountPermissionsData
+      ) {
+        saveCustomUserAccountPermissionsData(customUserAccountPermissionsData);
+      }
+      if (
+        extraPresets.includes('userEntityPermissions:custom') &&
+        customUserEntityPermissionsData
+      ) {
+        saveCustomUserEntityPermissionsData(customUserEntityPermissionsData);
       }
 
       const promises = seeders.map((seederId) => {
@@ -140,7 +254,15 @@ export const ServiceWorkerTool = () => {
       setSeedsCountMap(getSeedsCountMap());
       setPresetsCountMap(getExtraPresetsMap());
       setCustomAccountData(getCustomAccountData());
+      setCustomGrantsData(getCustomGrantsData());
       setCustomProfileData(getCustomProfileData());
+      setCustomEventsData(getCustomEventsData());
+      setCustomMaintenanceData(getCustomMaintenanceData());
+      setCustomNotificationsData(getCustomNotificationsData());
+      setCustomUserAccountPermissionsData(
+        getCustomUserAccountPermissionsData()
+      );
+      setCustomUserEntityPermissionsData(getCustomUserEntityPermissionsData());
       setSaveState({
         hasSaved: false,
         hasUnsavedChanges: false,
@@ -151,11 +273,19 @@ export const ServiceWorkerTool = () => {
       mswDB.clear('mockState');
       mswDB.clear('seedState');
       seederHandlers.removeAll();
+
       setBaselinePreset('baseline:static-mocking');
       setExtraPresets([]);
       setPresetsCountMap({});
       setCustomAccountData(null);
+      setCustomGrantsData(null);
       setCustomProfileData(null);
+      setCustomEventsData(null);
+      setCustomMaintenanceData(null);
+      setCustomNotificationsData(null);
+      setCustomUserAccountPermissionsData(null);
+      setCustomUserEntityPermissionsData(null);
+
       saveBaselinePreset('baseline:static-mocking');
       saveExtraPresets([]);
       saveSeeders([]);
@@ -163,6 +293,13 @@ export const ServiceWorkerTool = () => {
       saveExtraPresetsMap({});
       saveCustomAccountData(null);
       saveCustomProfileData(null);
+      saveCustomGrantsData(null);
+      saveCustomEventsData(null);
+      saveCustomMaintenanceData(null);
+      saveCustomNotificationsData(null);
+      saveCustomUserAccountPermissionsData(null);
+      saveCustomUserEntityPermissionsData(null);
+
       setSaveState({
         hasSaved: false,
         hasUnsavedChanges: true,
@@ -348,7 +485,7 @@ export const ServiceWorkerTool = () => {
             >
               Seeds <span style={{ fontSize: 12 }}>(CRUD preset only)</span>
               <button
-                className="small right-align"
+                className="dev-tools-button small right-align"
                 disabled={!isCrudPreset}
                 onClick={() => seederHandlers.removeAll()}
               >
@@ -373,10 +510,30 @@ export const ServiceWorkerTool = () => {
               <div className="dev-tools__list-box">
                 <ExtraPresetOptions
                   customAccountData={customAccountData}
+                  customEventsData={customEventsData}
+                  customGrantsData={customGrantsData}
+                  customMaintenanceData={customMaintenanceData}
+                  customNotificationsData={customNotificationsData}
                   customProfileData={customProfileData}
+                  customUserAccountPermissionsData={
+                    customUserAccountPermissionsData
+                  }
+                  customUserEntityPermissionsData={
+                    customUserEntityPermissionsData
+                  }
                   handlers={extraPresets}
                   onCustomAccountChange={setCustomAccountData}
+                  onCustomEventsChange={setCustomEventsData}
+                  onCustomGrantsChange={setCustomGrantsData}
+                  onCustomMaintenanceChange={setCustomMaintenanceData}
+                  onCustomNotificationsChange={setCustomNotificationsData}
                   onCustomProfileChange={setCustomProfileData}
+                  onCustomUserAccountPermissionsChange={
+                    setCustomUserAccountPermissionsData
+                  }
+                  onCustomUserEntityPermissionsChange={
+                    setCustomUserEntityPermissionsData
+                  }
                   onPresetCountChange={presetHandlers.changeCount}
                   onSelectChange={presetHandlers.changeSelect}
                   onTogglePreset={presetHandlers.toggle}
@@ -390,19 +547,23 @@ export const ServiceWorkerTool = () => {
       <div className="dev-tools__tool__footer">
         <div className="dev-tools__button-list">
           <button
+            className="dev-tools-button"
             disabled={saveState.mocksCleared}
             onClick={globalHandlers.resetAll}
           >
             Reset all (Store, Seeds & Presets)
           </button>
           <button
+            className="dev-tools-button"
             disabled={saveState.hasUnsavedChanges ? false : true}
             onClick={globalHandlers.discardChanges}
           >
             Discard Changes
           </button>
           <button
-            className={saveState.hasUnsavedChanges ? 'green' : ''}
+            className={`dev-tools-button ${
+              saveState.hasUnsavedChanges ? 'green' : ''
+            }`}
             disabled={saveState.hasUnsavedChanges ? false : true}
             onClick={globalHandlers.applyChanges}
           >

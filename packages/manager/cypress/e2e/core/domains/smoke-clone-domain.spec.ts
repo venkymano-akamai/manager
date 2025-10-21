@@ -1,13 +1,13 @@
-import { Domain } from '@linode/api-v4';
-import { domainFactory } from '@src/factories';
-import { getClick, fbtClick, fbltClick } from 'support/helpers';
-import { authenticate } from 'support/api/authentication';
-import { randomDomainName } from 'support/util/random';
 import { createDomain } from '@linode/api-v4/lib/domains';
+import { domainFactory } from '@src/factories';
+import { authenticate } from 'support/api/authentication';
 import { createDomainRecords } from 'support/constants/domains';
 import { interceptCreateDomainRecord } from 'support/intercepts/domains';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
+import { randomDomainName } from 'support/util/random';
+
+import type { Domain } from '@linode/api-v4';
 
 authenticate();
 describe('Clone a Domain', () => {
@@ -44,11 +44,12 @@ describe('Clone a Domain', () => {
 
         domainRecords.forEach((rec) => {
           interceptCreateDomainRecord().as('apiCreateRecord');
-          fbtClick(rec.name);
+          cy.findByText(rec.name).click();
           rec.fields.forEach((f) => {
-            getClick(f.name).type(f.value);
+            cy.get(f.name).click();
+            cy.focused().type(f.value);
           });
-          fbtClick('Save');
+          cy.findByText('Save').click();
           cy.wait('@apiCreateRecord');
         });
 
@@ -63,8 +64,8 @@ describe('Clone a Domain', () => {
               .findByTitle(`Action menu for Domain ${domain.domain}`)
               .should('be.visible')
               .click();
+            ui.actionMenuItem.findByTitle('Clone').should('be.visible').click();
           });
-        ui.actionMenuItem.findByTitle('Clone').should('be.visible').click();
 
         // Cancel cloning when prompted to confirm.
         ui.drawer
@@ -87,8 +88,8 @@ describe('Clone a Domain', () => {
               .findByTitle(`Action menu for Domain ${domain.domain}`)
               .should('be.visible')
               .click();
+            ui.actionMenuItem.findByTitle('Clone').should('be.visible').click();
           });
-        ui.actionMenuItem.findByTitle('Clone').should('be.visible').click();
 
         // Confirm cloning.
         ui.drawer
@@ -102,7 +103,8 @@ describe('Clone a Domain', () => {
               .should('be.disabled');
 
             // Confirm that an error is displayed when entering an invalid domain name
-            fbltClick('New Domain').type(invalidDomainName);
+            cy.findByLabelText('New Domain').click();
+            cy.focused().type(invalidDomainName);
             ui.buttonGroup
               .findButtonByTitle('Create Domain')
               .should('be.visible')
@@ -110,7 +112,9 @@ describe('Clone a Domain', () => {
               .click();
             cy.findByText('Domain is not valid.').should('be.visible');
 
-            fbltClick('New Domain').clear().type(clonedDomainName);
+            cy.findByLabelText('New Domain').click();
+            cy.focused().clear();
+            cy.focused().type(clonedDomainName);
             ui.buttonGroup
               .findButtonByTitle('Create Domain')
               .should('be.visible')

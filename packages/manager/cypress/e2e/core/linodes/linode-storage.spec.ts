@@ -1,15 +1,17 @@
 /* eslint-disable sonarjs/no-duplicate-string */
-import { LINODE_CREATE_TIMEOUT } from 'support/constants/linodes';
-import { Linode } from '@linode/api-v4';
 import { authenticate } from 'support/api/authentication';
-import { createTestLinode } from 'support/util/linodes';
-import { ui } from 'support/ui';
-import { cleanUp } from 'support/util/cleanup';
+import { LINODE_CREATE_TIMEOUT } from 'support/constants/linodes';
 import {
-  interceptDeleteDisks,
   interceptAddDisks,
+  interceptDeleteDisks,
   interceptResizeDisks,
 } from 'support/intercepts/linodes';
+import { ui } from 'support/ui';
+import { cleanUp } from 'support/util/cleanup';
+import { createTestLinode } from 'support/util/linodes';
+import { randomLabel } from 'support/util/random';
+
+import type { Linode } from '@linode/api-v4';
 
 /**
  * Waits for a Linode to finish provisioning by checking the details page status indicator.
@@ -38,11 +40,6 @@ const DISK_RESIZE_SIZE_MB = 768;
 const deleteInUseDisk = (diskName: string) => {
   waitForProvision();
 
-  ui.actionMenu
-    .findByTitle(`Action menu for Disk ${diskName}`)
-    .should('be.visible')
-    .click();
-
   ui.actionMenuItem
     .findByTitle('Delete')
     .should('be.visible')
@@ -60,7 +57,7 @@ const deleteInUseDisk = (diskName: string) => {
   });
 
   cy.findByText(
-    'Your Linode must be fully powered down in order to perform this action'
+    'Your Linode must be fully powered down in order to perform this action.'
   ).should('be.visible');
 };
 
@@ -117,7 +114,8 @@ const addDisk = (diskName: string, diskSize: number = DISK_CREATE_SIZE_MB) => {
     .should('be.visible')
     .within(() => {
       cy.findByLabelText('Label (required)').type(diskName);
-      cy.findByLabelText('Size (required)').clear().type(`${diskSize}`);
+      cy.findByLabelText('Size (required)').clear();
+      cy.focused().type(`${diskSize}`);
       ui.button.findByTitle('Create').click();
     });
 
@@ -148,7 +146,11 @@ describe('linode storage tab', () => {
       ui.button.findByTitle('Add a Disk').should('be.disabled');
 
       cy.get(`[data-qa-disk="${diskName}"]`).within(() => {
-        cy.contains('Resize').should('be.disabled');
+        ui.actionMenu
+          .findByTitle(`Action menu for Disk ${diskName}`)
+          .should('be.visible')
+          .click();
+        ui.actionMenuItem.findByTitle('Resize').should('be.disabled');
       });
 
       deleteInUseDisk(diskName);
@@ -158,26 +160,91 @@ describe('linode storage tab', () => {
   });
 
   /*
-   * - Confirms UI flow end-to-end when a user deletes a Linode disk.
-   * - Confirms that user can successfully delete a disk from a Linode.
-   * - Confirms that Cloud Manager UI automatically updates to reflect deleted disk.
+   * - Confirms UI flow end-to-end when a user attempts to delete a Linode disk with encryption enabled.
+   * - Confirms that disk deletion fails and toast notification appears.
    */
-  it('delete disk', () => {
-    const diskName = 'cy-test-disk';
-    cy.defer(() => createTestLinode({ image: null })).then((linode) => {
+  // TODO: Disk cannot be deleted if disk_encryption is 'enabled'
+  // TODO: edit result of this test if/when behavior of backend is updated. uncertain what expected behavior is for this disk config
+  it('delete disk fails when Linode uses disk encryption', () => {
+    const diskName = randomLabel();
+    cy.defer(() =>
+      createTestLinode({
+        booted: false,
+        disk_encryption: 'enabled',
+        image: null,
+      })
+    ).then((linode) => {
       interceptDeleteDisks(linode.id).as('deleteDisk');
       interceptAddDisks(linode.id).as('addDisk');
       cy.visitWithLogin(`/linodes/${linode.id}/storage`);
       addDisk(diskName);
-      cy.findByText(diskName).should('be.visible');
+
       cy.wait('@addDisk').its('response.statusCode').should('eq', 200);
-      // Disk should show "Creating". We must wait for it to finish "Creating" before we try to delete the disk
-      cy.findByText('Creating', { exact: false }).should('be.visible');
-      // "Creating" should go away when the Disk is able to be deleted
-      cy.findByText('Creating', { exact: false }).should('not.exist');
+
+      cy.findByText(diskName)
+        .should('be.visible')
+        .closest('tr')
+        .within(() => {
+          // Disk should show "Creating". We must wait for it to finish "Creating" before we try to delete the disk
+          cy.findByText('Creating', { exact: false }).should('be.visible');
+          // "Creating" should go away when the Disk is able to be deleted
+          cy.findByText('Creating', { exact: false }).should('not.exist');
+        });
+
       deleteDisk(diskName);
       cy.wait('@deleteDisk').its('response.statusCode').should('eq', 200);
       cy.findByText('Deleting', { exact: false }).should('be.visible');
+      ui.button.findByTitle('Add a Disk').should('be.enabled');
+      //   ui.toast.assertMessage(
+      //     `Disk ${diskName} on Linode ${linode.label} has been deleted.`
+      //   );
+      ui.toast
+        .findByMessage(
+          `Disk ${diskName} on Linode ${linode.label} has been deleted.`
+        )
+        .should('not.exist');
+      //   cy.findByLabelText('List of Disks').within(() => {
+      //     cy.contains(diskName).should('not.exist');
+      //   });
+      cy.findByLabelText('List of Disks').within(() => {
+        cy.contains(diskName).should('be.visible');
+      });
+    });
+  });
+
+  /*
+   * - Confirms UI flow end-to-end when a user deletes a Linode disk.
+   * - Confirms that disk is deleted successfully
+   * - Confirms that UI updates to reflect the deleted disk.
+   */
+  it('deletes a disk', () => {
+    const diskName = randomLabel();
+    cy.defer(() =>
+      createTestLinode({
+        booted: false,
+        disk_encryption: 'disabled',
+        image: null,
+      })
+    ).then((linode) => {
+      interceptDeleteDisks(linode.id).as('deleteDisk');
+      interceptAddDisks(linode.id).as('addDisk');
+      cy.visitWithLogin(`/linodes/${linode.id}/storage`);
+      addDisk(diskName);
+
+      cy.wait('@addDisk').its('response.statusCode').should('eq', 200);
+
+      cy.findByText(diskName)
+        .should('be.visible')
+        .closest('tr')
+        .within(() => {
+          // Disk should show "Creating". We must wait for it to finish "Creating" before we try to delete the disk
+          cy.findByText('Creating', { exact: false }).should('be.visible');
+          // "Creating" should go away when the Disk is able to be deleted
+          cy.findByText('Creating', { exact: false }).should('not.exist');
+        });
+
+      deleteDisk(diskName);
+      cy.wait('@deleteDisk').its('response.statusCode').should('eq', 200);
       ui.button.findByTitle('Add a Disk').should('be.enabled');
       ui.toast.assertMessage(
         `Disk ${diskName} on Linode ${linode.label} has been deleted.`
@@ -193,7 +260,7 @@ describe('linode storage tab', () => {
    * - Confirms that Cloud Manager UI automatically updates to reflect new disk.
    */
   it('add a disk', () => {
-    const diskName = 'cy-test-disk';
+    const diskName = randomLabel();
     cy.defer(() => createTestLinode({ image: null })).then((linode: Linode) => {
       interceptAddDisks(linode.id).as('addDisk');
       cy.visitWithLogin(`/linodes/${linode.id}/storage`);
@@ -208,7 +275,7 @@ describe('linode storage tab', () => {
    * - Confirms that Cloud Manager UI automatically updates to reflect resize.
    */
   it('resize disk', () => {
-    const diskName = 'Debian 10 Disk';
+    const diskName = 'Debian 12 Disk';
     cy.defer(() =>
       createTestLinode({ image: null }, { securityMethod: 'powered_off' })
     ).then((linode: Linode) => {
@@ -228,16 +295,19 @@ describe('linode storage tab', () => {
       });
 
       cy.get(`[data-qa-disk="${diskName}"]`).within(() => {
-        cy.findByText('Resize').should('be.visible').click();
+        ui.actionMenu
+          .findByTitle(`Action menu for Disk ${diskName}`)
+          .should('be.visible')
+          .click();
+        ui.actionMenuItem.findByTitle('Resize').should('be.visible').click();
       });
 
       ui.drawer
         .findByTitle(`Resize ${diskName}`)
         .should('be.visible')
         .within(() => {
-          cy.findByLabelText('Size (required)')
-            .clear()
-            .type(`${DISK_RESIZE_SIZE_MB}`);
+          cy.findByLabelText('Size (required)').clear();
+          cy.focused().type(`${DISK_RESIZE_SIZE_MB}`);
           ui.button.findByTitle('Resize').click();
         });
 

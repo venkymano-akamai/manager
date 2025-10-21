@@ -1,8 +1,8 @@
-import { createLazyRoute } from '@tanstack/react-router';
+import { Hidden } from '@linode/ui';
 import * as React from 'react';
 import { Waypoint } from 'react-waypoint';
 
-import { Hidden } from 'src/components/Hidden';
+import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
 import { TableCell } from 'src/components/TableCell';
@@ -91,6 +91,7 @@ export const EventsLanding = (props: Props) => {
 
   return (
     <>
+      <DocumentTitleSegment segment="Events" />
       {/* Only display this title on the main Events landing page */}
       {!entityId && <StyledH1Header title="Events" />}
       <Table aria-label="List of Events">
@@ -123,7 +124,3 @@ export const EventsLanding = (props: Props) => {
     </>
   );
 };
-
-export const eventsLandingLazyRoute = createLazyRoute('/events')({
-  component: EventsLanding,
-});

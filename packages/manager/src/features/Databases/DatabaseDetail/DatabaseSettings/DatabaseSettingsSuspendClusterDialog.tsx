@@ -1,11 +1,10 @@
-import { Checkbox, Notice, Typography } from '@linode/ui';
+import { useSuspendDatabaseMutation } from '@linode/queries';
+import { ActionsPanel, Checkbox, Notice, Typography } from '@linode/ui';
+import { useNavigate } from '@tanstack/react-router';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
-import { useSuspendDatabaseMutation } from 'src/queries/databases/databases';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import type { Engine } from '@linode/api-v4/lib/databases';
@@ -32,7 +31,7 @@ export const DatabaseSettingsSuspendClusterDialog = (
 
   const defaultError = 'There was an error suspending this Database Cluster.';
   const [hasConfirmed, setHasConfirmed] = React.useState(false);
-  const { push } = useHistory();
+  const navigate = useNavigate();
 
   const onSuspendCluster = async () => {
     try {
@@ -41,7 +40,9 @@ export const DatabaseSettingsSuspendClusterDialog = (
         variant: 'success',
       });
       onClose();
-      push('/databases');
+      navigate({
+        to: '/databases',
+      });
     } catch (error) {
       enqueueSnackbar('Failed to suspend Database Cluster. Please try again.', {
         variant: 'error',
@@ -57,9 +58,8 @@ export const DatabaseSettingsSuspendClusterDialog = (
     setHasConfirmed(false);
   };
 
-  const suspendClusterCopy = `A suspended cluster stops working immediately and you won't be billed for it.
-    You can resume the clusters work within 180 days from its suspension.
-    After that time, the cluster will be deleted permanently.`;
+  const SUSPENDED_CLUSTER_COPY =
+    "A suspended cluster stops immediately and you won't be billed for it. You can resume the cluster within 180 days from its suspension. After that time, the cluster will be deleted permanently.";
 
   const actions = (
     <ActionsPanel
@@ -79,10 +79,10 @@ export const DatabaseSettingsSuspendClusterDialog = (
 
   return (
     <ConfirmationDialog
+      actions={actions}
       error={
         error ? getAPIErrorOrDefault(error, defaultError)[0].reason : undefined
       }
-      actions={actions}
       maxWidth="sm"
       onClose={onClose}
       open={open}
@@ -90,7 +90,7 @@ export const DatabaseSettingsSuspendClusterDialog = (
     >
       <Notice variant="warning">
         <Typography style={{ fontSize: '0.875rem' }}>
-          <b>{suspendClusterCopy}</b>
+          <b>{SUSPENDED_CLUSTER_COPY}</b>
         </Typography>
       </Notice>
       <Checkbox

@@ -4,7 +4,7 @@ import { DisplaySettings } from 'src/features/Profile/DisplaySettings/DisplaySet
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 describe('DisplaySettings', () => {
-  it('renders profile display sections', () => {
+  it('renders profile display sections', async () => {
     const { getByText } = renderWithTheme(<DisplaySettings />);
 
     expect(getByText('Avatar')).toBeVisible();

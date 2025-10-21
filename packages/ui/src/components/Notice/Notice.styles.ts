@@ -1,90 +1,80 @@
-import { makeStyles } from 'tss-react/mui';
+import { styled } from '@mui/material/styles';
 
-import type { Theme } from '@mui/material/styles';
+import { omittedProps } from '../../utilities';
+import { Box } from '../Box';
 
-export const useStyles = makeStyles<
-  void,
-  'error' | 'icon' | 'important' | 'noticeText'
->()((theme: Theme, _params, classes) => ({
-  error: {
-    [`&.${classes.important}`]: {
-      borderLeftWidth: 32,
-    },
-    borderLeft: `5px solid ${theme.palette.error.dark}`,
+import type { NoticeVariant } from './Notice';
+
+export const StyledNoticeBox = styled(Box, {
+  label: 'StyledNotice',
+  shouldForwardProp: omittedProps(['variant']),
+})<{ variant: NoticeVariant }>(({ theme, variant }) => ({
+  display: 'flex',
+  gap: '0.5rem',
+  alignItems: 'center',
+  '& + .notice': {
+    marginTop: `${theme.spacingFunction(16)} !important`,
   },
-  errorList: {
-    borderLeft: `5px solid ${theme.palette.error.dark}`,
-  },
-  icon: {
-    color: theme.tokens.color.Neutrals.White,
-    left: -25, // This value must be static regardless of theme selection
-    position: 'absolute',
-  },
-  important: {
-    '&.MuiGrid2-root': {
-      padding: theme.spacing(1),
-      paddingRight: 18,
-    },
-    [`& .${classes.noticeText}`]: {
-      fontFamily: theme.font.normal,
-    },
-    backgroundColor: theme.bg.bgPaper,
-  },
-  info: {
-    [`&.${classes.important}`]: {
-      borderLeftWidth: 32,
-    },
-    borderLeft: `5px solid ${theme.palette.info.dark}`,
-  },
-  infoList: {
-    borderLeft: `5px solid ${theme.palette.info.dark}`,
-  },
-  inner: {
+  borderRadius: 1,
+  padding: `10px ${theme.spacingFunction(12)}`,
+  '& .MuiTypography-root': {
     width: '100%',
   },
-  marketing: {
-    borderLeft: `5px solid ${theme.color.green}`,
-  },
-  noticeText: {
-    fontFamily: theme.font.bold,
-    fontSize: '1rem',
-    lineHeight: '20px',
-  },
-  root: {
-    '& + .notice': {
-      marginTop: `${theme.spacing()} !important`,
-    },
-    [`& .${classes.error}`]: {
-      borderLeftColor: theme.color.red,
-    },
-    alignItems: 'center',
-    borderRadius: 1,
-    display: 'flex',
-    fontSize: '1rem',
-    maxWidth: '100%',
-    padding: '4px 16px',
-    paddingRight: 18,
+  '& p': {
+    fontSize: theme.tokens.font.FontSize.Xs,
+    font: theme.font.semibold,
     position: 'relative',
+    top: 1,
+    margin: 0,
   },
-  success: {
-    [`&.${classes.important}`]: {
-      borderLeftWidth: 32,
+  '& ul': {
+    paddingLeft: 20,
+    margin: 0,
+    listStyleType: 'disc',
+    '& li': {
+      display: 'list-item',
+      padding: 0,
     },
-    borderLeft: `5px solid ${theme.palette.success.dark}`,
   },
-  successList: {
-    borderLeft: `5px solid ${theme.palette.success.dark}`,
-  },
-  warning: {
-    [`& .${classes.icon}`]: {
-      color: theme.tokens.color.Neutrals[80],
+  ...(variant === 'error' && {
+    border: `1px solid ${theme.tokens.component.NotificationBanner.Error.Border}`,
+    background: theme.tokens.component.NotificationBanner.Error.Background,
+    '& path': {
+      fill: theme.tokens.component.NotificationBanner.Error.StatusIcon,
     },
-    [`&.${classes.important}`]: {
-      borderLeftWidth: 32,
+  }),
+  ...(['info', 'tip'].includes(variant) && {
+    border: `1px solid ${theme.tokens.component.NotificationBanner.Informative.Border}`,
+    background:
+      theme.tokens.component.NotificationBanner.Informative.Background,
+    '& path': {
+      fill: theme.tokens.component.NotificationBanner.Informative.StatusIcon,
     },
-    borderLeft: `5px solid ${theme.palette.warning.dark}`,
-  },
-  warningList: {
-    borderLeft: `5px solid ${theme.palette.warning.dark}`,
-  },
+  }),
+  ...(variant === 'success' && {
+    border: `1px solid ${theme.tokens.component.NotificationBanner.Success.Border}`,
+    background: theme.tokens.component.NotificationBanner.Success.Background,
+    '& path': {
+      fill: theme.tokens.component.NotificationBanner.Success.StatusIcon,
+    },
+  }),
+  ...(variant === 'warning' && {
+    border: `1px solid ${theme.tokens.component.NotificationBanner.Warning.Border}`,
+    background: theme.tokens.component.NotificationBanner.Warning.Background,
+    // Only update outer triangle color
+    '& .css-1j6o9qe-icon path:first-of-type': {
+      fill: theme.tokens.component.NotificationBanner.Warning.StatusIcon,
+    },
+  }),
+  maxWidth: '100%',
+  position: 'relative',
+}));
+
+export const StyledIconBox = styled(Box, {
+  label: 'StyledIconBox',
+})(() => ({
+  display: 'flex',
+  width: 20,
+  height: 20,
+  position: 'relative',
 }));

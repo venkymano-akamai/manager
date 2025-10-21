@@ -16,6 +16,27 @@ export interface APIErrorResponse {
   errors: APIError[];
 }
 
+// Type definitions for filters
+interface ContainsFilter {
+  '+contains': string;
+}
+
+interface OrCondition {
+  [field: string]: ContainsFilter | number | string;
+}
+
+interface ApiFilter {
+  '+or'?: OrCondition[];
+  '+order'?: 'asc' | 'desc';
+  '+order_by'?: string;
+  [key: string]: ContainsFilter | number | OrCondition[] | string | undefined;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  request: Request;
+}
+
 /**
  * Builds a Mock Service Worker response.
  *
@@ -65,11 +86,6 @@ export const makeErrorResponse = (
   );
 };
 
-interface PaginatedResponse<T> {
-  data: T[];
-  request: Request;
-}
-
 /**
  * Builds a Mock Service Worker paginated response.
  * This will probably need to be expanded to support more complex sorting and filtering but this will solve the common use case.
@@ -88,35 +104,95 @@ export const makePaginatedResponse = <T extends JsonBodyType>({
   const requestedPage = Number(url.searchParams.get('page')) || 1;
   const pageSize = Number(url.searchParams.get('page_size')) || 25;
   const xFilter = request.headers.get('X-Filter');
-  const filter = xFilter ? JSON.parse(xFilter) : {};
+  const filter: ApiFilter = xFilter ? JSON.parse(xFilter) : {};
   const orderBy = filter['+order_by'] || 'id';
   const order = filter['+order'] || 'asc';
-  const containsFilters = Object.entries(filter).filter(
-    ([_, value]) =>
-      typeof value === 'object' && value !== null && '+contains' in value
+
+  // Handle simple property filters (equality)
+  const propertyFilters = Object.entries(filter).filter(
+    (entry): entry is [string, number | string] => {
+      const [key, value] = entry;
+      return (
+        !key.startsWith('+') &&
+        (typeof value === 'string' || typeof value === 'number')
+      );
+    }
   );
 
-  // Filter the data based on the contains X-Filter
-  const filteredData =
-    containsFilters.length > 0
-      ? dataArray.filter((item) =>
-          containsFilters.every(([key, value]) => {
-            const searchValue = (value as { '+contains': string })[
-              '+contains'
-            ].toLowerCase();
-            return (
-              typeof item === 'object' &&
-              item !== null &&
-              key in item &&
-              String(item[key]).toLowerCase().includes(searchValue)
-            );
-          })
-        )
-      : dataArray;
+  // Handle complex filters like +or, +contains, etc.
+  const complexFilters = Object.entries(filter).filter(
+    (entry): entry is [string, OrCondition[]] => {
+      const [key, value] = entry;
+      return (
+        key.startsWith('+') &&
+        Array.isArray(value) &&
+        key !== '+order_by' &&
+        key !== '+order'
+      );
+    }
+  );
+
+  // Filter the data based on both types of filters
+  const filteredData = dataArray.filter((item: T) => {
+    // Handle simple property filters
+    const passesSimpleFilters = propertyFilters.every(([key, value]) => {
+      if (
+        (key === 'region_applied' || key === 's3_endpoint') &&
+        value === 'global'
+      ) {
+        return true;
+      }
+
+      return (
+        typeof item === 'object' &&
+        item !== null &&
+        key in item &&
+        item[key] === value
+      );
+    });
+
+    // Handle complex filters
+    const passesComplexFilters = complexFilters.every(
+      ([filterType, filterValue]) => {
+        if (filterType === '+or') {
+          // Handle +or filters
+          return filterValue.some((orCondition: OrCondition) => {
+            return Object.entries(orCondition).some(([field, condition]) => {
+              if (
+                typeof condition === 'object' &&
+                condition !== null &&
+                '+contains' in condition
+              ) {
+                // Handle +contains
+                const fieldValue =
+                  item && typeof item === 'object'
+                    ? (item[field] as string)
+                    : item;
+                const containsValue = (condition as ContainsFilter)[
+                  '+contains'
+                ];
+                return (
+                  typeof fieldValue === 'string' &&
+                  fieldValue.toLowerCase().includes(containsValue.toLowerCase())
+                );
+              }
+              // Handle simple equality in +or conditions
+              return item && typeof item === 'object'
+                ? item[field] === condition
+                : item === condition;
+            });
+          });
+        }
+
+        return true;
+      }
+    );
+
+    return passesSimpleFilters && passesComplexFilters;
+  });
 
   // Sort the data based on the order_by X-Filter
-  // with type guards to ensure that the data is of the expected type
-  filteredData.sort((a, b) => {
+  filteredData.sort((a: T, b: T) => {
     if (
       !a ||
       !b ||

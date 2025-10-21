@@ -1,26 +1,18 @@
-import { waitForElementToBeRemoved } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import * as React from 'react';
-
 import {
   nodeBalancerConfigFactory,
   nodeBalancerConfigNodeFactory,
-} from 'src/factories';
+} from '@linode/utilities';
+import { waitForElementToBeRemoved } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import React from 'react';
+
 import { makeResourcePage } from 'src/mocks/serverHandlers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
-import NodeBalancerConfigurations from './NodeBalancerConfigurations';
-
-const props = {
-  grants: undefined,
-  nodeBalancerLabel: 'nb-1',
-  nodeBalancerRegion: 'us-east',
-};
+import { NodeBalancerConfigurationsWrapper } from './NodeBalancerConfigurationsWrapper';
 
 const loadingTestId = 'circle-progress';
-const memoryRouter = { initialEntries: ['nodebalancers/1/configurations'] };
-const routePath = 'nodebalancers/:nodeBalancerId/configurations';
 
 const nodeBalancerConfig = nodeBalancerConfigFactory.build({
   id: 1,
@@ -28,10 +20,6 @@ const nodeBalancerConfig = nodeBalancerConfigFactory.build({
 });
 
 describe('NodeBalancerConfigurations', () => {
-  beforeEach(() => {
-    server.resetHandlers();
-  });
-
   it('renders the NodeBalancerConfigurations component with one configuration', async () => {
     server.use(
       http.get(`*/nodebalancers/:id/configs`, () => {
@@ -45,10 +33,9 @@ describe('NodeBalancerConfigurations', () => {
     );
 
     const { getByLabelText, getByTestId, getByText } = renderWithTheme(
-      <NodeBalancerConfigurations {...props} />,
+      <NodeBalancerConfigurationsWrapper />,
       {
-        MemoryRouter: memoryRouter,
-        routePath,
+        initialRoute: '/nodebalancers/$id/configurations',
       }
     );
 
@@ -66,21 +53,25 @@ describe('NodeBalancerConfigurations', () => {
     expect(getByLabelText('IP Address')).toBeInTheDocument();
     expect(getByLabelText('Weight')).toBeInTheDocument();
     expect(getByLabelText('Port')).toBeInTheDocument();
-    expect(getByText('Listen on this port.')).toBeInTheDocument();
+    expect(
+      getByText(
+        'The unique inbound port that this NodeBalancer configuration will listen on.'
+      )
+    ).toBeInTheDocument();
     expect(getByText('Active Health Checks')).toBeInTheDocument();
     expect(
       getByText(
-        'Route subsequent requests from the client to the same backend.'
+        'Routes subsequent requests from the client to the same backend.'
       )
     ).toBeInTheDocument();
     expect(
       getByText(
-        'Enable passive checks based on observing communication with back-end nodes.'
+        "When enabled, the NodeBalancer monitors requests to backends. If a request times out, returns a 5xx response (except 501/505), or fails to connect, the backend is marked 'down' and removed from rotation."
       )
     ).toBeInTheDocument();
     expect(
       getByText(
-        "Active health checks proactively check the health of back-end nodes. 'HTTP Valid Status' requires a 2xx or 3xx response from the backend node. 'HTTP Body Regex' uses a regex to match against an expected result body."
+        "Monitors backends to ensure they’re 'up' and handling requests."
       )
     ).toBeInTheDocument();
     expect(getByText('Add a Node')).toBeInTheDocument();
@@ -98,10 +89,9 @@ describe('NodeBalancerConfigurations', () => {
     );
 
     const { getByTestId, getByText, queryByLabelText } = renderWithTheme(
-      <NodeBalancerConfigurations {...props} />,
+      <NodeBalancerConfigurationsWrapper />,
       {
-        MemoryRouter: memoryRouter,
-        routePath,
+        initialRoute: '/nodebalancers/$id/configurations',
       }
     );
 
@@ -126,10 +116,9 @@ describe('NodeBalancerConfigurations', () => {
     );
 
     const { getByTestId, getByText, queryByLabelText } = renderWithTheme(
-      <NodeBalancerConfigurations {...props} />,
+      <NodeBalancerConfigurationsWrapper />,
       {
-        MemoryRouter: memoryRouter,
-        routePath,
+        initialRoute: '/nodebalancers/$id/configurations',
       }
     );
 
@@ -161,10 +150,9 @@ describe('NodeBalancerConfigurations', () => {
     );
 
     const { getByLabelText, getByTestId, getByText } = renderWithTheme(
-      <NodeBalancerConfigurations {...props} />,
+      <NodeBalancerConfigurationsWrapper />,
       {
-        MemoryRouter: memoryRouter,
-        routePath,
+        initialRoute: '/nodebalancers/$id/configurations',
       }
     );
 

@@ -1,81 +1,60 @@
+import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { matchPath } from 'react-router-dom';
 
-import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { SuspenseLoader } from 'src/components/SuspenseLoader';
-import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
-import { TabLinkList } from 'src/components/Tabs/TabLinkList';
 import { TabPanels } from 'src/components/Tabs/TabPanels';
 import { Tabs } from 'src/components/Tabs/Tabs';
+import { TanStackTabLinkList } from 'src/components/Tabs/TanStackTabLinkList';
+import { useFlags } from 'src/hooks/useFlags';
+import { useTabs } from 'src/hooks/useTabs';
 
-import type { RouteComponentProps } from 'react-router-dom';
-type Props = RouteComponentProps<{}>;
+import { useDelegationRole } from './hooks/useDelegationRole';
+import { IAM_DOCS_LINK, ROLES_LEARN_MORE_LINK } from './Shared/constants';
 
-const Users = React.lazy(() =>
-  import('./Users/UsersTable/Users').then((module) => ({
-    default: module.UsersLanding,
-  }))
-);
+export const IdentityAccessLanding = React.memo(() => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const flags = useFlags();
+  const { isParentAccount } = useDelegationRole();
 
-const Roles = React.lazy(() =>
-  import('./Roles/Roles').then((module) => ({
-    default: module.RolesLanding,
-  }))
-);
-
-export const IdentityAccessManagementLanding = React.memo((props: Props) => {
-  const tabs = [
+  const { tabs, tabIndex, handleTabChange } = useTabs([
     {
-      routeName: `${props.match.url}/users`,
+      to: `/iam/users`,
       title: 'Users',
     },
     {
-      routeName: `${props.match.url}/roles`,
+      to: `/iam/roles`,
       title: 'Roles',
     },
-  ];
-
-  const navToURL = (index: number) => {
-    props.history.push(tabs[index].routeName);
-  };
-
-  const getDefaultTabIndex = () => {
-    const tabChoice = tabs.findIndex((tab) =>
-      Boolean(matchPath(tab.routeName, { path: location.pathname }))
-    );
-
-    return tabChoice;
-  };
+    {
+      hide: !flags.iamDelegation?.enabled || !isParentAccount,
+      to: `/iam/delegations`,
+      title: 'Account Delegations',
+    },
+  ]);
 
   const landingHeaderProps = {
     breadcrumbProps: {
       pathname: '/iam',
     },
-    docsLink:
-      'https://www.linode.com/docs/platform/identity-access-management/',
+    docsLink: tabIndex === 0 ? IAM_DOCS_LINK : ROLES_LEARN_MORE_LINK,
     entity: 'Identity and Access',
     title: 'Identity and Access',
   };
 
-  let idx = 0;
+  if (location.pathname === '/iam') {
+    navigate({ to: '/iam/users' });
+  }
 
   return (
     <>
-      <DocumentTitleSegment segment="Identity and Access" />
-      <LandingHeader {...landingHeaderProps} />
-
-      <Tabs index={getDefaultTabIndex()} onChange={navToURL}>
-        <TabLinkList tabs={tabs} />
-
+      <LandingHeader {...landingHeaderProps} spacingBottom={4} />
+      <Tabs index={tabIndex} onChange={handleTabChange}>
+        <TanStackTabLinkList tabs={tabs} />
         <React.Suspense fallback={<SuspenseLoader />}>
           <TabPanels>
-            <SafeTabPanel index={idx}>
-              <Users />
-            </SafeTabPanel>
-            <SafeTabPanel index={++idx}>
-              <Roles />
-            </SafeTabPanel>
+            <Outlet />
           </TabPanels>
         </React.Suspense>
       </Tabs>

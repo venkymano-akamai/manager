@@ -1,8 +1,9 @@
+import { useRegionsQuery } from '@linode/queries';
 import { Divider, Paper, Typography } from '@linode/ui';
 import React from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 
-import UserSSHKeyPanel from 'src/components/AccessPanel/UserSSHKeyPanel';
+import { UserSSHKeyPanel } from 'src/components/AccessPanel/UserSSHKeyPanel';
 import {
   DISK_ENCRYPTION_DEFAULT_DISTRIBUTED_INSTANCES,
   DISK_ENCRYPTION_DISTRIBUTED_DESCRIPTION,
@@ -13,39 +14,38 @@ import { Encryption } from 'src/components/Encryption/Encryption';
 import { useIsDiskEncryptionFeatureEnabled } from 'src/components/Encryption/utils';
 import { getIsDistributedRegion } from 'src/components/RegionSelect/RegionSelect.utils';
 import { Skeleton } from 'src/components/Skeleton';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 
 import type { CreateLinodeRequest } from '@linode/api-v4';
 
-const PasswordInput = React.lazy(
-  () => import('src/components/PasswordInput/PasswordInput')
+const PasswordInput = React.lazy(() =>
+  import('src/components/PasswordInput/PasswordInput').then((module) => ({
+    default: module.PasswordInput,
+  }))
 );
 
 export const Security = () => {
   const { control } = useFormContext<CreateLinodeRequest>();
 
-  const {
-    isDiskEncryptionFeatureEnabled,
-  } = useIsDiskEncryptionFeatureEnabled();
+  const { isDiskEncryptionFeatureEnabled } =
+    useIsDiskEncryptionFeatureEnabled();
 
   const { data: regions } = useRegionsQuery();
   const regionId = useWatch({ control, name: 'region' });
 
   const selectedRegion = regions?.find((r) => r.id === regionId);
 
-  const regionSupportsDiskEncryption = selectedRegion?.capabilities.includes(
-    'Disk Encryption'
-  );
+  // "Disk Encryption" indicates general availability and "LA Disk Encryption" indicates limited availability
+  const regionSupportsDiskEncryption =
+    selectedRegion?.capabilities.includes('Disk Encryption') ||
+    selectedRegion?.capabilities.includes('LA Disk Encryption');
 
   const isDistributedRegion = getIsDistributedRegion(
     regions ?? [],
     selectedRegion?.id ?? ''
   );
 
-  const isLinodeCreateRestricted = useRestrictedGlobalGrantCheck({
-    globalGrantType: 'add_linodes',
-  });
+  const { data: permissions } = usePermissions('account', ['create_linode']);
 
   return (
     <Paper>
@@ -60,10 +60,12 @@ export const Security = () => {
         }
       >
         <Controller
+          control={control}
+          name="root_pass"
           render={({ field, fieldState }) => (
             <PasswordInput
               autoComplete="off"
-              disabled={isLinodeCreateRestricted}
+              disabled={!permissions.create_linode}
               errorText={fieldState.error?.message}
               id="linode-password"
               label="Root Password"
@@ -75,26 +77,26 @@ export const Security = () => {
               value={field.value ?? ''}
             />
           )}
-          control={control}
-          name="root_pass"
         />
       </React.Suspense>
       <Divider spacingBottom={20} spacingTop={24} />
       <Controller
+        control={control}
+        name="authorized_users"
         render={({ field }) => (
           <UserSSHKeyPanel
             authorizedUsers={field.value ?? []}
-            disabled={isLinodeCreateRestricted}
+            disabled={!permissions.create_linode}
             setAuthorizedUsers={field.onChange}
           />
         )}
-        control={control}
-        name="authorized_users"
       />
       {isDiskEncryptionFeatureEnabled && (
         <>
           <Divider spacingBottom={20} spacingTop={24} />
           <Controller
+            control={control}
+            name="disk_encryption"
             render={({ field, fieldState }) => (
               <Encryption
                 descriptionCopy={
@@ -102,21 +104,22 @@ export const Security = () => {
                     ? DISK_ENCRYPTION_DISTRIBUTED_DESCRIPTION
                     : DISK_ENCRYPTION_GENERAL_DESCRIPTION
                 }
+                disabled={isDistributedRegion || !regionSupportsDiskEncryption}
                 disabledReason={
                   isDistributedRegion
                     ? DISK_ENCRYPTION_DEFAULT_DISTRIBUTED_INSTANCES
                     : DISK_ENCRYPTION_UNAVAILABLE_IN_REGION_COPY
                 }
+                error={fieldState.error?.message}
+                isEncryptEntityChecked={
+                  isDistributedRegion || field.value === 'enabled'
+                }
                 onChange={(checked) =>
                   field.onChange(checked ? 'enabled' : 'disabled')
                 }
-                disabled={!regionSupportsDiskEncryption}
-                error={fieldState.error?.message}
-                isEncryptEntityChecked={field.value === 'enabled'}
+                sxCheckbox={{ paddingLeft: '0px' }}
               />
             )}
-            control={control}
-            name="disk_encryption"
           />
         </>
       )}

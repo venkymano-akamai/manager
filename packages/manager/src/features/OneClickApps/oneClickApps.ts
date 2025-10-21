@@ -19,8 +19,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'wordpress.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/wordpress/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/wordpress/',
         title: 'Deploy WordPress through the Linode Marketplace',
       },
     ],
@@ -40,8 +39,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'drupal.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/drupal/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/drupal/',
         title: 'Deploy Drupal through the Linode Marketplace',
       },
     ],
@@ -61,8 +59,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'lamp.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/lamp-stack/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/lamp-stack/',
         title: 'Deploy a LAMP Stack through the Linode Marketplace',
       },
     ],
@@ -82,32 +79,29 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mern.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mern-stack/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mern-stack/',
         title: 'Deploy a MERN Stack through the Linode Marketplace',
       },
     ],
     summary: `Build production-ready apps with the MERN stack: MongoDB, Express, React, and Node.js.`,
   },
   401706: {
-    alt_description: 'Virtual private network.',
-    alt_name: 'Free VPN',
+    alt_description: 'Virtual private network server.',
+    alt_name: 'Free VPN Server',
     categories: ['Security'],
     colors: {
       end: '51171a',
       start: '88171a',
     },
-    description: `Configuring WireGuard&reg; is as simple as configuring SSH. A connection is established by an exchange of public keys between server and client, and only a client whose public key is present in the server's configuration file is considered authorized. WireGuard sets up
-      standard network interfaces which behave similarly to other common network interfaces, like eth0. This makes it possible to configure and manage WireGuard interfaces using standard networking tools such as ifconfig and ip. "WireGuard" is a registered trademark of Jason A. Donenfeld.`,
+    description: `Deploy a WireGuard&reg; server to create a central VPN hub for secure network connections. This server automatically configures WireGuard with sensible defaults, sets up NAT for full-tunnel capability, and implements security best practices. The server acts as a central point where multiple WireGuard clients can connect by adding their public keys to the server's configuration. WireGuard uses state-of-the-art cryptography and is designed to be faster and more secure than traditional VPN protocols. "WireGuard" is a registered trademark of Jason A. Donenfeld.`,
     logo_url: 'wireguard.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/wireguard/',
-        title: 'Deploy WireGuard through the Linode Marketplace',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/wireguard/',
+        title: 'Deploy WireGuard Server through the Linode Marketplace',
       },
     ],
-    summary: `Modern VPN which utilizes state-of-the-art cryptography. It aims to be faster and leaner than other VPN protocols and has a smaller source code footprint.`,
+    summary: `Modern VPN server which acts as a central hub for secure client connections using state-of-the-art cryptography.`,
     website: 'https://www.wireguard.com/',
   },
   401707: {
@@ -123,8 +117,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'gitlab.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/gitlab/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/gitlab/',
         title: 'Deploy GitLab through the Linode Marketplace',
       },
     ],
@@ -144,8 +137,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'woocommerce.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/woocommerce/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/woocommerce/',
         title: 'Deploy WooCommerce through the Linode Marketplace',
       },
     ],
@@ -166,8 +158,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'minecraft.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/minecraft/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/minecraft/',
         title: 'Deploy a Minecraft Server through the Linode Marketplace',
       },
     ],
@@ -186,8 +177,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'openvpn.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/openvpn/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/openvpn/',
         title: 'Deploy OpenVPN through the Linode Marketplace',
       },
     ],
@@ -206,8 +196,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'plesk.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/plesk/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/plesk/',
         title: 'Deploy Plesk through the Linode Marketplace',
       },
     ],
@@ -228,8 +217,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'cpanel.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/cpanel/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/cpanel/',
         title: 'Deploy cPanel through the Linode Marketplace',
       },
     ],
@@ -250,8 +238,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'shadowsocks.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/shadowsocks/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/shadowsocks/',
         title: 'Deploy Shadowsocks through the Linode Marketplace',
       },
     ],
@@ -271,8 +258,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'lemp.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/lemp-stack/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/lemp-stack/',
         title: 'Deploy a LEMP Stack through the Linode Marketplace',
       },
     ],
@@ -290,8 +276,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mysql.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mysql/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mysql/',
         title: 'Deploy MySQL/MariaDB through the Linode Marketplace',
       },
     ],
@@ -310,8 +295,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'jenkins.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/jenkins/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/jenkins/',
         title: 'Deploy Jenkins through the Linode Marketplace',
       },
     ],
@@ -331,8 +315,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'docker.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/docker/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/docker/',
         title: 'Deploy Docker through the Linode Marketplace',
       },
     ],
@@ -351,35 +334,13 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'redis.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/redis/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/redis/',
         title: 'Deploy Redis&reg; through the Linode Marketplace',
       },
     ],
     summary:
       'Flexible, in-memory, NoSQL database service supported in many different coding languages.',
     website: 'https://redis.io/',
-  },
-  609018: {
-    alt_description:
-      'Web interface for MySQL/MariaDB operations and server administration.',
-    alt_name: 'SQL database GUI',
-    categories: ['Databases'],
-    colors: {
-      end: '6c78af',
-      start: 'f89d10',
-    },
-    description: `Intuitive web interface for MySQL and MariaDB operations, including importing/exporting data, administering multiple servers, and global database search.`,
-    logo_url: 'phpmyadmin.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/phpmyadmin/',
-        title: 'Deploy phpMyAdmin through the Linode Marketplace',
-      },
-    ],
-    summary: 'Popular free administration tool for MySQL and MariaDB.',
-    website: 'https://www.phpmyadmin.net/',
   },
   609048: {
     alt_description: 'Ruby web application framework with development tools.',
@@ -393,8 +354,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'rubyonrails.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/ruby-on-rails/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/ruby-on-rails/',
         title: 'Deploy Ruby on Rails through the Linode Marketplace',
       },
     ],
@@ -413,8 +373,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'django.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/django/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/django/',
         title: 'Deploy Django through the Linode Marketplace',
       },
     ],
@@ -433,8 +392,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'flask.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/flask/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/flask/',
         title: 'Deploy Flask through the Linode Marketplace',
       },
     ],
@@ -453,8 +411,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'postgresql.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/postgresql/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/postgresql/',
         title: 'Deploy PostgreSQL through the Linode Marketplace',
       },
     ],
@@ -473,8 +430,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mean.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mean-stack/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mean-stack/',
         title: 'Deploy a MEAN Stack through the Linode Marketplace',
       },
     ],
@@ -494,8 +450,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'nextcloud.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/nextcloud/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/nextcloud/',
         title: 'Deploy Nextcloud through the Linode Marketplace',
       },
     ],
@@ -513,8 +468,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'azuracast.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/azuracast/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/azuracast/',
         title: 'Deploy AzuraCast through the Linode Marketplace',
       },
     ],
@@ -534,8 +488,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'plex.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/plex/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/plex/',
         title: 'Deploy Plex Media Server through the Linode Marketplace',
       },
     ],
@@ -555,8 +508,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'jitsi.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/jitsi/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/jitsi/',
         title: 'Deploy Jitsi through the Linode Marketplace',
       },
     ],
@@ -575,8 +527,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'rabbitmq.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/rabbitmq/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/rabbitmq/',
         title: 'Deploy RabbitMQ through the Linode Marketplace',
       },
     ],
@@ -595,36 +546,13 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'discourse.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/discourse/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/discourse/',
         title: 'Deploy Discourse through the Linode Marketplace',
       },
     ],
     summary:
       'Open source community and discussion forum for customers, teams, fans, and more.',
     website: 'https://www.discourse.org/',
-  },
-  688902: {
-    alt_description:
-      'Control panel to deploy and manage LAMP stack applications.',
-    alt_name: 'Single user control panel',
-    categories: ['Control Panels'],
-    colors: {
-      end: '445289',
-      start: 'f1b55d',
-    },
-    description: `Lightweight control panel with a suite of features to streamline app management.`,
-    logo_url: 'webuzo.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/webuzo/',
-        title: 'Deploy Webuzo through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'LAMP stack and single user control panel to simplify app deployment in the cloud.',
-    website: 'http://www.webuzo.com/',
   },
   688903: {
     alt_description: 'Fancy development text editor.',
@@ -638,8 +566,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'vscodeserver.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/vscode/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/vscode/',
         title: 'Deploy VS Code through the Linode Marketplace',
       },
     ],
@@ -658,33 +585,12 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'gitea.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/gitea/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/gitea/',
         title: 'Deploy Gitea through the Linode Marketplace',
       },
     ],
     summary: 'Git with a cup of tea - A painless self-hosted Git service.',
     website: 'https://gitea.io/',
-  },
-  688912: {
-    alt_description: 'Drag and drop website CMS.',
-    alt_name: 'CMS: content management system',
-    categories: ['Website'],
-    colors: {
-      end: '4395ff',
-      start: '0166ff',
-    },
-    description: `Use Kepler Builder to easily design and build sites in WordPress - no coding or design knowledge necessary.`,
-    logo_url: 'keplerbuilder.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/kepler/',
-        title: 'Deploy Kepler through the Linode Marketplace',
-      },
-    ],
-    summary: 'Powerful drag & drop WordPress website builder.',
-    website: 'https://kepler.app/',
   },
   688914: {
     alt_description: 'Desktop cloud hosting.',
@@ -698,8 +604,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'guacamole.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/guacamole/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/guacamole/',
         title: 'Deploy Apache Guacamole through the Linode Marketplace',
       },
     ],
@@ -718,8 +623,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'filecloud.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/filecloud/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/filecloud/',
         title: 'Deploy FileCloud through the Linode Marketplace',
       },
     ],
@@ -739,8 +643,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'cloudron.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/cloudron/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/cloudron/',
         title: 'Deploy Cloudron through the Linode Marketplace',
       },
     ],
@@ -760,8 +663,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'openlitespeedwordpress.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-wordpress/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-wordpress/',
         title: 'Deploy OpenLiteSpeed Wordpress through the Linode Marketplace',
       },
     ],
@@ -780,8 +682,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'secureyourserver.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/secure-your-server/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/secure-your-server/',
         title: 'Secure Your Server through the Linode Marketplace',
       },
     ],
@@ -800,8 +701,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'cyberpanel.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/cyberpanel/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/cyberpanel/',
         title: 'Deploy CyberPanel through the Linode Marketplace',
       },
     ],
@@ -820,8 +720,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'yacht.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/yacht/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/yacht/',
         title: 'Deploy Yacht through the Linode Marketplace',
       },
     ],
@@ -840,34 +739,12 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'zabbix.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/zabbix/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/zabbix/',
         title: 'Deploy Zabbix through the Linode Marketplace',
       },
     ],
     summary: 'Enterprise-class open source distributed monitoring solution.',
     website: 'https://www.zabbix.com',
-  },
-  774829: {
-    alt_description: 'Host multiple sites on a Linode.',
-    alt_name: 'Website control panel',
-    categories: ['Control Panels'],
-    colors: {
-      end: 'a25c57',
-      start: '4c3148',
-    },
-    description: `Host multiple sites on a single server while managing apps, firewall, databases, backups, system users, cron jobs, SSL and email–  all in an intuitive interface.`,
-    logo_url: 'serverwand.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/serverwand/',
-        title: 'Deploy ServerWand through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Magical control panel for hosting websites and managing your servers.',
-    website: 'https://serverwand.com/',
   },
   804143: {
     alt_description: 'Open source project management tool.',
@@ -881,8 +758,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'peppermint.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/peppermint/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/peppermint/',
         title: 'Deploy Peppermint through the Linode Marketplace',
       },
     ],
@@ -902,8 +778,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'antmediaserver.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/antmediaserver/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/antmediaserver/',
         title: 'Deploy Ant Media Server through the Linode Marketplace',
       },
     ],
@@ -922,8 +797,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'owncast.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/owncast/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/owncast/',
         title: 'Deploy Owncast through the Linode Marketplace',
       },
     ],
@@ -943,8 +817,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'moodle.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/moodle/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/moodle/',
         title: 'Deploy Moodle through the Linode Marketplace',
       },
     ],
@@ -964,8 +837,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'aapanel.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/aapanel/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/aapanel/',
         title: 'Deploy aaPanel through the Linode Marketplace',
       },
     ],
@@ -985,101 +857,13 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'splunk.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/splunk/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/splunk/',
         title: 'Deploy Splunk through the Linode Marketplace',
       },
     ],
     summary:
       'All-in-one database deployment, management, and monitoring system.',
     website: 'https://docs.splunk.com/Documentation/Splunk',
-  },
-  869155: {
-    alt_description:
-      'Image hosting and sharing alternative to Google Photos and Flickr.',
-    alt_name: 'Photo library and image library',
-    categories: ['Media and Entertainment'],
-    colors: {
-      end: '8e44ad',
-      start: '23a8e0',
-    },
-    description: `Chevereto is a full-featured image sharing solution that acts as an alternative to services like Google Photos or Flickr. Optimize image hosting by using external cloud storage (like Linode’s S3-compatible Object Storage) and connect to Chevereto using API keys.`,
-    logo_url: 'chevereto.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/chevereto/',
-        title: 'Deploy Chevereto through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Self-host your own open source image library to easily upload, collaborate, and share images on your terms.',
-    website: 'https://v3-docs.chevereto.com/',
-  },
-  869156: {
-    alt_description:
-      'File storage and sharing alternative to Dropbox and Google Drive.',
-    alt_name: 'File sharing',
-    categories: ['Productivity'],
-    colors: {
-      end: '252730',
-      start: '1f4c8f',
-    },
-    description: `Securely share and collaborate Linode S3 object storage files/folders with your internal or external users such as customers, partners, vendors, etc with fine access control and a simple interface. Nirvashare easily integrates with many external identity providers such as Active Directory, GSuite, AWS SSO, KeyClock, etc.`,
-    logo_url: 'nirvashare.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/nirvashare/',
-        title: 'Deploy NirvaShare through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Secure file sharing for better collaboration with employees, partners, vendors, and more.',
-    website: 'https://nirvashare.com/setup-guide/',
-  },
-  869158: {
-    alt_description:
-      'SQL and NoSQL database interface and monitoring for MySQL, PostgreSQL, and more.',
-    alt_name: 'Database monitoring',
-    categories: ['Databases'],
-    colors: {
-      end: '3f434c',
-      start: '0589de',
-    },
-    description: `All-in-one interface for scripting and monitoring databases, including MySQL, MariaDB, Percona, PostgreSQL, Galera Cluster and more. Easily deploy database instances, manage with an included CLI, and automate performance monitoring.`,
-    logo_url: 'clustercontrol.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/clustercontrol/',
-        title: 'Deploy ClusterControl through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'All-in-one database deployment, management, and monitoring system.',
-    website: 'https://docs.severalnines.com/docs/clustercontrol/',
-  },
-  869623: {
-    alt_description: 'Enterprise-ready backups tool.',
-    alt_name: 'Server backups management and control panel',
-    categories: ['Control Panels'],
-    colors: {
-      end: '1f2c38',
-      start: 'ff6c2c',
-    },
-    description: `Powerful and customizable backups for several websites and data all in the same interface. JetBackup integrates with any control panel via API, and has native support for cPanel and DirectAdmin. Easily backup your data to storage you already use, including Linode’s S3-compatible Object Storage.`,
-    logo_url: 'jetbackup.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/jetbackup/',
-        title: 'Deploy JetBackup through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Advanced customizable backups to integrate with your preferred control panel.',
-    website: 'https://docs.jetapps.com/',
   },
   912262: {
     alt_description: 'Container registry for Kubernetes.',
@@ -1093,8 +877,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'harbor.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/harbor/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/harbor/',
         title: 'Deploy Harbor through the Linode Marketplace',
       },
     ],
@@ -1113,8 +896,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'rocketchat.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/rocketchat/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/rocketchat/',
         title: 'Deploy Rocket.Chat through the Linode Marketplace',
       },
     ],
@@ -1134,8 +916,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'wazuh.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/wazuh/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/wazuh/',
         title: 'Deploy Wazuh through the Linode Marketplace',
       },
     ],
@@ -1154,8 +935,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'beef.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/beef/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/beef/',
         title: 'Deploy BeEF through the Linode Marketplace',
       },
     ],
@@ -1175,33 +955,12 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'openlitespeeddjango.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-django/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-django/',
         title: 'Deploy OpenLiteSpeed Django through the Linode Marketplace',
       },
     ],
     summary: 'OLS web server with Django development framework.',
     website: 'https://docs.litespeedtech.com/cloud/images/django/',
-  },
-  923030: {
-    alt_description: 'Ruby web application framework with development tools.',
-    alt_name: 'Ruby web application framework.',
-    categories: ['Development'],
-    colors: {
-      end: 'd94b7a',
-      start: '8e1a4a',
-    },
-    description: `Easy setup to run Ruby apps in the cloud and take advantage of OpenLiteSpeed server features like SSL, HTTP/3 support, and RewriteRules.`,
-    logo_url: 'openlitespeedrails.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-rails/',
-        title: 'Deploy OpenLiteSpeed Rails through the Linode Marketplace ',
-      },
-    ],
-    summary: 'OLS web server with Ruby and CertBot.',
-    website: 'https://docs.litespeedtech.com/cloud/images/rails/',
   },
   923031: {
     alt_description:
@@ -1216,8 +975,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'openlitespeednodejs.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-nodejs/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/openlitespeed-nodejs/',
         title: 'Deploy OpenLiteSpeed Node.js through the Linode Marketplace',
       },
     ],
@@ -1236,8 +994,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'litespeedcpanel.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/litespeed-cpanel/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/litespeed-cpanel/',
         title: 'Deploy LiteSpeed cPanel through the Linode Marketplace',
       },
     ],
@@ -1257,75 +1014,13 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'akaunting.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/akaunting/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/akaunting/',
         title: 'Deploy Akaunting through the Linode Marketplace',
       },
     ],
     summary:
       'Free and open source accounting software you can use in your browser.',
     website: 'https://akaunting.com',
-  },
-  923036: {
-    alt_description: 'Free alternative to Trello and Asana.',
-    alt_name: 'Kanban board project management tool',
-    categories: ['Productivity'],
-    colors: {
-      end: '555555',
-      start: 'f47564',
-    },
-    description: `Restyaboard is an open-source alternative to Trello, but with additional smart features like offline sync, diff /revisions, nested comments, multiple view layouts, chat, and more.`,
-    logo_url: 'restyaboard.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/restyaboard/',
-        title: 'Deploy Restyaboard through the Linode Marketplace',
-      },
-    ],
-    summary: 'Free and open source project management tool.',
-    website: 'https://restya.com',
-  },
-  923037: {
-    alt_description: 'Virtual private network.',
-    alt_name: 'WireGuard VPN',
-    categories: ['Security'],
-    colors: {
-      end: '333333',
-      start: '1f76b7',
-    },
-    description: `Feature-rich, self-hosted VPN based on WireGuard® protocol, plus convenient features like single sign-on, real-time bandwidth monitoring, and unlimited users/devices.`,
-    logo_url: 'warpspeed.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/warpspeed/',
-        title: 'Deploy WarpSpeed VPN through the Linode Marketplace',
-      },
-    ],
-    summary: 'Secure low-latency VPN powered by WireGuard® protocol.',
-    website: 'https://bunker.services/products/warpspeed',
-  },
-  925530: {
-    alt_description: 'Virtual private network.',
-    alt_name: 'VPN',
-    categories: ['Security'],
-    colors: {
-      end: '1a32b1',
-      start: '2ec1cf',
-    },
-    description: `UTunnel VPN is a robust cloud-based VPN server software solution. With UTunnel VPN, businesses could easily set up secure remote access to their business network. UTunnel comes with a host of business-centric features including site-to-site connectivity, single sign-on integration, 2-factor authentication, etc.`,
-    logo_url: 'utunnel.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/utunnel/',
-        title: 'Deploy UTunnel VPN through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'A powerful, user-friendly Virtual Private Network (VPN) server application that supports multiple VPN protocols.',
-    website: 'https://www.utunnel.io/linode-vpn-server.html',
   },
   925722: {
     alt_description: 'Virtual private network for businesses and teams.',
@@ -1339,34 +1034,12 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'pritunl.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/pritunl/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/pritunl/',
         title: 'Deploy Pritunl through the Linode Marketplace',
       },
     ],
     summary: 'Enterprise open source VPN.',
     website: 'https://docs.pritunl.com/docs',
-  },
-  954759: {
-    alt_description: 'Time series database and database monitoring/metrics.',
-    alt_name: 'Database monitoring',
-    categories: ['Databases'],
-    colors: {
-      end: 'af3e56',
-      start: '6a1e6e',
-    },
-    description: `VictoriaMetrics is designed to collect, store, and process real-time metrics.`,
-    logo_url: 'victoriametricssingle.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/victoriametrics-single/',
-        title: 'Deploy VictoriaMetrics Single through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Free and open source time series database (TSDB) and monitoring solution.',
-    website: 'https://victoriametrics.com/',
   },
   970522: {
     alt_description: 'Popular DNS privacy sinkhole.',
@@ -1380,8 +1053,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'pihole.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/pihole/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/pihole/',
         title: 'Deploy Pi-hole through the Linode Marketplace',
       },
     ],
@@ -1401,8 +1073,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'uptimekuma.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/uptime-kuma/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/uptime-kuma/',
         title: 'Deploy Uptime Kuma through the Linode Marketplace',
       },
     ],
@@ -1421,8 +1092,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'grav.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/grav/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/grav/',
         title: 'Deploy Grav through the Linode Marketplace',
       },
     ],
@@ -1442,8 +1112,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'nodejs.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/nodejs/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/nodejs/',
         title: 'Deploy Node.js through the Linode Marketplace',
       },
     ],
@@ -1463,8 +1132,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'saltcorn.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/saltcorn/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/saltcorn/',
         title: 'Deploy Saltcorn through the Linode Marketplace',
       },
     ],
@@ -1484,8 +1152,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'odoo.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/odoo/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/odoo/',
         title: 'Deploy Odoo through the Linode Marketplace',
       },
     ],
@@ -1505,8 +1172,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'focalboard.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/focalboard/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/focalboard/',
         title: 'Deploy Focalboard through the Linode Marketplace',
       },
     ],
@@ -1525,8 +1191,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'prometheusgrafana.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/prometheus-grafana/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/prometheus-grafana/',
         title: 'Deploy Prometheus & Grafana through the Linode Marketplace',
       },
     ],
@@ -1545,8 +1210,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'joomla.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/joomla/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/joomla/',
         title: 'Deploy Joomla through the Linode Marketplace',
       },
     ],
@@ -1566,8 +1230,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'antmediaserver.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/antmediaenterpriseserver/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/antmediaenterpriseserver/',
         title:
           'Deploy Ant Media Enterprise Edition through the Linode Marketplace',
       },
@@ -1588,8 +1251,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'joplin.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/joplin/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/joplin/',
         title: 'Deploy Joplin through the Linode Marketplace',
       },
     ],
@@ -1608,8 +1270,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'liveswitch.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/liveswitch/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/liveswitch/',
         title: 'Deploy LiveSwitch through the Linode Marketplace',
       },
     ],
@@ -1629,8 +1290,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'easypanel.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/easypanel/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/easypanel/',
         title: 'Deploy Easypanel through the Linode Marketplace',
       },
     ],
@@ -1650,36 +1310,13 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'kalilinux.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/kali-linux/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/kali-linux/',
         title: 'Deploy Kali Linux through the Linode Marketplace',
       },
     ],
     summary:
       'Popular Linux OS and tool suite for penetration testing and security research.',
     website: 'https://www.kali.org/',
-  },
-  1037036: {
-    alt_description:
-      'Application builder for forms, portals, admin panels, and more.',
-    alt_name: 'Low-code application builder',
-    categories: ['Development'],
-    colors: {
-      end: '000000',
-      start: '9981f5',
-    },
-    description:
-      'Budibase is a modern, open source low-code platform for building modern business applications in minutes. Build, design and automate business apps, such as: admin panels, forms, internal tools, client portals and more. Before Budibase, it could take developers weeks to build simple CRUD apps; with Budibase, building CRUD apps takes minutes. When self-hosting please follow best practices for securing, updating and backing up your server.',
-    logo_url: 'budibase.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/budibase/',
-        title: 'Deploy Budibase through the Linode Marketplace',
-      },
-    ],
-    summary: 'Low-code platform for building modern business applications.',
-    website: 'https://docs.budibase.com/docs',
   },
   1037037: {
     alt_description:
@@ -1695,8 +1332,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'nomad.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-nomad',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-nomad',
         title: 'Deploy HashiCorp Nomad through the Linode Marketplace',
       },
     ],
@@ -1716,8 +1352,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'vault.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-vault',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-vault',
         title: 'Deploy HashiCorp Vault through the Linode Marketplace',
       },
     ],
@@ -1736,8 +1371,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'microweber.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/microweber/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/microweber/',
         title: 'Deploy Microweber through the Linode Marketplace',
       },
     ],
@@ -1753,11 +1387,10 @@ export const oneClickApps: Record<number, OCA> = {
       start: '326690',
     },
     description: `PostgreSQL is a popular open source relational database system that provides many advanced configuration options that can help optimize your database’s performance in a production environment.`,
-    logo_url: 'postgresqlmarketplaceocc.svg',
+    logo_url: 'postgresql.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/postgresql-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/postgresql-cluster/',
         title: 'Deploy PostgreSQL Cluster through the Linode Marketplace',
       },
     ],
@@ -1776,8 +1409,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'galeramarketplaceocc.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/galera-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/galera-cluster/',
         title: 'Deploy Galera Cluster through the Linode Marketplace',
       },
     ],
@@ -1796,8 +1428,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mastodon.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mastodon/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mastodon/',
         title: 'Deploy Mastodon through the Linode Marketplace',
       },
     ],
@@ -1818,8 +1449,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'apacheairflow.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/apache-airflow/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/apache-airflow/',
         title: 'Deploy Apache Airflow through the Linode Marketplace',
       },
     ],
@@ -1839,56 +1469,12 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'haltdos.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/haltdos-community-waf/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/haltdos-community-waf/',
         title: 'Deploy Haltdos Community WAF through the Linode Marketplace',
       },
     ],
     summary: 'User-friendly web application firewall.',
     website: 'https://www.haltdos.com/',
-  },
-  1102904: {
-    alt_description:
-      'A simple SQL interface to store and search unstructured data.',
-    alt_name: 'SuperinsightDB',
-    categories: ['Databases'],
-    colors: {
-      end: 'C54349',
-      start: 'E6645F',
-    },
-    description: `Superinsight provides a simple SQL interface to store and search unstructured data. Superinsight is built on top of PostgreSQL to take advantage of powerful extensions and features, plus the ability to run machine learning operations using SQL statements.`,
-    logo_url: 'superinsight.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/superinsight/',
-        title: 'Deploy Superinsight through the Linode Marketplace',
-      },
-    ],
-    summary: 'Relational database for unstructured data.',
-    website: 'https://www.superinsight.ai/',
-  },
-  1102905: {
-    alt_description:
-      'No-code platform for Kubernetes developers and operators.',
-    alt_name: 'Go Paddle',
-    categories: ['Development'],
-    colors: {
-      end: '252930',
-      start: '3a5bfd',
-    },
-    description: `Provision multicloud clusters, containerize applications, and build DevOps pipelines. Gopaddle’s suite of templates and integrations helps eliminate manual errors and automate Kubernetes application releases.`,
-    logo_url: 'gopaddle.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/gopaddle/',
-        title: 'Deploy Gopaddle through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Simple low-code platform for Kubernetes developers and operators.',
-    website: 'https://gopaddle.io/',
   },
   1102906: {
     alt_description: 'Password Manager',
@@ -1902,8 +1488,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'passky.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/passky/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/passky/',
         title: 'Deploy Passky through the Linode Marketplace',
       },
     ],
@@ -1922,8 +1507,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'onlyoffice.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/onlyoffice/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/onlyoffice/',
         title: 'Deploy ONLYOFFICE Docs through the Linode Marketplace',
       },
     ],
@@ -1939,39 +1523,16 @@ export const oneClickApps: Record<number, OCA> = {
       start: '222222',
     },
     description: `Redis&reg; is an open-source, in-memory, data-structure store, with the optional ability to write and persist data to a disk, which can be used as a key-value database, cache, and message broker. Redis&reg; features built-in transactions, replication, and support for a variety of data structures such as strings, hashes, lists, sets, and others.<br/><br/>*Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd. Any use by Akamai Technologies is for referential purposes only and does not indicate any sponsorship, endorsement or affiliation between Redis and Akamai Technologies.`,
-    logo_url: 'redissentinelmarketplaceocc.svg',
+    logo_url: 'redis.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/redis-cluster/',
-        title:
-          'Deploy Redis&reg; Sentinel Cluster through the Linode Marketplace',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/redis-cluster/',
+        title: 'Deploy Redis® Sentinel Cluster through the Linode Marketplace',
       },
     ],
     summary:
       'Flexible, in-memory, NoSQL database service supported in many different coding languages.',
     website: 'https://redis.io/',
-  },
-  1160816: {
-    alt_description: 'Self-hosted file sharing and collaboration platform.',
-    alt_name: 'Collabrative file sharing',
-    categories: ['Productivity'],
-    colors: {
-      end: '041e42',
-      start: '041e42',
-    },
-    description: `LAMP-stack-based server application that allows you to access your files from anywhere in a secure way.`,
-    logo_url: 'owncloud.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/owncloud/',
-        title: 'Deploy ownCloud through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Dropbox and OneDrive alternative that lets you remain in control of your files.',
-    website: 'https://doc.owncloud.com/docs/next/',
   },
   1160820: {
     alt_description:
@@ -1986,58 +1547,13 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'appwrite.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/appwrite/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/appwrite/',
         title: 'Deploy Appwrite through the Linode Marketplace',
       },
     ],
     summary:
       'Appwrite is an open-source, cross-platform and technology-agnostic alternative to Firebase, providing all the core APIs necessary for web, mobile and Flutter development.',
     website: 'https://appwrite.io/',
-  },
-  1177225: {
-    alt_description: 'A safe home for all your data.',
-    alt_name:
-      'Spreadsheet style interface with the power of a relational database.',
-    categories: ['Productivity'],
-    colors: {
-      end: 'FF8000',
-      start: 'FF8000',
-    },
-    description: `Self-hosted database for a variety of management projects.`,
-    logo_url: 'seatable.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/seatable/',
-        title: 'Deploy Seatable through the Linode Marketplace',
-      },
-    ],
-    summary:
-      'Collaborative web interface for data backed project and process management.',
-    website: 'https://seatable.io/docs/?lang=auto',
-  },
-  1177605: {
-    alt_description:
-      'Retool open-source alternative, with low-code UI components.',
-    alt_name: 'Low-code development platform',
-    categories: ['Security'],
-    colors: {
-      end: 'FF58BE',
-      start: '654AEC',
-    },
-    description:
-      'Illa Builder is a Retool open-source alternative, with low-code UI components for self-hosting the development of internal tools.',
-    logo_url: 'illabuilder.svg',
-    related_guides: [
-      {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/illa-builder',
-        title: 'Deploy Illa Builder through the Linode Marketplace',
-      },
-    ],
-    summary: 'An open-source, low-code development platform.',
-    website: 'https://github.com/illacloud/illa-builder',
   },
   1226544: {
     alt_description:
@@ -2053,8 +1569,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'nomad.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-nomad-cluster',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-nomad-cluster',
         title: 'Deploy HashiCorp Nomad Cluster through the Linode Marketplace',
       },
     ],
@@ -2075,8 +1590,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'nomad.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-nomad-clients-cluster',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/hashicorp-nomad-clients-cluster',
         title:
           'Deploy HashiCorp Nomad Clients Cluster through the Linode Marketplace',
       },
@@ -2096,8 +1610,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mainconcept.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-ffmpeg-plugins-demo/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-ffmpeg-plugins-demo/',
         title:
           'Deploy MainConcept FFmpeg Plugins Demo through the Linode Marketplace',
       },
@@ -2118,8 +1631,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mainconcept.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-live-encoder-demo/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-live-encoder-demo/',
         title:
           'Deploy MainConcept Live Encoder Demo through the Linode Marketplace',
       },
@@ -2139,8 +1651,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mainconcept.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-p2-avc-ultra-demo/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-p2-avc-ultra-demo/',
         title:
           'Deploy MainConcept P2 AVC ULTRA Transcoder Demo through the Linode Marketplace',
       },
@@ -2161,8 +1672,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mainconcept.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-xavc-transcoder-demo/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-xavc-transcoder-demo/',
         title:
           'Deploy MainConcept XAVC Transcoder Demo through the Linode Marketplace',
       },
@@ -2183,8 +1693,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'mainconcept.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-xdcam-transcoder-demo/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/mainconcept-xdcam-transcoder-demo/',
         title:
           'Deploy MainConcept XDCAM Transcoder Demo through the Linode Marketplace',
       },
@@ -2205,8 +1714,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'simplexchat.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/simplex/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/simplex/',
         title: 'Deploy SimpleX chat through the Linode Marketplace',
       },
     ],
@@ -2226,8 +1734,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'jupyter.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/jupyterlab/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/jupyterlab/',
         title: 'Deploy JupyterLab through the Linode Marketplace',
       },
     ],
@@ -2247,8 +1754,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'nats.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/nats-single-node/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/nats-single-node/',
         title: 'Deploy NATS single node through the Linode Marketplace',
       },
     ],
@@ -2268,8 +1774,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'linuxgsm.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/linuxgsm/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/linuxgsm/',
         title: 'Deploy LinuxGSM through the Linode Marketplace',
       },
     ],
@@ -2289,8 +1794,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'jitsi.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/jitsi-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/jitsi-cluster/',
         title: 'Deploy Jitsi Cluster through the Linode Marketplace',
       },
     ],
@@ -2310,8 +1814,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'glusterfs.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/glusterfs-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/glusterfs-cluster/',
         title: 'Deploy GlusterFS Cluster through the Linode Marketplace',
       },
     ],
@@ -2328,12 +1831,11 @@ export const oneClickApps: Record<number, OCA> = {
       start: '85A355',
     },
     description: `Distributed, masterless, replicating NoSQL database cluster.`,
-    isNew: true,
+    isNew: false,
     logo_url: 'apachecassandra.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/apache-cassandra-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/apache-cassandra-cluster/',
         title: 'Deploy Apache Cassandra Cluster through the Linode Marketplace',
       },
     ],
@@ -2353,8 +1855,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'couchbase.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/couchbase-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/couchbase-cluster/',
         title:
           'Deploy a Couchbase Enterprise Server cluster through the Linode Marketplace',
       },
@@ -2374,8 +1875,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'apachekafka.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/apache-kafka-cluster/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/apache-kafka-cluster/',
         title: 'Deploy an Apache Kafka cluster through the Linode Marketplace',
       },
     ],
@@ -2391,12 +1891,11 @@ export const oneClickApps: Record<number, OCA> = {
       start: 'AAAAAA',
     },
     description: `High performance, BSD license key/value database.`,
-    isNew: true,
+    isNew: false,
     logo_url: 'valkey.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/valkey/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/valkey/',
         title: 'Deploy Valkey through the Linode Marketplace',
       },
     ],
@@ -2412,12 +1911,11 @@ export const oneClickApps: Record<number, OCA> = {
       start: 'FFBA01',
     },
     description: `OSI approved open source secrets platform.`,
-    isNew: true,
+    isNew: false,
     logo_url: 'openbao.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/openbao/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/openbao/',
         title: 'Deploy OpenBao through the Linode Marketplace',
       },
     ],
@@ -2433,12 +1931,11 @@ export const oneClickApps: Record<number, OCA> = {
       start: '9D29FB',
     },
     description: `Time series database supporting native query and visualization.`,
-    isNew: true,
+    isNew: false,
     logo_url: 'influxdb.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/influxdb/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/influxdb/',
         title: 'Deploy InfluxDB through the Linode Marketplace',
       },
     ],
@@ -2459,8 +1956,7 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'apachespark.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/marketplace-docs/guides/apache-spark-cluster/',
+        href: 'https://www.linode.com/docs/marketplace-docs/guides/apache-spark-cluster/',
         title: 'Deploy Apache Spark through the Linode Marketplace',
       },
     ],
@@ -2479,13 +1975,181 @@ export const oneClickApps: Record<number, OCA> = {
     logo_url: 'passbolt.svg',
     related_guides: [
       {
-        href:
-          'https://www.linode.com/docs/products/tools/marketplace/guides/passbolt/',
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/passbolt/',
         title:
           'Deploy Passbolt Community Edition through the Linode Marketplace',
       },
     ],
     summary: 'Open-source password manager for teams and businesses.',
     website: 'https://www.passbolt.com/',
+  },
+  1646305: {
+    alt_description:
+      'Fast, open source framework for building developer portals.',
+    alt_name: 'Developer Tool.',
+    categories: ['Development'],
+    colors: {
+      end: '121212',
+      start: '9BF0E1',
+    },
+    description: `Platform for building developer portals designed to simplify and unify software development processes.`,
+    isNew: true,
+    logo_url: 'backstage.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/marketplace-docs/guides/backstage/',
+        title: 'Deploy Backstage through the Linode Marketplace',
+      },
+    ],
+    summary: 'Developer portal for managing services and infrastructure.',
+    website: 'https://backstage.io/',
+  },
+  1785544: {
+    alt_description: `Lightweight, software-based gateway that provides secure, zero-trust networking between endpoints.`,
+    alt_name: 'Software Edge Router',
+    categories: ['Development'],
+    colors: {
+      end: '65ce4b',
+      start: '056abd',
+    },
+    description:
+      'Netfoundry Edge Router is a software gateway that enables secure, zero-trust, high-performance connectivity between local networks, cloud environments, and applications.',
+    isNew: true,
+    logo_url: 'netfoundry.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/netfoundry/',
+        title: 'Deploy Netfoundry through the Linode Marketplace',
+      },
+    ],
+    summary: 'Software gateway solution at the edge.',
+    website: 'https://netfoundry.io/',
+  },
+  1873119: {
+    alt_description:
+      'Multi-model NoSQL database for graph, document, and key-value data.',
+    alt_name: 'Graph Database',
+    categories: ['Databases'],
+    colors: {
+      end: 'dde072',
+      start: '577038',
+    },
+    description:
+      'ArangoDB is a multi-model database that combines the power of graphs, documents, and key-value pairs in a single engine. It provides ACID transactions, flexible data modeling, and powerful query capabilities with AQL (ArangoDB Query Language). Perfect for applications requiring complex data relationships, real-time analytics, and scalable performance.',
+    isNew: true,
+    logo_url: 'arangodb.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/arangodb/',
+        title: 'Deploy ArangoDB through the Linode Marketplace',
+      },
+    ],
+    summary:
+      'Multi-model database combining graph, document, and key-value capabilities.',
+    website: 'https://arangodb.com/',
+  },
+  1878106: {
+    alt_description:
+      'In-memory graph database built for real-time analytics and applications.',
+    alt_name: 'Graph Database',
+    categories: ['Databases'],
+    colors: {
+      end: 'ffbd14',
+      start: '75008f',
+    },
+    description:
+      'Memgraph is a high-performance, in-memory graph database designed for real-time analytics and streaming data. It uses the Cypher query language and supports powerful graph algorithms out of the box. With built-in support for streaming data, Memgraph makes it easy to build apps that respond instantly to changes in complex connected data.',
+    isNew: true,
+    logo_url: 'memgraph.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/memgraph/',
+        title: 'Deploy Memgraph through the Linode Marketplace',
+      },
+    ],
+    summary:
+      'High-performance in-memory graph database for real-time applications.',
+    website: 'https://memgraph.com/',
+  },
+  1884304: {
+    alt_description:
+      'Leading graph database platform for connected data applications.',
+    alt_name: 'Graph Database',
+    categories: ['Databases'],
+    colors: {
+      end: '241f20',
+      start: '013f63',
+    },
+    description:
+      'Neo4j is a high-performance, open-source property graph database designed to store and query data as a network of connected nodes and relationships. It is optimized for handling complex, interconnected data and supports the Cypher query language for expressive and efficient graph queries.',
+    isNew: true,
+    logo_url: 'neo4j.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/neo4j/',
+        title: 'Deploy Neo4j through the Linode Marketplace',
+      },
+    ],
+    summary: 'Leading graph database for connected data applications.',
+    website: 'https://neo4j.com/',
+  },
+  1914317: {
+    alt_description: 'Virtual private network client.',
+    alt_name: 'Free VPN Client',
+    categories: ['Security'],
+    colors: {
+      end: '51171a',
+      start: '88171a',
+    },
+    description: `Deploy a WireGuard&reg; client to securely connect your Linode to a remote WireGuard server for private networking, tunneling, or secure remote access. This client automatically configures the WireGuard connection using the server's public key and endpoint information you provide. The client is ideal for creating secure point-to-point connections, accessing private networks through a VPN tunnel, or routing traffic through a central WireGuard server. WireGuard uses state-of-the-art cryptography and is designed to be faster and more secure than traditional VPN protocols. "WireGuard" is a registered trademark of Jason A. Donenfeld.`,
+    logo_url: 'wireguard.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/wireguard/',
+        title: 'Deploy WireGuard Client through the Linode Marketplace',
+      },
+    ],
+    summary: `Modern VPN client that connects to a remote WireGuard server for secure network access using state-of-the-art cryptography.`,
+    website: 'https://www.wireguard.com/',
+  },
+  1902903: {
+    alt_description: 'Observability pipeline for data management.',
+    alt_name: 'Telemetry data routing and optimization',
+    categories: ['Development'],
+    colors: {
+      end: '04cccc',
+      start: 'ffffff',
+    },
+    description: `Cribl Stream is an observability pipeline that helps organizations collect, reduce, enrich, and route telemetry data in real-time. It connects with 80+ sources and destinations, enabling you to handle data from any source to any analytics tool. Cribl Stream helps reduce data volume and optimize log processing to cut costs, enhance data security with encryption and access controls, and transform data using AI-powered tools. The platform scales from small to enterprise-level deployments and acts as a universal data management layer, giving organizations more control and efficiency in handling their telemetry data across various systems.`,
+    isNew: true,
+    logo_url: 'cribl.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/cribl/',
+        title: 'Deploy Cribl through the Linode Marketplace',
+      },
+    ],
+    summary: `Observability pipeline for collecting, reducing, enriching, and routing telemetry data in real-time across 80+ sources and destinations.`,
+    website: 'https://cribl.io/products/stream/',
+  },
+  1902904: {
+    alt_description: 'All-in-one distributed tracing platform.',
+    alt_name: 'Microservices tracing and observability',
+    categories: ['Development'],
+    colors: {
+      end: '68cfe3',
+      start: '648c19',
+    },
+    description: `Jaeger all-in-one is a complete distributed tracing solution deployed as a single Docker container that includes the Jaeger UI, Collector, Query service, Agent, and in-memory storage. This integrated setup is designed for development, testing, and quick deployment scenarios where you need full tracing capabilities without complex distributed architecture. Jaeger helps developers track request flows across microservices, identify performance bottlenecks, analyze service dependencies, and troubleshoot errors in distributed applications. The all-in-one image supports various tracing protocols including Zipkin and Jaeger's own formats, making it ideal for getting started with distributed tracing.`,
+    isNew: true,
+    logo_url: 'jaeger.svg',
+    related_guides: [
+      {
+        href: 'https://www.linode.com/docs/products/tools/marketplace/guides/jaeger/',
+        title: 'Deploy Jaeger through the Linode Marketplace',
+      },
+    ],
+    summary: `All-in-one distributed tracing platform with integrated UI, collector, and storage for monitoring microservices.`,
+    website: 'https://www.jaegertracing.io/',
   },
 };

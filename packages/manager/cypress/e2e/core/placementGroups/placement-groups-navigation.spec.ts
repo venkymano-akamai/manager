@@ -3,8 +3,9 @@
  */
 
 import { mockGetAccount } from 'support/intercepts/account';
-import { accountFactory } from 'src/factories';
 import { ui } from 'support/ui';
+
+import { accountFactory } from 'src/factories';
 
 const mockAccount = accountFactory.build();
 
@@ -34,7 +35,7 @@ describe('Placement Groups navigation', () => {
       .findByTitle('Create Placement Group')
       .should('be.visible')
       .click();
-    cy.url().should('endWith', '/placement-groups/create');
+    cy.url().should('endWith', '/placement-groups?action=create');
 
     ui.drawer
       .findByTitle('Create Placement Group')

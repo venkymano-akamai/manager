@@ -1,10 +1,10 @@
-import { Notice, StyledLinkButton, Typography } from '@linode/ui';
+import { useLinodeFirewallsQuery } from '@linode/queries';
+import { LinkButton, Notice, Typography } from '@linode/ui';
 import { useTheme } from '@mui/material/styles';
 import * as React from 'react';
 
 import { Link } from 'src/components/Link';
 import { lishLaunch } from 'src/features/Lish/lishUtils';
-import { useLinodeFirewallsQuery } from 'src/queries/linodes/firewalls';
 
 const rescueDescription = {
   firewallWarning:
@@ -43,9 +43,9 @@ export const RescueDescription = (props: Props) => {
       {linodeId && isBareMetal ? (
         <Typography sx={{ marginTop: theme.spacing(1) }}>
           {`When your Linode has successfully rebooted into Rescue Mode, use the `}
-          <StyledLinkButton onClick={() => lishLaunch(linodeId)}>
+          <LinkButton onClick={() => lishLaunch(linodeId)}>
             LISH Console
-          </StyledLinkButton>
+          </LinkButton>
           {` to access it.`}
         </Typography>
       ) : null}

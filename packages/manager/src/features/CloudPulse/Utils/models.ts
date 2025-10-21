@@ -1,5 +1,7 @@
+import type { AssociatedEntityType } from '../shared/types';
 import type {
   Capabilities,
+  CloudPulseServiceType,
   DatabaseEngine,
   DatabaseType,
 } from '@linode/api-v4';
@@ -22,7 +24,7 @@ export interface CloudPulseServiceTypeFilterMap {
   /**
    * The service types like dbaas, linode etc.,
    */
-  readonly serviceType: 'dbaas' | 'linode';
+  readonly serviceType: CloudPulseServiceType;
 }
 
 /**
@@ -92,6 +94,11 @@ export interface CloudPulseServiceTypeFiltersConfiguration {
   apiV4QueryKey?: QueryFunctionAndKey;
 
   /**
+   * This is an optional field, controls the associated entity type for the dashboard
+   */
+  associatedEntityType?: AssociatedEntityType;
+
+  /**
    * This is an optional field, it is used to disable a certain filter, untill of the dependent filters are selected
    */
   dependency?: string[];
@@ -119,6 +126,12 @@ export interface CloudPulseServiceTypeFiltersConfiguration {
    * If this is true, multiselect will be enabled for the filter, only applicable for static and dynamic, not for predefined ones
    */
   isMultiSelect?: boolean;
+
+  /**
+   * If this is true, we will pass filter as an optional filter
+   */
+  isOptional?: boolean;
+
   /**
    * If this is true, we will only allow users to select a certain threshold, only applicable for static and dynamic, not for predefined ones
    */
@@ -128,9 +141,9 @@ export interface CloudPulseServiceTypeFiltersConfiguration {
    */
   name: string;
   /**
-   * This will be helpful, when we build a reusable component for integrating in service page, whether to show the filter there or not
+   *  This is helpful to determine the views in which the filter should be shown
    */
-  neededInServicePage: boolean;
+  neededInViews: CloudPulseAvailableViews[];
   /**
    * This is an optional field, needed if the select type is static, this is the list of options to be displayed in dropdown component
    */
@@ -176,5 +189,21 @@ export enum CloudPulseSelectTypes {
   /**
    * static selection type, where the service owner will give the static options for the filter
    */
+  // eslint-disable-next-line sonarjs/future-reserved-words
   static,
+}
+
+/**
+ * CloudPulseAvailableViews holds the views in which the filter should be shown
+ */
+export enum CloudPulseAvailableViews {
+  /**
+   * Represents the centralized Metrics view. If present in a filter's view configuration, that filter will be shown in the central page
+   */
+  central,
+
+  /**
+   * Represents the service page's Metrics view. If present in a filter's view configuration, that filter will be shown in the service page
+   */
+  service,
 }

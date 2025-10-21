@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { stackScriptFactory } from 'src/factories';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { StackScriptDetailsDialog } from './StackScriptDetailsDialog';
@@ -10,6 +10,7 @@ describe('StackScriptDetailsDialog', () => {
   it('should render StackScript data from the API', async () => {
     const stackscript = stackScriptFactory.build({
       id: 1234,
+      script: 'echo',
     });
 
     server.use(

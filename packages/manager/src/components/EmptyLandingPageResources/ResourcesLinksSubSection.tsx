@@ -1,12 +1,13 @@
 import { Typography } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 interface ResourcesLinksSubSectionProps {
-  MoreLink?: (props: { className?: any }) => JSX.Element;
   children?: JSX.Element | JSX.Element[];
   external?: boolean;
   icon?: JSX.Element;
+  MoreLink?: (props: { className?: any }) => JSX.Element;
   title?: string;
 }
 
@@ -15,7 +16,7 @@ const StyledResourcesLinksSubSection = styled('div', {
 })(({ theme }) => ({
   '& > a': {
     display: 'inline-block',
-    fontFamily: theme.font.bold,
+    font: theme.font.bold,
     width: '100%',
   },
   '& > h2': {

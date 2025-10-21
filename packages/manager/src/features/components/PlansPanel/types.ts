@@ -35,6 +35,7 @@ export interface PlanSelectionAvailabilityTypes {
   planIsSmallerThanUsage?: boolean;
   planIsTooSmall: boolean;
   planIsTooSmallForAPL?: boolean;
+  planResizeNotSupported?: boolean;
 }
 
 export interface DisabledTooltipReasons extends PlanSelectionAvailabilityTypes {

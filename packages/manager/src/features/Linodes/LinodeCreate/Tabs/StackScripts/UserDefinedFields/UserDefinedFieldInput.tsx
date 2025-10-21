@@ -11,10 +11,11 @@ import {
 } from '@linode/ui';
 import React from 'react';
 import { useController, useFormContext } from 'react-hook-form';
+import type { FieldError } from 'react-hook-form';
 
 import { FormLabel } from 'src/components/FormLabel';
 import { Link } from 'src/components/Link';
-import PasswordInput from 'src/components/PasswordInput/PasswordInput';
+import { PasswordInput } from 'src/components/PasswordInput/PasswordInput';
 
 import {
   getIsUDFHeader,
@@ -35,16 +36,18 @@ export const UserDefinedFieldInput = ({ userDefinedField }: Props) => {
 
   const { control, formState } = useFormContext<CreateLinodeRequest>();
 
-  const { field } = useController<CreateLinodeRequest>({
+  const { field, fieldState } = useController<CreateLinodeRequest>({
     control,
     name: `stackscript_data.${userDefinedField.name}`,
   });
 
-  // @ts-expect-error UDFs don't abide by the form's error type.
-  const error = formState.errors?.[userDefinedField.name]?.message?.replace(
-    'the UDF',
-    ''
-  );
+  // @ts-expect-error UDFs don't abide by the form's error type. This is an api-v4 bug.
+  const apiError = formState.errors?.[userDefinedField.name] as
+    | FieldError
+    | undefined;
+
+  const error = (apiError ?? fieldState.error)?.message?.replace('the UDF', '');
+
   // We might be able to fix this by checking the message for "UDF" and fixing the key
   // when we put the error message in the react hook form state.
 
@@ -68,19 +71,19 @@ export const UserDefinedFieldInput = ({ userDefinedField }: Props) => {
 
     return (
       <Autocomplete
-        onChange={(e, options) => {
-          field.onChange(options.map((option) => option.label).join(','));
-        }}
-        textFieldProps={{
-          required: isRequired,
-        }}
         errorText={error}
         label={userDefinedField.label}
         multiple
         noMarginTop
+        onChange={(e, options) => {
+          field.onChange(options.map((option) => option.label).join(','));
+        }}
         options={options}
         // If options are selected, hide the placeholder
         placeholder={value.length > 0 ? ' ' : undefined}
+        textFieldProps={{
+          required: isRequired,
+        }}
         value={value}
       />
     );
@@ -96,13 +99,13 @@ export const UserDefinedFieldInput = ({ userDefinedField }: Props) => {
     if (options.length > 4) {
       return (
         <Autocomplete
-          textFieldProps={{
-            required: isRequired,
-          }}
           disableClearable
           label={userDefinedField.label}
           onChange={(_, option) => field.onChange(option?.label ?? '')}
           options={options}
+          textFieldProps={{
+            required: isRequired,
+          }}
           value={value}
         />
       );
@@ -135,6 +138,12 @@ export const UserDefinedFieldInput = ({ userDefinedField }: Props) => {
     const isTokenPassword = userDefinedField.name === 'token_password';
     return (
       <PasswordInput
+        errorText={error}
+        label={userDefinedField.label}
+        noMarginTop
+        onChange={(e) => field.onChange(e.target.value)}
+        placeholder={isTokenPassword ? 'Enter your token' : 'Enter a password.'}
+        required={isRequired}
         tooltipText={
           isTokenPassword ? (
             <>
@@ -144,12 +153,6 @@ export const UserDefinedFieldInput = ({ userDefinedField }: Props) => {
             </>
           ) : undefined
         }
-        errorText={error}
-        label={userDefinedField.label}
-        noMarginTop
-        onChange={(e) => field.onChange(e.target.value)}
-        placeholder={isTokenPassword ? 'Enter your token' : 'Enter a password.'}
-        required={isRequired}
         value={field.value ?? ''}
       />
     );

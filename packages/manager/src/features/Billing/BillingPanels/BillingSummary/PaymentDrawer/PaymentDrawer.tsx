@@ -1,38 +1,36 @@
 import { makePayment } from '@linode/api-v4/lib/account';
-import { Typography } from '@linode/ui';
+import { accountQueries, useAccount, useProfile } from '@linode/queries';
 import {
   Button,
   Divider,
+  Drawer,
+  ErrorState,
   InputAdornment,
   Notice,
   Stack,
   TextField,
   TooltipIcon,
+  Typography,
 } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 import { makeStyles } from 'tss-react/mui';
 
 import { Currency } from 'src/components/Currency';
-import { Drawer } from 'src/components/Drawer';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { LinearProgress } from 'src/components/LinearProgress';
 import { SupportLink } from 'src/components/SupportLink';
 import { getRestrictedResourceText } from 'src/features/Account/utils';
 import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useAccount } from 'src/queries/account/account';
-import { accountQueries } from 'src/queries/account/queries';
-import { useProfile } from 'src/queries/profile/profile';
 import { isCreditCardExpired } from 'src/utilities/creditCard';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import { PayPalErrorBoundary } from '../../PaymentInfoPanel/PayPalErrorBoundary';
-import GooglePayButton from './GooglePayButton';
+import { GooglePayButton } from './GooglePayButton';
 import { CreditCardDialog } from './PaymentBits/CreditCardDialog';
 import { PaymentMethodCard } from './PaymentMethodCard';
-import PayPalButton from './PayPalButton';
+import { PayPalButton } from './PayPalButton';
 
 import type { SetSuccess } from './types';
 import type { PaymentMethod } from '@linode/api-v4';
@@ -103,9 +101,8 @@ export const PaymentDrawer = (props: Props) => {
     getMinimumPayment(account?.balance || 0)
   );
   const [paymentMethodId, setPaymentMethodId] = React.useState<number>(-1);
-  const [selectedCardExpired, setSelectedCardExpired] = React.useState<boolean>(
-    false
-  );
+  const [selectedCardExpired, setSelectedCardExpired] =
+    React.useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = React.useState<boolean>(false);
   const [submitting, setSubmitting] = React.useState<boolean>(false);
 
@@ -271,10 +268,10 @@ export const PaymentDrawer = (props: Props) => {
           </Typography>
         ) : null}
         <TextField
-          InputProps={{
-            startAdornment: <InputAdornment position="end">$</InputAdornment>,
-          }}
           disabled={isProcessing || isReadOnly}
+          InputProps={{
+            startAdornment: <InputAdornment position="start">$</InputAdornment>,
+          }}
           label="Payment Amount"
           noMarginTop
           onBlur={handleOnBlur}
@@ -308,25 +305,25 @@ export const PaymentDrawer = (props: Props) => {
             <Grid className={classes.button}>
               {paymentTooLow || selectedCardExpired ? (
                 <TooltipIcon
+                  status="info"
+                  sxTooltipIcon={{ padding: `0px 8px` }}
                   text={
                     paymentTooLow
                       ? `Payment amount must be at least ${minimumPayment}.`
                       : selectedCardExpired
-                      ? 'The selected card has expired.'
-                      : ''
+                        ? 'The selected card has expired.'
+                        : ''
                   }
-                  status="help"
-                  sxTooltipIcon={{ padding: `0px 8px` }}
                 />
               ) : null}
               <Button
+                buttonType="primary"
                 disabled={
                   paymentTooLow ||
                   selectedCardExpired ||
                   isProcessing ||
                   isReadOnly
                 }
-                buttonType="primary"
                 onClick={handleOpenDialog}
               >
                 Pay Now
@@ -343,7 +340,12 @@ export const PaymentDrawer = (props: Props) => {
               </Typography>
             </Grid>
             <Grid container spacing={2}>
-              <Grid sm={6} xs={9}>
+              <Grid
+                size={{
+                  sm: 6,
+                  xs: 9,
+                }}
+              >
                 <PayPalErrorBoundary renderError={renderError}>
                   <PayPalButton
                     disabled={isProcessing}
@@ -355,19 +357,24 @@ export const PaymentDrawer = (props: Props) => {
                   />
                 </PayPalErrorBoundary>
               </Grid>
-              <Grid sm={6} xs={9}>
+              <Grid
+                size={{
+                  sm: 6,
+                  xs: 9,
+                }}
+              >
                 <GooglePayButton
+                  disabled={isProcessing}
+                  renderError={renderError}
+                  setError={setErrorMessage}
+                  setProcessing={setIsProcessing}
+                  setSuccess={setSuccess}
                   transactionInfo={{
                     countryCode: 'US',
                     currencyCode: 'USD',
                     totalPrice: usd,
                     totalPriceStatus: 'FINAL',
                   }}
-                  disabled={isProcessing}
-                  renderError={renderError}
-                  setError={setErrorMessage}
-                  setProcessing={setIsProcessing}
-                  setSuccess={setSuccess}
                 />
               </Grid>
             </Grid>
@@ -405,7 +412,7 @@ const Warning = (props: WarningProps) => {
       .
     </>
   ) : (
-    warning.detail ?? ''
+    (warning.detail ?? '')
   );
   const message = (
     <>

@@ -1,9 +1,16 @@
-import { Autocomplete, Box, Notice, Stack, Typography } from '@linode/ui';
+import { useAllImagesQuery } from '@linode/queries';
+import {
+  Autocomplete,
+  Box,
+  InputAdornment,
+  Notice,
+  Stack,
+  Typography,
+} from '@linode/ui';
 import { DateTime } from 'luxon';
 import React, { useMemo } from 'react';
 
 import { imageFactory } from 'src/factories/images';
-import { useAllImagesQuery } from 'src/queries/images';
 import { formatDate } from 'src/utilities/formatDate';
 
 import { OSIcon } from '../OSIcon';
@@ -63,10 +70,11 @@ export const ImageSelect = (props: Props) => {
     ...rest
   } = props;
 
-  const { data: images, error, isLoading } = useAllImagesQuery(
-    {},
-    getAPIFilterForImageSelect(variant)
-  );
+  const {
+    data: images,
+    error,
+    isLoading,
+  } = useAllImagesQuery({}, getAPIFilterForImageSelect(variant));
 
   const disabledImages = getDisabledImages({
     images: images ?? [],
@@ -144,13 +152,22 @@ export const ImageSelect = (props: Props) => {
     return isImageDeprecated(value) && [value];
   }, [value]);
 
-  if (options.length === 1 && onChange && selectIfOnlyOneOption && !multiple) {
-    onChange(options[0]);
-  }
+  React.useEffect(() => {
+    if (
+      options.length === 1 &&
+      onChange &&
+      selectIfOnlyOneOption &&
+      !multiple
+    ) {
+      onChange(options[0]);
+    }
+  }, [options.length, onChange, selectIfOnlyOneOption, multiple, options]);
 
   return (
-    <Box>
+    <Box sx={{ width: '100%' }}>
       <Autocomplete
+        clearOnBlur
+        disableSelectAll
         groupBy={(option) => {
           if (option.id === 'any/all') {
             return '';
@@ -161,6 +178,10 @@ export const ImageSelect = (props: Props) => {
 
           return option.vendor ?? '';
         }}
+        label={label || 'Images'}
+        loading={isLoading}
+        options={sortedOptions}
+        placeholder={placeholder || 'Choose an image'}
         renderOption={(props, option, state) => {
           const { key, ...rest } = props;
 
@@ -178,35 +199,33 @@ export const ImageSelect = (props: Props) => {
           InputProps: {
             startAdornment:
               !multiple && value && !Array.isArray(value) ? (
-                <OSIcon
-                  fontSize="24px"
-                  height="24px"
-                  os={value.vendor ?? ''}
-                  pl={1}
-                  pr={2}
-                />
+                <InputAdornment position="start">
+                  <OSIcon
+                    fontSize="20px"
+                    height="20px"
+                    os={value.vendor ?? ''}
+                    position="relative"
+                    top={1}
+                    width="20px"
+                  />
+                </InputAdornment>
               ) : null,
           },
         }}
-        clearOnBlur
-        disableSelectAll
-        label={label || 'Images'}
-        loading={isLoading}
-        options={sortedOptions}
-        placeholder={placeholder || 'Choose an image'}
         {...rest}
         disableClearable={
           rest.disableClearable ??
           (selectIfOnlyOneOption && options.length === 1 && !multiple)
         }
+        disabledItemsFocusable
+        errorText={rest.errorText ?? error?.[0].reason}
+        getOptionDisabled={(option) => Boolean(disabledImages[option.id])}
+        multiple={multiple}
         onChange={(_, value) =>
           multiple && Array.isArray(value)
             ? onChange(value)
             : !multiple && !Array.isArray(value) && onChange(value)
         }
-        errorText={rest.errorText ?? error?.[0].reason}
-        getOptionDisabled={(option) => Boolean(disabledImages[option.id])}
-        multiple={multiple}
         value={value}
       />
 
@@ -221,7 +240,7 @@ export const ImageSelect = (props: Props) => {
               variant="warning"
             >
               {image.eol && DateTime.fromISO(image.eol) > DateTime.now() ? (
-                <Typography fontFamily={(theme) => theme.font.bold}>
+                <Typography sx={(theme) => ({ font: theme.font.bold })}>
                   {image.label} will reach its end-of-life on{' '}
                   {formatDate(image.eol ?? '', { format: 'MM/dd/yyyy' })}. After
                   this date, this OS distribution will no longer receive
@@ -230,7 +249,7 @@ export const ImageSelect = (props: Props) => {
                   stability for your linodes.
                 </Typography>
               ) : (
-                <Typography fontFamily={(theme) => theme.font.bold}>
+                <Typography sx={(theme) => ({ font: theme.font.bold })}>
                   {image.label} reached its end-of-life on{' '}
                   {formatDate(image.eol ?? '', { format: 'MM/dd/yyyy' })}. This
                   OS distribution will no longer receive security updates or

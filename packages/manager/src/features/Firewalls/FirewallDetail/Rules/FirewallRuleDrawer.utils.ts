@@ -3,7 +3,6 @@ import {
   isCustomPortsValid,
 } from '@linode/validation';
 import { parseCIDR, parse as parseIP } from 'ipaddr.js';
-import { uniq } from 'ramda';
 
 import {
   allIPs,
@@ -197,7 +196,6 @@ export const getInitialIPs = (
 
   const ips: ExtendedIP[] = [...extendedIPv4, ...extendedIPv6];
 
-  // eslint-disable-next-line no-unused-expressions
   ruleToModify.errors?.forEach((thisError) => {
     const { formField, ip } = thisError;
 
@@ -220,7 +218,7 @@ export const getInitialIPs = (
      * first in the list when modifying an existing rule.
      */
     const index =
-      ip.type === 'ipv4' ? ip.idx : addresses?.ipv4?.length ?? 0 + ip.idx;
+      ip.type === 'ipv4' ? ip.idx : (addresses?.ipv4?.length ?? 0 + ip.idx);
 
     ips[index].error = IP_ERROR_MESSAGE;
   });
@@ -255,7 +253,7 @@ export const itemsToPortString = (
     .split(',')
     .map((port) => port.trim())
     .filter(Boolean);
-  return uniq([...presets, ...customArray])
+  return Array.from(new Set([...presets, ...customArray]))
     .sort(sortString)
     .join(', ');
 };
@@ -282,17 +280,29 @@ export const portStringToItems = (
   const items: FirewallOptionItem<string>[] = [];
   const customInput: string[] = [];
 
-  ports.forEach((thisPort) => {
-    if (thisPort in PORT_PRESETS) {
-      items.push(PORT_PRESETS[thisPort as keyof typeof PORT_PRESETS]);
-    } else {
-      customInput.push(thisPort);
+  for (const port of ports) {
+    const preset =
+      port in PORT_PRESETS
+        ? PORT_PRESETS[port as keyof typeof PORT_PRESETS]
+        : undefined;
+
+    if (preset && items.some((i) => i.value === preset.value)) {
+      // If we have already added the port preset to our `items` array, just skip it
+      // to avoid duplicate options
+      continue;
     }
-  });
+
+    if (preset) {
+      items.push(preset);
+    } else {
+      customInput.push(port);
+    }
+  }
+
   if (customInput.length > 0) {
     items.push({ label: 'Custom', value: 'CUSTOM' });
   }
-  return [uniq(items), customInput.join(', ')];
+  return [items, customInput.join(', ')];
 };
 
 export const validateForm = ({
@@ -322,7 +332,6 @@ export const validateForm = ({
   }
 
   if (!protocol) {
-    // eslint-disable-next-line
     errors.protocol = 'Protocol is required.';
   }
 

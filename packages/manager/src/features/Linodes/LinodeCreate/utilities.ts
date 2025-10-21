@@ -1,158 +1,84 @@
+import {
+  accountQueries,
+  firewallQueries,
+  imageQueries,
+  linodeQueries,
+  stackscriptQueries,
+} from '@linode/queries';
 import { omitProps } from '@linode/ui';
+import { isNotNullOrUndefined, utoa } from '@linode/utilities';
+import { enqueueSnackbar } from 'notistack';
 import { useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import type { FieldErrors } from 'react-hook-form';
 
-import { imageQueries } from 'src/queries/images';
-import { linodeQueries } from 'src/queries/linodes/linodes';
-import { stackscriptQueries } from 'src/queries/stackscripts';
 import { sendCreateLinodeEvent } from 'src/utilities/analytics/customEventAnalytics';
 import { sendLinodeCreateFormErrorEvent } from 'src/utilities/analytics/formEventAnalytics';
 import { isPrivateIP } from 'src/utilities/ipUtils';
-import { utoa } from 'src/utilities/metadata';
-import { isNotNullOrUndefined } from 'src/utilities/nullOrUndefined';
-import { getQueryParamsFromQueryString } from 'src/utilities/queryParams';
 
+import {
+  getDefaultInterfacePayload,
+  getLegacyInterfaceFromLinodeInterface,
+  getLinodeInterfacePayload,
+} from './Networking/utilities';
 import { getDefaultUDFData } from './Tabs/StackScripts/UserDefinedFields/utilities';
 
-import type { StackScriptTabType } from './Tabs/StackScripts/utilities';
-import type { LinodeCreateType } from './types';
+import type { LinodeCreateInterface } from './Networking/utilities';
 import type {
+  AccountSettings,
   CreateLinodeRequest,
+  FirewallSettings,
+  InterfaceGenerationType,
   InterfacePayload,
   Linode,
+  MaintenancePolicySlug,
   Profile,
+  StackScript,
 } from '@linode/api-v4';
+import type { LinodeCreateType } from '@linode/utilities';
 import type { QueryClient } from '@tanstack/react-query';
-import type { FieldErrors } from 'react-hook-form';
+import type { LinodeCreateSearchParams } from 'src/routes/linodes';
 
 /**
  * This is the ID of the Image of the default OS.
  */
 const DEFAULT_OS = 'linode/ubuntu24.04';
 
-/**
- * This interface is used to type the query params on the Linode Create flow.
- */
-interface LinodeCreateQueryParams {
-  appID: string | undefined;
-  backupID: string | undefined;
-  imageID: string | undefined;
-  linodeID: string | undefined;
-  stackScriptID: string | undefined;
-  subtype: StackScriptTabType | undefined;
-  type: LinodeCreateType | undefined;
+interface LinodeCreatePayloadOptions {
+  isAclpAlertsPreferenceBeta?: boolean;
+  isAclpIntegration?: boolean;
+  isDualStackEnabled?: boolean;
+  isShowingNewNetworkingUI: boolean;
 }
-
-interface ParsedLinodeCreateQueryParams {
-  appID: number | undefined;
-  backupID: number | undefined;
-  imageID: string | undefined;
-  linodeID: number | undefined;
-  stackScriptID: number | undefined;
-  subtype: StackScriptTabType | undefined;
-  type: LinodeCreateType | undefined;
-}
-
-/**
- * Hook that allows you to read and manage Linode Create flow query params.
- *
- * We have this because react-router-dom's query strings are not typesafe.
- */
-export const useLinodeCreateQueryParams = () => {
-  const history = useHistory();
-
-  const rawParams = getQueryParamsFromQueryString(history.location.search);
-
-  /**
-   * Updates query params
-   */
-  const updateParams = (params: Partial<LinodeCreateQueryParams>) => {
-    const newParams = new URLSearchParams(rawParams);
-
-    for (const key in params) {
-      if (!params[key as keyof LinodeCreateQueryParams]) {
-        newParams.delete(key);
-      } else {
-        newParams.set(key, params[key as keyof LinodeCreateQueryParams]!);
-      }
-    }
-
-    history.push({ search: newParams.toString() });
-  };
-
-  /**
-   * Replaces query params with the provided values
-   */
-  const setParams = (params: Partial<LinodeCreateQueryParams>) => {
-    const newParams = new URLSearchParams(params);
-
-    history.push({ search: newParams.toString() });
-  };
-
-  const params = getParsedLinodeCreateQueryParams(rawParams);
-
-  return { params, setParams, updateParams };
-};
-
-const getParsedLinodeCreateQueryParams = (rawParams: {
-  [key: string]: string;
-}): ParsedLinodeCreateQueryParams => {
-  return {
-    appID: rawParams.appID ? Number(rawParams.appID) : undefined,
-    backupID: rawParams.backupID ? Number(rawParams.backupID) : undefined,
-    imageID: rawParams.imageID as string | undefined,
-    linodeID: rawParams.linodeID ? Number(rawParams.linodeID) : undefined,
-    stackScriptID: rawParams.stackScriptID
-      ? Number(rawParams.stackScriptID)
-      : undefined,
-    subtype: rawParams.subtype as StackScriptTabType | undefined,
-    type: rawParams.type as LinodeCreateType | undefined,
-  };
-};
-
-/**
- * Given the Linode Create flow 'type' from query params, this function
- * returns the tab's index. This allows us to control the tabs via the query string.
- */
-export const getTabIndex = (tabType: LinodeCreateType | undefined) => {
-  if (!tabType) {
-    return 0;
-  }
-
-  const currentTabIndex = tabs.indexOf(tabType);
-
-  // Users might type an invalid tab name into query params. Fallback to the first tab.
-  if (currentTabIndex === -1) {
-    return 0;
-  }
-
-  return currentTabIndex;
-};
-
-export const tabs: LinodeCreateType[] = [
-  'OS',
-  'One-Click',
-  'StackScripts',
-  'Images',
-  'Backups',
-  'Clone Linode',
-];
 
 /**
  * Performs some transformations to the Linode Create form data so that the data
  * is in the correct format for the API. Intended to be used in the "onSubmit" when creating a Linode.
  *
- * @param payload the initial raw values from the Linode Create form
+ * @param formValues the initial raw values from the Linode Create form
  * @returns final Linode Create payload to be sent to the API
  */
 export const getLinodeCreatePayload = (
-  formValues: LinodeCreateFormValues
+  formValues: LinodeCreateFormValues,
+  options: LinodeCreatePayloadOptions
 ): CreateLinodeRequest => {
-  const values = omitProps(formValues, [
+  const {
+    isShowingNewNetworkingUI,
+    isAclpIntegration,
+    isAclpAlertsPreferenceBeta,
+    isDualStackEnabled,
+  } = options;
+
+  const values: CreateLinodeRequest = omitProps(formValues, [
     'linode',
     'hasSignedEUAgreement',
     'firewallOverride',
+    'linodeInterfaces',
   ]);
+
+  if (!isAclpIntegration || !isAclpAlertsPreferenceBeta) {
+    values.alerts = undefined;
+  }
+
   if (values.metadata?.user_data) {
     values.metadata.user_data = utoa(values.metadata.user_data);
   }
@@ -165,10 +91,30 @@ export const getLinodeCreatePayload = (
     values.placement_group = undefined;
   }
 
-  values.interfaces = getInterfacesPayload(
-    values.interfaces,
-    Boolean(values.private_ip)
-  );
+  if (isShowingNewNetworkingUI) {
+    const shouldUseNewInterfaces = values.interface_generation === 'linode';
+
+    if (shouldUseNewInterfaces) {
+      values.interfaces = formValues.linodeInterfaces.map(
+        getLinodeInterfacePayload
+      );
+      values.firewall_id = undefined;
+    } else {
+      values.interfaces = formValues.backup_id
+        ? undefined
+        : formValues.linodeInterfaces.map((linodeInterface) =>
+            getLegacyInterfaceFromLinodeInterface(
+              linodeInterface,
+              isDualStackEnabled
+            )
+          );
+    }
+  } else {
+    values.interfaces = getInterfacesPayload(
+      formValues.interfaces,
+      Boolean(values.private_ip)
+    );
+  }
 
   return values;
 };
@@ -183,7 +129,7 @@ export const getLinodeCreatePayload = (
  */
 export const getInterfacesPayload = (
   interfaces: InterfacePayload[] | undefined,
-  hasPrivateIP: boolean | undefined
+  hasPrivateIP: LinodeCreateFormValues['backups_enabled']
 ): InterfacePayload[] | undefined => {
   if (!interfaces) {
     return undefined;
@@ -226,6 +172,7 @@ const defaultInterfaces: InterfacePayload[] = [
   {
     ipam_address: '',
     label: '',
+    primary: true,
     purpose: 'vpc',
   },
   {
@@ -260,12 +207,33 @@ export interface LinodeCreateFormValues extends CreateLinodeRequest {
    */
   hasSignedEUAgreement?: boolean;
   /**
-   * The currently selected Linode
+   * Override the interfaces type of the Linode Create flow so it only has Legacy Interfaces.
    */
-  linode?: Linode | null;
+  interfaces: InterfacePayload[];
+  /**
+   * The currently selected Linode (used for the Backups and Clone tabs)
+   */
+  linode?: null | {
+    id: number;
+    label: string;
+    region: string;
+    type: null | string;
+  };
+  /**
+   * Form state for the new Linode interface
+   */
+  linodeInterfaces: LinodeCreateInterface[];
+  /**
+   * Maintenance policy for the Linode. Can be undefined if the selected region doesn't support it.
+   */
+  maintenance_policy?: MaintenancePolicySlug;
 }
 
 export interface LinodeCreateFormContext {
+  /**
+   * Is the form using the new Interfaces UI?
+   */
+  isLinodeInterfacesEnabled: boolean;
   /**
    * Profile data is used in the Linode Create resolver because
    * restricted users are subject to different validation.
@@ -284,61 +252,140 @@ export interface LinodeCreateFormContext {
  * The default values are dependent on the query params present.
  */
 export const defaultValues = async (
-  params: ParsedLinodeCreateQueryParams,
-  queryClient: QueryClient
+  createType: LinodeCreateType,
+  params: LinodeCreateSearchParams,
+  queryClient: QueryClient,
+  flags: {
+    isLinodeInterfacesEnabled: boolean;
+    isVMHostMaintenanceEnabled: boolean;
+  }
 ): Promise<LinodeCreateFormValues> => {
   const stackscriptId = params.stackScriptID ?? params.appID;
 
-  const stackscript = stackscriptId
-    ? await queryClient.ensureQueryData(
-        stackscriptQueries.stackscript(stackscriptId)
-      )
-    : null;
+  let stackscript: null | StackScript = null;
 
-  const linode = params.linodeID
-    ? await queryClient.ensureQueryData(linodeQueries.linode(params.linodeID))
-    : null;
+  if (stackscriptId) {
+    try {
+      stackscript = await queryClient.ensureQueryData(
+        stackscriptQueries.stackscript(Number(stackscriptId))
+      );
+    } catch (error) {
+      enqueueSnackbar('Unable to initialize StackScript user defined field.', {
+        variant: 'error',
+      });
+    }
+  }
 
-  const privateIp = linode?.ipv4.some(isPrivateIP) ?? false;
+  let linode: Linode | null = null;
+
+  if (params.linodeID) {
+    try {
+      linode = await queryClient.ensureQueryData(
+        linodeQueries.linode(Number(params.linodeID))
+      );
+    } catch (error) {
+      enqueueSnackbar('Unable to initialize pre-selected Linode.', {
+        variant: 'error',
+      });
+    }
+  }
+
+  let interfaceGeneration: LinodeCreateFormValues['interface_generation'] =
+    undefined;
+  let defaultMaintenancePolicy: MaintenancePolicySlug | undefined = undefined;
+
+  // Fetch account settings for interface generation if enabled
+  if (flags.isLinodeInterfacesEnabled || flags.isVMHostMaintenanceEnabled) {
+    try {
+      const accountSettings = await queryClient.ensureQueryData(
+        accountQueries.settings
+      );
+
+      // Don't set the interface generation when cloning. The API can figure that out
+      if (flags.isLinodeInterfacesEnabled && createType !== 'Clone Linode') {
+        interfaceGeneration = getDefaultInterfaceGenerationFromAccountSetting(
+          accountSettings.interfaces_for_new_linodes
+        );
+      }
+
+      // If the Maintenance Policy feature is enabled, use the user's account setting
+      if (flags.isVMHostMaintenanceEnabled) {
+        defaultMaintenancePolicy = accountSettings.maintenance_policy;
+      }
+    } catch (error) {
+      // silently fail because the user may be a restricted user that can't access this endpoint
+    }
+  }
+
+  let firewallSettings: FirewallSettings | null = null;
+
+  // Fetch firewall settings separately since it's a different endpoint
+  if (flags.isLinodeInterfacesEnabled) {
+    try {
+      firewallSettings = await queryClient.ensureQueryData(
+        firewallQueries.settings
+      );
+    } catch {
+      // We can silently fail. Worst case, a user's default firewall won't be pre-populated.
+    }
+  }
+
+  const privateIp =
+    linode?.interface_generation !== 'linode' &&
+    (linode?.ipv4.some(isPrivateIP) ?? false);
 
   const values: LinodeCreateFormValues = {
-    backup_id: params.backupID,
+    backup_id: params.backupID ? Number(params.backupID) : undefined,
     backups_enabled: linode?.backups.enabled,
-    image: getDefaultImageId(params),
+    firewall_id:
+      firewallSettings && firewallSettings.default_firewall_ids.linode
+        ? firewallSettings.default_firewall_ids.linode
+        : undefined,
+    image: getDefaultImageId(createType, params),
+    interface_generation: interfaceGeneration,
     interfaces: defaultInterfaces,
     linode,
+    linodeInterfaces: [getDefaultInterfacePayload('public', firewallSettings)],
+    maintenance_policy: defaultMaintenancePolicy,
     private_ip: privateIp,
     region: linode ? linode.region : '',
     stackscript_data: stackscript?.user_defined_fields
       ? getDefaultUDFData(stackscript.user_defined_fields)
       : undefined,
-    stackscript_id: stackscriptId,
+    stackscript_id: stackscriptId ? Number(stackscriptId) : undefined,
     type: linode?.type ? linode.type : '',
   };
 
-  values.label = await getGeneratedLinodeLabel({
-    queryClient,
-    tab: params.type,
-    values,
-  });
+  try {
+    values.label = await getGeneratedLinodeLabel({
+      queryClient,
+      tab: createType,
+      values,
+    });
+  } catch (error) {
+    enqueueSnackbar('Unable to generate a Linode label.', { variant: 'error' });
+  }
 
   return values;
 };
 
-const getDefaultImageId = (params: ParsedLinodeCreateQueryParams) => {
+const getDefaultImageId = (
+  createType: LinodeCreateType,
+  params: LinodeCreateSearchParams
+) => {
   // You can't have an Image selected when deploying from a backup.
-  if (params.type === 'Backups') {
+  if (createType === 'Backups') {
     return null;
   }
 
   // Always default debian for the OS tab.
-  if (!params.type || params.type === 'OS') {
+  if (!createType || createType === 'OS') {
     return DEFAULT_OS;
   }
 
   // If the user is deep linked to the Images tab with a preselected image,
   // default to it.
-  if (params.type === 'Images' && params.imageID) {
+  if (createType === 'Images' && params.imageID) {
     return params.imageID;
   }
 
@@ -562,4 +609,51 @@ export const useHandleLinodeCreateAnalyticsFormError = (
   );
 
   return { handleLinodeCreateAnalyticsFormError };
+};
+
+export const getDefaultInterfaceGenerationFromAccountSetting = (
+  accountSetting: AccountSettings['interfaces_for_new_linodes']
+): InterfaceGenerationType | undefined => {
+  if (
+    accountSetting === 'linode_only' ||
+    accountSetting === 'linode_default_but_legacy_config_allowed'
+  ) {
+    return 'linode';
+  }
+  if (
+    accountSetting === 'legacy_config_only' ||
+    accountSetting === 'legacy_config_default_but_linode_allowed'
+  ) {
+    return 'legacy_config';
+  }
+  return undefined;
+};
+
+/**
+ * getDoesEmployeeNeedToAssignFirewall
+ *
+ * @returns
+ * `true` if an internal Akamai employee should be creating their Linode
+ * with a Firewall given the current network Configuration.
+ *
+ * `false` if the user has satisified the Firewall requirment or
+ * their network configuration does not require a Firewall.
+ */
+export const getDoesEmployeeNeedToAssignFirewall = (
+  legacyFirewallId: LinodeCreateFormValues['firewall_id'],
+  linodeInterfaces: LinodeCreateFormValues['linodeInterfaces'],
+  interfaceGeneration: LinodeCreateFormValues['interface_generation']
+) => {
+  if (interfaceGeneration === 'linode') {
+    // VLAN Linode interfaces do not support Firewalls, so we don't consider them.
+    const interfacesThatMayHaveInternetConnectivity = linodeInterfaces.filter(
+      (i) => i.purpose !== 'vlan'
+    );
+
+    return !interfacesThatMayHaveInternetConnectivity.every(
+      (i) => i.firewall_id
+    );
+  }
+
+  return !legacyFirewallId;
 };

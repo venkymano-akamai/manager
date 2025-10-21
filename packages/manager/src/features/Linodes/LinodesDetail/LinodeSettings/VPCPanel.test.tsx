@@ -1,9 +1,10 @@
+import { regionFactory } from '@linode/utilities';
 import { waitFor } from '@testing-library/react';
 import * as React from 'react';
 
-import { accountFactory, regionFactory } from 'src/factories';
+import { accountFactory } from 'src/factories';
 import { makeResourcePage } from 'src/mocks/serverHandlers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { mockMatchMedia, renderWithTheme } from 'src/utilities/testHelpers';
 
 import { VPCPanel } from './VPCPanel';
@@ -180,7 +181,7 @@ describe('VPCPanel', () => {
 
     await waitFor(() => {
       expect(
-        wrapper.getByLabelText('Assign a public IPv4 address for this Linode')
+        wrapper.getByLabelText('Allow public IPv4 access (1:1 NAT)')
       ).toBeChecked();
     });
   });

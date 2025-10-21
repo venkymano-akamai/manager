@@ -83,6 +83,11 @@ export interface CloudPulseCustomSelectProps {
    */
   isMultiSelect?: boolean;
 
+  /**
+   * This property controls whether the filter is optional or not
+   */
+  isOptional?: boolean;
+
   label: string;
 
   /**
@@ -115,6 +120,7 @@ export interface CloudPulseCustomSelectProps {
 
 export enum CloudPulseSelectTypes {
   dynamic,
+  // eslint-disable-next-line sonarjs/future-reserved-words
   static,
 }
 
@@ -137,6 +143,7 @@ export const CloudPulseCustomSelect = React.memo(
       preferences,
       savePreferences,
       type,
+      isOptional,
     } = props;
 
     const [selectedResource, setResource] = React.useState<
@@ -158,7 +165,7 @@ export const CloudPulseCustomSelect = React.memo(
     });
 
     React.useEffect(() => {
-      if (!selectedResource) {
+      if (!selectedResource && !disabled) {
         setResource(
           getInitialDefaultSelections({
             defaultValue,
@@ -168,11 +175,12 @@ export const CloudPulseCustomSelect = React.memo(
             options: options || queriedResources || [],
             preferences,
             savePreferences: savePreferences ?? false,
+            isOptional,
           })
         );
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [savePreferences, options, apiV4QueryKey, queriedResources]); // only execute this use efffect one time or if savePreferences or options or dataApiUrl changes
+    }, [savePreferences, options, apiV4QueryKey, queriedResources, disabled]); // only execute this use efffect one time or if savePreferences or options or dataApiUrl changes
 
     const handleChange = (
       _: React.SyntheticEvent,
@@ -192,7 +200,7 @@ export const CloudPulseCustomSelect = React.memo(
       setResource(
         Array.isArray(filteredValue)
           ? [...filteredValue]
-          : filteredValue ?? undefined
+          : (filteredValue ?? undefined)
       );
     };
 
@@ -216,15 +224,23 @@ export const CloudPulseCustomSelect = React.memo(
       staticErrorText.length > 0
         ? staticErrorText
         : isError
-        ? 'Error while loading from API'
-        : '';
+          ? 'Error while loading from API'
+          : '';
 
     return (
       <Autocomplete
+        autoHighlight
+        disabled={isAutoCompleteDisabled}
+        errorText={staticErrorText}
+        isOptionEqualToValue={(option, value) => option.label === value.label}
+        label={label || 'Select a Value'}
+        multiple={isMultiSelect}
+        noMarginTop
+        onChange={handleChange}
         options={
           type === CloudPulseSelectTypes.static
-            ? options ?? []
-            : queriedResources ?? []
+            ? (options ?? [])
+            : (queriedResources ?? [])
         }
         placeholder={
           selectedResource &&
@@ -237,14 +253,7 @@ export const CloudPulseCustomSelect = React.memo(
             placement: 'bottom',
           },
         }}
-        autoHighlight
-        disabled={isAutoCompleteDisabled}
-        errorText={staticErrorText}
-        isOptionEqualToValue={(option, value) => option.label === value.label}
-        label={label || 'Select a Value'}
-        multiple={isMultiSelect}
-        noMarginTop
-        onChange={handleChange}
+        textFieldProps={{ optional: isOptional }}
         value={selectedResource ?? (isMultiSelect ? [] : null)}
       />
     );

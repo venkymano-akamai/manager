@@ -1,5 +1,4 @@
 import { Radio } from '@linode/ui';
-import { update } from 'ramda';
 import * as React from 'react';
 
 import { TableBody } from 'src/components/TableBody';
@@ -10,6 +9,7 @@ import { TableRowEmpty } from 'src/components/TableRowEmpty/TableRowEmpty';
 import { useObjectStorageRegions } from 'src/features/ObjectStorage/hooks/useObjectStorageRegions';
 
 import { AccessCell } from './AccessCell';
+import { getUpdatedScopes } from './AccessTable';
 import {
   StyledBucketCell,
   StyledClusterCell,
@@ -25,22 +25,6 @@ import type {
   ObjectStorageKeyBucketAccessPermissions,
 } from '@linode/api-v4/lib/object-storage/types';
 
-export const getUpdatedScopes = (
-  oldScopes: ObjectStorageKeyBucketAccess[],
-  newScope: ObjectStorageKeyBucketAccess
-): ObjectStorageKeyBucketAccess[] => {
-  // Region and bucket together form a primary key
-  const scopeToUpdate = oldScopes.findIndex(
-    (thisScope) =>
-      thisScope.bucket_name === newScope.bucket_name &&
-      thisScope.region === newScope.region
-  );
-  if (scopeToUpdate < 0) {
-    return oldScopes;
-  }
-  return update(scopeToUpdate, newScope, oldScopes);
-};
-
 export const SCOPES: Record<string, ObjectStorageKeyBucketAccessPermissions> = {
   none: 'none',
   read: 'read_only',
@@ -48,7 +32,7 @@ export const SCOPES: Record<string, ObjectStorageKeyBucketAccessPermissions> = {
 };
 
 interface Props {
-  bucket_access: ObjectStorageKeyBucketAccess[] | null;
+  bucket_access: null | ObjectStorageKeyBucketAccess[];
   checked: boolean;
   mode: MODE;
   selectedRegions?: string[];
@@ -112,46 +96,46 @@ export const BucketPermissionsTable = React.memo((props: Props) => {
       <TableBody>
         {mode === 'creating' && (
           <StyledSelectAllRadioRow data-qa-row="Select All" disabled={disabled}>
-            <TableCell colSpan={2} padding="checkbox" parentColumn="Region">
+            <TableCell colSpan={2} padding="checkbox">
               <strong>Select All</strong>
             </TableCell>
-            <TableCell padding="checkbox" parentColumn="None">
+            <TableCell padding="checkbox">
               <Radio
-                inputProps={{
-                  'aria-label': 'Select none for all',
-                }}
                 checked={allScopesEqual(SCOPES.none)}
                 data-qa-perm-none-radio
                 data-testid="set-all-none"
                 disabled={disabled}
+                inputProps={{
+                  'aria-label': 'Select none for all',
+                }}
                 name="Select All"
                 onChange={() => updateAllScopes(SCOPES.none)}
                 value="none"
               />
             </TableCell>
-            <TableCell padding="checkbox" parentColumn="Read Only">
+            <TableCell padding="checkbox">
               <Radio
-                inputProps={{
-                  'aria-label': 'Select read-only for all',
-                }}
                 checked={allScopesEqual(SCOPES.read)}
                 data-qa-perm-read-radio
                 data-testid="set-all-read"
                 disabled={disabled}
+                inputProps={{
+                  'aria-label': 'Select read-only for all',
+                }}
                 name="Select All"
                 onChange={() => updateAllScopes(SCOPES.read)}
                 value="read-only"
               />
             </TableCell>
-            <TableCell padding="checkbox" parentColumn="Read/Write">
+            <TableCell padding="checkbox">
               <Radio
-                inputProps={{
-                  'aria-label': 'Select read/write for all',
-                }}
                 checked={allScopesEqual(SCOPES.write)}
                 data-qa-perm-rw-radio
                 data-testid="set-all-write"
                 disabled={disabled}
+                inputProps={{
+                  'aria-label': 'Select read/write for all',
+                }}
                 name="Select All"
                 onChange={() => updateAllScopes(SCOPES.write)}
                 value="read-write"
@@ -161,12 +145,12 @@ export const BucketPermissionsTable = React.memo((props: Props) => {
         )}
         {bucket_access.length === 0 ? (
           <TableRowEmpty
+            colSpan={9}
             message={
               !selectedRegions?.length
                 ? 'Select at least one Region to see buckets'
                 : 'There are no buckets in the selected regions'
             }
-            colSpan={9}
           />
         ) : (
           bucket_access.map((thisScope) => {
@@ -189,14 +173,14 @@ export const BucketPermissionsTable = React.memo((props: Props) => {
                 </StyledBucketCell>
                 <StyledRadioCell padding="checkbox">
                   <AccessCell
+                    active={thisScope.permissions === SCOPES.none}
+                    disabled={disabled}
                     onChange={() =>
                       updateSingleScope({
                         ...thisScope,
                         permissions: SCOPES.none,
                       })
                     }
-                    active={thisScope.permissions === SCOPES.none}
-                    disabled={disabled}
                     scope="none"
                     scopeDisplay={scopeName}
                     viewOnly={mode === 'viewing'}
@@ -204,14 +188,14 @@ export const BucketPermissionsTable = React.memo((props: Props) => {
                 </StyledRadioCell>
                 <StyledRadioCell padding="checkbox">
                   <AccessCell
+                    active={thisScope.permissions === SCOPES.read}
+                    disabled={disabled}
                     onChange={() =>
                       updateSingleScope({
                         ...thisScope,
                         permissions: SCOPES.read,
                       })
                     }
-                    active={thisScope.permissions === SCOPES.read}
-                    disabled={disabled}
                     scope="read-only"
                     scopeDisplay={scopeName}
                     viewOnly={mode === 'viewing'}
@@ -219,14 +203,14 @@ export const BucketPermissionsTable = React.memo((props: Props) => {
                 </StyledRadioCell>
                 <StyledRadioCell padding="checkbox">
                   <AccessCell
+                    active={thisScope.permissions === SCOPES.write}
+                    disabled={disabled}
                     onChange={() =>
                       updateSingleScope({
                         ...thisScope,
                         permissions: SCOPES.write,
                       })
                     }
-                    active={thisScope.permissions === SCOPES.write}
-                    disabled={disabled}
                     scope="read-write"
                     scopeDisplay={scopeName}
                     viewOnly={mode === 'viewing'}

@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import { getEventMessage } from './utils';
 
 import type { Event, EventAction } from '@linode/api-v4';
@@ -27,14 +29,14 @@ interface ToastOption {
 }
 
 interface ToastOptions {
-  failure?: ToastOption | boolean;
-  success?: ToastOption | boolean;
+  failure?: boolean | ToastOption;
+  success?: boolean | ToastOption;
 }
 
 export const createToast = (options: ToastOptions) => {
   const toastConfig: Toast = {};
 
-  const getToastMessage = (option: ToastOption | boolean): ToastMessage => {
+  const getToastMessage = (option: boolean | ToastOption): ToastMessage => {
     const message: ToastMessage['message'] = (e) => getEventMessage(e);
 
     if (typeof option === 'boolean') {
@@ -72,7 +74,7 @@ export const createToast = (options: ToastOptions) => {
  */
 export const toasts: Toasts = {
   backups_restore: createToast({ failure: { persist: true } }),
-  disk_delete: createToast({ failure: false, success: true }),
+  disk_delete: createToast({ failure: true, success: true }),
   disk_imagize: createToast({ failure: { persist: true }, success: true }),
   disk_resize: createToast({ failure: { persist: true }, success: true }),
   image_delete: createToast({ failure: true, success: true }),
@@ -80,6 +82,7 @@ export const toasts: Toasts = {
   linode_clone: createToast({ failure: true, success: true }),
   linode_migrate: createToast({ failure: true, success: true }),
   linode_migrate_datacenter: createToast({ failure: true, success: true }),
+  linode_rebuild: createToast({ failure: true, success: true }),
   linode_resize: createToast({ failure: true, success: true }),
   linode_snapshot: createToast({ failure: { persist: true } }),
   longviewclient_create: createToast({ failure: true, success: true }),

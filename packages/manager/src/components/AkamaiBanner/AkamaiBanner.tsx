@@ -1,10 +1,11 @@
 import { Box, Stack, Typography } from '@linode/ui';
+import { replaceNewlinesWithLineBreaks } from '@linode/utilities';
 import { useMediaQuery, useTheme } from '@mui/material';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import { Link } from 'src/components/Link';
 import { useFlags } from 'src/hooks/useFlags';
-import { replaceNewlinesWithLineBreaks } from 'src/utilities/replaceNewlinesWithLineBreaks';
 
 import {
   StyledAkamaiLogo,
@@ -43,7 +44,7 @@ export const AkamaiBanner = React.memo((props: AkamaiBannerProps) => {
       warning={warning}
     >
       <StyledBannerLabel warning={warning}>
-        <Stack alignItems="center" direction="row">
+        <Stack alignItems={warning ? 'start' : 'center'} direction="row">
           <Box sx={{ height: 18, width: 25 }}>
             {warning ? (
               <StyledWarningIcon height={18} />
@@ -54,7 +55,7 @@ export const AkamaiBanner = React.memo((props: AkamaiBannerProps) => {
           <Typography
             sx={(theme: Theme) => ({
               color: 'inherit',
-              fontFamily: theme.font.bold,
+              font: theme.font.bold,
               fontSize: 11,
               letterSpacing: 0.44,
             })}

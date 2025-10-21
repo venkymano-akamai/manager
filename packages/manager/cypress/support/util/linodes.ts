@@ -1,7 +1,27 @@
 import { createLinode, getLinodeConfigs } from '@linode/api-v4';
-import { createLinodeRequestFactory } from '@src/factories';
+import { createLinodeRequestFactory } from '@linode/utilities';
 import { findOrCreateDependencyFirewall } from 'support/api/firewalls';
+import { findOrCreateDependencyVlan } from 'support/api/vlans';
 import { pageSize } from 'support/constants/api';
+import {
+  dryRunButtonText,
+  legacyInterfacesDescriptionText1,
+  legacyInterfacesDescriptionText2,
+  legacyInterfacesLabelText,
+  linodeInterfacesDescriptionText1,
+  linodeInterfacesDescriptionText2,
+  linodeInterfacesLabelText,
+  networkConnectionDescriptionText,
+  networkConnectionSectionText,
+  networkInterfaceTypeSectionText,
+  promptDialogDescription1,
+  promptDialogDescription2,
+  promptDialogUpgradeDetails,
+  promptDialogUpgradeWhatHappensTitle,
+  upgradeInterfacesButtonText,
+} from 'support/constants/linode-interfaces';
+import { LINODE_CREATE_TIMEOUT } from 'support/constants/linodes';
+import { ui } from 'support/ui';
 import { SimpleBackoffMethod } from 'support/util/backoff';
 import { pollLinodeDiskStatuses, pollLinodeStatus } from 'support/util/polling';
 import { randomLabel, randomString } from 'support/util/random';
@@ -10,10 +30,12 @@ import { chooseRegion } from 'support/util/regions';
 import { depaginate } from './paginate';
 
 import type {
+  Alert,
   Config,
   CreateLinodeRequest,
   InterfacePayload,
   Linode,
+  LinodeInterface,
 } from '@linode/api-v4';
 
 /**
@@ -76,7 +98,7 @@ export const defaultCreateTestLinodeOptions = {
  * @returns Promise that resolves to the created Linode.
  */
 export const createTestLinode = async (
-  createRequestPayload?: Partial<CreateLinodeRequest> | null,
+  createRequestPayload?: null | Partial<CreateLinodeRequest>,
   options?: Partial<CreateTestLinodeOptions>
 ): Promise<Linode> => {
   const resolvedOptions = {
@@ -84,33 +106,46 @@ export const createTestLinode = async (
     ...(options || {}),
   };
 
-  const securityMethodPayload: Partial<CreateLinodeRequest> = await (async () => {
-    switch (resolvedOptions.securityMethod) {
-      case 'firewall':
-      default:
-        const firewall = await findOrCreateDependencyFirewall();
-        return {
-          firewall_id: firewall.id,
-        };
+  let regionId = createRequestPayload?.region;
+  if (!regionId) {
+    regionId = chooseRegion({ capabilities: ['Linodes', 'Vlans'] }).id;
+  }
 
-      case 'vlan_no_internet':
-        return {
-          interfaces: linodeVlanNoInternetConfig,
-        };
+  const securityMethodPayload: Partial<CreateLinodeRequest> =
+    await (async () => {
+      switch (resolvedOptions.securityMethod) {
+        case 'firewall':
+          const firewall = await findOrCreateDependencyFirewall();
+          return {
+            firewall_id: firewall.id,
+          };
 
-      case 'powered_off':
-        return {
-          booted: false,
-        };
-    }
-  })();
+        case 'powered_off':
+          return {
+            booted: false,
+          };
+
+        case 'vlan_no_internet':
+          const vlanConfig = linodeVlanNoInternetConfig;
+          const vlanLabel = await findOrCreateDependencyVlan(regionId);
+          vlanConfig[0].label = vlanLabel;
+          return {
+            interfaces: vlanConfig,
+          };
+
+        default:
+          return {};
+      }
+    })();
 
   const resolvedCreatePayload = {
     ...createLinodeRequestFactory.build({
+      interface_generation: 'legacy_config',
+      firewall_id: null,
       booted: false,
       image: 'linode/ubuntu24.04',
       label: randomLabel(),
-      region: chooseRegion().id,
+      region: regionId,
     }),
     ...(createRequestPayload || {}),
     ...securityMethodPayload,
@@ -138,6 +173,7 @@ export const createTestLinode = async (
     );
   }
 
+  // eslint-disable-next-line @linode/cloud-manager/no-createLinode
   const linode = await createLinode(resolvedCreatePayload);
 
   // Wait for disks to become available if `waitForDisks` option is set.
@@ -174,6 +210,7 @@ export const createTestLinode = async (
     },
     message: `Create Linode '${linode.label}' (ID ${linode.id})`,
     name: 'createTestLinode',
+    timeout: LINODE_CREATE_TIMEOUT,
   });
 
   return {
@@ -195,4 +232,158 @@ export const fetchLinodeConfigs = async (
   return depaginate((page) =>
     getLinodeConfigs(linodeId, { page, page_size: pageSize })
   );
+};
+
+/**
+ * Check the content of prompt dialog
+ */
+export const assertPromptDialogContent = () => {
+  ui.dialog
+    .findByTitle('Upgrade to Linode Interfaces')
+    .should('be.visible')
+    .within(() => {
+      cy.findByText(promptDialogDescription1, { exact: false }).should(
+        'be.visible'
+      );
+      cy.findByText(promptDialogDescription2, { exact: false }).should(
+        'be.visible'
+      );
+      cy.findByText(promptDialogUpgradeWhatHappensTitle, {
+        exact: false,
+      }).should('be.visible');
+      promptDialogUpgradeDetails.forEach((item) => {
+        cy.findByText(item).should('be.visible');
+      });
+
+      ui.button
+        .findByTitle(dryRunButtonText)
+        .should('be.visible')
+        .should('be.enabled');
+      ui.button
+        .findByTitle(upgradeInterfacesButtonText)
+        .should('be.visible')
+        .should('be.enabled');
+    });
+};
+
+/**
+ * Check the upgrade summary
+ *
+ * @param linodeInterface - Linode interface to check.
+ * @param isDryRun - Boolean to indicate if the upgrade performs dry run.
+ *
+ */
+export const assertUpgradeSummary = (
+  linodeInterface: LinodeInterface,
+  isDryRun: boolean = false
+) => {
+  if (isDryRun) {
+    // Confirm that dry run status is successful
+    cy.findByText('Dry run successful').should('be.visible');
+    cy.findByText(
+      'No issues were found. You can proceed with upgrading to Linode Interfaces.'
+    ).should('be.visible');
+
+    // Confirm that dry run summary details display.
+    cy.findByText('Dry Run Summary').should('be.visible');
+    cy.findByText('Interface Meta Info').should('be.visible');
+    cy.findByText(`MAC Address: ${linodeInterface.mac_address}`).should(
+      'be.visible'
+    );
+    cy.findByText(`Created: ${linodeInterface.created}`).should('be.visible');
+    cy.findByText(`Updated: ${linodeInterface.updated}`).should('be.visible');
+    cy.findByText(`Version: ${linodeInterface.version}`).should('be.visible');
+    cy.findByText('Public Interface dry run successful.').should('be.visible');
+  } else {
+    // Confirm that upgrade status is successful
+    cy.findByText('Upgrade successful').should('be.visible');
+    cy.findByText(
+      'Your Linode now uses Linode Interfaces. Existing interfaces were migrated, firewalls reassigned, and changes are visible',
+      { exact: false }
+    ).should('be.visible');
+
+    // Confirm that upgrade summary details display.
+    cy.findByText('Upgrade Summary').should('be.visible');
+    cy.findByText(
+      `Interface Meta Info: Interface #${linodeInterface.id}`
+    ).should('be.visible');
+    cy.findByText(`ID: ${linodeInterface.id}`).should('be.visible');
+    cy.findByText(`MAC Address: ${linodeInterface.mac_address}`).should(
+      'be.visible'
+    );
+    cy.findByText(`Created: ${linodeInterface.created}`).should('be.visible');
+    cy.findByText(`Updated: ${linodeInterface.updated}`).should('be.visible');
+    cy.findByText(`Version: ${linodeInterface.version}`).should('be.visible');
+    cy.findByText('Public Interface successfully upgraded.').should(
+      'be.visible'
+    );
+  }
+};
+
+/**
+ * Check the elements of Linode Interfaces.
+ *
+ * @param linodeInterfacesEnabled - Indicator if Linode Interfaces feature is enabled.
+ */
+export const assertNewLinodeInterfacesIsAvailable = (
+  linodeInterfacesEnabled: boolean = true
+): void => {
+  const expectedBehavior = linodeInterfacesEnabled ? 'be.visible' : 'not.exist';
+  cy.findByText(networkInterfaceTypeSectionText).should(expectedBehavior);
+  cy.findByText(linodeInterfacesLabelText).should(expectedBehavior);
+  cy.findByText(linodeInterfacesDescriptionText1).should(expectedBehavior);
+  cy.findByText(linodeInterfacesDescriptionText2).should(expectedBehavior);
+  cy.findByText(legacyInterfacesLabelText).should(expectedBehavior);
+  cy.findByText(legacyInterfacesDescriptionText1).should(expectedBehavior);
+  cy.findByText(legacyInterfacesDescriptionText2).should(expectedBehavior);
+  cy.findByText(networkConnectionSectionText).should(expectedBehavior);
+  cy.findByText(networkConnectionDescriptionText).should(expectedBehavior);
+};
+
+/**
+ * Validates the table cell contents against the alerts provided
+ *
+ * @param linodeInterfacesEnabled - Indicator if Linode Interfaces feature is enabled.
+ */
+export const assertLinodeAlertsEnabled = (alertDefinitions: Alert[]) => {
+  cy.get('table[data-testid="alert-table"]')
+    .should('be.visible')
+    .get('tbody > tr')
+    .should('have.length', 3)
+    .each((row, index) => {
+      // match alert definitions to table cell contents
+      cy.wrap(row).within(() => {
+        cy.get('td')
+          .eq(0)
+          .within(() => {
+            // each alert's toggle should be enabled/on/true and editable
+            ui.toggle
+              .find()
+              .should('have.attr', 'data-qa-toggle', 'true')
+              .should('be.visible')
+              .should('be.enabled')
+              .click();
+            ui.toggle.find().should('have.attr', 'data-qa-toggle', 'false');
+          });
+        cy.get('td')
+          .eq(1)
+          .within(() => {
+            cy.findByText(alertDefinitions[index].label).should('be.visible');
+          });
+        cy.get('td')
+          .eq(2)
+          .within(() => {
+            const rule = alertDefinitions[index].rule_criteria.rules[0];
+            const str = `${rule.label} = ${rule.threshold} ${rule.unit}`;
+            cy.findByText(str).should('be.visible');
+          });
+        cy.get('td')
+          .eq(3)
+          .within(() => {
+            cy.findByText(alertDefinitions[index].type, {
+              exact: false,
+            }).should('be.visible');
+          });
+      });
+    });
 };

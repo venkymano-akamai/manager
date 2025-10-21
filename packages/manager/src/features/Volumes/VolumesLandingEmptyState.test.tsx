@@ -1,10 +1,10 @@
+import { grantsFactory, profileFactory } from '@linode/utilities';
 import { waitFor } from '@testing-library/react';
 import React from 'react';
 
-import { grantsFactory, profileFactory } from 'src/factories';
 import { makeResourcePage } from 'src/mocks/serverHandlers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
-import { renderWithThemeAndRouter } from 'src/utilities/testHelpers';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
+import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { VolumesLandingEmptyState } from './VolumesLandingEmptyState';
 
@@ -24,9 +24,7 @@ describe('VolumesLandingEmptyState', () => {
       })
     );
 
-    const { getByText } = await renderWithThemeAndRouter(
-      <VolumesLandingEmptyState />
-    );
+    const { getByText } = renderWithTheme(<VolumesLandingEmptyState />);
 
     await waitFor(() => {
       const createVolumeButton = getByText('Create Volume').closest('button');

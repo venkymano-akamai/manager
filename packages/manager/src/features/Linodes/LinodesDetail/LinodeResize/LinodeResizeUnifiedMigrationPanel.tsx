@@ -7,11 +7,11 @@ import {
   RadioGroup,
   TooltipIcon,
 } from '@linode/ui';
+import { capitalize } from '@linode/utilities';
 import { useTheme } from '@mui/material/styles';
 import * as React from 'react';
 
 import { Link } from 'src/components/Link';
-import { capitalize } from 'src/utilities/capitalize';
 
 import type { MigrationTypes } from '@linode/api-v4/lib/linodes';
 import type { ResizeLinodePayload } from '@linode/api-v4/lib/linodes/types';
@@ -58,7 +58,7 @@ export const UnifiedMigrationPanel = (props: Props) => {
             >
               <Typography
                 sx={(theme) => ({
-                  fontFamily: theme.font.bold,
+                  font: theme.font.bold,
                   fontSize: '0.85rem',
                   opacity: isLinodeOffline ? 0.5 : 1,
                 })}
@@ -67,6 +67,7 @@ export const UnifiedMigrationPanel = (props: Props) => {
               </Typography>
             </Box>
             <TooltipIcon
+              status="info"
               text={
                 <>
                   During a <strong>warm resize</strong>, your Linode will remain
@@ -76,13 +77,12 @@ export const UnifiedMigrationPanel = (props: Props) => {
                     Learn more.
                   </Link>
                   {isLinodeOffline && (
-                    <Typography fontFamily={theme.font.bold} sx={{ mt: 1 }}>
+                    <Typography sx={{ font: theme.font.bold, mt: 1 }}>
                       Your Linode must be powered on to select a warm resize.
                     </Typography>
                   )}
                 </>
               }
-              status="help"
               tooltipPosition="right"
               width={375}
             />
@@ -97,6 +97,7 @@ export const UnifiedMigrationPanel = (props: Props) => {
               value={migrationTypeOptions.cold}
             />
             <TooltipIcon
+              status="info"
               sxTooltipIcon={{
                 marginLeft: '-15px',
               }}
@@ -111,7 +112,6 @@ export const UnifiedMigrationPanel = (props: Props) => {
                   </Link>
                 </>
               }
-              status="help"
               tooltipPosition="right"
               width={450}
             />

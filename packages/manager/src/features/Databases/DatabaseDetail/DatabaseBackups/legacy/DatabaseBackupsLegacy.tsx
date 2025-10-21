@@ -1,3 +1,4 @@
+import { useDatabaseBackupsQuery } from '@linode/queries';
 import { Paper, Typography } from '@linode/ui';
 import * as React from 'react';
 
@@ -8,8 +9,7 @@ import { TableHead } from 'src/components/TableHead';
 import { TableRow } from 'src/components/TableRow';
 import { TableSortCell } from 'src/components/TableSortCell';
 import RestoreLegacyFromBackupDialog from 'src/features/Databases/DatabaseDetail/DatabaseBackups/legacy/RestoreLegacyFromBackupDialog';
-import { useOrder } from 'src/hooks/useOrder';
-import { useDatabaseBackupsQuery } from 'src/queries/databases/databases';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
 
 import DatabaseBackupTableBody from './DatabaseBackupTableBody';
 
@@ -25,13 +25,8 @@ interface Props {
 }
 
 export const DatabaseBackupsLegacy = (props: Props) => {
-  const {
-    database,
-    databaseError,
-    disabled,
-    engine,
-    isDatabaseLoading,
-  } = props;
+  const { database, databaseError, disabled, engine, isDatabaseLoading } =
+    props;
 
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = React.useState(false);
   const [idOfBackupToRestore, setIdOfBackupToRestore] = React.useState<
@@ -46,9 +41,15 @@ export const DatabaseBackupsLegacy = (props: Props) => {
     isLoading: isBackupsLoading,
   } = useDatabaseBackupsQuery(engine, id, Boolean(database));
 
-  const { handleOrderChange, order, orderBy } = useOrder({
-    order: 'desc',
-    orderBy: 'created',
+  const { handleOrderChange, order, orderBy } = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'created',
+      },
+      from: '/databases/$engine/$databaseId/backups',
+    },
+    preferenceKey: 'database-backups-legacy',
   });
 
   if (!database) {
@@ -78,8 +79,8 @@ export const DatabaseBackupsLegacy = (props: Props) => {
             >
               Date Created
             </TableSortCell>
-            <TableCell></TableCell>
-            <TableCell style={{ width: 100 }}></TableCell>
+            <TableCell />
+            <TableCell style={{ width: 100 }} />
           </TableRow>
         </TableHead>
         <TableBody>

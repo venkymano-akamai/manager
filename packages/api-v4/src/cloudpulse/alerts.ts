@@ -1,27 +1,38 @@
-import { createAlertDefinitionSchema } from '@linode/validation';
+import {
+  createAlertDefinitionSchema,
+  editAlertDefinitionSchema,
+} from '@linode/validation';
+
+import { BETA_API_ROOT as API_ROOT } from '../constants';
 import Request, {
-  setURL,
-  setMethod,
   setData,
+  setMethod,
   setParams,
+  setURL,
   setXFilter,
 } from '../request';
-import { Alert, AlertServiceType, CreateAlertDefinitionPayload } from './types';
-import { BETA_API_ROOT as API_ROOT } from '../constants';
-import { Params, Filter, ResourcePage } from '../types';
+
+import type { Filter, Params, ResourcePage } from '../types';
+import type {
+  Alert,
+  CloudPulseAlertsPayload,
+  CreateAlertDefinitionPayload,
+  EditAlertDefinitionPayload,
+  NotificationChannel,
+} from './types';
 
 export const createAlertDefinition = (
   data: CreateAlertDefinitionPayload,
-  serviceType: AlertServiceType
+  serviceType: string,
 ) =>
   Request<Alert>(
     setURL(
       `${API_ROOT}/monitor/services/${encodeURIComponent(
-        serviceType!
-      )}/alert-definitions`
+        serviceType!,
+      )}/alert-definitions`,
     ),
     setMethod('POST'),
-    setData(data, createAlertDefinitionSchema)
+    setData(data, createAlertDefinitionSchema),
   );
 
 export const getAlertDefinitions = (params?: Params, filters?: Filter) =>
@@ -29,18 +40,102 @@ export const getAlertDefinitions = (params?: Params, filters?: Filter) =>
     setURL(`${API_ROOT}/monitor/alert-definitions`),
     setMethod('GET'),
     setParams(params),
-    setXFilter(filters)
+    setXFilter(filters),
   );
 
 export const getAlertDefinitionByServiceTypeAndId = (
   serviceType: string,
-  alertId: number
+  alertId: string,
 ) =>
   Request<Alert>(
     setURL(
       `${API_ROOT}/monitor/services/${encodeURIComponent(
-        serviceType
-      )}/alert-definitions/${encodeURIComponent(alertId)}`
+        serviceType,
+      )}/alert-definitions/${encodeURIComponent(alertId)}`,
     ),
-    setMethod('GET')
+    setMethod('GET'),
+  );
+
+export const editAlertDefinition = (
+  data: EditAlertDefinitionPayload,
+  serviceType: string,
+  alertId: number,
+) =>
+  Request<Alert>(
+    setURL(
+      `${API_ROOT}/monitor/services/${encodeURIComponent(
+        serviceType,
+      )}/alert-definitions/${encodeURIComponent(alertId)}`,
+    ),
+    setMethod('PUT'),
+    setData(data, editAlertDefinitionSchema),
+  );
+export const getNotificationChannels = (params?: Params, filters?: Filter) =>
+  Request<ResourcePage<NotificationChannel>>(
+    setURL(`${API_ROOT}/monitor/alert-channels`),
+    setMethod('GET'),
+    setParams(params),
+    setXFilter(filters),
+  );
+
+export const getAlertDefinitionByServiceType = (serviceType: string) =>
+  Request<ResourcePage<Alert>>(
+    setURL(
+      `${API_ROOT}/monitor/services/${encodeURIComponent(
+        serviceType,
+      )}/alert-definitions`,
+    ),
+    setMethod('GET'),
+  );
+
+export const addEntityToAlert = (
+  serviceType: string,
+  entityId: string,
+  data: { 'alert-definition-id': number },
+) =>
+  Request<{}>(
+    setURL(
+      `${API_ROOT}/monitor/service/${encodeURIComponent(
+        serviceType,
+      )}/entity/${encodeURIComponent(entityId)}/alert-definition`,
+    ),
+    setMethod('POST'),
+    setData(data),
+  );
+
+export const deleteEntityFromAlert = (
+  serviceType: string,
+  entityId: string,
+  alertId: number,
+) =>
+  Request<{}>(
+    setURL(
+      `${API_ROOT}/monitor/service/${encodeURIComponent(
+        serviceType,
+      )}/entity/${encodeURIComponent(
+        entityId,
+      )}/alert-definition/${encodeURIComponent(alertId)}`,
+    ),
+    setMethod('DELETE'),
+  );
+
+export const deleteAlertDefinition = (serviceType: string, alertId: number) =>
+  Request<Alert>(
+    setURL(
+      `${API_ROOT}/monitor/services/${encodeURIComponent(serviceType)}/alert-definitions/${encodeURIComponent(alertId)}`,
+    ),
+    setMethod('DELETE'),
+  );
+
+export const updateServiceAlerts = (
+  serviceType: string,
+  entityId: string,
+  payload: CloudPulseAlertsPayload,
+) =>
+  Request<Alert>(
+    setURL(
+      `${API_ROOT}/monitor/services/${encodeURIComponent(serviceType)}/alert-definitions/${encodeURIComponent(entityId)}`,
+    ),
+    setMethod('PUT'),
+    setData(payload),
   );

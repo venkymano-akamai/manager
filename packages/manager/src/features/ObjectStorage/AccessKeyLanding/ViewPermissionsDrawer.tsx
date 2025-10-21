@@ -1,18 +1,14 @@
-import { Typography } from '@linode/ui';
+import { Drawer, Typography } from '@linode/ui';
 import * as React from 'react';
 
-import { Drawer } from 'src/components/Drawer';
-import { useAccountManagement } from 'src/hooks/useAccountManagement';
-import { useFlags } from 'src/hooks/useFlags';
-import { isFeatureEnabledV2 } from 'src/utilities/accountCapabilities';
-
+import { useIsObjMultiClusterEnabled } from '../hooks/useIsObjectStorageGen2Enabled';
 import { AccessTable } from './AccessTable';
 import { BucketPermissionsTable } from './BucketPermissionsTable';
 
 import type { ObjectStorageKey } from '@linode/api-v4';
 
 export interface Props {
-  objectStorageKey: ObjectStorageKey | null;
+  objectStorageKey: null | ObjectStorageKey;
   onClose: () => void;
   open: boolean;
 }
@@ -20,14 +16,7 @@ export interface Props {
 export const ViewPermissionsDrawer = (props: Props) => {
   const { objectStorageKey, onClose, open } = props;
 
-  const flags = useFlags();
-  const { account } = useAccountManagement();
-
-  const isObjMultiClusterEnabled = isFeatureEnabledV2(
-    'Object Storage Access Key Regions',
-    Boolean(flags.objMultiCluster),
-    account?.capabilities ?? []
-  );
+  const { isObjMultiClusterEnabled } = useIsObjMultiClusterEnabled();
 
   return (
     <Drawer
@@ -36,15 +25,18 @@ export const ViewPermissionsDrawer = (props: Props) => {
       title={`Permissions for ${objectStorageKey?.label}`}
       wide
     >
-      {!objectStorageKey ? null : objectStorageKey.bucket_access === null ? (
+      {!objectStorageKey ? null : objectStorageKey.limited === false ? (
         <Typography>
           This key has unlimited access to all buckets on your account.
         </Typography>
+      ) : objectStorageKey.bucket_access === null ? (
+        <Typography>This key has no permissions.</Typography>
       ) : (
         <>
           <Typography>
             This access key has the following permissions:
           </Typography>
+
           {isObjMultiClusterEnabled ? (
             <BucketPermissionsTable
               bucket_access={objectStorageKey.bucket_access}

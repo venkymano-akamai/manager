@@ -1,8 +1,16 @@
 import { getInvoiceItems } from '@linode/api-v4/lib/account';
-import { Autocomplete, Typography } from '@linode/ui';
+import {
+  useAccount,
+  useAllAccountInvoices,
+  useAllAccountPayments,
+  useProfile,
+  useRegionsQuery,
+} from '@linode/queries';
+import { Autocomplete, Notice, Typography, WarningIcon } from '@linode/ui';
+import { getAll, useSet } from '@linode/utilities';
+import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import { styled } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
 import { DateTime } from 'luxon';
 import * as React from 'react';
 import { makeStyles } from 'tss-react/mui';
@@ -29,20 +37,12 @@ import {
   printInvoice,
   printPayment,
 } from 'src/features/Billing/PdfGenerator/PdfGenerator';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { useFlags } from 'src/hooks/useFlags';
-import { useOrder } from 'src/hooks/useOrder';
-import { usePagination } from 'src/hooks/usePagination';
-import { useSet } from 'src/hooks/useSet';
-import { useAccount } from 'src/queries/account/account';
-import {
-  useAllAccountInvoices,
-  useAllAccountPayments,
-} from 'src/queries/account/billing';
-import { useProfile } from 'src/queries/profile/profile';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 import { parseAPIDate } from 'src/utilities/date';
 import { formatDate } from 'src/utilities/formatDate';
-import { getAll } from 'src/utilities/getAll';
 
 import { getTaxID } from '../../billingUtils';
 
@@ -93,6 +93,7 @@ const useStyles = makeStyles()((theme: Theme) => ({
     '& > .loading': {
       width: 115,
     },
+    paddingRight: 0,
     textAlign: 'right',
   },
   pdfError: {
@@ -183,25 +184,45 @@ export const BillingActivityPanel = React.memo((props: Props) => {
   const { data: profile } = useProfile();
   const { data: account } = useAccount();
   const { data: regions } = useRegionsQuery();
+  const flags = useFlags();
 
-  const pagination = usePagination(1, 'billing-activity');
-  const { handleOrderChange, order, orderBy } = useOrder();
+  const pagination = usePaginationV2({
+    currentRoute: flags?.iamRbacPrimaryNavChanges
+      ? '/billing'
+      : '/account/billing',
+    preferenceKey: 'billing-activity-pagination',
+  });
+  const { handleOrderChange, order, orderBy } = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'desc',
+        orderBy: 'amount',
+      },
+      from: flags?.iamRbacPrimaryNavChanges ? '/billing' : '/account/billing',
+    },
+    preferenceKey: 'billing-activity-order',
+  });
+
+  const { data: permissions } = usePermissions('account', [
+    'list_billing_payments',
+    'list_billing_invoices',
+    'list_invoice_items',
+  ]);
+
+  const canViewInvoices = permissions.list_billing_invoices;
+  const canViewPayments = permissions.list_billing_payments;
+  const canViewInvoiceDetails = permissions.list_invoice_items;
 
   const isAkamaiCustomer = account?.billing_source === 'akamai';
   const { classes } = useStyles();
-  const flags = useFlags();
   const pdfErrors = useSet();
   const pdfLoading = useSet();
 
-  const [
-    selectedTransactionType,
-    setSelectedTransactionType,
-  ] = React.useState<TransactionTypeOptions>(transactionTypeOptions[2]);
+  const [selectedTransactionType, setSelectedTransactionType] =
+    React.useState<TransactionTypeOptions>(transactionTypeOptions[2]);
 
-  const [
-    selectedTransactionDate,
-    setSelectedTransactionDate,
-  ] = React.useState<TransactionDateOptions>(transactionDateOptions[3]);
+  const [selectedTransactionDate, setSelectedTransactionDate] =
+    React.useState<TransactionDateOptions>(transactionDateOptions[3]);
 
   const endDate = getCutoffFromDateRange(selectedTransactionDate);
   const filter = makeFilter(endDate);
@@ -210,13 +231,13 @@ export const BillingActivityPanel = React.memo((props: Props) => {
     data: payments,
     error: accountPaymentsError,
     isLoading: accountPaymentsLoading,
-  } = useAllAccountPayments({}, filter);
+  } = useAllAccountPayments({}, filter, canViewPayments);
 
   const {
     data: invoices,
     error: accountInvoicesError,
     isLoading: accountInvoicesLoading,
-  } = useAllAccountInvoices({}, filter);
+  } = useAllAccountInvoices({}, filter, canViewInvoices);
 
   const downloadInvoicePDF = React.useCallback(
     (invoiceId: number) => {
@@ -348,7 +369,19 @@ export const BillingActivityPanel = React.memo((props: Props) => {
       return (
         <TableRowEmpty
           colSpan={NUM_COLS}
-          message="No Billing & Payment History found."
+          message={
+            canViewInvoices && canViewPayments ? (
+              'No Billing & Payment History found.'
+            ) : (
+              <>
+                <WarningIcon
+                  style={{ position: 'relative', top: 4, marginRight: 2 }}
+                  width={16}
+                />{' '}
+                You do not have permission to view billing or payment history.
+              </>
+            )
+          }
         />
       );
     }
@@ -357,11 +390,15 @@ export const BillingActivityPanel = React.memo((props: Props) => {
         const lastItem = idx === orderedPaginatedData.length - 1;
         return (
           <ActivityFeedItem
+            canViewInvoiceDetails={canViewInvoiceDetails}
             downloadPDF={
               thisItem.type === 'invoice'
                 ? downloadInvoicePDF
                 : downloadPaymentPDF
             }
+            hasError={pdfErrors.has(`${thisItem.type}-${thisItem.id}`)}
+            isLoading={pdfLoading.has(`${thisItem.type}-${thisItem.id}`)}
+            key={`${thisItem.type}-${thisItem.id}`}
             sxRow={
               lastItem
                 ? {
@@ -371,9 +408,6 @@ export const BillingActivityPanel = React.memo((props: Props) => {
                   }
                 : {}
             }
-            hasError={pdfErrors.has(`${thisItem.type}-${thisItem.id}`)}
-            isLoading={pdfLoading.has(`${thisItem.type}-${thisItem.id}`)}
-            key={`${thisItem.type}-${thisItem.id}`}
             {...thisItem}
           />
         );
@@ -384,7 +418,7 @@ export const BillingActivityPanel = React.memo((props: Props) => {
   };
 
   return (
-    <Grid data-qa-billing-activity-panel xs={12}>
+    <Grid data-qa-billing-activity-panel size={12}>
       <Paper variant="outlined">
         <StyledBillingAndPaymentHistoryHeader
           className={classes.headerContainer}
@@ -418,37 +452,57 @@ export const BillingActivityPanel = React.memo((props: Props) => {
           </div>
           <div className={classes.headerRight}>
             <Autocomplete
+              className={classes.transactionType}
+              disableClearable
+              disabled={!canViewInvoices && !canViewPayments}
+              filterOptions={(options) => {
+                if (!canViewInvoices) {
+                  return options.filter((option) => option.value !== 'invoice');
+                }
+                if (!canViewPayments) {
+                  return options.filter((option) => option.value !== 'payment');
+                }
+                return options;
+              }}
+              label="Transaction Types"
+              noMarginTop
               onChange={(_, item) => {
                 setSelectedTransactionType(item);
                 pdfErrors.clear();
                 pdfLoading.clear();
               }}
+              options={transactionTypeOptions}
               value={transactionTypeOptions.find(
                 (option) => option.value === selectedTransactionType.value
               )}
-              className={classes.transactionType}
-              disableClearable
-              label="Transaction Types"
-              noMarginTop
-              options={transactionTypeOptions}
             />
             <Autocomplete
+              className={classes.transactionDate}
+              disableClearable
+              label="Transaction Dates"
+              noMarginTop
               onChange={(_, item) => {
                 setSelectedTransactionDate(item);
                 pdfErrors.clear();
                 pdfLoading.clear();
               }}
+              options={transactionDateOptions}
               value={transactionDateOptions.find(
                 (option) => option.value === selectedTransactionDate.value
               )}
-              className={classes.transactionDate}
-              disableClearable
-              label="Transaction Dates"
-              noMarginTop
-              options={transactionDateOptions}
             />
           </div>
         </StyledBillingAndPaymentHistoryHeader>
+        {(canViewInvoices && !canViewPayments) ||
+        (!canViewInvoices && canViewPayments) ? (
+          <Notice
+            spacingBottom={20}
+            text={`You do not have permission to view ${
+              canViewInvoices ? 'payments' : 'invoices'
+            } history.`}
+            variant="error"
+          />
+        ) : null}
         <Table aria-label="List of Invoices and Payments" sx={{ border: 0 }}>
           <TableHead>
             <TableRow>
@@ -465,8 +519,9 @@ export const BillingActivityPanel = React.memo((props: Props) => {
               >
                 Amount
               </TableSortCell>
-
-              <TableCell className={classes.pdfDownloadColumn} />
+              {canViewInvoiceDetails && (
+                <TableCell className={classes.pdfDownloadColumn} />
+              )}
             </TableRow>
           </TableHead>
           <TableBody>{renderTableContent()}</TableBody>
@@ -495,6 +550,7 @@ const StyledBillingAndPaymentHistoryHeader = styled('div', {
 // <ActivityFeedItem />
 // =============================================================================
 interface ActivityFeedItemProps extends ActivityFeedItem {
+  canViewInvoiceDetails: boolean;
   downloadPDF: (id: number) => void;
   hasError: boolean;
   isLoading: boolean;
@@ -504,7 +560,10 @@ interface ActivityFeedItemProps extends ActivityFeedItem {
 export const ActivityFeedItem = React.memo((props: ActivityFeedItemProps) => {
   const { classes } = useStyles();
 
+  const { iamRbacPrimaryNavChanges } = useFlags();
+
   const {
+    canViewInvoiceDetails,
     date,
     downloadPDF,
     hasError,
@@ -534,8 +593,16 @@ export const ActivityFeedItem = React.memo((props: ActivityFeedItemProps) => {
   return (
     <TableRow data-testid={`${type}-${id}`} sx={sxRow}>
       <TableCell>
-        {type === 'invoice' ? (
-          <Link to={`/account/billing/invoices/${id}`}>{label}</Link>
+        {type === 'invoice' && canViewInvoiceDetails ? (
+          <Link
+            to={
+              iamRbacPrimaryNavChanges
+                ? `/billing/invoices/${id}`
+                : `/account/billing/invoices/${id}`
+            }
+          >
+            {label}
+          </Link>
         ) : (
           label
         )}
@@ -546,14 +613,16 @@ export const ActivityFeedItem = React.memo((props: ActivityFeedItemProps) => {
       <TableCell className={classes.totalColumn}>
         <Currency quantity={total} wrapInParentheses={total < 0} />
       </TableCell>
-      <TableCell className={classes.pdfDownloadColumn}>
-        <InlineMenuAction
-          actionText={action.title}
-          className={action.className}
-          loading={isLoading}
-          onClick={action.onClick}
-        />
-      </TableCell>
+      {canViewInvoiceDetails && (
+        <TableCell className={classes.pdfDownloadColumn}>
+          <InlineMenuAction
+            actionText={action.title}
+            className={action.className}
+            loading={isLoading}
+            onClick={action.onClick}
+          />
+        </TableCell>
+      )}
     </TableRow>
   );
 });

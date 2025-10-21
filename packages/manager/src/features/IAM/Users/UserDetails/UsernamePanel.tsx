@@ -1,25 +1,32 @@
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useUpdateUserMutation } from '@linode/queries';
 import { Button, Paper, TextField } from '@linode/ui';
+import { UpdateUserNameSchema } from '@linode/validation';
+import { useNavigate } from '@tanstack/react-router';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useHistory } from 'react-router-dom';
 
 import { RESTRICTED_FIELD_TOOLTIP } from 'src/features/Account/constants';
-import { useUpdateUserMutation } from 'src/queries/account/users';
+
+import { usePermissions } from '../../hooks/usePermissions';
 
 import type { User } from '@linode/api-v4';
 
 interface Props {
-  user: User;
+  activeUser: User;
+  canUpdateUser: boolean;
 }
 
-export const UsernamePanel = ({ user }: Props) => {
-  const history = useHistory();
+export const UsernamePanel = ({ activeUser, canUpdateUser }: Props) => {
+  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
-  const isProxyUserProfile = user?.user_type === 'proxy';
+  const isProxyUser = activeUser?.user_type === 'proxy';
 
-  const { mutateAsync } = useUpdateUserMutation(user.username);
+  const { mutateAsync } = useUpdateUserMutation(activeUser.username);
+
+  const { data: permissions } = usePermissions('account', ['update_user']);
 
   const {
     control,
@@ -27,8 +34,9 @@ export const UsernamePanel = ({ user }: Props) => {
     handleSubmit,
     setError,
   } = useForm({
-    defaultValues: { username: user.username },
-    values: { username: user.username },
+    resolver: yupResolver(UpdateUserNameSchema),
+    defaultValues: { username: activeUser.username },
+    values: { username: activeUser.username },
   });
 
   const onSubmit = async (values: Partial<User>) => {
@@ -36,7 +44,10 @@ export const UsernamePanel = ({ user }: Props) => {
       const user = await mutateAsync(values);
 
       // Because the username changed, we need to update the username in the URL
-      history.replace(`/account/users/${user.username}`);
+      navigate({
+        to: '/iam/users/$username/details',
+        params: { username: user.username },
+      });
 
       enqueueSnackbar('Username updated successfully', { variant: 'success' });
     } catch (error) {
@@ -44,17 +55,21 @@ export const UsernamePanel = ({ user }: Props) => {
     }
   };
 
-  const tooltipForDisabledUsernameField = isProxyUserProfile
-    ? RESTRICTED_FIELD_TOOLTIP
-    : undefined;
+  const tooltipForDisabledUsernameField = !permissions.update_user
+    ? 'Restricted users cannot update their username. Please contact an account administrator.'
+    : isProxyUser
+      ? RESTRICTED_FIELD_TOOLTIP
+      : undefined;
 
   return (
     <Paper>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Controller
+          control={control}
+          name="username"
           render={({ field, fieldState }) => (
             <TextField
-              disabled={isProxyUserProfile}
+              disabled={tooltipForDisabledUsernameField !== undefined}
               errorText={fieldState.error?.message}
               label="Username"
               noMarginTop
@@ -65,14 +80,17 @@ export const UsernamePanel = ({ user }: Props) => {
               value={field.value}
             />
           )}
-          control={control}
-          name="username"
         />
         <Button
           buttonType="primary"
-          disabled={!isDirty}
+          disabled={!isDirty || !canUpdateUser}
           loading={isSubmitting}
           sx={{ mt: 2 }}
+          tooltipText={
+            !canUpdateUser
+              ? 'You do not have permission to update this user.'
+              : undefined
+          }
           type="submit"
         >
           Save

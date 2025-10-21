@@ -1,5 +1,8 @@
+import { useUpdateOAuthClientMutation } from '@linode/queries';
 import {
+  ActionsPanel,
   Checkbox,
+  Drawer,
   FormControl,
   FormControlLabel,
   Notice,
@@ -8,9 +11,6 @@ import {
 import { useFormik } from 'formik';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { useUpdateOAuthClientMutation } from 'src/queries/account/oauth';
 import { getAPIErrorFor } from 'src/utilities/getAPIErrorFor';
 
 import type { OAuthClient, OAuthClientRequest } from '@linode/api-v4';
@@ -53,7 +53,7 @@ export const EditOAuthClientDrawer = ({ client, onClose, open }: Props) => {
   const hasErrorFor = getAPIErrorFor(errorResources, error ?? undefined);
 
   return (
-    <Drawer onClose={onClose} open={open} title="Create OAuth App">
+    <Drawer onClose={onClose} open={open} title="Edit OAuth App">
       {hasErrorFor('none') && (
         <Notice text={hasErrorFor('none')} variant="error" />
       )}

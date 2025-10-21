@@ -1,11 +1,19 @@
-import { Autocomplete, Chip, Stack, StyledListItem } from '@linode/ui';
-import CloseIcon from '@mui/icons-material/Close';
+import { useAllAccountAvailabilitiesQuery } from '@linode/queries';
+import {
+  Autocomplete,
+  Chip,
+  CloseIcon,
+  Stack,
+  StyledListItem,
+} from '@linode/ui';
 import React from 'react';
 
-import { Flag } from 'src/components/Flag';
-import { useAllAccountAvailabilitiesQuery } from 'src/queries/account/availability';
+// @todo: modularization - Move `getRegionCountryGroup` utility to `@linode/shared` package
+// as it imports GLOBAL_QUOTA_VALUE from RegionSelect's constants.ts and update the import.
 import { getRegionCountryGroup } from 'src/utilities/formatRegion';
 
+// @todo: modularization - Move `Flag` component to `@linode/shared` package.
+import { Flag } from '../Flag';
 import { RegionOption } from './RegionOption';
 import { StyledAutocompleteContainer } from './RegionSelect.styles';
 import {
@@ -15,7 +23,7 @@ import {
 
 import type { RegionMultiSelectProps } from './RegionSelect.types';
 import type { Region } from '@linode/api-v4';
-import type { DisableItemOption } from 'src/components/ListItemOption';
+import type { DisableItemOption } from '@linode/ui';
 
 interface RegionChipLabelProps {
   region: Region;
@@ -40,6 +48,7 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
     forcefullyShownRegionIds,
     helperText,
     isClearable,
+    isGeckoLAEnabled,
     label,
     onChange,
     placeholder,
@@ -51,10 +60,8 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
     ...rest
   } = props;
 
-  const {
-    data: accountAvailability,
-    isLoading: accountAvailabilityLoading,
-  } = useAllAccountAvailabilitiesQuery();
+  const { data: accountAvailability, isLoading: accountAvailabilityLoading } =
+    useAllAccountAvailabilitiesQuery(!!currentCapability);
 
   const regionOptions = getRegionOptions({
     currentCapability,
@@ -95,6 +102,13 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
     <>
       <StyledAutocompleteContainer sx={{ width }}>
         <Autocomplete
+          autoHighlight
+          clearOnBlur
+          data-testid="region-select"
+          disableClearable={!isClearable}
+          disabled={disabled}
+          errorText={errorText}
+          getOptionDisabled={(option) => Boolean(disabledRegions[option.id])}
           groupBy={(option) => {
             if (!option.site_type) {
               // Render empty group for "Select All / Deselect All"
@@ -102,9 +116,15 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
             }
             return getRegionCountryGroup(option);
           }}
+          label={label ?? 'Regions'}
+          loading={accountAvailabilityLoading}
+          multiple
+          noOptionsText="No results"
           onChange={(_, selectedOptions) =>
             onChange(selectedOptions?.map((region) => region.id) ?? [])
           }
+          options={regionOptions}
+          placeholder={placeholder ?? 'Select Regions'}
           renderOption={(props, option, { selected }) => {
             const { key, ...rest } = props;
             if (!option.site_type) {
@@ -120,6 +140,7 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
             return (
               <RegionOption
                 disabledOptions={disabledRegions[option.id]}
+                isGeckoLAEnabled={isGeckoLAEnabled}
                 item={option}
                 key={key}
                 props={rest}
@@ -132,7 +153,7 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
               <Chip
                 {...getTagProps({ index })}
                 data-testid={option.id}
-                deleteIcon={<CloseIcon />}
+                deleteIcon={<CloseIcon data-testid="CloseIcon" />}
                 key={index}
                 label={<RegionChipLabel region={option} />}
                 onDelete={() => handleRemoveOption(option.id)}
@@ -150,31 +171,18 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
             },
             tooltipText: helperText,
           }}
-          autoHighlight
-          clearOnBlur
-          data-testid="region-select"
-          disableClearable={!isClearable}
-          disabled={disabled}
-          errorText={errorText}
-          getOptionDisabled={(option) => Boolean(disabledRegions[option.id])}
-          label={label ?? 'Regions'}
-          loading={accountAvailabilityLoading}
-          multiple
-          noOptionsText="No results"
-          options={regionOptions}
-          placeholder={placeholder ?? 'Select Regions'}
           value={selectedRegions}
           {...rest}
         />
       </StyledAutocompleteContainer>
       {selectedRegions.length > 0 && SelectedRegionsList && (
         <SelectedRegionsList
+          onRemove={handleRemoveOption}
           selectedRegions={
             sortRegionOptions
               ? [...selectedRegions].sort(sortRegionOptions)
               : selectedRegions
           }
-          onRemove={handleRemoveOption}
         />
       )}
     </>

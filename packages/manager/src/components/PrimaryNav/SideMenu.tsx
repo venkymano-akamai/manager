@@ -1,13 +1,11 @@
+import { Global } from '@linode/design-language-system';
+import { Hidden } from '@linode/ui';
 import Drawer from '@mui/material/Drawer';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
 
-import { Hidden } from 'src/components/Hidden';
-
+import { SIDEBAR_COLLAPSED_WIDTH, SIDEBAR_WIDTH } from './constants';
 import PrimaryNav from './PrimaryNav';
-
-export const SIDEBAR_WIDTH = 232;
-export const SIDEBAR_COLLAPSED_WIDTH = 52;
 
 export interface SideMenuProps {
   /**
@@ -18,6 +16,10 @@ export interface SideMenuProps {
    * If true, the menu will be collapsed.
    */
   collapse: boolean;
+  /**
+   * Callback to toggle the desktop menu.
+   */
+  desktopMenuToggle: () => void;
   /**
    * If true, the menu will be open. Has no effect unless the viewport is less than 960px.
    */
@@ -30,31 +32,39 @@ export interface SideMenuProps {
  * The Linodes landing page is considered the homepage unless the account is managed. Otherwise, clicking on the Linode logo will take the user to the Managed landing page.
  */
 export const SideMenu = (props: SideMenuProps) => {
-  const { closeMenu, collapse, open } = props;
+  const { closeMenu, collapse, desktopMenuToggle, open } = props;
 
   return (
     <>
       <Hidden mdUp>
         <StyledDrawer
+          data-testid="side-menu-mobile"
           ModalProps={{
             keepMounted: true, // Better open performance on mobile.
           }}
-          data-testid="side-menu-mobile"
           onClose={closeMenu}
           open={open}
           variant="temporary"
         >
-          <PrimaryNav closeMenu={closeMenu} isCollapsed={false} />
+          <PrimaryNav
+            closeMenu={closeMenu}
+            desktopMenuToggle={desktopMenuToggle}
+            isCollapsed={false}
+          />
         </StyledDrawer>
       </Hidden>
-      <Hidden implementation="css" mdDown>
+      <Hidden mdDown>
         <StyledDrawer
           collapse={collapse}
           data-testid="side-menu"
           open
           variant="permanent"
         >
-          <PrimaryNav closeMenu={closeMenu} isCollapsed={collapse} />
+          <PrimaryNav
+            closeMenu={closeMenu}
+            desktopMenuToggle={desktopMenuToggle}
+            isCollapsed={collapse}
+          />
         </StyledDrawer>
       </Hidden>
     </>
@@ -66,22 +76,24 @@ const StyledDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== 'collapse',
 })<{ collapse?: boolean }>(({ theme, ...props }) => ({
   '& .MuiDrawer-paper': {
-    backgroundColor:
-      theme.name === 'dark' ? theme.bg.appBar : theme.bg.primaryNavPaper,
-    borderRight: 'none',
+    backgroundColor: Global.Color.Neutrals[90],
     boxShadow: 'none',
     height: '100%',
     left: 'inherit',
-    overflowX: 'hidden',
+    overflow: 'hidden',
+    position: 'absolute',
+    [theme.breakpoints.up('md')]: {
+      borderRight: `1px solid ${theme.tokens.component.SideNavigation.Border}`,
+    },
     transform: 'none',
-    transition: 'width linear .1s',
+    transition: 'width linear 100ms, height linear 250ms',
     width: SIDEBAR_WIDTH,
   },
   ...(props.collapse && {
     [theme.breakpoints.up('md')]: {
       '& .MuiDrawer-paper': {
         '&:hover': {
-          '& .primaryNavLink, .akamai-logo-name, p': {
+          '& .primaryNavLink, .akamai-logo-name, .productFamilyName': {
             opacity: 1,
           },
           '.MuiAccordion-region, div[class*="StyledSingleLinkBox"]': {
@@ -94,9 +106,6 @@ const StyledDrawer = styled(Drawer, {
           overflowY: 'hidden',
         },
         width: `${SIDEBAR_COLLAPSED_WIDTH}px`,
-      },
-      '& a[aria-current="true"]': {
-        background: 'linear-gradient(98deg, #38584B 1%, #3A5049 166%)',
       },
       '&.MuiDrawer-docked': {
         height: '100%',

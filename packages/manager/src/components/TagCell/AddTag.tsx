@@ -1,9 +1,11 @@
+import {
+  updateTagsSuggestionsData,
+  useAllTagsQuery,
+  useProfile,
+} from '@linode/queries';
 import { Autocomplete } from '@linode/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import * as React from 'react';
-
-import { useProfile } from 'src/queries/profile/profile';
-import { updateTagsSuggestionsData, useAllTagsQuery } from 'src/queries/tags';
 
 interface AddTagProps {
   addTag: (tag: string) => Promise<void>;
@@ -29,8 +31,9 @@ export const AddTag = (props: AddTagProps) => {
   const createTag =
     !!accountTags &&
     !!inputValue &&
+    inputValue.trim() !== '' &&
     !accountTags.some(
-      (tag) => tag.label.toLowerCase() == inputValue.toLowerCase()
+      (tag) => tag.label.toLowerCase() === inputValue.toLowerCase()
     );
 
   const tagOptions: { displayLabel?: string; label: string }[] = [
@@ -61,6 +64,10 @@ export const AddTag = (props: AddTagProps) => {
 
   return (
     <Autocomplete
+      disableClearable
+      forcePopupIcon
+      label={'Create or Select a Tag'}
+      loading={accountTagsLoading || loading}
       noOptionsText={
         inputValue.length === 0 ? (
           'No tags to choose from. Type to create a new tag.'
@@ -75,9 +82,13 @@ export const AddTag = (props: AddTagProps) => {
       }}
       onChange={(_, value) => {
         if (value) {
-          handleAddTag(typeof value == 'string' ? value : value.label);
+          handleAddTag(typeof value === 'string' ? value : value.label);
         }
       }}
+      onInputChange={(_, value) => setInputValue(value)}
+      openOnFocus
+      options={tagOptions ?? []}
+      placeholder="Create or Select a Tag"
       renderOption={(props, option) => {
         const { key, ...rest } = props;
 
@@ -87,14 +98,6 @@ export const AddTag = (props: AddTagProps) => {
           </li>
         );
       }}
-      disableClearable
-      forcePopupIcon
-      label={'Create or Select a Tag'}
-      loading={accountTagsLoading || loading}
-      onInputChange={(_, value) => setInputValue(value)}
-      openOnFocus
-      options={tagOptions ?? []}
-      placeholder="Create or Select a Tag"
       sx={{ width: '100%' }}
       textFieldProps={{ autoFocus: true, hideLabel: true }}
     />

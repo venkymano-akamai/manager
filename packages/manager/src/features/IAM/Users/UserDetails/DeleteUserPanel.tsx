@@ -1,32 +1,33 @@
 import { Box, Button, Paper, Stack, Typography } from '@linode/ui';
+import { useNavigate } from '@tanstack/react-router';
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
 
 import { PARENT_USER } from 'src/features/Account/constants';
-import { useProfile } from 'src/queries/profile/profile';
 
+import { useDelegationRole } from '../../hooks/useDelegationRole';
 import { UserDeleteConfirmation } from './UserDeleteConfirmation';
 
 import type { User } from '@linode/api-v4';
 
 interface Props {
-  user: User;
+  activeUser: User;
+  canDeleteUser: boolean;
 }
 
-export const DeleteUserPanel = ({ user }: Props) => {
+export const DeleteUserPanel = ({ canDeleteUser, activeUser }: Props) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const history = useHistory();
-  const { data: profile } = useProfile();
+  const navigate = useNavigate();
+  const { profileUserName } = useDelegationRole();
 
-  const isProxyUserProfile = user.user_type === 'proxy';
+  const isProxyUser = activeUser.user_type === 'proxy';
 
   const tooltipText =
-    profile?.username === user.username
+    profileUserName === activeUser.username
       ? 'You can\u{2019}t delete the currently active user.'
-      : isProxyUserProfile
-      ? `You can\u{2019}t delete a ${PARENT_USER}.`
-      : undefined;
+      : isProxyUser
+        ? `You can\u{2019}t delete a ${PARENT_USER}.`
+        : undefined;
 
   return (
     <Paper>
@@ -35,9 +36,17 @@ export const DeleteUserPanel = ({ user }: Props) => {
         <Box>
           <Button
             buttonType="outlined"
-            disabled={profile?.username === user.username || isProxyUserProfile}
+            disabled={
+              profileUserName === activeUser.username ||
+              isProxyUser ||
+              !canDeleteUser
+            }
             onClick={() => setIsDeleteDialogOpen(true)}
-            tooltipText={tooltipText}
+            tooltipText={
+              !canDeleteUser
+                ? 'You do not have permission to delete this user.'
+                : tooltipText
+            }
           >
             Delete
           </Button>
@@ -47,9 +56,9 @@ export const DeleteUserPanel = ({ user }: Props) => {
         </Typography>
         <UserDeleteConfirmation
           onClose={() => setIsDeleteDialogOpen(false)}
-          onSuccess={() => history.push(`/account/users`)}
+          onSuccess={() => navigate({ to: '/iam/users' })}
           open={isDeleteDialogOpen}
-          username={user.username}
+          username={activeUser.username}
         />
       </Stack>
     </Paper>

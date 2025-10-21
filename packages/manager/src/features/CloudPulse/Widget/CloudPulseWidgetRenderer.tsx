@@ -1,4 +1,4 @@
-import { Grid, Paper } from '@mui/material';
+import { GridLegacy, Paper } from '@mui/material';
 import React from 'react';
 
 import { CloudPulseErrorPlaceholder } from '../shared/CloudPulseErrorPlaceholder';
@@ -19,34 +19,40 @@ import type {
 import type {
   AclpConfig,
   Dashboard,
+  DateTimeWithPreset,
   JWEToken,
   MetricDefinition,
   ResourcePage,
-  TimeDuration,
   Widgets,
 } from '@linode/api-v4';
 
 interface WidgetProps {
   additionalFilters?: CloudPulseMetricsAdditionalFilters[];
-  dashboard?: Dashboard | undefined;
-  duration: TimeDuration;
+  dashboard: Dashboard;
+  duration: DateTimeWithPreset;
+  groupBy: string[];
   isJweTokenFetching: boolean;
   jweToken?: JWEToken | undefined;
+  linodeRegion?: string;
   manualRefreshTimeStamp?: number;
   metricDefinitions: ResourcePage<MetricDefinition> | undefined;
   preferences?: AclpConfig;
+  /**
+   * Selected region for the widget
+   */
+  region?: string;
   resourceList: CloudPulseResources[] | undefined;
   resources: string[];
   savePref?: boolean;
 }
 
-const renderPlaceHolder = (subtitle: string) => {
+export const renderPlaceHolder = (subtitle: string) => {
   return (
-    <Grid item xs>
+    <GridLegacy item xs>
       <Paper>
         <CloudPulseErrorPlaceholder errorMessage={subtitle} />
       </Paper>
-    </Grid>
+    </GridLegacy>
   );
 };
 
@@ -64,6 +70,9 @@ export const RenderWidgets = React.memo(
       resourceList,
       resources,
       savePref,
+      groupBy,
+      linodeRegion,
+      region,
     } = props;
 
     const getCloudPulseGraphProperties = (
@@ -75,14 +84,20 @@ export const RenderWidgets = React.memo(
         authToken: '',
         availableMetrics: undefined,
         duration,
+        entityIds: resources,
         errorLabel: 'Error occurred while loading data.',
         isJweTokenFetching: false,
-        resourceIds: resources,
         resources: [],
-        serviceType: dashboard?.service_type ?? '',
+        serviceType: dashboard.service_type,
         timeStamp: manualRefreshTimeStamp,
         unit: widget.unit ?? '%',
-        widget: { ...widget, time_granularity: autoIntervalOption },
+        dashboardId: dashboard.id,
+        globalFilterGroupBy: groupBy,
+        widget: {
+          ...widget,
+          time_granularity: autoIntervalOption,
+          group_by: undefined,
+        },
       };
       if (savePref) {
         graphProp.widget = setPreferredWidgetPlan(graphProp.widget);
@@ -108,16 +123,18 @@ export const RenderWidgets = React.memo(
           time_granularity: {
             ...(pref.timeGranularity ?? autoIntervalOption),
           },
+          group_by: pref.groupBy,
         };
       } else {
         return {
           ...widgetObj,
           time_granularity: autoIntervalOption,
+          group_by: undefined,
         };
       }
     };
 
-    if (!dashboard || !dashboard.widgets?.length) {
+    if (!dashboard.widgets?.length) {
       return renderPlaceHolder(
         'No visualizations are available at this moment. Create Dashboards to list here.'
       );
@@ -125,9 +142,10 @@ export const RenderWidgets = React.memo(
 
     if (
       !dashboard.service_type ||
-      !Boolean(resources.length > 0) ||
+      // eslint-disable-next-line sonarjs/no-inverted-boolean-check
+      !(resources.length > 0) ||
       (!isJweTokenFetching && !jweToken?.token) ||
-      !Boolean(resourceList?.length)
+      !resourceList?.length
     ) {
       return renderPlaceHolder(
         'Select a dashboard and filters to visualize metrics.'
@@ -137,14 +155,14 @@ export const RenderWidgets = React.memo(
     // maintain a copy
     const newDashboard: Dashboard = createObjectCopy(dashboard)!;
     return (
-      <Grid columnSpacing={2} container item rowSpacing={2} xs={12}>
+      <GridLegacy columnSpacing={2} container item rowSpacing={2} xs={12}>
         {{ ...newDashboard }.widgets.map((widget, index) => {
           // check if widget metric definition is available or not
           if (widget) {
             // find the metric defintion of the widget label
             const availMetrics = metricDefinitions?.data.find(
               (availMetrics: MetricDefinition) =>
-                widget.label === availMetrics.label
+                widget.metric === availMetrics.metric
             );
             const cloudPulseWidgetProperties = getCloudPulseGraphProperties({
               ...widget,
@@ -155,9 +173,8 @@ export const RenderWidgets = React.memo(
               availMetrics &&
               !cloudPulseWidgetProperties.widget.time_granularity
             ) {
-              cloudPulseWidgetProperties.widget.time_granularity = getTimeGranularity(
-                availMetrics.scrape_interval
-              );
+              cloudPulseWidgetProperties.widget.time_granularity =
+                getTimeGranularity(availMetrics.scrape_interval);
             }
             return (
               <CloudPulseWidget
@@ -166,15 +183,17 @@ export const RenderWidgets = React.memo(
                 authToken={jweToken?.token}
                 availableMetrics={availMetrics}
                 isJweTokenFetching={isJweTokenFetching}
+                linodeRegion={linodeRegion}
+                region={region}
                 resources={resourceList!}
                 savePref={savePref}
               />
             );
           } else {
-            return <React.Fragment key={index}></React.Fragment>;
+            return <React.Fragment key={index} />;
           }
         })}
-      </Grid>
+      </GridLegacy>
     );
   },
   (oldProps: WidgetProps, newProps: WidgetProps) => {
@@ -185,6 +204,7 @@ export const RenderWidgets = React.memo(
       'duration',
       'resources',
       'additionalFilters',
+      'groupBy',
     ];
 
     for (const key of keysToCompare) {

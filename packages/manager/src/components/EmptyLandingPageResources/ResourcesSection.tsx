@@ -1,5 +1,6 @@
 import { Typography } from '@linode/ui';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import DocsIcon from 'src/assets/icons/docs.svg';
 import PointerIcon from 'src/assets/icons/pointer.svg';
@@ -17,9 +18,9 @@ import {
 } from 'src/utilities/emptyStateLandingUtils';
 
 import type {
+  LinkAnalyticsEvent,
   ResourcesHeaders,
   ResourcesLinkSection,
-  linkAnalyticsEvent,
 } from 'src/components/EmptyLandingPageResources/ResourcesLinksTypes';
 
 interface ButtonProps {
@@ -31,11 +32,6 @@ interface ButtonProps {
 
 interface ResourcesSectionProps {
   /**
-   * The custom resource to be rendered between docs and youtube links
-   * @example <AppsSection /> on linodes empty state landing
-   */
-  CustomResource?: () => JSX.Element;
-  /**
    * The additional copy to be rendered between primary button and resource links.
    */
   additionalCopy?: JSX.Element | string;
@@ -43,6 +39,11 @@ interface ResourcesSectionProps {
    * The button's handlers and text
    */
   buttonProps: ButtonProps[];
+  /**
+   * The custom resource to be rendered between docs and youtube links
+   * @example <AppsSection /> on linodes empty state landing
+   */
+  CustomResource?: () => JSX.Element;
   /**
    * Allow to set a custom max width for the description (better word wrapping)
    * */
@@ -62,7 +63,7 @@ interface ResourcesSectionProps {
   /**
    * The event data to be sent when the call to action is clicked
    */
-  linkAnalyticsEvent: linkAnalyticsEvent;
+  linkAnalyticsEvent: LinkAnalyticsEvent;
   /**
    * If true, the transfer display will be shown at the bottom
    * */
@@ -82,14 +83,14 @@ interface ResourcesSectionProps {
 
 const GuideLinks = (
   guides: ResourcesLinkSection,
-  linkAnalyticsEvent: linkAnalyticsEvent
+  linkAnalyticsEvent: LinkAnalyticsEvent
 ) => (
   <ResourceLinks linkAnalyticsEvent={linkAnalyticsEvent} links={guides.links} />
 );
 
 const YoutubeLinks = (
   youtube: ResourcesLinkSection,
-  linkAnalyticsEvent: linkAnalyticsEvent
+  linkAnalyticsEvent: LinkAnalyticsEvent
 ) => (
   <ResourceLinks
     linkAnalyticsEvent={linkAnalyticsEvent}
@@ -115,9 +116,16 @@ export const ResourcesSection = (props: ResourcesSectionProps) => {
 
   return (
     <Placeholder
+      additionalCopy={additionalCopy}
+      buttonProps={buttonProps}
+      dataQAPlaceholder="resources-section"
+      descriptionMaxWidth={descriptionMaxWidth}
+      icon={icon}
+      isEntity
       linksSection={
         <ResourcesLinksSection wide={wide}>
           <ResourcesLinksSubSection
+            icon={<DocsIcon />}
             MoreLink={(props) => (
               <ResourcesMoreLink
                 onClick={getLinkOnClick(
@@ -133,27 +141,26 @@ export const ResourcesSection = (props: ResourcesSectionProps) => {
                 </span>
               </ResourcesMoreLink>
             )}
-            icon={<DocsIcon />}
             title={gettingStartedGuidesData.title}
           >
             {GuideLinks(gettingStartedGuidesData, linkAnalyticsEvent)}
           </ResourcesLinksSubSection>
           {CustomResource && <CustomResource />}
           <ResourcesLinksSubSection
+            icon={<YoutubeIcon />}
             MoreLink={(props) => (
               <ResourcesMoreLink
+                external
                 onClick={getLinkOnClick(
                   linkAnalyticsEvent,
                   youtubeMoreLinkLabel
                 )}
-                external
                 to={youtubeChannelLink}
                 {...props}
               >
                 {youtubeMoreLinkText}
               </ResourcesMoreLink>
             )}
-            icon={<YoutubeIcon />}
             title={youtubeLinkData?.title || ''}
           >
             {youtubeLinkData &&
@@ -161,12 +168,6 @@ export const ResourcesSection = (props: ResourcesSectionProps) => {
           </ResourcesLinksSubSection>
         </ResourcesLinksSection>
       }
-      additionalCopy={additionalCopy}
-      buttonProps={buttonProps}
-      dataQAPlaceholder="resources-section"
-      descriptionMaxWidth={descriptionMaxWidth}
-      icon={icon}
-      isEntity
       showTransferDisplay={showTransferDisplay}
       subtitle={subtitle}
       title={title}

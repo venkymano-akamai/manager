@@ -4,16 +4,22 @@ import React from 'react';
 
 import { useFlags } from 'src/hooks/useFlags';
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
-import { themes } from 'src/utilities/theme';
 
-import { deepEqual } from '../Utils/FilterBuilder';
+import { RESOURCE_FILTER_MAP } from '../Utils/constants';
+import { deepEqual, filterUsingDependentFilters } from '../Utils/FilterBuilder';
 
-import type { Filter, FilterValue } from '@linode/api-v4';
+import type { CloudPulseMetricsFilter } from '../Dashboard/CloudPulseDashboardLanding';
+import type { CloudPulseServiceType, FilterValue } from '@linode/api-v4';
 
 export interface CloudPulseResources {
+  clusterSize?: number;
+  endpoint?: string;
+  engineType?: string;
+  entities?: Record<string, string>;
   id: string;
   label: string;
   region?: string;
+  tags?: string[];
 }
 
 export interface CloudPulseResourcesSelectProps {
@@ -26,9 +32,10 @@ export interface CloudPulseResourcesSelectProps {
   label: string;
   placeholder?: string;
   region?: string;
-  resourceType: string | undefined;
+  resourceType: CloudPulseServiceType | undefined;
   savePreferences?: boolean;
-  xFilter?: Filter;
+  tags?: string[];
+  xFilter?: CloudPulseMetricsFilter;
 }
 
 export const CloudPulseResourcesSelect = React.memo(
@@ -47,32 +54,20 @@ export const CloudPulseResourcesSelect = React.memo(
 
     const flags = useFlags();
 
-    const resourceFilterMap: Record<string, Filter> = {
-      dbaas: {
-        '+order': 'asc',
-        '+order_by': 'label',
-        platform: 'rdbms-default',
-      },
-    };
-
-    const { data: resources, isError, isLoading } = useResourcesQuery(
+    const {
+      data: resources,
+      isError,
+      isLoading,
+    } = useResourcesQuery(
       disabled !== undefined ? !disabled : Boolean(region && resourceType),
       resourceType,
       {},
-      xFilter
-        ? {
-            ...(resourceFilterMap[resourceType ?? ''] ?? {}),
-            ...xFilter, // the usual xFilters
-          }
-        : {
-            ...(resourceFilterMap[resourceType ?? ''] ?? {}),
-            region,
-          }
+
+      RESOURCE_FILTER_MAP[resourceType ?? ''] ?? {}
     );
 
-    const [selectedResources, setSelectedResources] = React.useState<
-      CloudPulseResources[]
-    >();
+    const [selectedResources, setSelectedResources] =
+      React.useState<CloudPulseResources[]>();
 
     /**
      * This is used to track the open state of the autocomplete and useRef optimizes the re-renders that this component goes through and it is used for below
@@ -82,8 +77,8 @@ export const CloudPulseResourcesSelect = React.memo(
     const isAutocompleteOpen = React.useRef(false); // Ref to track the open state of Autocomplete
 
     const getResourcesList = React.useMemo<CloudPulseResources[]>(() => {
-      return resources && resources.length > 0 ? resources : [];
-    }, [resources]);
+      return filterUsingDependentFilters(resources, xFilter) ?? [];
+    }, [resources, xFilter]);
 
     // Maximum resource selection limit is fetched from launchdarkly
     const maxResourceSelectionLimit = React.useMemo(() => {
@@ -99,6 +94,10 @@ export const CloudPulseResourcesSelect = React.memo(
 
     // Once the data is loaded, set the state variable with value stored in preferences
     React.useEffect(() => {
+      if (disabled && !selectedResources) {
+        return;
+      }
+      // To save default values, go through side effects if disabled is false
       if (resources && savePreferences && !selectedResources) {
         const defaultResources =
           defaultValue && Array.isArray(defaultValue)
@@ -122,9 +121,21 @@ export const CloudPulseResourcesSelect = React.memo(
 
     return (
       <Autocomplete
+        autoHighlight
+        clearOnBlur
+        data-testid="resource-select"
+        disabled={disabled}
+        disableSelectAll={resourcesLimitReached} // Select_All option will not be available if number of resources are higher than resource selection limit
+        errorText={isError ? `Failed to fetch ${label || 'Resources'}.` : ''}
         helperText={
           !isError ? `Select up to ${maxResourceSelectionLimit} ${label}` : ''
         }
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        label={label || 'Resources'}
+        limitTags={1}
+        loading={isLoading}
+        multiple
+        noMarginTop
         onChange={(e, resourceSelections) => {
           setSelectedResources(resourceSelections);
 
@@ -139,6 +150,7 @@ export const CloudPulseResourcesSelect = React.memo(
         onOpen={() => {
           isAutocompleteOpen.current = true;
         }}
+        options={getResourcesList}
         placeholder={
           selectedResources?.length ? '' : placeholder || 'Select Resources'
         }
@@ -186,25 +198,9 @@ export const CloudPulseResourcesSelect = React.memo(
               msOverflowStyle: 'none',
               overflow: 'auto',
               scrollbarWidth: 'none',
-              svg: {
-                color: themes.light.color.grey3,
-              },
             },
           },
         }}
-        autoHighlight
-        clearOnBlur
-        data-testid="resource-select"
-        disableSelectAll={resourcesLimitReached} // Select_All option will not be available if number of resources are higher than resource selection limit
-        disabled={disabled}
-        errorText={isError ? `Failed to fetch ${label || 'Resources'}.` : ''}
-        isOptionEqualToValue={(option, value) => option.id === value.id}
-        label={label || 'Resources'}
-        limitTags={1}
-        loading={isLoading}
-        multiple
-        noMarginTop
-        options={getResourcesList}
         value={selectedResources ?? []}
       />
     );

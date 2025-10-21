@@ -1,8 +1,9 @@
+import { profileFactory } from '@linode/utilities';
+import { waitFor } from '@testing-library/react';
 import React from 'react';
 
-import { profileFactory } from 'src/factories';
 import { accountUserFactory } from 'src/factories/accountUsers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import {
   mockMatchMedia,
   renderWithTheme,
@@ -15,8 +16,20 @@ import { UserRow } from './UserRow';
 // we must use this.
 beforeAll(() => mockMatchMedia());
 
+const queryMocks = vi.hoisted(() => ({
+  useFlags: vi.fn().mockReturnValue({}),
+}));
+
+vi.mock('src/hooks/useFlags', () => {
+  const actual = vi.importActual('src/hooks/useFlags');
+  return {
+    ...actual,
+    useFlags: queryMocks.useFlags,
+  };
+});
+
 describe('UserRow', () => {
-  it('renders a username and email', () => {
+  it('renders a username and email', async () => {
     const user = accountUserFactory.build();
 
     const { getByText } = renderWithTheme(
@@ -26,16 +39,9 @@ describe('UserRow', () => {
     expect(getByText(user.username)).toBeVisible();
     expect(getByText(user.email)).toBeVisible();
   });
-  it('renders only a username, email, and account access status for a Proxy user', async () => {
-    const mockLogin = {
-      login_datetime: '2022-02-09T16:19:26',
-    };
-    const proxyUser = accountUserFactory.build({
-      email: 'proxy@proxy.com',
-      last_login: mockLogin,
-      restricted: true,
-      user_type: 'proxy',
-      username: 'proxyUsername',
+  it('renders username, email, and user type for a Child user when isIAMDelegationEnabled flag is enabled', async () => {
+    const user = accountUserFactory.build({
+      user_type: 'child',
     });
 
     server.use(
@@ -45,19 +51,52 @@ describe('UserRow', () => {
       })
     );
 
-    const { findByText, queryByText } = renderWithTheme(
-      wrapWithTableBody(<UserRow onDelete={vi.fn()} user={proxyUser} />)
+    queryMocks.useFlags.mockReturnValue({
+      iamDelegation: { enabled: true },
+    });
+
+    const { getByText } = renderWithTheme(
+      wrapWithTableBody(<UserRow onDelete={vi.fn()} user={user} />)
     );
 
-    // Renders Username, Email, and Account Access fields for a proxy user.
-    expect(await findByText('proxyUsername')).toBeInTheDocument();
-    expect(await findByText('proxy@proxy.com')).toBeInTheDocument();
+    expect(getByText(user.username)).toBeVisible();
+    expect(getByText(user.email)).toBeVisible();
 
-    // Does not render the Last Login for a proxy user.
-    expect(queryByText('2022-02-09T16:19:26')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('User')).toBeVisible();
+    });
   });
 
-  it('renders "Never" if last_login is null', () => {
+  it('renders username and user type, and does not render email for a Delegate user when isIAMDelegationEnabled flag is enabled', async () => {
+    const delegateUser = accountUserFactory.build({
+      user_type: 'delegate',
+    });
+
+    server.use(
+      // Mock the active profile for the child account.
+      http.get('*/profile', () => {
+        return HttpResponse.json(profileFactory.build({ user_type: 'child' }));
+      })
+    );
+
+    queryMocks.useFlags.mockReturnValue({
+      iamDelegation: { enabled: true },
+    });
+
+    const { getByText, queryByText } = renderWithTheme(
+      wrapWithTableBody(<UserRow onDelete={vi.fn()} user={delegateUser} />)
+    );
+
+    expect(getByText(delegateUser.username)).toBeVisible();
+
+    await waitFor(() => {
+      expect(queryByText(delegateUser.email)).not.toBeInTheDocument();
+      expect(getByText('Not applicable')).toBeVisible();
+      expect(getByText('Delegate User')).toBeVisible();
+    });
+  });
+
+  it('renders "Never" if last_login is null', async () => {
     const user = accountUserFactory.build({ last_login: null });
 
     const { getByText } = renderWithTheme(

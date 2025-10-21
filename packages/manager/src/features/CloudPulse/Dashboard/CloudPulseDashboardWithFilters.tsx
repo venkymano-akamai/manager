@@ -1,15 +1,17 @@
-import { Box, CircleProgress, Divider, Paper } from '@linode/ui';
-import { Grid } from '@mui/material';
+import { Box, CircleProgress, Divider, ErrorState, Paper } from '@linode/ui';
+import { GridLegacy } from '@mui/material';
 import React from 'react';
 
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { useCloudPulseDashboardByIdQuery } from 'src/queries/cloudpulse/dashboards';
 
+import { GlobalFilterGroupByRenderer } from '../GroupBy/GlobalFilterGroupByRenderer';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
 import { CloudPulseDashboardFilterBuilder } from '../shared/CloudPulseDashboardFilterBuilder';
 import { CloudPulseDashboardSelect } from '../shared/CloudPulseDashboardSelect';
+import { CloudPulseDateTimeRangePicker } from '../shared/CloudPulseDateTimeRangePicker';
 import { CloudPulseErrorPlaceholder } from '../shared/CloudPulseErrorPlaceholder';
-import { CloudPulseTimeRangeSelect } from '../shared/CloudPulseTimeRangeSelect';
+import { convertToGmt } from '../Utils/CloudPulseDateTimePickerUtils';
+import { PARENT_ENTITY_REGION } from '../Utils/constants';
 import { FILTER_CONFIG } from '../Utils/FilterConfig';
 import {
   checkIfFilterBuilderNeeded,
@@ -19,7 +21,7 @@ import {
 import { CloudPulseDashboard } from './CloudPulseDashboard';
 
 import type { FilterData, FilterValueType } from './CloudPulseDashboardLanding';
-import type { TimeDuration } from '@linode/api-v4';
+import type { DateTimeWithPreset } from '@linode/api-v4';
 
 export interface CloudPulseDashboardWithFiltersProp {
   /**
@@ -27,31 +29,32 @@ export interface CloudPulseDashboardWithFiltersProp {
    */
   dashboardId: number;
   /**
+   * The region for which the metrics will be listed
+   */
+  region?: string;
+  /**
    * The resource id for which the metrics will be listed
    */
-  resource: number;
+  resource: number | string;
 }
 
 export const CloudPulseDashboardWithFilters = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
-    const { dashboardId, resource } = props;
-    const { data: dashboard, isError } = useCloudPulseDashboardByIdQuery(
-      dashboardId
-    );
-
+    const { dashboardId, resource, region } = props;
+    const { data: dashboard, isError } =
+      useCloudPulseDashboardByIdQuery(dashboardId);
     const [filterData, setFilterData] = React.useState<FilterData>({
       id: {},
       label: {},
     });
 
-    const [timeDuration, setTimeDuration] = React.useState<TimeDuration>({
-      unit: 'min',
-      value: 30,
-    });
+    const [groupBy, setGroupBy] = React.useState<string[]>([]);
 
-    const [showAppliedFilters, setShowAppliedFilters] = React.useState<boolean>(
-      false
-    );
+    const [timeDuration, setTimeDuration] =
+      React.useState<DateTimeWithPreset>();
+
+    const [showAppliedFilters, setShowAppliedFilters] =
+      React.useState<boolean>(false);
 
     const toggleAppliedFilter = (isVisible: boolean) => {
       setShowAppliedFilters(isVisible);
@@ -75,9 +78,17 @@ export const CloudPulseDashboardWithFilters = React.memo(
       []
     );
 
+    const handleGroupByChange = React.useCallback((groupBy: string[]) => {
+      setGroupBy(groupBy);
+    }, []);
+
     const handleTimeRangeChange = React.useCallback(
-      (timeDuration: TimeDuration) => {
-        setTimeDuration(timeDuration);
+      (timeDuration: DateTimeWithPreset) => {
+        setTimeDuration({
+          ...timeDuration,
+          end: convertToGmt(timeDuration.end, timeDuration.timeZone),
+          start: convertToGmt(timeDuration.start, timeDuration.timeZone),
+        });
       },
       []
     );
@@ -102,7 +113,7 @@ export const CloudPulseDashboardWithFilters = React.memo(
       return <CircleProgress />;
     }
 
-    if (!FILTER_CONFIG.get(dashboard.service_type)) {
+    if (!FILTER_CONFIG.get(dashboardId)) {
       return (
         <ErrorState
           errorText={`No Filters Configured for Service Type - ${dashboard.service_type}`}
@@ -115,7 +126,9 @@ export const CloudPulseDashboardWithFilters = React.memo(
       dashboardObj: dashboard,
       filterValue: filterData.id,
       resource,
+      region,
       timeDuration,
+      groupBy,
     });
 
     return (
@@ -125,38 +138,46 @@ export const CloudPulseDashboardWithFilters = React.memo(
             padding: 0,
           }}
         >
-          <Grid container>
-            <Grid container item m={3} rowGap={1} xs={12}>
-              <Grid
-                columnSpacing={2}
-                container
-                item
+          <GridLegacy container>
+            <GridLegacy item xs={12}>
+              <Box
+                display="flex"
+                flexDirection={{ lg: 'row', xs: 'column' }}
+                flexWrap="wrap"
+                gap={2}
                 justifyContent="space-between"
-                rowSpacing={2}
+                m={3}
               >
-                <Grid display={'flex'} item md={4} sm={5} xs={12}>
-                  <CloudPulseDashboardSelect
-                    defaultValue={dashboardId}
-                    isServiceIntegration
-                  />
-                </Grid>
-                <Grid display="flex" gap={1} item md={4} sm={5} xs={12}>
-                  <CloudPulseTimeRangeSelect
+                <CloudPulseDashboardSelect
+                  defaultValue={dashboardId}
+                  isServiceIntegration
+                />
+                <Box
+                  display="flex"
+                  flexDirection={{ md: 'row', xs: 'column' }}
+                  flexWrap="wrap"
+                  gap={2}
+                >
+                  <CloudPulseDateTimeRangePicker
                     handleStatsChange={handleTimeRangeChange}
                     savePreferences
                   />
-                </Grid>
-              </Grid>
-            </Grid>
+                  <GlobalFilterGroupByRenderer
+                    handleChange={handleGroupByChange}
+                    selectedDashboard={dashboard}
+                  />
+                </Box>
+              </Box>
+            </GridLegacy>
 
-            <Grid item xs={12}>
+            <GridLegacy item xs={12}>
               <Divider
                 sx={(theme) => ({
                   borderColor: theme.color.grey5,
                   margin: 0,
                 })}
               />
-            </Grid>
+            </GridLegacy>
 
             {isFilterBuilderNeeded && (
               <CloudPulseDashboardFilterBuilder
@@ -164,17 +185,31 @@ export const CloudPulseDashboardWithFilters = React.memo(
                 emitFilterChange={onFilterChange}
                 handleToggleAppliedFilter={toggleAppliedFilter}
                 isServiceAnalyticsIntegration
+                resource_ids={
+                  dashboard.service_type !== 'objectstorage'
+                    ? typeof resource === 'number'
+                      ? [resource]
+                      : undefined
+                    : undefined
+                }
               />
             )}
-            <Grid item mb={3} mt={-3} xs={12}>
+            <GridLegacy
+              item
+              sx={{
+                mb: 3,
+                mt: -3,
+              }}
+              xs={12}
+            >
               {showAppliedFilters && (
                 <CloudPulseAppliedFilterRenderer
+                  dashboardId={dashboard.id}
                   filters={filterData.label}
-                  serviceType={dashboard.service_type}
                 />
               )}
-            </Grid>
-          </Grid>
+            </GridLegacy>
+          </GridLegacy>
         </Paper>
         {isMandatoryFiltersSelected ? (
           <CloudPulseDashboard
@@ -182,8 +217,15 @@ export const CloudPulseDashboardWithFilters = React.memo(
               dashboardObj: dashboard,
               filterValue: filterData.id,
               resource,
+              region,
               timeDuration,
+              groupBy,
             })}
+            linodeRegion={
+              filterData.id[PARENT_ENTITY_REGION]
+                ? (filterData.id[PARENT_ENTITY_REGION] as string)
+                : undefined
+            }
           />
         ) : (
           renderPlaceHolder('Select filters to visualize metrics.')

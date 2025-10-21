@@ -1,11 +1,8 @@
-import { Box } from '@linode/ui';
-import Close from '@mui/icons-material/Close';
-import Grid from '@mui/material/Unstable_Grid2';
+import { CloseIcon, IconButton, Notice, Stack } from '@linode/ui';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import { useDismissibleNotifications } from 'src/hooks/useDismissibleNotifications';
-
-import { StyledButton, StyledNotice } from './DismissibleBanner.styles';
 
 import type { NoticeProps } from '@linode/ui';
 import type { DismissibleNotificationOptions } from 'src/hooks/useDismissibleNotifications';
@@ -15,6 +12,16 @@ interface Props extends NoticeProps {
    * Optional element to pass to the banner to trigger actions
    */
   actionButton?: JSX.Element;
+  /**
+   * If false, the banner will not be dismissible
+   *
+   * @default true
+   */
+  dismissible?: boolean;
+  /**
+   * If true, the important icon will be vertically centered with the text no matter the height of the text.
+   */
+  forceImportantIconVerticalCenter?: boolean;
   /**
    * Additional controls to pass to the Dismissible Banner
    */
@@ -45,7 +52,7 @@ export const DismissibleBanner = (props: Props) => {
   const {
     actionButton,
     children,
-    className,
+    dismissible = true, // Default to true if not provided
     options,
     preferenceKey,
     ...rest
@@ -61,32 +68,75 @@ export const DismissibleBanner = (props: Props) => {
   }
 
   const dismissibleButton = (
-    <Grid>
-      <StyledButton
-        aria-label={`Dismiss ${preferenceKey} banner`}
-        data-testid="notice-dismiss"
-        onClick={handleDismiss}
-      >
-        <Close />
-      </StyledButton>
-    </Grid>
+    <IconButton
+      aria-label={`Dismiss ${preferenceKey} banner`}
+      data-testid="notice-dismiss"
+      onClick={handleDismiss}
+      sx={(theme) => ({
+        padding: theme.spacingFunction(2),
+        '& svg': {
+          width: 16,
+          height: 16,
+          '& path': {
+            fill: theme.tokens.component.NotificationBanner.Icon,
+          },
+        },
+      })}
+    >
+      <CloseIcon />
+    </IconButton>
   );
 
   return (
-    <StyledNotice className={className} {...rest}>
-      <Box
-        alignItems="center"
-        display="flex"
-        flexDirection="row"
-        justifyContent="space-between"
-      >
-        {children}
-        <Box alignItems="center" display="flex">
-          {actionButton}
-          {dismissibleButton}
-        </Box>
-      </Box>
-    </StyledNotice>
+    <Notice bgcolor={(theme) => theme.palette.background.paper} {...rest}>
+      <Stack direction="row" spacing={1}>
+        <Stack
+          flex={1}
+          justifyContent="space-between"
+          sx={{
+            alignItems: { sm: 'center' },
+            flexDirection: {
+              xs: 'column',
+              sm: 'row',
+            },
+          }}
+        >
+          <Stack direction="column" flex={1} justifyContent="center">
+            {children}
+          </Stack>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={(theme) => ({
+              alignItems: {
+                sm: 'center',
+              },
+              mt: {
+                xs: theme.spacingFunction(12),
+                sm: theme.spacingFunction(0),
+              },
+              ml: {
+                sm: theme.spacingFunction(24),
+              },
+            })}
+          >
+            {actionButton}
+          </Stack>
+        </Stack>
+        {dismissible && (
+          <Stack
+            sx={{
+              alignSelf: {
+                sm: 'center',
+                xs: 'flex-start',
+              },
+            }}
+          >
+            {dismissibleButton}
+          </Stack>
+        )}
+      </Stack>
+    </Notice>
   );
 };
 
@@ -96,10 +146,8 @@ export const useDismissibleBanner = (
   preferenceKey: string,
   options?: DismissibleNotificationOptions
 ) => {
-  const {
-    dismissNotifications,
-    hasDismissedNotifications,
-  } = useDismissibleNotifications();
+  const { dismissNotifications, hasDismissedNotifications } =
+    useDismissibleNotifications();
 
   const hasDismissedBanner = hasDismissedNotifications([preferenceKey]);
 

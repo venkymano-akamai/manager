@@ -11,7 +11,7 @@ const mockOnDelete = vi.fn();
 const numCols = 3;
 
 describe('UsersLandingTableBody', () => {
-  it('renders loading state', () => {
+  it('renders loading state', async () => {
     const { getByTestId } = renderWithTheme(
       <table>
         <tbody>
@@ -34,7 +34,7 @@ describe('UsersLandingTableBody', () => {
     );
   });
 
-  it('renders error state', () => {
+  it('renders error state', async () => {
     const error: APIError[] = [{ reason: 'Something went wrong' }];
 
     const { getByTestId } = renderWithTheme(
@@ -55,7 +55,7 @@ describe('UsersLandingTableBody', () => {
     expect(errorRow).toBeInTheDocument();
   });
 
-  it('renders empty state', () => {
+  it('renders empty state', async () => {
     const { getByTestId } = renderWithTheme(
       <table>
         <tbody>
@@ -74,7 +74,7 @@ describe('UsersLandingTableBody', () => {
     expect(emptyRow).toBeInTheDocument();
   });
 
-  it('renders user rows', () => {
+  it('renders user rows', async () => {
     const users = accountUserFactory.buildList(3);
 
     const { getByText } = renderWithTheme(

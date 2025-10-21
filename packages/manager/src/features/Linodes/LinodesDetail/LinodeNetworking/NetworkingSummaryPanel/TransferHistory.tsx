@@ -1,4 +1,12 @@
-import { Box, CircleProgress, Typography } from '@linode/ui';
+import {
+  STATS_NOT_READY_API_MESSAGE,
+  STATS_NOT_READY_MESSAGE,
+  useLinodeStatsByDate,
+  useLinodeTransferByDate,
+  useProfile,
+} from '@linode/queries';
+import { Box, CircleProgress, ErrorState, Typography } from '@linode/ui';
+import { readableBytes } from '@linode/utilities';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { IconButton } from '@mui/material';
@@ -8,20 +16,11 @@ import * as React from 'react';
 
 import PendingIcon from 'src/assets/icons/pending.svg';
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import {
   convertNetworkToUnit,
   generateNetworkUnits,
 } from 'src/features/Longview/shared/utilities';
-import {
-  STATS_NOT_READY_API_MESSAGE,
-  STATS_NOT_READY_MESSAGE,
-  useLinodeStatsByDate,
-  useLinodeTransferByDate,
-} from 'src/queries/linodes/stats';
-import { useProfile } from 'src/queries/profile/profile';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
-import { readableBytes } from 'src/utilities/unitConversions';
 
 import type { Stats } from '@linode/api-v4/lib/linodes';
 import type {
@@ -92,14 +91,18 @@ export const TransferHistory = React.memo((props: Props) => {
   const decrementOffset = () =>
     setMonthOffset((prevOffset) => Math.max(prevOffset - 1, maxMonthOffset));
 
-  const decrementLabel = parseMonthOffset(monthOffset - 1, now)
-    .longHumanizedDate;
+  const decrementLabel = parseMonthOffset(
+    monthOffset - 1,
+    now
+  ).longHumanizedDate;
 
   const incrementOffset = () =>
     setMonthOffset((prevOffset) => Math.min(prevOffset + 1, minMonthOffset));
 
-  const incrementLabel = parseMonthOffset(monthOffset + 1, now)
-    .longHumanizedDate;
+  const incrementLabel = parseMonthOffset(
+    monthOffset + 1,
+    now
+  ).longHumanizedDate;
 
   // In/Out totals from the /transfer endpoint are per-month (to align with billing cycle).
   // Graph data from the /stats endpoint works a bit differently: when you request data for the
@@ -134,11 +137,11 @@ export const TransferHistory = React.memo((props: Props) => {
 
       return (
         <ErrorState
+          compact
+          CustomIcon={areStatsNotReady ? PendingIcon : undefined}
           errorText={
             areStatsNotReady ? STATS_NOT_READY_MESSAGE : statsErrorString
           }
-          CustomIcon={areStatsNotReady ? PendingIcon : undefined}
-          compact
         />
       );
     }
@@ -157,7 +160,7 @@ export const TransferHistory = React.memo((props: Props) => {
     );
 
     return (
-      <Box marginLeft={-5}>
+      <Box>
         <AreaChart
           areas={[
             {
@@ -165,15 +168,15 @@ export const TransferHistory = React.memo((props: Props) => {
               dataKey: 'Public Outbound Traffic',
             },
           ]}
-          xAxis={{
-            tickFormat: 'LLL dd',
-            tickGap: 15,
-          }}
           ariaLabel={graphAriaLabel}
           data={timeData}
           height={190}
           timezone={profile?.timezone ?? 'UTC'}
           unit={` ${unit}/s`}
+          xAxis={{
+            tickFormat: 'LLL dd',
+            tickGap: 15,
+          }}
         />
       </Box>
     );
@@ -209,8 +212,8 @@ export const TransferHistory = React.memo((props: Props) => {
           <IconButton
             aria-label={`Show Network Transfer History for ${decrementLabel}`}
             color="primary"
-            disableRipple
             disabled={monthOffset === maxMonthOffset}
+            disableRipple
             onClick={decrementOffset}
             sx={{ padding: 0 }}
           >
@@ -224,8 +227,8 @@ export const TransferHistory = React.memo((props: Props) => {
           <IconButton
             aria-label={`Show Network Transfer History for ${incrementLabel}`}
             color="primary"
-            disableRipple
             disabled={monthOffset === minMonthOffset}
+            disableRipple
             onClick={incrementOffset}
             sx={{ padding: 0 }}
           >

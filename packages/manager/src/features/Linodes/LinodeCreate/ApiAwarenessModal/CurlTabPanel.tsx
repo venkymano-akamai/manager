@@ -9,7 +9,7 @@ import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
 import { sendApiAwarenessClickEvent } from 'src/utilities/analytics/customEventAnalytics';
 import { generateCurlCommand } from 'src/utilities/codesnippets/generate-cURL';
 
-import { useLinodeCreateQueryParams } from '../utilities';
+import { useGetLinodeCreateType } from '../Tabs/utils/useGetLinodeCreateType';
 
 import type { LinodeCreateFormValues } from '../utilities';
 import type { CreateLinodeRequest } from '@linode/api-v4/lib/linodes';
@@ -26,21 +26,21 @@ export const CurlTabPanel = ({ index, payLoad, title }: CurlTabPanelProps) => {
   const { getValues } = useFormContext<LinodeCreateFormValues>();
   const sourceLinodeID = getValues('linode.id');
 
-  const { params } = useLinodeCreateQueryParams();
-  const linodeCLIAction = params.type === 'Clone Linode' ? 'clone' : 'create';
+  const createType = useGetLinodeCreateType();
+  const linodeCLIAction = createType === 'Clone Linode' ? 'clone' : 'create';
   const path =
     linodeCLIAction === 'create'
       ? '/linode/instances'
       : `/linode/instances/${sourceLinodeID}/clone`;
 
-  const curlCommand = useMemo(() => generateCurlCommand(payLoad, path), [
-    path,
-    payLoad,
-  ]);
+  const curlCommand = useMemo(
+    () => generateCurlCommand(payLoad, path),
+    [path, payLoad]
+  );
 
   return (
     <SafeTabPanel index={index}>
-      <Typography sx={{ marginTop: theme.spacing(2) }} variant="body1">
+      <Typography sx={{ marginTop: theme.spacingFunction(16) }} variant="body1">
         Most Linode API requests need to be authenticated with a valid{' '}
         <Link
           onClick={() => {
@@ -74,7 +74,7 @@ export const CurlTabPanel = ({ index, payLoad, title }: CurlTabPanelProps) => {
         </Link>
         .
       </Typography>
-      <CodeBlock command={curlCommand} commandType={title} language={'bash'} />
+      <CodeBlock analyticsLabel={title} code={curlCommand} language={'bash'} />
     </SafeTabPanel>
   );
 };

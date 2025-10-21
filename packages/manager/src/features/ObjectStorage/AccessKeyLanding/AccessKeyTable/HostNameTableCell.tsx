@@ -1,11 +1,11 @@
-import { StyledLinkButton } from '@linode/ui';
+import { LinkButton } from '@linode/ui';
+import { pluralize } from '@linode/utilities';
 import { styled } from '@mui/material/styles';
 import React from 'react';
 
 import { CopyTooltip } from 'src/components/CopyTooltip/CopyTooltip';
 import { TableCell } from 'src/components/TableCell';
 import { useObjectStorageRegions } from 'src/features/ObjectStorage/hooks/useObjectStorageRegions';
-import { pluralize } from 'src/utilities/pluralize';
 
 import type { ObjectStorageKey, ObjectStorageKeyRegions } from '@linode/api-v4';
 
@@ -49,14 +49,14 @@ export const HostNameTableCell = (props: Props) => {
       {showMultipleRegions ? (
         <>
           | + {pluralize('region', 'regions', regions.length - 1)} |&nbsp;
-          <StyledLinkButton
+          <LinkButton
             onClick={() => {
               setHostNames(regions);
               setShowHostNamesDrawers(true);
             }}
           >
             Show All
-          </StyledLinkButton>
+          </LinkButton>
           <StyledCopyIcon text={allEndpoints} />
         </>
       ) : (

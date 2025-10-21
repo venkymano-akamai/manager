@@ -1,4 +1,4 @@
-import CloseIcon from '@mui/icons-material/Close';
+import { CloseIcon } from '@linode/ui';
 import Handyman from '@mui/icons-material/Handyman';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { styled } from '@mui/material';
@@ -7,9 +7,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import React from 'react';
 import { Provider } from 'react-redux';
 
-import { getRoot } from 'src/utilities/rootManager';
-
 import { Draggable } from './components/Draggable';
+import { DesignTokensTool } from './DesignTokensTool';
 import './dev-tools.css';
 import { EnvironmentToggleTool } from './EnvironmentToggleTool';
 import { FeatureFlagTool } from './FeatureFlagTool';
@@ -19,7 +18,7 @@ import { isMSWEnabled } from './utils';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ApplicationStore } from 'src/store';
 
-export type DevToolsView = 'mocks' | 'react-query';
+export type DevToolsView = 'design-tokens' | 'mocks' | 'react-query';
 
 const reactQueryDevtoolsStyle = {
   border: '1px solid rgba(255, 255, 255, 0.25)',
@@ -27,62 +26,71 @@ const reactQueryDevtoolsStyle = {
   width: '100%',
 };
 
-export const install = (store: ApplicationStore, queryClient: QueryClient) => {
-  const DevTools = () => {
-    const [isOpen, setIsOpen] = React.useState<boolean>(false);
-    const [isDraggable, setIsDraggable] = React.useState<boolean>(false);
-    const [view, setView] = React.useState<DevToolsView>('mocks');
-    const devToolsMainRef = React.useRef<HTMLDivElement>(null);
+interface Props {
+  queryClient: QueryClient;
+  store: ApplicationStore;
+}
 
-    const handleOpenReactQuery = () => {
-      setView('react-query');
-    };
+export const DevTools = (props: Props) => {
+  const [isOpen, setIsOpen] = React.useState<boolean>(false);
+  const [isDraggable, setIsDraggable] = React.useState<boolean>(false);
+  const [view, setView] = React.useState<DevToolsView>('mocks');
+  const devToolsMainRef = React.useRef<HTMLDivElement>(null);
 
-    const handleOpenMocks = () => {
-      setView('mocks');
-    };
+  const handleOpenReactQuery = () => {
+    setView('react-query');
+  };
 
-    const handleDraggableToggle = () => {
-      setIsDraggable(!isDraggable);
-      if (isDraggable) {
-        setIsOpen(false);
-      }
-    };
+  const handleOpenMocks = () => {
+    setView('mocks');
+  };
 
-    const handleGoToPreferences = () => {
-      window.location.assign('/profile/settings?preferenceEditor=true');
-    };
+  const handleOpenDesignTokens = () => {
+    setView('design-tokens');
+  };
 
-    React.useEffect(() => {
-      // Prevent scrolling of the window when scrolling start/end of the dev tools
-      // Particularly useful when in draggable mode
-      if (!isDraggable) {
+  const handleDraggableToggle = () => {
+    setIsDraggable(!isDraggable);
+    if (isDraggable) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleGoToPreferences = () => {
+    window.location.assign('/profile/settings?preferenceEditor=true');
+  };
+
+  React.useEffect(() => {
+    // Prevent scrolling of the window when scrolling start/end of the dev tools
+    // Particularly useful when in draggable mode
+    if (!isDraggable) {
+      return;
+    }
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!devToolsMainRef.current?.contains(e.target as Node)) {
         return;
       }
 
-      const handleWheel = (e: WheelEvent) => {
-        if (!devToolsMainRef.current?.contains(e.target as Node)) {
-          return;
-        }
+      const target = devToolsMainRef.current;
+      const isAtTop = target.scrollTop === 0;
+      const isAtBottom =
+        target.scrollHeight - target.clientHeight <= target.scrollTop + 1;
 
-        const target = devToolsMainRef.current;
-        const isAtTop = target.scrollTop === 0;
-        const isAtBottom =
-          target.scrollHeight - target.clientHeight <= target.scrollTop + 1;
+      if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+        e.preventDefault();
+      }
+    };
 
-        if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-          e.preventDefault();
-        }
-      };
+    window.addEventListener('wheel', handleWheel, { passive: false });
 
-      window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
-      return () => {
-        window.removeEventListener('wheel', handleWheel);
-      };
-    }, []);
-
-    return (
+  return (
+    <Provider store={props.store}>
       <Draggable draggable={isDraggable}>
         <div
           className={`dev-tools ${isMSWEnabled ? 'dev-tools--msw' : ''} ${
@@ -92,14 +100,21 @@ export const install = (store: ApplicationStore, queryClient: QueryClient) => {
         >
           {!isDraggable && (
             <div className="dev-tools__toggle">
-              <button onClick={() => setIsOpen(!isOpen)}>
+              <button
+                className="dev-tools-button"
+                onClick={() => setIsOpen(!isOpen)}
+              >
                 <Handyman />
               </button>
             </div>
           )}
           {isOpen && (
             <div className="dev-tools__draggable-toggle">
-              <button onClick={handleDraggableToggle} title="Toggle draggable">
+              <button
+                className="dev-tools-button"
+                onClick={handleDraggableToggle}
+                title="Toggle draggable"
+              >
                 {isDraggable ? <CloseIcon /> : <OpenInNewIcon />}
               </button>
             </div>
@@ -112,7 +127,7 @@ export const install = (store: ApplicationStore, queryClient: QueryClient) => {
                 </div>
                 <div className="dev-tools__segmented-button">
                   <button
-                    className={`toggle-button ${
+                    className={`toggle-button dev-tools-button ${
                       view === 'mocks' && 'toggle-button--on'
                     }`}
                     onClick={handleOpenMocks}
@@ -120,16 +135,27 @@ export const install = (store: ApplicationStore, queryClient: QueryClient) => {
                     Mocks
                   </button>
                   <button
-                    className={`toggle-button ${
+                    className={`toggle-button dev-tools-button ${
                       view === 'react-query' && 'toggle-button--on'
                     }`}
                     onClick={handleOpenReactQuery}
                   >
                     React Query
                   </button>
+                  <button
+                    className={`toggle-button dev-tools-button ${
+                      view === 'design-tokens' && 'toggle-button--on'
+                    }`}
+                    onClick={handleOpenDesignTokens}
+                  >
+                    Design Tokens
+                  </button>
                 </div>
                 <div>
-                  <button onClick={handleGoToPreferences}>
+                  <button
+                    className="dev-tools-button"
+                    onClick={handleGoToPreferences}
+                  >
                     Go to Preferences
                   </button>
                 </div>
@@ -149,32 +175,17 @@ export const install = (store: ApplicationStore, queryClient: QueryClient) => {
                   <StyledReactQueryDevtoolsContainer
                     style={reactQueryDevtoolsStyle}
                   >
-                    <QueryClientProvider client={queryClient}>
+                    <QueryClientProvider client={props.queryClient}>
                       <ReactQueryDevtools initialIsOpen={true} />
                     </QueryClientProvider>
                   </StyledReactQueryDevtoolsContainer>
                 )}
+                {view === 'design-tokens' && <DesignTokensTool />}
               </div>
             </div>
           </div>
         </div>
       </Draggable>
-    );
-  };
-
-  const devToolsRoot =
-    document.getElementById('dev-tools-root') ||
-    (() => {
-      const newRoot = document.createElement('div');
-      newRoot.id = 'dev-tools-root';
-      document.body.appendChild(newRoot);
-      return newRoot;
-    })();
-
-  const root = getRoot(devToolsRoot);
-  root.render(
-    <Provider store={store}>
-      <DevTools />
     </Provider>
   );
 };

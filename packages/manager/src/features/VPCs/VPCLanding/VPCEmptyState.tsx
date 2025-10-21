@@ -1,35 +1,33 @@
+import { useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
 
-import NodeBalancerIcon from 'src/assets/icons/entityIcons/nodebalancer.svg';
+import NetworkIcon from 'src/assets/icons/entityIcons/networking.svg';
 import { ResourcesSection } from 'src/components/EmptyLandingPageResources/ResourcesSection';
 import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { gettingStartedGuides } from 'src/features/VPCs/VPCLanding/VPCLandingEmptyStateData';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
 import { sendEvent } from 'src/utilities/analytics/utils';
 
 import { headers, linkAnalyticsEvent } from './VPCEmptyStateData';
 
 export const VPCEmptyState = () => {
-  const { push } = useHistory();
+  const navigate = useNavigate();
 
-  const isVPCCreationRestricted = useRestrictedGlobalGrantCheck({
-    globalGrantType: 'add_vpcs',
-  });
+  const { data: permissions } = usePermissions('account', ['create_vpc']);
 
   return (
     <ResourcesSection
       buttonProps={[
         {
           children: 'Create VPC',
-          disabled: isVPCCreationRestricted,
+          disabled: !permissions.create_vpc,
           onClick: () => {
             sendEvent({
               action: 'Click:button',
               category: linkAnalyticsEvent.category,
               label: 'Create VPC',
             });
-            push('/vpcs/create');
+            navigate({ to: '/vpcs/create' });
           },
           tooltipText: getRestrictedResourceText({
             action: 'create',
@@ -40,7 +38,7 @@ export const VPCEmptyState = () => {
       ]}
       gettingStartedGuidesData={gettingStartedGuides}
       headers={headers}
-      icon={NodeBalancerIcon}
+      icon={NetworkIcon}
       linkAnalyticsEvent={linkAnalyticsEvent}
       wide
     />

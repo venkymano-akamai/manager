@@ -1,16 +1,17 @@
-import { Button, CircleProgress } from '@linode/ui';
+import {
+  useAccount,
+  useAllPaymentMethodsQuery,
+  useProfile,
+} from '@linode/queries';
+import { Button, CircleProgress, ErrorState } from '@linode/ui';
+import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import { styled } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 import * as React from 'react';
 
-import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
 import { PAYPAL_CLIENT_ID } from 'src/constants';
-import { useAccount } from 'src/queries/account/account';
-import { useAllPaymentMethodsQuery } from 'src/queries/account/payment';
-import { useProfile } from 'src/queries/profile/profile';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import { BillingActivityPanel } from './BillingPanels/BillingActivityPanel/BillingActivityPanel';
@@ -19,11 +20,14 @@ import { ContactInformation } from './BillingPanels/ContactInfoPanel/ContactInfo
 import PaymentInformation from './BillingPanels/PaymentInfoPanel';
 
 export const BillingDetail = () => {
+  const { data: permissions } = usePermissions('account', [
+    'list_billing_payments',
+  ]);
   const {
     data: paymentMethods,
     error: paymentMethodsError,
     isLoading: paymentMethodsLoading,
-  } = useAllPaymentMethodsQuery();
+  } = useAllPaymentMethodsQuery(permissions?.list_billing_payments ?? false);
 
   const {
     data: account,
@@ -50,16 +54,15 @@ export const BillingDetail = () => {
   }
 
   return (
-    <PayPalScriptProvider options={{ 'client-id': PAYPAL_CLIENT_ID }}>
-      <DocumentTitleSegment segment={`Account & Billing`} />
+    <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID }}>
       <Grid
-        sx={{
-          paddingTop: 1,
-        }}
         columnSpacing={2}
         container
         data-testid="billing-detail"
         rowSpacing={2}
+        sx={{
+          paddingTop: 1,
+        }}
       >
         <BillingSummary
           balance={account?.balance ?? 0}
@@ -113,7 +116,7 @@ export const BillingActionButton = styled(Button)(({ theme, ...props }) => ({
       textDecoration: 'underline',
     },
   }),
-  fontFamily: theme.font.bold,
+  font: theme.font.bold,
   fontSize: '.875rem',
   minHeight: 'unset',
   minWidth: 'auto',

@@ -1,12 +1,15 @@
-import { Autocomplete } from '@linode/ui';
+import { useAllAccountAvailabilitiesQuery } from '@linode/queries';
+import { Autocomplete, InputAdornment } from '@linode/ui';
+import PublicIcon from '@mui/icons-material/Public';
 import { createFilterOptions } from '@mui/material/Autocomplete';
 import * as React from 'react';
 
-import { Flag } from 'src/components/Flag';
-import { useIsGeckoEnabled } from 'src/components/RegionSelect/RegionSelect.utils';
-import { useAllAccountAvailabilitiesQuery } from 'src/queries/account/availability';
+// @todo: modularization - Move `getRegionCountryGroup` utility to `@linode/shared` package
+// as it imports GLOBAL_QUOTA_VALUE from RegionSelect's constants.ts and update the import.
 import { getRegionCountryGroup } from 'src/utilities/formatRegion';
 
+// @todo: modularization - Move `Flag` component to `@linode/shared` package.
+import { Flag } from '../Flag';
 import { RegionOption } from './RegionOption';
 import { StyledAutocompleteContainer } from './RegionSelect.styles';
 import {
@@ -16,7 +19,7 @@ import {
 
 import type { RegionSelectProps } from './RegionSelect.types';
 import type { Region } from '@linode/api-v4';
-import type { DisableItemOption } from 'src/components/ListItemOption';
+import type { DisableItemOption } from '@linode/ui';
 
 /**
  * A specific select for regions.
@@ -28,7 +31,7 @@ import type { DisableItemOption } from 'src/components/ListItemOption';
  * We do not display the selected check mark for single selects.
  */
 export const RegionSelect = <
-  DisableClearable extends boolean | undefined = undefined
+  DisableClearable extends boolean | undefined = undefined,
 >(
   props: RegionSelectProps<DisableClearable>
 ) => {
@@ -40,7 +43,7 @@ export const RegionSelect = <
     errorText,
     forcefullyShownRegionIds,
     helperText,
-    ignoreAccountAvailability,
+    isGeckoLAEnabled,
     label,
     noMarginTop,
     onChange,
@@ -48,17 +51,14 @@ export const RegionSelect = <
     regionFilter,
     regions,
     required,
+    sx,
     tooltipText,
     value,
     width,
   } = props;
 
-  const { isGeckoLAEnabled } = useIsGeckoEnabled();
-
-  const {
-    data: accountAvailability,
-    isLoading: accountAvailabilityLoading,
-  } = useAllAccountAvailabilitiesQuery(!ignoreAccountAvailability);
+  const { data: accountAvailability, isLoading: accountAvailabilityLoading } =
+    useAllAccountAvailabilitiesQuery(!!currentCapability);
 
   const regionOptions = getRegionOptions({
     currentCapability,
@@ -68,7 +68,7 @@ export const RegionSelect = <
   });
 
   const selectedRegion = value
-    ? regionOptions.find((r) => r.id === value)
+    ? (regionOptions.find((r) => r.id === value) ?? null)
     : null;
 
   const disabledRegions = regionOptions.reduce<
@@ -78,7 +78,6 @@ export const RegionSelect = <
       acc[region.id] = disabledRegionsFromProps[region.id];
     }
     if (
-      !ignoreAccountAvailability &&
       isRegionOptionUnavailable({
         accountAvailabilityData: accountAvailability,
         currentCapability,
@@ -106,22 +105,44 @@ export const RegionSelect = <
   return (
     <StyledAutocompleteContainer sx={{ width }}>
       <Autocomplete<Region, false, DisableClearable>
+        autoHighlight
+        clearOnBlur
+        data-testid="region-select"
+        disableClearable={disableClearable}
+        disabled={disabled}
+        disabledItemsFocusable
+        errorText={errorText}
+        filterOptions={filterOptions}
+        getOptionDisabled={(option) => Boolean(disabledRegions[option.id])}
         getOptionLabel={(region) =>
           isGeckoLAEnabled ? region.label : `${region.label} (${region.id})`
         }
-        renderOption={(props, region) => {
+        groupBy={(option) => getRegionCountryGroup(option)}
+        helperText={helperText}
+        label={label ?? 'Region'}
+        loading={accountAvailabilityLoading || props.loading}
+        loadingText="Loading regions..."
+        noMarginTop={noMarginTop}
+        noOptionsText={props.noOptionsText ?? 'No results'}
+        onChange={onChange}
+        options={regionOptions}
+        placeholder={placeholder ?? 'Select a Region'}
+        renderOption={(props, region, state) => {
           const { key, ...rest } = props;
 
           return (
             <RegionOption
               disabledOptions={disabledRegions[region.id]}
+              isGeckoLAEnabled={isGeckoLAEnabled}
               item={region}
               key={`${region.id}-${key}`}
               props={rest}
+              selected={state.selected}
             />
           );
         }}
         sx={(theme) => ({
+          ...sx,
           [theme.breakpoints.up('md')]: {
             width: tooltipText ? '458px' : '416px',
           },
@@ -129,33 +150,29 @@ export const RegionSelect = <
         textFieldProps={{
           ...props.textFieldProps,
           InputProps: {
-            endAdornment:
-              isGeckoLAEnabled && selectedRegion && `(${selectedRegion?.id})`,
+            endAdornment: isGeckoLAEnabled && selectedRegion && (
+              <InputAdornment position="end">
+                ({selectedRegion?.id})
+              </InputAdornment>
+            ),
             required,
             startAdornment: selectedRegion && (
-              <Flag country={selectedRegion?.country} mr={1} />
+              <InputAdornment position="start">
+                {selectedRegion.id === 'global' ? (
+                  <PublicIcon
+                    sx={{
+                      height: '24px',
+                      width: '24px',
+                    }}
+                  />
+                ) : (
+                  <Flag country={selectedRegion?.country} />
+                )}
+              </InputAdornment>
             ),
           },
           tooltipText,
         }}
-        autoHighlight
-        clearOnBlur
-        data-testid="region-select"
-        disableClearable={disableClearable}
-        disabled={disabled}
-        errorText={errorText}
-        filterOptions={filterOptions}
-        getOptionDisabled={(option) => Boolean(disabledRegions[option.id])}
-        groupBy={(option) => getRegionCountryGroup(option)}
-        helperText={helperText}
-        label={label ?? 'Region'}
-        loading={accountAvailabilityLoading}
-        loadingText="Loading regions..."
-        noMarginTop={noMarginTop}
-        noOptionsText="No results"
-        onChange={onChange}
-        options={regionOptions}
-        placeholder={placeholder ?? 'Select a Region'}
         value={selectedRegion as Region}
       />
     </StyledAutocompleteContainer>

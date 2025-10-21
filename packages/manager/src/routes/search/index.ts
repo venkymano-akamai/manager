@@ -7,13 +7,14 @@ const searchRoute = createRoute({
   component: SearchRoute,
   getParentRoute: () => rootRoute,
   path: 'search',
+  validateSearch: (params) => ({ query: String(params.query) }),
 });
 
 const searchLandingRoute = createRoute({
   getParentRoute: () => searchRoute,
   path: '/',
 }).lazy(() =>
-  import('src/features/Search/SearchLanding').then(
+  import('src/features/Search/searchLandingLazyRoute').then(
     (m) => m.searchLandingLazyRoute
   )
 );

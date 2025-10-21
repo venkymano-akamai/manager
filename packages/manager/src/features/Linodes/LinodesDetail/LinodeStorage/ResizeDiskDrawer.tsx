@@ -1,21 +1,26 @@
-import { FormHelperText, InputAdornment, Notice, TextField } from '@linode/ui';
+import {
+  useAllLinodeDisksQuery,
+  useLinodeDiskResizeMutation,
+  useLinodeQuery,
+} from '@linode/queries';
+import {
+  ActionsPanel,
+  Drawer,
+  FormHelperText,
+  InputAdornment,
+  Notice,
+  TextField,
+} from '@linode/ui';
 import { ResizeLinodeDiskSchema } from '@linode/validation';
 import { styled } from '@mui/material/styles';
 import { useFormik } from 'formik';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { Code } from 'src/components/Code/Code';
-import { Drawer } from 'src/components/Drawer';
 import { Link } from 'src/components/Link';
 import { TextTooltip } from 'src/components/TextTooltip';
 import { useEventsPollingActions } from 'src/queries/events/events';
-import {
-  useAllLinodeDisksQuery,
-  useLinodeDiskResizeMutation,
-} from 'src/queries/linodes/disks';
-import { useLinodeQuery } from 'src/queries/linodes/linodes';
 import { sendEvent } from 'src/utilities/analytics/utils';
 import { handleAPIErrors } from 'src/utilities/formikErrorUtils';
 
@@ -108,12 +113,12 @@ export const ResizeDiskDrawer = (props: Props) => {
           </StyledLink>
         </FormHelperText>
         <TextField
-          InputProps={{
-            endAdornment: <InputAdornment position="end">MB</InputAdornment>,
-          }}
           aria-required
           data-qa-disk-size
           errorText={formik.errors.size}
+          InputProps={{
+            endAdornment: <InputAdornment position="end">MB</InputAdornment>,
+          }}
           label="Size"
           name="size"
           onBlur={formik.handleBlur}

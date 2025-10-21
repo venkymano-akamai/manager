@@ -12,9 +12,9 @@ describe('Button', () => {
   });
 
   it('should render the loading state', () => {
-    const { getByTestId } = renderWithTheme(<Button loading>Test</Button>);
+    const { getByRole } = renderWithTheme(<Button loading>Test</Button>);
 
-    const loadingIcon = getByTestId('loadingIcon');
+    const loadingIcon = getByRole('progressbar');
     expect(loadingIcon).toBeInTheDocument();
   });
 
@@ -22,10 +22,10 @@ describe('Button', () => {
     const { getByTestId } = renderWithTheme(
       <Button disabled tooltipText="Test">
         Test
-      </Button>
+      </Button>,
     );
 
-    const helpIcon = getByTestId('HelpOutlineIcon');
+    const helpIcon = getByTestId('tooltip-info-icon');
     expect(helpIcon).toBeInTheDocument();
   });
 
@@ -46,7 +46,7 @@ describe('Button', () => {
     const { getByTestId } = renderWithTheme(
       <Button disabled tooltipText="Test tooltip">
         Test
-      </Button>
+      </Button>,
     );
 
     const button = getByTestId('button');

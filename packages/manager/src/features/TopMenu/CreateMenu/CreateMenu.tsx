@@ -1,20 +1,24 @@
 import { Box, Button, Divider } from '@linode/ui';
-import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUp from '@mui/icons-material/KeyboardArrowUp';
 import { Popover, Stack, useMediaQuery } from '@mui/material';
 import * as React from 'react';
 
-import BucketIcon from 'src/assets/icons/entityIcons/bucket.svg';
+import ComputeIcon from 'src/assets/icons/entityIcons/compute.svg';
 import DatabaseIcon from 'src/assets/icons/entityIcons/database.svg';
-import LinodeIcon from 'src/assets/icons/entityIcons/linode.svg';
-import NodebalancerIcon from 'src/assets/icons/entityIcons/nodebalancer.svg';
+import NetworkIcon from 'src/assets/icons/entityIcons/networking.svg';
+import StorageIcon from 'src/assets/icons/entityIcons/storage.svg';
 import { useIsDatabasesEnabled } from 'src/features/Databases/utilities';
 import { useIsPlacementGroupsEnabled } from 'src/features/PlacementGroups/utils';
 
-import { StyledMenuList, StyledPaper, StyledStack } from './CreateMenu.styles';
+import {
+  StyledAddIcon,
+  StyledMenuList,
+  StyledPaper,
+  StyledStack,
+} from './CreateMenu.styles';
 import { ProductFamilyGroup } from './ProductFamilyGroup';
 
 import type { Theme } from '@mui/material';
+import type { LinkProps } from '@tanstack/react-router';
 import type { BaseNavLink } from 'src/components/PrimaryNav/PrimaryLink';
 import type { ProductFamilyLinkGroup } from 'src/components/PrimaryNav/PrimaryNav';
 
@@ -30,19 +34,22 @@ export type CreateEntity =
   | 'NodeBalancer'
   | 'Object Storage'
   | 'Placement Group'
-  | 'VPC'
-  | 'Volume';
+  | 'Volume'
+  | 'VPC';
 
 export interface CreateMenuLink extends BaseNavLink {
   description?: string;
+  search?: LinkProps['search'];
 }
 
 export const CreateMenu = () => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
-  const isSmallScreen = useMediaQuery((theme: Theme) =>
+
+  const isMediumScreen = useMediaQuery((theme: Theme) =>
     theme.breakpoints.down('md')
   );
+
   const { isDatabasesEnabled } = useIsDatabasesEnabled();
   const { isPlacementGroupsEnabled } = useIsPlacementGroupsEnabled();
 
@@ -56,76 +63,77 @@ export const CreateMenu = () => {
 
   const productFamilyLinkGroup: ProductFamilyLinkGroup<CreateMenuLink[]>[] = [
     {
-      icon: <LinodeIcon />,
+      icon: <ComputeIcon />,
       links: [
         {
           description: 'High performance SSD Linux servers',
           display: 'Linode',
-          href: '/linodes/create',
+          to: '/linodes/create',
         },
         {
           description: 'Capture or upload Linux images',
           display: 'Image',
-          href: '/images/create',
+          to: '/images/create',
         },
         {
           description: 'Highly available container workloads',
           display: 'Kubernetes',
-          href: '/kubernetes/create',
+          to: '/kubernetes/create',
         },
         {
           description: "Control your Linodes' physical placement",
           display: 'Placement Group',
           hide: !isPlacementGroupsEnabled,
-          href: '/placement-groups/create',
+          to: '/placement-groups',
+          search: { action: 'create' },
         },
         {
           attr: { 'data-qa-one-click-add-new': true },
           description: 'Deploy applications with ease',
           display: 'Marketplace',
-          href: '/linodes/create?type=One-Click',
+          to: '/linodes/create/marketplace',
         },
       ],
       name: 'Compute',
     },
     {
-      icon: <NodebalancerIcon />,
+      icon: <NetworkIcon />,
       links: [
         {
           description: 'Create a private and isolated network',
           display: 'VPC',
-          href: '/vpcs/create',
+          to: '/vpcs/create',
         },
         {
           description: 'Control network access to your Linodes',
           display: 'Firewall',
-          href: '/firewalls/create',
+          to: '/firewalls/create',
         },
         {
           description: 'Ensure your services are highly available',
           display: 'NodeBalancer',
-          href: '/nodebalancers/create',
+          to: '/nodebalancers/create',
         },
         {
           description: 'Manage your DNS records',
           display: 'Domain',
-          href: '/domains/create',
+          to: '/domains/create',
         },
       ],
       name: 'Networking',
     },
     {
-      icon: <BucketIcon />,
+      icon: <StorageIcon />,
       links: [
         {
           description: 'S3-compatible object storage',
           display: 'Bucket',
-          href: '/object-storage/buckets/create',
+          to: '/object-storage/buckets/create',
         },
         {
           description: 'Attach additional storage to your Linode',
           display: 'Volume',
-          href: '/volumes/create',
+          to: '/volumes/create',
         },
       ],
       name: 'Storage',
@@ -137,7 +145,7 @@ export const CreateMenu = () => {
           description: 'High-performance managed database clusters',
           display: 'Database',
           hide: !isDatabasesEnabled,
-          href: '/databases/create',
+          to: '/databases/create',
         },
       ],
       name: 'Databases',
@@ -145,25 +153,26 @@ export const CreateMenu = () => {
   ];
 
   return (
-    <Box sx={{ flexGrow: isSmallScreen ? 1 : 0 }}>
+    <Box sx={{ flexGrow: isMediumScreen ? 1 : 0 }}>
       <Button
         aria-controls={open ? 'basic-menu' : undefined}
         aria-expanded={open ? 'true' : undefined}
         aria-haspopup="true"
         buttonType="primary"
         data-qa-add-new-menu-button
-        endIcon={open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+        disableRipple
         id="create-menu"
         onClick={handleClick}
+        startIcon={<StyledAddIcon />}
       >
         Create
       </Button>
       <Popover
+        anchorEl={anchorEl}
         anchorOrigin={{
           horizontal: 'left',
           vertical: 'bottom',
         }}
-        anchorEl={anchorEl}
         aria-labelledby="create-menu"
         id="basic-menu"
         onClose={handleClose}

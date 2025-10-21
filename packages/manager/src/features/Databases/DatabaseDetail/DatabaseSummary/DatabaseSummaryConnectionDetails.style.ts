@@ -31,7 +31,7 @@ export const useStyles = makeStyles()((theme: Theme) => ({
       cursor: 'default',
     },
     color: theme.palette.primary.main,
-    fontFamily: theme.font.bold,
+    font: theme.font.bold,
     fontSize: '0.875rem',
     lineHeight: '1.125rem',
     marginLeft: theme.spacing(),
@@ -39,14 +39,17 @@ export const useStyles = makeStyles()((theme: Theme) => ({
     minWidth: 'auto',
     padding: 0,
   },
+  tooltipIcon: {
+    alignContent: 'center',
+  },
   connectionDetailsCtn: {
     '& p': {
       lineHeight: '1.5rem',
     },
     '& span': {
-      fontFamily: theme.font.bold,
+      font: theme.font.bold,
     },
-    background: theme.tokens.interaction.Background.Secondary,
+    background: theme.tokens.alias.Interaction.Background.Secondary,
     border: `1px solid ${
       theme.name === 'light'
         ? theme.tokens.color.Neutrals[40]
@@ -89,7 +92,7 @@ export const useStyles = makeStyles()((theme: Theme) => ({
     marginLeft: 22,
   },
   provisioningText: {
-    fontFamily: theme.font.normal,
+    font: theme.font.normal,
     fontStyle: 'italic',
   },
   showBtn: {

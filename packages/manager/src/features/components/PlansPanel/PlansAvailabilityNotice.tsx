@@ -1,19 +1,19 @@
 import { ListItem, Notice } from '@linode/ui';
+import { formatPlanTypes, getCapabilityFromPlanType } from '@linode/utilities';
 import * as React from 'react';
 
-import { formatPlanTypes } from 'src/utilities/planNotices';
-import { getCapabilityFromPlanType } from 'src/utilities/planNotices';
-
 import {
+  PlanNoticeTypography,
+  PlanTextTooltip,
   StyledFormattedRegionList,
-  StyledNoticeTypography,
-  StyledTextTooltip,
 } from './PlansAvailabilityNotice.styles';
 
 import type { LinodeTypeClass, Region } from '@linode/api-v4';
 
 export interface PlansAvailabilityNoticeProps {
+  flow?: 'database' | 'kubernetes' | 'linode';
   hasSelectedRegion: boolean;
+  isResize?: boolean;
   isSelectedRegionEligibleForPlan: boolean;
   planType: LinodeTypeClass;
   regionsData: Region[];
@@ -26,6 +26,8 @@ export const PlansAvailabilityNotice = React.memo(
       isSelectedRegionEligibleForPlan,
       planType,
       regionsData,
+      flow,
+      isResize,
     } = props;
     const capability = getCapabilityFromPlanType(planType);
 
@@ -39,7 +41,9 @@ export const PlansAvailabilityNotice = React.memo(
 
     return (
       <PlansAvailabilityNoticeMessage
+        flow={flow}
         hasSelectedRegion={hasSelectedRegion}
+        isResize={isResize}
         isSelectedRegionEligibleForPlan={isSelectedRegionEligibleForPlan}
         planType={planType}
         regionList={getEligibleRegionList()}
@@ -49,7 +53,9 @@ export const PlansAvailabilityNotice = React.memo(
 );
 
 interface PlansAvailabilityNoticeMessageProps {
+  flow?: 'database' | 'kubernetes' | 'linode';
   hasSelectedRegion: boolean;
+  isResize?: boolean;
   isSelectedRegionEligibleForPlan: boolean;
   planType: LinodeTypeClass;
   regionList: Region[];
@@ -63,6 +69,8 @@ const PlansAvailabilityNoticeMessage = (
     isSelectedRegionEligibleForPlan,
     planType,
     regionList,
+    flow,
+    isResize,
   } = props;
 
   const FormattedRegionList = () => (
@@ -79,18 +87,19 @@ const PlansAvailabilityNoticeMessage = (
   );
 
   const formattedPlanType = formatPlanTypes(planType);
+  const isDatabaseResize = flow === 'database' && isResize;
 
   if (!hasSelectedRegion) {
     return (
       <Notice dataTestId={`${planType}-notice-warning`} variant="warning">
-        <StyledNoticeTypography>
+        <PlanNoticeTypography>
           {formattedPlanType} Plans are currently available in&nbsp;
-          <StyledTextTooltip
+          <PlanTextTooltip
             displayText="select regions"
             tooltipText={<FormattedRegionList />}
           />
           .
-        </StyledNoticeTypography>
+        </PlanNoticeTypography>
       </Notice>
     );
   }
@@ -102,21 +111,25 @@ const PlansAvailabilityNoticeMessage = (
         dataTestId={`${planType}-notice-error`}
         variant="error"
       >
-        <StyledNoticeTypography>
+        <PlanNoticeTypography>
           {formattedPlanType} Plans are not currently available in this
           region.&nbsp;
-          <StyledTextTooltip
-            tooltipText={
-              regionList.length > 0 ? (
-                <FormattedRegionList />
-              ) : (
-                'There are no regions available for this plan.'
-              )
-            }
-            displayText="See global availability"
-          />
-          .
-        </StyledNoticeTypography>
+          {!isDatabaseResize && (
+            <>
+              <PlanTextTooltip
+                displayText="See global availability"
+                tooltipText={
+                  regionList.length > 0 ? (
+                    <FormattedRegionList />
+                  ) : (
+                    'There are no regions available for this plan.'
+                  )
+                }
+              />
+              .
+            </>
+          )}
+        </PlanNoticeTypography>
       </Notice>
     );
   }

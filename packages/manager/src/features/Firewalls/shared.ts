@@ -1,9 +1,7 @@
-import { capitalize } from 'src/utilities/capitalize';
-import { truncateAndJoinList } from 'src/utilities/stringUtils';
+import { truncateAndJoinList } from '@linode/utilities';
+import { capitalize } from '@linode/utilities';
 
-import { PORT_PRESETS } from './FirewallDetail/Rules/shared';
-
-import type { Grants, Profile } from '@linode/api-v4';
+import type { PORT_PRESETS } from './FirewallDetail/Rules/shared';
 import type {
   Firewall,
   FirewallRuleProtocol,
@@ -178,16 +176,16 @@ export const predefinedFirewallFromRule = (
   }
 
   switch (ports) {
-    case portPresets.ssh:
-      return 'ssh';
+    case portPresets.dns:
+      return 'dns';
     case portPresets.http:
       return 'http';
     case portPresets.https:
       return 'https';
     case portPresets.mysql:
       return 'mysql';
-    case portPresets.dns:
-      return 'dns';
+    case portPresets.ssh:
+      return 'ssh';
     default:
       return undefined;
   }
@@ -248,18 +246,6 @@ export const generateAddressesLabel = (
 
   // If no IPs are allowed.
   return 'None';
-};
-
-export const checkIfUserCanModifyFirewall = (
-  firewallId: number,
-  profile?: Profile,
-  grants?: Grants
-) => {
-  return (
-    !profile?.restricted ||
-    grants?.firewall?.find((firewall) => firewall.id === firewallId)
-      ?.permissions === 'read_write'
-  );
 };
 
 export const getFirewallDescription = (firewall: Firewall) => {

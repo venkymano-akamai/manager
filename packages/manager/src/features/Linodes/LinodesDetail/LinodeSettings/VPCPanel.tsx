@@ -1,3 +1,4 @@
+import { useAllVPCsQuery, useRegionsQuery } from '@linode/queries';
 import {
   Autocomplete,
   Box,
@@ -9,20 +10,21 @@ import {
   TooltipIcon,
   Typography,
 } from '@linode/ui';
+import {
+  doesRegionSupportFeature,
+  scrollErrorIntoView,
+} from '@linode/utilities';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import * as React from 'react';
 
+import { PublicIPv4Access } from 'src/features/Linodes/LinodesDetail/LinodeNetworking/LinodeInterfaces/PublicIPv4Access';
 import {
   REGION_CAVEAT_HELPER_TEXT,
   VPC_AUTO_ASSIGN_IPV4_TOOLTIP,
 } from 'src/features/VPCs/constants';
 import { AssignIPRanges } from 'src/features/VPCs/VPCDetail/AssignIPRanges';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useAllVPCsQuery } from 'src/queries/vpcs/vpcs';
-import { doesRegionSupportFeature } from 'src/utilities/doesRegionSupportFeature';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
-import { scrollErrorIntoView } from 'src/utilities/scrollErrorIntoView';
 
 import type { ExtendedIP } from 'src/utilities/ipUtils';
 
@@ -39,12 +41,12 @@ export interface VPCPanelProps {
   selectedSubnetId: null | number | undefined;
   selectedVPCId: null | number | undefined;
   subnetError?: string;
-  toggleAssignPublicIPv4Address: () => void;
+  toggleAssignPublicIPv4Address: (ipv4Access: null | string) => void;
   toggleAutoassignIPv4WithinVPCEnabled: () => void;
+  vpcIdError?: string;
   vpcIPRangesError?: string;
   vpcIPv4AddressOfLinode: string | undefined;
   vpcIPv4Error?: string;
-  vpcIdError?: string;
 }
 
 const ERROR_GROUP_STRING = 'vpc-errors';
@@ -83,7 +85,11 @@ export const VPCPanel = (props: VPCPanelProps) => {
     'VPCs'
   );
 
-  const { data: vpcsData, error, isLoading } = useAllVPCsQuery({
+  const {
+    data: vpcsData,
+    error,
+    isLoading,
+  } = useAllVPCsQuery({
     enabled: regionSupportsVPCs,
     filter: { region },
   });
@@ -121,26 +127,13 @@ export const VPCPanel = (props: VPCPanelProps) => {
 
   return (
     <Paper
+      data-testid="vpc-panel"
       sx={{
         padding: 0,
       }}
-      data-testid="vpc-panel"
     >
       <Stack>
         <Autocomplete
-          onChange={(_, selectedVPC) => {
-            handleSelectVPC(selectedVPC?.value || -1);
-          }}
-          textFieldProps={{
-            tooltipText: REGION_CAVEAT_HELPER_TEXT,
-          }}
-          value={
-            selectedVPCId && selectedVPCId !== -1
-              ? vpcDropdownOptions.find(
-                  (option) => option.value === selectedVPCId
-                ) ?? null
-              : defaultVPCValue
-          }
           autoHighlight
           clearIcon={null}
           disabled={!regionSupportsVPCs}
@@ -148,15 +141,34 @@ export const VPCPanel = (props: VPCPanelProps) => {
           label={'VPC'}
           loading={isLoading}
           noOptionsText="No VPCs exist in this Linode's region."
+          onChange={(_, selectedVPC) => {
+            handleSelectVPC(selectedVPC?.value || -1);
+          }}
           options={vpcDropdownOptions}
           placeholder={'Select a VPC'}
+          textFieldProps={{
+            tooltipText: REGION_CAVEAT_HELPER_TEXT,
+          }}
+          value={
+            selectedVPCId && selectedVPCId !== -1
+              ? (vpcDropdownOptions.find(
+                  (option) => option.value === selectedVPCId
+                ) ?? null)
+              : defaultVPCValue
+          }
         />
         {selectedVPCId !== -1 && regionSupportsVPCs && (
           <Stack data-testid="subnet-and-additional-options-section">
             <Autocomplete
+              autoHighlight
+              clearIcon={null}
+              errorText={subnetError}
+              label="Subnet"
               onChange={(_, selectedSubnet) => {
                 handleSubnetChange(selectedSubnet?.value);
               }}
+              options={subnetDropdownOptions}
+              placeholder="Select Subnet"
               textFieldProps={{
                 errorGroup: ERROR_GROUP_STRING,
               }}
@@ -165,23 +177,17 @@ export const VPCPanel = (props: VPCPanelProps) => {
                   (option) => option.value === selectedSubnetId
                 ) ?? null
               }
-              autoHighlight
-              clearIcon={null}
-              errorText={subnetError}
-              label="Subnet"
-              options={subnetDropdownOptions}
-              placeholder="Select Subnet"
             />
             {selectedSubnetId && (
               <>
                 <Box
+                  alignItems="center"
+                  display="flex"
+                  flexDirection="row"
                   sx={(theme) => ({
                     marginLeft: '2px',
                     paddingTop: theme.spacing(),
                   })}
-                  alignItems="center"
-                  display="flex"
-                  flexDirection="row"
                 >
                   <FormControlLabel
                     control={
@@ -190,6 +196,7 @@ export const VPCPanel = (props: VPCPanelProps) => {
                         onChange={toggleAutoassignIPv4WithinVPCEnabled}
                       />
                     }
+                    data-testid="vpc-ipv4-checkbox"
                     label={
                       <Box
                         alignItems="center"
@@ -201,12 +208,11 @@ export const VPCPanel = (props: VPCPanelProps) => {
                           VPC
                         </Typography>
                         <TooltipIcon
-                          status="help"
+                          status="info"
                           text={VPC_AUTO_ASSIGN_IPV4_TOOLTIP}
                         />
                       </Box>
                     }
-                    data-testid="vpc-ipv4-checkbox"
                   />
                 </Box>
                 {!autoassignIPv4WithinVPC && (
@@ -220,37 +226,17 @@ export const VPCPanel = (props: VPCPanelProps) => {
                   />
                 )}
                 <Box
+                  alignItems="center"
+                  display="flex"
                   sx={(theme) => ({
                     marginLeft: '2px',
                     marginTop: !autoassignIPv4WithinVPC ? theme.spacing() : 0,
                   })}
-                  alignItems="center"
-                  display="flex"
                 >
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={assignPublicIPv4Address}
-                        onChange={toggleAssignPublicIPv4Address}
-                      />
-                    }
-                    label={
-                      <Box
-                        alignItems="center"
-                        display="flex"
-                        flexDirection="row"
-                      >
-                        <Typography>
-                          Assign a public IPv4 address for this Linode
-                        </Typography>
-                        <TooltipIcon
-                          text={
-                            'Access the internet through the public IPv4 address using static 1:1 NAT.'
-                          }
-                          status="help"
-                        />
-                      </Box>
-                    }
+                  <PublicIPv4Access
+                    checked={assignPublicIPv4Address}
+                    isConfigInterface
+                    onChange={toggleAssignPublicIPv4Address}
                   />
                 </Box>
                 {assignPublicIPv4Address && publicIPv4Error && (
@@ -265,8 +251,8 @@ export const VPCPanel = (props: VPCPanelProps) => {
                 <AssignIPRanges
                   handleIPRangeChange={handleIPv4RangeChange}
                   includeDescriptionInTooltip
-                  ipRanges={additionalIPv4RangesForVPC}
                   ipRangesError={vpcIPRangesError}
+                  ipv4Ranges={additionalIPv4RangesForVPC}
                 />
               </>
             )}

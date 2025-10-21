@@ -1,140 +1,120 @@
-import { fireEvent } from '@testing-library/react';
+import { profileFactory } from '@linode/utilities';
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
-import { profileFactory } from 'src/factories';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { UsersActionMenu } from './UsersActionMenu';
 
+const navigate = vi.fn();
 const queryMocks = vi.hoisted(() => ({
   useProfile: vi.fn().mockReturnValue({}),
+  useNavigate: vi.fn(() => navigate),
 }));
 
 // Mock useProfile
-vi.mock('src/queries/profile/profile', async () => {
-  const actual = await vi.importActual('src/queries/profile/profile');
+vi.mock('@linode/queries', async () => {
+  const actual = await vi.importActual('@linode/queries');
   return {
     ...actual,
     useProfile: queryMocks.useProfile,
   };
 });
 
-const mockHistory = {
-  push: vi.fn(),
-  replace: vi.fn(),
-};
-
-// Mock useHistory
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<any>('react-router-dom');
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
   return {
     ...actual,
-    useHistory: vi.fn(() => mockHistory),
+    useNavigate: queryMocks.useNavigate,
   };
 });
 
 const mockOnDelete = vi.fn();
 
 describe('UsersActionMenu', () => {
-  it('should render proxy user actions correctly', () => {
+  it('should render actions correctly', async () => {
     queryMocks.useProfile.mockReturnValue({
       data: profileFactory.build({ username: 'current_user' }),
     });
 
-    const { getByRole, getByText, queryByText } = renderWithTheme(
+    renderWithTheme(
       <UsersActionMenu
-        isProxyUser={true}
         onDelete={mockOnDelete}
+        permissions={{
+          is_account_admin: true,
+          delete_user: true,
+        }}
         username="test_user"
       />
     );
 
-    // Check if "Manage Access" action is present
-    const actionBtn = getByRole('button');
+    const actionBtn = screen.getByRole('button');
     expect(actionBtn).toBeInTheDocument();
-    fireEvent.click(actionBtn);
-
-    const manageAccessButton = getByText('Manage Access');
-    expect(manageAccessButton).toBeInTheDocument();
-
-    // Check if only the proxy user action is rendered
-    expect(queryByText('View User Details')).not.toBeInTheDocument();
-    expect(queryByText('View User Roles')).not.toBeInTheDocument();
-    expect(queryByText('Delete User')).not.toBeInTheDocument();
-
-    // Click "Manage Access" and verify history.push is called with the correct URL
-    fireEvent.click(manageAccessButton);
-    expect(mockHistory.push).toHaveBeenCalledWith('/iam/users/test_user/roles');
-  });
-
-  it('should render non-proxy user actions correctly', () => {
-    queryMocks.useProfile.mockReturnValue({
-      data: profileFactory.build({ username: 'current_user' }),
-    });
-
-    const { getByRole, getByText } = renderWithTheme(
-      <UsersActionMenu
-        isProxyUser={false}
-        onDelete={mockOnDelete}
-        username="test_user"
-      />
-    );
-
-    const actionBtn = getByRole('button');
-    expect(actionBtn).toBeInTheDocument();
-    fireEvent.click(actionBtn);
+    await userEvent.click(actionBtn);
 
     // Check if "View User Details" action is present
-    const viewDetailsButton = getByText('View User Details');
+    const viewDetailsButton = screen.getByText('View User Details');
     expect(viewDetailsButton).toBeInTheDocument();
 
     // Click "View User Details" and verify history.push is called with the correct URL
-    fireEvent.click(viewDetailsButton);
-    expect(mockHistory.push).toHaveBeenCalledWith(
-      '/iam/users/test_user/details'
-    );
+    await userEvent.click(viewDetailsButton);
+    expect(navigate).toHaveBeenCalledWith({
+      params: {
+        username: 'test_user',
+      },
+      to: '/iam/users/$username/details',
+    });
 
-    // Check if "View User Roles" action is present
-    const viewRolesButton = getByText('View User Roles');
+    // Check if "View Assigned Roles" action is present
+    const viewRolesButton = screen.getByText('View Assigned Roles');
     expect(viewRolesButton).toBeInTheDocument();
 
-    // Click "View User Roles" and verify history.push is called with the correct URL
-    fireEvent.click(viewRolesButton);
-    expect(mockHistory.push).toHaveBeenCalledWith('/iam/users/test_user/roles');
+    // Click "View Assigned Roles" and verify history.push is called with the correct URL
+    await userEvent.click(viewRolesButton);
+    expect(navigate).toHaveBeenCalledWith({
+      params: {
+        username: 'test_user',
+      },
+      to: '/iam/users/$username/roles',
+    });
 
     // Check if "Delete User" action is present
-    const deleteUserButton = getByText('Delete User');
+    const deleteUserButton = screen.getByText('Delete User');
     expect(deleteUserButton).toBeInTheDocument();
 
     // Click "Delete User" and verify onDelete is called with the correct username
-    fireEvent.click(deleteUserButton);
+    await userEvent.click(deleteUserButton);
     expect(mockOnDelete).toHaveBeenCalledWith('test_user');
   });
 
-  it("should disable 'Delete User' action for the currently active user", () => {
+  it("should disable 'Delete User' action for the currently active user", async () => {
     queryMocks.useProfile.mockReturnValue({
       data: profileFactory.build({ username: 'current_user' }),
     });
 
-    const { getByRole, getByTestId } = renderWithTheme(
+    renderWithTheme(
       <UsersActionMenu
-        isProxyUser={false}
         onDelete={mockOnDelete}
+        permissions={{
+          is_account_admin: true,
+          delete_user: true,
+        }}
         username="current_user"
       />
     );
 
-    const actionBtn = getByRole('button');
+    const actionBtn = screen.getByRole('button');
     expect(actionBtn).toBeInTheDocument();
-    fireEvent.click(actionBtn);
+    await userEvent.click(actionBtn);
 
     // Check if "Delete User" action is present but disabled
-    const deleteUserButton = getByTestId('Delete User');
+    const deleteUserButton = screen.getByTestId('Delete User');
     expect(deleteUserButton).toBeInTheDocument();
     expect(deleteUserButton).toHaveAttribute('aria-disabled', 'true');
 
     // Check for tooltip text
-    const tooltip = getByRole('button', {
+    const tooltip = screen.getByRole('button', {
       name: "You can't delete the currently active user.",
     });
     expect(tooltip).toBeInTheDocument();

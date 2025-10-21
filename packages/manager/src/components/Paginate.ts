@@ -1,29 +1,28 @@
 import { clamp } from '@linode/ui';
-import { slice } from 'ramda';
+import { scrollTo } from '@linode/utilities';
 import * as React from 'react';
 
-import scrollTo from 'src/utilities/scrollTo';
 import { storage } from 'src/utilities/storage';
 
-export const createDisplayPage = <T>(page: number, pageSize: number) => (
-  list: T[]
-): T[] => {
-  const count = list.length;
-  if (count === 0) {
-    return list;
-  }
+export const createDisplayPage =
+  <T>(page: number, pageSize: number) =>
+  (list: T[]): T[] => {
+    const count = list.length;
+    if (count === 0) {
+      return list;
+    }
 
-  if (pageSize === Infinity) {
-    return list;
-  }
+    if (pageSize === Infinity) {
+      return list;
+    }
 
-  const pages = Math.ceil(count / pageSize);
-  const currentPage = clamp(1, pages, page);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize - 1, count - 1);
+    const pages = Math.ceil(count / pageSize);
+    const currentPage = clamp(1, pages, page);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize - 1, count - 1);
 
-  return slice(startIndex, endIndex + 1, list);
-};
+    return list.slice(startIndex, endIndex + 1);
+  };
 
 export interface PaginationProps<T> extends State {
   count: number;
@@ -49,28 +48,10 @@ interface Props<T> {
 }
 
 export default class Paginate<T> extends React.Component<Props<T>, State> {
-  render() {
-    let view: (data: T[]) => T[];
-    // update view based on page url
-    if (this.props.updatePageUrl) {
-      view = createDisplayPage(this.props.page || 1, this.state.pageSize);
-    }
-    // update view based on state
-    else {
-      view = createDisplayPage(this.state.page, this.state.pageSize);
-    }
-
-    const props = {
-      ...this.props,
-      ...this.state,
-      count: this.props.data.length,
-      data: view(this.props.data),
-      handlePageChange: this.handlePageChange,
-      handlePageSizeChange: this.handlePageSizeChange,
-    };
-
-    return this.props.children(props);
-  }
+  state: State = {
+    page: this.props.page || 1,
+    pageSize: this.props.pageSize || storage.pageSize.get() || 25,
+  };
 
   handlePageChange = (page: number) => {
     if (this.props.shouldScroll ?? true) {
@@ -93,8 +74,26 @@ export default class Paginate<T> extends React.Component<Props<T>, State> {
     }
   };
 
-  state: State = {
-    page: this.props.page || 1,
-    pageSize: this.props.pageSize || storage.pageSize.get() || 25,
-  };
+  render() {
+    let view: (data: T[]) => T[];
+    // update view based on page url
+    if (this.props.updatePageUrl) {
+      view = createDisplayPage(this.props.page || 1, this.state.pageSize);
+    }
+    // update view based on state
+    else {
+      view = createDisplayPage(this.state.page, this.state.pageSize);
+    }
+
+    const props = {
+      ...this.props,
+      ...this.state,
+      count: this.props.data.length,
+      data: view(this.props.data),
+      handlePageChange: this.handlePageChange,
+      handlePageSizeChange: this.handlePageSizeChange,
+    };
+
+    return this.props.children(props);
+  }
 }

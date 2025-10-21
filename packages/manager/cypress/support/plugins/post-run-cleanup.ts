@@ -1,16 +1,19 @@
-import { DateTime } from 'luxon';
-import { depaginate } from '../util/paginate';
-import { CypressPlugin } from './plugin';
-
 import {
   deleteFirewall,
   deleteKubernetesCluster,
   deleteLinode,
-  Firewall,
   getFirewalls,
   getKubernetesClusters,
   getLinodes,
   getNodePools,
+} from '@linode/api-v4';
+import { DateTime } from 'luxon';
+
+import { depaginate } from '../util/paginate';
+
+import type { CypressPlugin } from './plugin';
+import type {
+  Firewall,
   KubeNodePoolResponse,
   KubernetesCluster,
   Linode,
@@ -35,7 +38,7 @@ import {
  */
 
 // Test resource label/name prefix.
-const TEST_TAG_PREFIX = 'cy-test-';
+const TEST_TAG_PREFIX = process.env['CY_TEST_RESOURCE_PREFIX'] || 'cy-test-';
 
 // Desired number of items per page of a paginated API request.
 const PAGE_SIZE = 500;
@@ -157,7 +160,6 @@ export const postRunCleanup: CypressPlugin = async (on) => {
       console.log(`- Cleaning up test ${resourceCleanUpItem.name}...`);
       try {
         // Perform clean-up sequentially.
-        // eslint-disable-next-line no-await-in-loop
         await resourceCleanUpItem.cleanUp();
       } catch (e) {
         console.error(

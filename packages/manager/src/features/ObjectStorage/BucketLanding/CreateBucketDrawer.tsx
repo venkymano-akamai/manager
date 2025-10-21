@@ -1,32 +1,31 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Notice, TextField } from '@linode/ui';
+import {
+  useAccountAgreements,
+  useAccountSettings,
+  useMutateAccountAgreements,
+  useNetworkTransferPricesQuery,
+  useProfile,
+  useRegionsQuery,
+} from '@linode/queries';
+import { ActionsPanel, Drawer, Notice, TextField } from '@linode/ui';
 import { CreateBucketSchema } from '@linode/validation';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
 import { EUAgreementCheckbox } from 'src/features/Account/Agreements/EUAgreementCheckbox';
-import {
-  reportAgreementSigningError,
-  useAccountAgreements,
-  useMutateAccountAgreements,
-} from 'src/queries/account/agreements';
-import { useAccountSettings } from 'src/queries/account/settings';
-import { useNetworkTransferPricesQuery } from 'src/queries/networkTransfer';
 import {
   useCreateBucketMutation,
   useObjectStorageBuckets,
   useObjectStorageTypesQuery,
 } from 'src/queries/object-storage/queries';
-import { useProfile } from 'src/queries/profile/profile';
-import { useRegionsQuery } from 'src/queries/regions/regions';
 import { sendCreateBucketEvent } from 'src/utilities/analytics/customEventAnalytics';
 import { getGDPRDetails } from 'src/utilities/formatRegion';
 import { PRICES_RELOAD_ERROR_NOTICE_TEXT } from 'src/utilities/pricing/constants';
+import { reportAgreementSigningError } from 'src/utilities/reportAgreementSigningError';
 
 import { EnableObjectStorageModal } from '../EnableObjectStorageModal';
+import { QuotasInfoNotice } from '../QuotasInfoNotice';
 import ClusterSelect from './ClusterSelect';
 import { OveragePricing } from './OveragePricing';
 
@@ -66,12 +65,10 @@ export const CreateBucketDrawer = (props: Props) => {
   const { data: agreements } = useAccountAgreements();
   const { mutateAsync: updateAccountAgreements } = useMutateAccountAgreements();
   const { data: accountSettings } = useAccountSettings();
-  const [isEnableObjDialogOpen, setIsEnableObjDialogOpen] = React.useState(
-    false
-  );
-  const [hasSignedAgreement, setHasSignedAgreement] = React.useState<boolean>(
-    false
-  );
+  const [isEnableObjDialogOpen, setIsEnableObjDialogOpen] =
+    React.useState(false);
+  const [hasSignedAgreement, setHasSignedAgreement] =
+    React.useState<boolean>(false);
 
   const {
     control,
@@ -145,6 +142,7 @@ export const CreateBucketDrawer = (props: Props) => {
   return (
     <Drawer onClose={handleClose} open={isOpen} title="Create Bucket">
       <form onSubmit={handleBucketFormSubmit}>
+        <QuotasInfoNotice action="creating a bucket" />
         {isRestrictedUser && (
           <Notice
             data-qa-permissions-notice
@@ -156,6 +154,8 @@ export const CreateBucketDrawer = (props: Props) => {
           <Notice text={errors.root?.message} variant="error" />
         )}
         <Controller
+          control={control}
+          name="label"
           render={({ field, fieldState }) => (
             <TextField
               {...field}
@@ -163,15 +163,15 @@ export const CreateBucketDrawer = (props: Props) => {
               data-testid="label"
               disabled={isRestrictedUser}
               errorText={fieldState.error?.message}
-              label="Label"
+              label="Bucket Name"
               required
             />
           )}
-          control={control}
-          name="label"
-          rules={{ required: 'Label is required' }}
+          rules={{ required: 'Bucket name is required' }}
         />
         <Controller
+          control={control}
+          name="cluster"
           render={({ field, fieldState }) => (
             <ClusterSelect
               {...field}
@@ -183,8 +183,6 @@ export const CreateBucketDrawer = (props: Props) => {
               selectedCluster={field.value ?? undefined}
             />
           )}
-          control={control}
-          name="cluster"
           rules={{ required: 'Cluster is required' }}
         />
         {clusterRegion?.id && <OveragePricing regionId={clusterRegion.id} />}
@@ -197,7 +195,10 @@ export const CreateBucketDrawer = (props: Props) => {
         <ActionsPanel
           primaryButtonProps={{
             'data-testid': 'create-bucket-button',
-            disabled: (showGDPRCheckbox && !hasSignedAgreement) || isErrorTypes,
+            disabled:
+              (showGDPRCheckbox && !hasSignedAgreement) ||
+              isErrorTypes ||
+              isRestrictedUser,
             label: 'Create Bucket',
             loading: isPending || Boolean(clusterRegion?.id && isLoadingTypes),
             tooltipText:

@@ -1,9 +1,15 @@
-import { Autocomplete, Box, SelectedIcon, Stack, Typography } from '@linode/ui';
-import React from 'react';
+import { Autocomplete } from '@linode/ui';
+import React, { useMemo } from 'react';
 
-import { useAllLinodesQuery } from 'src/queries/linodes/linodes';
+import { useGetLinodeIPAndVPCData } from 'src/hooks/useDataForLinodesInVPC';
 
-import { getPrivateIPOptions } from './ConfigNodeIPSelect.utils';
+import {
+  getPrivateIPOptions,
+  getVPCIPOptions,
+} from './ConfigNodeIPSelect.utils';
+import { ConfigNodeOption } from './ConfigNodeOption';
+
+import type { PrivateIPOption, VPCIPOption } from './ConfigNodeIPSelect.utils';
 
 interface Props {
   /**
@@ -17,7 +23,11 @@ interface Props {
   /**
    * Function that is called when the select's value changes
    */
-  handleChange: (nodeIndex: number, ipAddress: null | string) => void;
+  handleChange: (
+    nodeIndex: number,
+    ipAddress: null | string,
+    subnetId?: number
+  ) => void;
   /**
    * Override the default input `id` for the select
    */
@@ -35,7 +45,17 @@ interface Props {
    * @note IPs won't load until a region is passed
    */
   region: string | undefined;
+  /**
+   * The subnetID for which to load the available VPC IPs
+   */
+  subnetId?: number;
+  /**
+   * The vpcId for which to load available VPC IPs
+   */
+  vpcId?: number;
 }
+
+export type NodeOption = PrivateIPOption | VPCIPOption;
 
 export const ConfigNodeIPSelect = React.memo((props: Props) => {
   const {
@@ -46,54 +66,56 @@ export const ConfigNodeIPSelect = React.memo((props: Props) => {
     nodeAddress,
     nodeIndex,
     region,
+    vpcId,
+    subnetId,
   } = props;
 
-  const { data: linodes, error, isLoading } = useAllLinodesQuery(
-    {},
-    { region },
-    region !== undefined
-  );
+  const { linodes, error, isLoading, vpc, vpcIPs } = useGetLinodeIPAndVPCData({
+    region,
+    vpcId,
+  });
 
-  const options = getPrivateIPOptions(linodes);
+  let options: NodeOption[] = [];
+
+  if (region && !vpcId) {
+    options = getPrivateIPOptions(linodes);
+  } else if (region && vpcId && subnetId) {
+    options = getVPCIPOptions(vpcIPs, linodes, vpc?.subnets);
+  }
+
+  const noOptionsText = useMemo(() => {
+    if (!vpcId) {
+      return 'Please ensure you have at least 1 Linode with a private IP located in the selected region.';
+    } else if (vpcId && !subnetId) {
+      return 'Select a subnet within the chosen VPC.';
+    } else return 'The selected subnet must have at least one Linode.';
+  }, [vpcId, subnetId]);
 
   return (
     <Autocomplete
-      renderOption={(props, option, { selected }) => {
-        const { key, ...rest } = props;
-        return (
-          <li {...rest} key={key}>
-            <Box
-              alignItems="center"
-              display="flex"
-              flexDirection="row"
-              gap={1}
-              justifyContent="space-between"
-              width="100%"
-            >
-              <Stack>
-                <Typography
-                  color="inherit"
-                  fontFamily={(theme) => theme.font.bold}
-                >
-                  {option.label}
-                </Typography>
-                <Typography color="inherit">{option.linode.label}</Typography>
-              </Stack>
-              {selected && <SelectedIcon visible />}
-            </Box>
-          </li>
-        );
-      }}
       disabled={disabled}
-      errorText={errorText ?? error?.[0].reason}
+      errorText={errorText ?? error?.[0]?.reason}
       id={inputId}
       label="IP Address"
       loading={isLoading}
       noMarginTop
-      noOptionsText="No options - please ensure you have at least 1 Linode with a private IP located in the selected region."
-      onChange={(e, value) => handleChange(nodeIndex, value?.label ?? null)}
+      noOptionsText={noOptionsText}
+      onChange={(e, value: NodeOption) =>
+        handleChange(nodeIndex, value?.label ?? null, subnetId)
+      }
       options={options}
       placeholder="Enter IP Address"
+      renderOption={(props, option, { selected }) => {
+        const { key, ...rest } = props;
+        return (
+          <ConfigNodeOption
+            key={key}
+            listItemProps={rest}
+            option={option}
+            selected={selected}
+          />
+        );
+      }}
       value={options.find((o) => o.label === nodeAddress) ?? null}
     />
   );

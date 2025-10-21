@@ -1,26 +1,53 @@
-import { CircleProgress, Stack } from '@linode/ui';
+import { useAccountUser, useUserRoles } from '@linode/queries';
+import {
+  CircleProgress,
+  ErrorState,
+  NotFound,
+  Notice,
+  Stack,
+} from '@linode/ui';
+import { useParams } from '@tanstack/react-router';
 import React from 'react';
-import { useParams } from 'react-router-dom';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
-import { NotFound } from 'src/components/NotFound';
-import { useAccountUser } from 'src/queries/account/users';
-import { useAccountUserPermissions } from 'src/queries/iam/iam';
 
+import { usePermissions } from '../../hooks/usePermissions';
 import { DeleteUserPanel } from './DeleteUserPanel';
 import { UserDetailsPanel } from './UserDetailsPanel';
 import { UserEmailPanel } from './UserEmailPanel';
 import { UsernamePanel } from './UsernamePanel';
 
 export const UserProfile = () => {
-  const { username } = useParams<{ username: string }>();
+  const { username } = useParams({ from: '/iam/users/$username' });
+  const { data: permissions } = usePermissions('account', [
+    'is_account_admin',
+    'update_user',
+    'delete_user',
+  ]);
 
-  const { data: user, error, isLoading } = useAccountUser(username ?? '');
-  const { data: assignedRoles } = useAccountUserPermissions(username ?? '');
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useAccountUser(username ?? '', permissions?.is_account_admin);
+  const { data: assignedRoles } = useUserRoles(
+    username ?? '',
+    permissions?.is_account_admin
+  );
+
+  const canUpdateUser = permissions?.update_user;
+  const canDeleteUser = permissions?.delete_user;
 
   if (isLoading) {
     return <CircleProgress />;
+  }
+
+  if (!permissions?.is_account_admin) {
+    return (
+      <Notice variant="error">
+        You do not have permission to view this user&apos;s details.
+      </Notice>
+    );
   }
 
   if (error) {
@@ -34,11 +61,14 @@ export const UserProfile = () => {
   return (
     <>
       <DocumentTitleSegment segment={`${username} - Profile`} />
-      <Stack spacing={2}>
-        <UserDetailsPanel assignedRoles={assignedRoles} user={user} />
-        <UsernamePanel user={user} />
-        <UserEmailPanel user={user} />
-        <DeleteUserPanel user={user} />
+      <Stack
+        spacing={2}
+        sx={(theme) => ({ marginTop: theme.tokens.spacing.S16 })}
+      >
+        <UserDetailsPanel activeUser={user} assignedRoles={assignedRoles} />
+        <UsernamePanel activeUser={user} canUpdateUser={canUpdateUser} />
+        <UserEmailPanel activeUser={user} canUpdateUser={canUpdateUser} />
+        <DeleteUserPanel activeUser={user} canDeleteUser={canDeleteUser} />
       </Stack>
     </>
   );

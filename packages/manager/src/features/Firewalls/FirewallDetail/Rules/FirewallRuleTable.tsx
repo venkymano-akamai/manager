@@ -1,9 +1,9 @@
 import {
+  closestCorners,
   DndContext,
   MouseSensor,
   PointerSensor,
   TouchSensor,
-  closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -14,15 +14,16 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Box, Typography } from '@linode/ui';
+import { Box, LinkButton, Typography } from '@linode/ui';
+import { Autocomplete } from '@linode/ui';
+import { Hidden } from '@linode/ui';
+import { capitalize } from '@linode/utilities';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { prop, uniqBy } from 'ramda';
 import * as React from 'react';
 
 import Undo from 'src/assets/icons/undo.svg';
-import { Autocomplete } from '@linode/ui';
-import { Hidden } from 'src/components/Hidden';
 import { MaskableText } from 'src/components/MaskableText/MaskableText';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
@@ -35,12 +36,10 @@ import {
   generateRuleLabel,
   predefinedFirewallFromRule as ruleToPredefinedFirewall,
 } from 'src/features/Firewalls/shared';
-import { capitalize } from 'src/utilities/capitalize';
 import { CustomKeyboardSensor } from 'src/utilities/CustomKeyboardSensor';
 
 import { FirewallRuleActionMenu } from './FirewallRuleActionMenu';
 import {
-  MoreStyledLinkButton,
   StyledButtonDiv,
   StyledDragIndicator,
   StyledErrorDiv,
@@ -78,11 +77,11 @@ interface RuleRow {
 // =============================================================================
 
 interface RowActionHandlers {
-  triggerCloneFirewallRule: (idx: number) => void;
-  triggerDeleteFirewallRule: (idx: number) => void;
-  triggerOpenRuleDrawerForEditing: (idx: number) => void;
-  triggerReorder: (startIdx: number, endIdx: number) => void;
-  triggerUndo: (idx: number) => void;
+  handleCloneFirewallRule: (idx: number) => void;
+  handleDeleteFirewallRule: (idx: number) => void;
+  handleOpenRuleDrawerForEditing: (idx: number) => void;
+  handleReorder: (startIdx: number, endIdx: number) => void;
+  handleUndo: (idx: number) => void;
 }
 
 interface FirewallRuleTableProps extends RowActionHandlers {
@@ -101,15 +100,15 @@ export const FirewallRuleTable = (props: FirewallRuleTableProps) => {
   const {
     category,
     disabled,
+    handleCloneFirewallRule,
+    handleDeleteFirewallRule,
+    handleOpenRuleDrawerForEditing,
     handlePolicyChange,
+    handleReorder,
+    handleUndo,
     openRuleDrawer,
     policy,
     rulesWithStatus,
-    triggerCloneFirewallRule,
-    triggerDeleteFirewallRule,
-    triggerOpenRuleDrawerForEditing,
-    triggerReorder,
-    triggerUndo,
   } = props;
 
   const theme = useTheme();
@@ -141,7 +140,7 @@ export const FirewallRuleTable = (props: FirewallRuleTableProps) => {
     if (active && over && active.id !== over.id) {
       const sourceIndex = getRowDataIndex(Number(active.id));
       const destinationIndex = getRowDataIndex(Number(over.id));
-      triggerReorder(sourceIndex, destinationIndex);
+      handleReorder(sourceIndex, destinationIndex);
     }
 
     // Remove focus from the initial position when the drag ends.
@@ -200,10 +199,10 @@ export const FirewallRuleTable = (props: FirewallRuleTableProps) => {
                     width: smDown
                       ? '65%'
                       : mdDown
-                      ? '50%'
-                      : lgDown
-                      ? '32%'
-                      : '26%',
+                        ? '50%'
+                        : lgDown
+                          ? '32%'
+                          : '26%',
                   }}
                 >
                   Label
@@ -238,16 +237,16 @@ export const FirewallRuleTable = (props: FirewallRuleTableProps) => {
                       aria-label={
                         thisRuleRow.label ?? `firewall rule ${thisRuleRow.id}`
                       }
-                      triggerOpenRuleDrawerForEditing={
-                        triggerOpenRuleDrawerForEditing
-                      }
                       aria-roledescription={screenReaderMessage}
                       aria-selected={false}
                       disabled={disabled}
+                      handleCloneFirewallRule={handleCloneFirewallRule}
+                      handleDeleteFirewallRule={handleDeleteFirewallRule}
+                      handleOpenRuleDrawerForEditing={
+                        handleOpenRuleDrawerForEditing
+                      }
+                      handleUndo={handleUndo}
                       key={thisRuleRow.id}
-                      triggerCloneFirewallRule={triggerCloneFirewallRule}
-                      triggerDeleteFirewallRule={triggerDeleteFirewallRule}
-                      triggerUndo={triggerUndo}
                       {...thisRuleRow}
                       id={thisRuleRow.id}
                     />
@@ -278,10 +277,10 @@ interface RowActionHandlersWithDisabled
 
 export interface FirewallRuleTableRowProps extends RuleRow {
   disabled: RowActionHandlersWithDisabled['disabled'];
-  triggerCloneFirewallRule: RowActionHandlersWithDisabled['triggerCloneFirewallRule'];
-  triggerDeleteFirewallRule: RowActionHandlersWithDisabled['triggerDeleteFirewallRule'];
-  triggerOpenRuleDrawerForEditing: RowActionHandlersWithDisabled['triggerOpenRuleDrawerForEditing'];
-  triggerUndo: RowActionHandlersWithDisabled['triggerUndo'];
+  handleCloneFirewallRule: RowActionHandlersWithDisabled['handleCloneFirewallRule'];
+  handleDeleteFirewallRule: RowActionHandlersWithDisabled['handleDeleteFirewallRule'];
+  handleOpenRuleDrawerForEditing: RowActionHandlersWithDisabled['handleOpenRuleDrawerForEditing'];
+  handleUndo: RowActionHandlersWithDisabled['handleUndo'];
 }
 
 const FirewallRuleTableRow = React.memo((props: FirewallRuleTableRowProps) => {
@@ -290,6 +289,10 @@ const FirewallRuleTableRow = React.memo((props: FirewallRuleTableRowProps) => {
     addresses,
     disabled,
     errors,
+    handleCloneFirewallRule,
+    handleDeleteFirewallRule,
+    handleOpenRuleDrawerForEditing,
+    handleUndo,
     id,
     index,
     label,
@@ -297,18 +300,14 @@ const FirewallRuleTableRow = React.memo((props: FirewallRuleTableRowProps) => {
     ports,
     protocol,
     status,
-    triggerCloneFirewallRule,
-    triggerDeleteFirewallRule,
-    triggerOpenRuleDrawerForEditing,
-    triggerUndo,
   } = props;
 
   const actionMenuProps = {
     disabled: status === 'PENDING_DELETION' || disabled,
+    handleCloneFirewallRule,
+    handleDeleteFirewallRule,
+    handleOpenRuleDrawerForEditing,
     idx: index,
-    triggerCloneFirewallRule,
-    triggerDeleteFirewallRule,
-    triggerOpenRuleDrawerForEditing,
   };
 
   const theme = useTheme();
@@ -335,8 +334,8 @@ const FirewallRuleTableRow = React.memo((props: FirewallRuleTableRowProps) => {
     },
     ':focus': {
       backgroundColor: isActive
-        ? theme.tokens.background.Neutralsubtle
-        : theme.tokens.background.Normal,
+        ? theme.tokens.alias.Background.Neutralsubtle
+        : theme.tokens.alias.Background.Normal,
     },
     cursor: isActive ? 'grabbing' : 'grab',
     position: 'relative',
@@ -361,12 +360,12 @@ const FirewallRuleTableRow = React.memo((props: FirewallRuleTableRowProps) => {
       <TableCell aria-label={`Label: ${label}`}>
         <StyledDragIndicator aria-label="Drag indicator icon" />
         {label || (
-          <MoreStyledLinkButton
+          <LinkButton
             disabled={disabled}
-            onClick={() => triggerOpenRuleDrawerForEditing(index)}
+            onClick={() => handleOpenRuleDrawerForEditing(index)}
           >
             Add a label
-          </MoreStyledLinkButton>
+          </LinkButton>
         )}
       </TableCell>
       <Hidden lgDown>
@@ -395,7 +394,7 @@ const FirewallRuleTableRow = React.memo((props: FirewallRuleTableRowProps) => {
               <StyledFirewallRuleButton
                 aria-label="Undo change to Firewall Rule"
                 disabled={disabled}
-                onClick={() => triggerUndo(index)}
+                onClick={() => handleUndo(index)}
                 status={status}
               >
                 <Undo />
@@ -498,18 +497,18 @@ export const PolicyRow = React.memo((props: PolicyRowProps) => {
       <Box sx={sxBoxPolicyText}>{helperText}</Box>
       <Box sx={sxBoxPolicySelect}>
         <Autocomplete
-          textFieldProps={{
-            hideLabel: true,
-          }}
-          value={policyOptions.find(
-            (thisOption) => thisOption.value === policy
-          )}
           autoHighlight
           disableClearable
           disabled={disabled}
           label={`${category} policy`}
           onChange={(_, selected) => handlePolicyChange(selected?.value)}
           options={policyOptions}
+          textFieldProps={{
+            hideLabel: true,
+          }}
+          value={policyOptions.find(
+            (thisOption) => thisOption.value === policy
+          )}
         />
       </Box>
     </Box>
@@ -528,7 +527,6 @@ export const ConditionalError = React.memo((props: ConditionalErrorProps) => {
   const uniqueByFormField = uniqBy(prop('formField'), errors ?? []);
 
   return (
-    // eslint-disable-next-line react/jsx-no-useless-fragment
     <>
       {uniqueByFormField.map((thisError) => {
         if (formField !== thisError.formField || !thisError.reason) {

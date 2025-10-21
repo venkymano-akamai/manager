@@ -1,18 +1,19 @@
+import { useAccount } from '@linode/queries';
 import { Button, Typography } from '@linode/ui';
+import { useNavigate } from '@tanstack/react-router';
 import { DateTime } from 'luxon';
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
 
 import { DismissibleBanner } from 'src/components/DismissibleBanner/DismissibleBanner';
 import { Link } from 'src/components/Link';
 import { useFlags } from 'src/hooks/useFlags';
-import { useAccount } from 'src/queries/account/account';
 
 export const TaxCollectionBanner = () => {
-  const history = useHistory();
   const flags = useFlags();
 
   const { data: account } = useAccount();
+
+  const navigate = useNavigate();
 
   const countryDateString = flags.taxCollectionBanner?.date ?? '';
   const bannerHasAction = flags.taxCollectionBanner?.action ?? false;
@@ -52,13 +53,18 @@ export const TaxCollectionBanner = () => {
 
   const actionButton = bannerHasAction ? (
     <Button
+      buttonType="primary"
+      onClick={() =>
+        navigate({
+          to: flags?.iamRbacPrimaryNavChanges ? '/billing' : '/account/billing',
+          search: { action: 'edit' },
+        })
+      }
       sx={(theme) => ({
         marginLeft: theme.spacing(2),
         minWidth: '140px',
         whiteSpace: 'nowrap',
       })}
-      buttonType="primary"
-      onClick={() => history.push('/account/billing/edit')}
     >
       Update Tax ID
     </Button>
@@ -68,7 +74,6 @@ export const TaxCollectionBanner = () => {
     !isBannerDateWithinFiveWeeksPrior ? (
     <DismissibleBanner
       actionButton={actionButton}
-      important
       preferenceKey="tax-collection-banner"
       variant="warning"
     >

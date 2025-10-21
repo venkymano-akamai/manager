@@ -1,61 +1,48 @@
-import { Autocomplete, Box, Paper, Stack, Typography } from '@linode/ui';
+import { Box, Paper, Stack, Typography } from '@linode/ui';
+import { LinkButton } from '@linode/ui';
 import React, { useState } from 'react';
-import { useController, useFormContext } from 'react-hook-form';
+import { useController } from 'react-hook-form';
 
 import { AkamaiBanner } from 'src/components/AkamaiBanner/AkamaiBanner';
 import { GenerateFirewallDialog } from 'src/components/GenerateFirewallDialog/GenerateFirewallDialog';
 import { Link } from 'src/components/Link';
-import { LinkButton } from 'src/components/LinkButton';
 import { FIREWALL_GET_STARTED_LINK } from 'src/constants';
+import { FirewallSelect } from 'src/features/Firewalls/components/FirewallSelect';
 import { CreateFirewallDrawer } from 'src/features/Firewalls/FirewallLanding/CreateFirewallDrawer';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { useFlags } from 'src/hooks/useFlags';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
 import { useSecureVMNoticesEnabled } from 'src/hooks/useSecureVMNoticesEnabled';
-import { useAllFirewallsQuery } from 'src/queries/firewalls';
 import { sendLinodeCreateFormInputEvent } from 'src/utilities/analytics/formEventAnalytics';
 
-import { useLinodeCreateQueryParams } from './utilities';
+import { useGetLinodeCreateType } from './Tabs/utils/useGetLinodeCreateType';
 
-import type { LinodeCreateFormValues } from './utilities';
 import type { CreateLinodeRequest } from '@linode/api-v4';
 import type { LinodeCreateFormEventOptions } from 'src/utilities/analytics/types';
 
 export const Firewall = () => {
-  const { clearErrors } = useFormContext<LinodeCreateFormValues>();
   const { field, fieldState } = useController<
     CreateLinodeRequest,
     'firewall_id'
   >({ name: 'firewall_id' });
-
-  const { data: firewalls, error, isLoading } = useAllFirewallsQuery();
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = React.useState(false);
 
   const flags = useFlags();
 
-  const { params } = useLinodeCreateQueryParams();
+  const createType = useGetLinodeCreateType();
 
   const { secureVMNoticesEnabled } = useSecureVMNoticesEnabled();
   const secureVMFirewallBanner =
     (secureVMNoticesEnabled && flags.secureVmCopy) ?? false;
 
-  const isLinodeCreateRestricted = useRestrictedGlobalGrantCheck({
-    globalGrantType: 'add_linodes',
-  });
-
-  const selectedFirewall =
-    firewalls?.find((firewall) => firewall.id === field.value) ?? null;
-
-  const onChange = (firewallId: number | undefined) => {
-    if (firewallId !== undefined) {
-      clearErrors('firewallOverride');
-    }
-    field.onChange(firewallId);
-  };
+  const { data: permissions } = usePermissions('account', [
+    'create_linode',
+    'create_firewall',
+  ]);
 
   const firewallFormEventOptions: LinodeCreateFormEventOptions = {
-    createType: params.type ?? 'OS',
+    createType: createType ?? 'OS',
     headerName: 'Firewall',
     interaction: 'click',
     label: 'Firewall',
@@ -71,7 +58,7 @@ export const Firewall = () => {
           <Link
             onClick={() =>
               sendLinodeCreateFormInputEvent({
-                createType: params.type ?? 'OS',
+                createType: createType ?? 'OS',
                 headerName: 'Firewall',
                 interaction: 'click',
                 label: 'Learn more',
@@ -98,9 +85,13 @@ export const Firewall = () => {
             />
           )}
         <Stack spacing={1.5}>
-          <Autocomplete
+          <FirewallSelect
+            disabled={!permissions.create_linode}
+            errorText={fieldState.error?.message}
+            label="Assign Firewall"
+            onBlur={field.onBlur}
             onChange={(e, firewall) => {
-              onChange(firewall?.id);
+              field.onChange(firewall?.id);
               if (!firewall?.id) {
                 sendLinodeCreateFormInputEvent({
                   ...firewallFormEventOptions,
@@ -117,18 +108,12 @@ export const Firewall = () => {
                 });
               }
             }}
-            disabled={isLinodeCreateRestricted}
-            errorText={fieldState.error?.message ?? error?.[0].reason}
-            label="Assign Firewall"
-            loading={isLoading}
-            noMarginTop
-            onBlur={field.onBlur}
-            options={firewalls ?? []}
             placeholder="None"
-            value={selectedFirewall}
+            value={field.value}
           />
           <Box>
             <LinkButton
+              disabled={!permissions.create_firewall}
               onClick={() => {
                 setIsDrawerOpen(true);
                 sendLinodeCreateFormInputEvent({
@@ -136,7 +121,6 @@ export const Firewall = () => {
                   label: 'Create Firewall',
                 });
               }}
-              isDisabled={isLinodeCreateRestricted}
             >
               Create Firewall
             </LinkButton>
@@ -149,11 +133,13 @@ export const Firewall = () => {
         onFirewallCreated={(firewall) => field.onChange(firewall.id)}
         open={isDrawerOpen}
       />
-      <GenerateFirewallDialog
-        onClose={() => setIsGenerateDialogOpen(false)}
-        onFirewallGenerated={(firewall) => onChange(firewall.id)}
-        open={isGenerateDialogOpen}
-      />
+      {secureVMNoticesEnabled && (
+        <GenerateFirewallDialog
+          onClose={() => setIsGenerateDialogOpen(false)}
+          onFirewallGenerated={(firewall) => field.onChange(firewall.id)}
+          open={isGenerateDialogOpen}
+        />
+      )}
     </Paper>
   );
 };

@@ -1,8 +1,7 @@
+import { regionFactory } from '@linode/utilities';
 import React from 'react';
 
-import { regionFactory } from 'src/factories';
-import { makeResourcePage } from 'src/mocks/serverHandlers';
-import { HttpResponse, http, server } from 'src/mocks/testServer';
+import { http, HttpResponse, server } from 'src/mocks/testServer';
 import { renderWithThemeAndHookFormContext } from 'src/utilities/testHelpers';
 
 import { VPC } from './VPC';
@@ -36,106 +35,94 @@ describe('VPC', () => {
     const region = regionFactory.build({ capabilities: [] });
 
     server.use(
-      http.get('*/v4/regions', () => {
-        return HttpResponse.json(makeResourcePage([region]));
+      http.get(`*/v4*/regions/${region.id}`, () => {
+        return HttpResponse.json(region);
       })
     );
 
-    const {
-      findByText,
-    } = renderWithThemeAndHookFormContext<CreateLinodeRequest>({
-      component: <VPC />,
-      useFormOptions: { defaultValues: { region: region.id } },
-    });
+    const { findByText } =
+      renderWithThemeAndHookFormContext<CreateLinodeRequest>({
+        component: <VPC />,
+        useFormOptions: { defaultValues: { region: region.id } },
+      });
 
-    await findByText('VPC is not available in the selected region.');
+    await findByText('VPC is not available in the selected region.', {
+      exact: false,
+    });
   });
 
   it('renders a subnet select if a VPC is selected', async () => {
-    const {
-      getByLabelText,
-    } = renderWithThemeAndHookFormContext<CreateLinodeRequest>({
-      component: <VPC />,
-      useFormOptions: {
-        defaultValues: {
-          interfaces: [{ vpc_id: 4 }, {}, {}],
-          region: 'fake-region',
+    const { getByLabelText } =
+      renderWithThemeAndHookFormContext<CreateLinodeRequest>({
+        component: <VPC />,
+        useFormOptions: {
+          defaultValues: {
+            interfaces: [{ vpc_id: 4 }, {}, {}],
+            region: 'fake-region',
+          },
         },
-      },
-    });
+      });
 
     expect(getByLabelText('Subnet')).toBeVisible();
   });
 
   it('renders VPC IPv4, NAT checkboxes, and IP Ranges inputs when a subnet is selected', async () => {
-    const {
-      getByLabelText,
-      getByText,
-    } = renderWithThemeAndHookFormContext<CreateLinodeRequest>({
-      component: <VPC />,
-      useFormOptions: {
-        defaultValues: {
-          interfaces: [{ subnet_id: 5, vpc_id: 4 }, {}, {}],
-          region: 'fake-region',
+    const { getByLabelText, getByText } =
+      renderWithThemeAndHookFormContext<CreateLinodeRequest>({
+        component: <VPC />,
+        useFormOptions: {
+          defaultValues: {
+            interfaces: [{ subnet_id: 5, vpc_id: 4 }, {}, {}],
+            region: 'fake-region',
+          },
         },
-      },
-    });
+      });
+
+    expect(getByLabelText('Auto-assign VPC IPv4')).toBeInTheDocument();
 
     expect(
-      getByLabelText(
-        'Auto-assign a VPC IPv4 address for this Linode in the VPC'
-      )
-    ).toBeInTheDocument();
-
-    expect(
-      getByLabelText('Assign a public IPv4 address for this Linode')
+      getByLabelText('Allow public IPv4 access (1:1 NAT)')
     ).toBeInTheDocument();
 
     expect(getByText('Assign additional IPv4 ranges')).toBeInTheDocument();
   });
 
   it('should check the VPC IPv4 if a "ipv4.vpc" is null/undefined', async () => {
-    const {
-      getByLabelText,
-    } = renderWithThemeAndHookFormContext<CreateLinodeRequest>({
-      component: <VPC />,
-      useFormOptions: {
-        defaultValues: {
-          interfaces: [
-            { ipv4: { vpc: undefined }, subnet_id: 5, vpc_id: 4 },
-            {},
-            {},
-          ],
-          region: 'fake-region',
+    const { getByLabelText } =
+      renderWithThemeAndHookFormContext<CreateLinodeRequest>({
+        component: <VPC />,
+        useFormOptions: {
+          defaultValues: {
+            interfaces: [
+              { ipv4: { vpc: undefined }, subnet_id: 5, vpc_id: 4 },
+              {},
+              {},
+            ],
+            region: 'fake-region',
+          },
         },
-      },
-    });
+      });
 
-    expect(
-      getByLabelText(
-        'Auto-assign a VPC IPv4 address for this Linode in the VPC'
-      )
-    ).toBeChecked();
+    expect(getByLabelText('Auto-assign VPC IPv4')).toBeChecked();
   });
 
   it('should uncheck the VPC IPv4 if a "ipv4.vpc" is a string value and show the VPC IP TextField', async () => {
-    const {
-      getByLabelText,
-    } = renderWithThemeAndHookFormContext<CreateLinodeRequest>({
-      component: <VPC />,
-      useFormOptions: {
-        defaultValues: {
-          interfaces: [{ ipv4: { vpc: '' }, subnet_id: 5, vpc_id: 4 }, {}, {}],
-          region: 'fake-region',
+    const { getByLabelText } =
+      renderWithThemeAndHookFormContext<CreateLinodeRequest>({
+        component: <VPC />,
+        useFormOptions: {
+          defaultValues: {
+            interfaces: [
+              { ipv4: { vpc: '' }, subnet_id: 5, vpc_id: 4 },
+              {},
+              {},
+            ],
+            region: 'fake-region',
+          },
         },
-      },
-    });
+      });
 
-    expect(
-      getByLabelText(
-        'Auto-assign a VPC IPv4 address for this Linode in the VPC'
-      )
-    ).not.toBeChecked();
+    expect(getByLabelText('Auto-assign VPC IPv4')).not.toBeChecked();
 
     expect(getByLabelText('VPC IPv4 (required)')).toBeVisible();
   });

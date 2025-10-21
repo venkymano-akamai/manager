@@ -10,7 +10,7 @@ describe('Notice Component', () => {
     const { container } = renderWithTheme(<Notice />);
     const notice = container.firstChild;
 
-    expect(notice).toHaveStyle('margin-bottom: 24px');
+    expect(notice).toHaveStyle('margin-bottom: 1rem');
     expect(notice).toHaveStyle('margin-left: 0');
     expect(notice).toHaveStyle('margin-top: 0');
   });
@@ -32,7 +32,7 @@ describe('Notice Component', () => {
   it('handles click events', () => {
     const handleClick = vi.fn();
     const { getByText } = renderWithTheme(
-      <Notice onClick={handleClick} text="Click me" />
+      <Notice onClick={handleClick} text="Click me" />,
     );
     const noticeText = getByText('Click me');
     fireEvent.click(noticeText);
@@ -46,26 +46,25 @@ describe('Notice Component', () => {
     expect(container.firstChild).toHaveClass('custom-class');
   });
 
-  it('applies dataTestId props', () => {
-    const { getByTestId } = renderWithTheme(
-      <Notice dataTestId="test-id" variant="success" />
-    );
+  it('applies a default test-id based on the variant', () => {
+    const { getByTestId } = renderWithTheme(<Notice variant="success" />);
 
     expect(getByTestId('notice-success')).toBeInTheDocument();
-    expect(getByTestId('test-id')).toBeInTheDocument();
+  });
+
+  it('applies the dataTestId prop', () => {
+    const { getByTestId } = renderWithTheme(
+      <Notice dataTestId="my-custom-test-id" variant="success" />,
+    );
+
+    expect(getByTestId('my-custom-test-id')).toBeInTheDocument();
   });
 
   it('applies variant prop', () => {
     const { container } = renderWithTheme(<Notice variant="error" />);
 
-    expect(container.firstChild).toHaveStyle('border-left: 5px solid #d63c42;');
-  });
-
-  it('displays icon for important notices', () => {
-    const { getByTestId } = renderWithTheme(<Notice important />);
-    const icon = getByTestId('notice-important');
-
-    expect(icon).toBeInTheDocument();
+    expect(container.firstChild).toHaveStyle('border: 1px solid #d63c42;');
+    expect(container.firstChild).toHaveStyle('background: #ffe5e5;');
   });
 
   it('handles bypassValidation prop', () => {
@@ -76,7 +75,7 @@ describe('Notice Component', () => {
 
   it('applies spacing props', () => {
     const { container } = renderWithTheme(
-      <Notice spacingBottom={8} spacingLeft={4} spacingTop={4} />
+      <Notice spacingBottom={8} spacingLeft={4} spacingTop={4} />,
     );
     const notice = container.firstChild;
 
@@ -86,13 +85,13 @@ describe('Notice Component', () => {
   });
 
   it('applies typeProps to Typography component', () => {
-    const { container } = renderWithTheme(
+    const { getByText } = renderWithTheme(
       <Notice
         text="Styled Text"
         typeProps={{ style: { fontFamily: 'monospace' } }}
-      />
+      />,
     );
-    const typography = container.querySelector('.noticeText');
+    const typography = getByText('Styled Text');
 
     expect(typography).toHaveStyle('font-family: monospace');
   });

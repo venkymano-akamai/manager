@@ -1,4 +1,4 @@
-import { Checkbox, Typography } from '@linode/ui';
+import { Typography } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 
 import { DebouncedSearchTextField } from 'src/components/DebouncedSearchTextField';
@@ -6,26 +6,17 @@ import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFoot
 import { Table } from 'src/components/Table';
 import { TableCell } from 'src/components/TableCell';
 
-export const StyledCheckbox = styled(Checkbox, {
-  label: 'StyledCheckbox',
-})({
-  '& svg': {
-    height: 20,
-    width: 20,
-  },
-});
-
-export const StyledEmptyCheckbox = styled(Checkbox, {
-  label: 'StyledEmptyCheckbox',
-})({
-  '& svg': { height: 20, width: 20 },
-});
-
 export const StyledPaginationFooter = styled(PaginationFooter, {
   label: 'StyledPaginationFooter',
-})(({ theme }) => ({
+  shouldForwardProp: (prop) => prop !== 'disabled',
+})<{ disabled?: boolean }>(({ theme, disabled }) => ({
   marginBottom: theme.spacing(),
   padding: theme.spacing(),
+  ...(disabled && {
+    '&.MuiButtonBase-root': {
+      cursor: 'not-allowed',
+    },
+  }),
 }));
 
 export const StyledTypography = styled(Typography, {

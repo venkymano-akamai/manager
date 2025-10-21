@@ -1,16 +1,14 @@
+import { useImageQuery, useRegionsQuery, useTypeQuery } from '@linode/queries';
 import { FormControlLabel, Radio } from '@linode/ui';
+import { formatStorageUnits, getFormattedStatus } from '@linode/utilities';
 import React from 'react';
 
 import { InlineMenuAction } from 'src/components/InlineMenuAction/InlineMenuAction';
 import { StatusIcon } from 'src/components/StatusIcon/StatusIcon';
 import { TableCell } from 'src/components/TableCell';
 import { TableRow } from 'src/components/TableRow';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { getLinodeIconStatus } from 'src/features/Linodes/LinodesLanding/utils';
-import { useImageQuery } from 'src/queries/images';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useTypeQuery } from 'src/queries/types';
-import { capitalize } from 'src/utilities/capitalize';
-import { formatStorageUnits } from 'src/utilities/formatStorageUnits';
 
 import type { Linode } from '@linode/api-v4';
 
@@ -35,12 +33,19 @@ export const LinodeSelectTableRow = (props: Props) => {
 
   const region = regions?.find((r) => r.id === linode.region);
 
+  const { data: permissions } = usePermissions(
+    'linode',
+    ['shutdown_linode', 'clone_linode'],
+    linode.id
+  );
+
   return (
-    <TableRow key={linode.label}>
+    <TableRow disabled={!permissions.clone_linode} key={linode.label}>
       <TableCell>
         <FormControlLabel
           checked={selected}
           control={<Radio />}
+          disabled={!permissions.clone_linode}
           label={linode.label}
           onChange={onSelect}
           sx={{ gap: 2 }}
@@ -48,7 +53,7 @@ export const LinodeSelectTableRow = (props: Props) => {
       </TableCell>
       <TableCell statusCell>
         <StatusIcon status={getLinodeIconStatus(linode.status)} />
-        {capitalize(linode.status.replace('_', ' '))}
+        {getFormattedStatus(linode.status)}
       </TableCell>
       <TableCell>{image?.label ?? linode.image}</TableCell>
       <TableCell>
@@ -61,6 +66,7 @@ export const LinodeSelectTableRow = (props: Props) => {
             <InlineMenuAction
               actionText="Power Off"
               buttonHeight={43}
+              disabled={!permissions.shutdown_linode}
               onClick={onPowerOff}
             />
           )}

@@ -1,10 +1,17 @@
-import { Box, IconButton, Stack, Tooltip, Typography } from '@linode/ui';
-import Close from '@mui/icons-material/Close';
+import { useRegionsQuery } from '@linode/queries';
+import {
+  Box,
+  CloseIcon,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@linode/ui';
 import React from 'react';
 
 import { Flag } from 'src/components/Flag';
 import { StatusIcon } from 'src/components/StatusIcon/StatusIcon';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+import { getRestrictedResourceText } from 'src/features/Account/utils';
 
 import type { ImageRegionStatus, ImageStatus } from '@linode/api-v4';
 import type { Status } from 'src/components/StatusIcon/StatusIcon';
@@ -12,6 +19,7 @@ import type { Status } from 'src/components/StatusIcon/StatusIcon';
 type ExtendedImageRegionStatus = 'unsaved' | ImageRegionStatus;
 
 interface Props {
+  disabled?: boolean;
   disableRemoveButton?: boolean;
   onRemove: () => void;
   region: string;
@@ -19,11 +27,20 @@ interface Props {
 }
 
 export const ImageRegionRow = (props: Props) => {
-  const { disableRemoveButton, onRemove, region, status } = props;
+  const { disableRemoveButton, onRemove, region, status, disabled } = props;
 
   const { data: regions } = useRegionsQuery();
 
   const actualRegion = regions?.find((r) => r.id === region);
+
+  const tooltipTextPerPermission = getRestrictedResourceText({
+    action: 'edit',
+    isSingular: true,
+    resourceType: 'Images',
+  });
+
+  const tooltipTextPerRegion =
+    'You cannot remove this region because at least one available region must be present.';
 
   return (
     <Box alignItems="center" display="flex" justifyContent="space-between">
@@ -36,19 +53,21 @@ export const ImageRegionRow = (props: Props) => {
         <StatusIcon status={imageStatusIconMap[status]} />
         <Tooltip
           title={
-            disableRemoveButton
-              ? 'You cannot remove this region because at least one available region must be present.'
-              : ''
+            disabled
+              ? tooltipTextPerPermission
+              : disableRemoveButton
+                ? tooltipTextPerRegion
+                : undefined
           }
         >
           <span>
             <IconButton
               aria-label={`Remove ${region}`}
-              disabled={disableRemoveButton}
+              disabled={disabled || disableRemoveButton}
               onClick={onRemove}
-              sx={{ p: 0.5 }}
+              sx={{ p: 0.75 }}
             >
-              <Close />
+              <CloseIcon />
             </IconButton>
           </span>
         </Tooltip>

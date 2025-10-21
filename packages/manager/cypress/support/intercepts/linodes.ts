@@ -13,8 +13,12 @@ import type {
   Firewall,
   Kernel,
   Linode,
+  LinodeInterface,
+  LinodeInterfaces,
   LinodeIPsResponse,
   LinodeType,
+  Stats,
+  UpgradeInterfaceData,
   Volume,
 } from '@linode/api-v4';
 
@@ -99,6 +103,25 @@ export const interceptGetLinode = (
 };
 
 /**
+ * Intercepts GET request to get a Linode and mocks response
+ *
+ * @param linodeId - ID of Linode to fetch.
+ * @param linode - linode to return
+ *
+ * @returns Cypress chainable.
+ */
+export const mockGetLinode = (
+  linodeId: number,
+  linode: Linode
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`linode/instances/${linodeId}`),
+    makeResponse(linode)
+  );
+};
+
+/**
  * Intercepts GET request to get all Linodes.
  *
  * @returns Cypress chainable.
@@ -117,7 +140,7 @@ export const interceptGetLinodes = (): Cypress.Chainable<null> => {
 export const mockGetLinodes = (linodes: Linode[]): Cypress.Chainable<null> => {
   return cy.intercept(
     'GET',
-    apiMatcher('linode/instances/*'),
+    apiMatcher('linode/instances*'),
     paginateResponse(linodes)
   );
 };
@@ -186,6 +209,25 @@ export const interceptRebuildLinode = (
   return cy.intercept(
     'POST',
     apiMatcher(`linode/instances/${linodeId}/rebuild`)
+  );
+};
+
+/**
+ * Intercepts POST request to rebuild a Linode and mocks the response.
+ *
+ * @param linodeId - ID of Linode for intercepted request.
+ * @param linode - Linode for the mocked response
+ *
+ * @returns Cypress chainable.
+ */
+export const mockRebuildLinode = (
+  linodeId: number,
+  linode: Linode
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher(`linode/instances/${linodeId}/rebuild`),
+    makeResponse(linode)
   );
 };
 
@@ -418,6 +460,24 @@ export const interceptCloneLinode = (
 };
 
 /**
+ * Intercepts POST request to clone a Linode and mock responses.
+ *
+ * @param linodeId - ID of Linode being cloned.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockCloneLinode = (
+  linodeId: number,
+  linode: Linode
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher(`linode/instances/${linodeId}/clone`),
+    makeResponse(linode)
+  );
+};
+
+/**
  * Intercepts POST request to enable backups for a Linode.
  *
  * @param linodeId - ID of Linode for which to enable backups.
@@ -602,5 +662,214 @@ export const interceptCancelLinodeBackups = (
   return cy.intercept(
     'POST',
     apiMatcher(`linode/instances/${linodeId}/backups/cancel`)
+  );
+};
+
+/**
+ * Mocks GET request to get a Linode's Interfaces.
+ *
+ * @param linodeId - ID of Linode to get interfaces associated with it
+ * @param interfaces - the mocked Linode interfaces
+ *
+ * @returns Cypress Chainable.
+ */
+export const mockGetLinodeInterfaces = (
+  linodeId: number,
+  interfaces: LinodeInterfaces
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`linode/instances/${linodeId}/interfaces`),
+    interfaces
+  );
+};
+
+/**
+ * Mocks GET request to get a single Linode Interface.
+ *
+ * @param linodeId - ID of Linode to get interface associated with it
+ * @param interfaceId - ID of interface to get
+ * @param interfaces - the mocked Linode interface
+ *
+ * @returns Cypress Chainable.
+ */
+export const mockGetLinodeInterface = (
+  linodeId: number,
+  interfaceId: number,
+  linodeInterface: LinodeInterface
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`linode/instances/${linodeId}/interfaces/${interfaceId}`),
+    linodeInterface
+  );
+};
+
+/**
+ * Intercepts POST request to create a Linode Interface.
+ *
+ * @param linodeId - the Linodes ID to add the interface to.
+ * @param linodeInterface - a mock linode interface object.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockCreateLinodeInterface = (
+  linodeId: number,
+  linodeInterface: LinodeInterface
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher(`linode/instances/${linodeId}/interfaces`),
+    makeResponse(linodeInterface)
+  );
+};
+
+/**
+ * Intercepts POST request to create a Linode Interface and mocks an error response.
+ *
+ * @param errorMessage - Error message to be included in the mocked HTTP response.
+ * @param statusCode - HTTP status code for mocked error response. Default is `400`.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockCreateLinodeInterfaceError = (
+  linodeId: number,
+  errorMessage: string,
+  statusCode: number = 400
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher(`linode/instances/${linodeId}/interfaces`),
+    makeErrorResponse(errorMessage, statusCode)
+  );
+};
+
+/**
+ * Intercepts POST request to create a Linode Interface.
+ *
+ * @param linodeId - the Linodes ID to add the interface to.
+ * @param linodeInterface - a mock upgrade linode interface object.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockUpgradeNewLinodeInterface = (
+  linodeId: number,
+  linodeInterface: UpgradeInterfaceData
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher(`linode/instances/${linodeId}/upgrade-interfaces`),
+    makeResponse(linodeInterface)
+  );
+};
+
+/**
+ * Intercepts POST request to create a Linode Interface and mocks an error response.
+ *
+ * @param errorMessage - Error message to be included in the mocked HTTP response.
+ * @param statusCode - HTTP status code for mocked error response. Default is `400`.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockUpgradeNewLinodeInterfaceError = (
+  linodeId: number,
+  errorMessage: string,
+  statusCode: number = 400
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher(`linode/instances/${linodeId}/upgrade-interfaces`),
+    makeErrorResponse(errorMessage, statusCode)
+  );
+};
+
+/**
+ * Intercepts GET request to retrieve network stats for a linode
+ *
+ * @param linodeId - ID of Linode for intercepted request.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockGetLinodeStats = (
+  linodeId: number,
+  stats: Stats
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`linode/instances/${linodeId}/stats`),
+    makeResponse(stats)
+  );
+};
+
+/**
+ * Intercepts GET request to retrieve network stats for a Linode and mocks an error response.
+ *
+ * @param linodeId - ID of Linode for intercepted request.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockGetLinodeStatsError = (
+  linodeId: number,
+  errorMessage: string,
+  statusCode: number = 400
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`linode/instances/${linodeId}/stats`),
+    makeErrorResponse(errorMessage, statusCode)
+  );
+};
+
+/**
+ * Intercepts PUT request to edit details of a linode
+ *
+ * @param linodeId - ID of Linode for intercepted request.
+ *
+ * @returns Cypress chainable.
+ */
+export const interceptUpdateLinode = (
+  linodeId: number
+): Cypress.Chainable<null> => {
+  return cy.intercept('PUT', apiMatcher(`linode/instances/${linodeId}`));
+};
+
+/**
+ * Intercepts PUT request to edit details of a linode
+ *
+ * @param linodeId - ID of Linode for intercepted request.
+ * @param updatedLinode - a mock linode object
+ *
+ * @returns Cypress chainable.
+ */
+export const mockUpdateLinode = (
+  linodeId: number,
+  updatedLinode: Linode
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'PUT',
+    apiMatcher(`linode/instances/${linodeId}`),
+    updatedLinode
+  );
+};
+
+/**
+ * Intercepts PUT request to edit details of a linode and mocks an error response.
+ *
+ * @param linodeId - ID of Linode for intercepted request.
+ * @param updatedLinode - a mock linode object
+ * @param errorMessage - Error message to be included in the mocked HTTP response.
+ * @param statusCode - HTTP status code for mocked error response. Default is `400`.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockUpdateLinodeError = (
+  linodeId: number,
+  errorMessage: string,
+  statusCode: number = 400
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'PUT',
+    apiMatcher(`linode/instances/${linodeId}`),
+    makeErrorResponse(errorMessage, statusCode)
   );
 };

@@ -2,24 +2,27 @@ import {
   PLACEMENT_GROUP_POLICIES,
   PLACEMENT_GROUP_TYPES,
 } from '@linode/api-v4';
-import { CircleProgress, Divider, Notice, Stack, TextField } from '@linode/ui';
+import { useMutatePlacementGroup } from '@linode/queries';
+import {
+  ActionsPanel,
+  Divider,
+  Drawer,
+  NotFound,
+  Notice,
+  Stack,
+  TextField,
+} from '@linode/ui';
+import {
+  scrollErrorIntoView,
+  useFormValidateOnChange,
+} from '@linode/utilities';
 import { updatePlacementGroupSchema } from '@linode/validation';
 import { useFormik } from 'formik';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
-import { useParams } from 'react-router-dom';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
 import { DescriptionList } from 'src/components/DescriptionList/DescriptionList';
-import { Drawer } from 'src/components/Drawer';
-import { NotFound } from 'src/components/NotFound';
-import { useFormValidateOnChange } from 'src/hooks/useFormValidateOnChange';
-import {
-  useMutatePlacementGroup,
-  usePlacementGroupQuery,
-} from 'src/queries/placementGroups';
 import { getFormikErrorsFromAPIErrors } from 'src/utilities/formikErrorUtils';
-import { scrollErrorIntoView } from 'src/utilities/scrollErrorIntoView';
 
 import type { PlacementGroupsEditDrawerProps } from './types';
 import type { UpdatePlacementGroupPayload } from '@linode/api-v4';
@@ -30,36 +33,21 @@ export const PlacementGroupsEditDrawer = (
 ) => {
   const {
     disableEditButton,
+    isFetching,
     onClose,
     onPlacementGroupEdit,
     open,
     region,
-    selectedPlacementGroup: placementGroupFromProps,
+    selectedPlacementGroup: placementGroup,
+    selectedPlacementGroupError,
   } = props;
-  const { id } = useParams<{ id: string }>();
-  const {
-    data: placementGroupFromParam,
-    isFetching,
-    status,
-  } = usePlacementGroupQuery(
-    Number(id),
-    open && placementGroupFromProps === undefined
-  );
-
-  const placementGroup = React.useMemo(
-    () =>
-      open ? placementGroupFromProps ?? placementGroupFromParam : undefined,
-    [open, placementGroupFromProps, placementGroupFromParam]
-  );
 
   const { error, mutateAsync } = useMutatePlacementGroup(
     placementGroup?.id ?? -1
   );
   const { enqueueSnackbar } = useSnackbar();
-  const {
-    hasFormBeenSubmitted,
-    setHasFormBeenSubmitted,
-  } = useFormValidateOnChange();
+  const { hasFormBeenSubmitted, setHasFormBeenSubmitted } =
+    useFormValidateOnChange();
 
   const handleResetForm = () => {
     resetForm();
@@ -119,13 +107,15 @@ export const PlacementGroupsEditDrawer = (
 
   return (
     <Drawer
+      error={selectedPlacementGroupError}
+      isFetching={isFetching}
+      onClose={handleClose}
+      open={open}
       title={
         placementGroup
           ? `Edit Placement Group ${placementGroup.label}`
           : 'Edit Placement Group'
       }
-      onClose={handleClose}
-      open={open}
     >
       {generalError && <Notice text={generalError} variant="error" />}
       {placementGroup ? (
@@ -159,16 +149,22 @@ export const PlacementGroupsEditDrawer = (
           <form onSubmit={handleSubmit}>
             <Stack spacing={1}>
               <TextField
+                aria-label="Label for the Placement Group"
+                clearable
+                disabled={!placementGroup || disableEditButton || false}
+                errorText={errors.label}
                 inputProps={{
                   autoFocus: true,
                 }}
-                aria-label="Label for the Placement Group"
-                disabled={!placementGroup || disableEditButton || false}
-                errorText={errors.label}
                 label="Label"
                 name="label"
                 onBlur={handleBlur}
                 onChange={handleChange}
+                onClear={() => {
+                  handleChange({
+                    target: { name: 'label', value: '' },
+                  } as React.ChangeEvent<HTMLInputElement>);
+                }}
                 value={values.label}
               />
               <ActionsPanel
@@ -189,8 +185,6 @@ export const PlacementGroupsEditDrawer = (
             </Stack>
           </form>
         </>
-      ) : isFetching ? (
-        <CircleProgress />
       ) : status === 'error' ? (
         <NotFound />
       ) : null}

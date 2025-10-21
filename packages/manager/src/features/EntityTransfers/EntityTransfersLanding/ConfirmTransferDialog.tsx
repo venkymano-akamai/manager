@@ -1,23 +1,21 @@
-import { acceptEntityTransfer } from '@linode/api-v4/lib/entity-transfers';
-import { Checkbox, CircleProgress, Notice } from '@linode/ui';
+import { acceptServiceTransfer } from '@linode/api-v4';
+import {
+  entityTransfersQueryKey,
+  TRANSFER_FILTERS,
+  useProfile,
+  useTransferQuery,
+} from '@linode/queries';
+import { Checkbox, CircleProgress, ErrorState, Notice } from '@linode/ui';
+import { capitalize, pluralize } from '@linode/utilities';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
-import {
-  TRANSFER_FILTERS,
-  queryKey,
-  useTransferQuery,
-} from 'src/queries/entityTransfers';
-import { useProfile } from 'src/queries/profile/profile';
 import { sendEntityTransferReceiveEvent } from 'src/utilities/analytics/customEventAnalytics';
-import { capitalize } from 'src/utilities/capitalize';
 import { parseAPIDate } from 'src/utilities/date';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 import { formatDate } from 'src/utilities/formatDate';
-import { pluralize } from 'src/utilities/pluralize';
 
 import { countByEntity } from '../utilities';
 import {
@@ -29,8 +27,7 @@ import {
   StyledUl,
 } from './ConfirmTransferDialog.styles';
 
-import type { TransferEntities } from '@linode/api-v4/lib/entity-transfers';
-import type { APIError } from '@linode/api-v4/lib/types';
+import type { APIError, TransferEntities } from '@linode/api-v4/lib/types';
 
 export interface ConfirmTransferDialogProps {
   onClose: () => void;
@@ -82,7 +79,7 @@ export const ConfirmTransferDialog = React.memo(
       }
       setSubmissionErrors(null);
       setSubmitting(true);
-      acceptEntityTransfer(token)
+      acceptServiceTransfer(token)
         .then(() => {
           // @analytics
           if (data?.entities) {
@@ -92,7 +89,7 @@ export const ConfirmTransferDialog = React.memo(
           // Update the received transfer table since we're already on the landing page
           queryClient.invalidateQueries({
             predicate: (query) =>
-              query.queryKey[0] === queryKey &&
+              query.queryKey[0] === entityTransfersQueryKey &&
               query.queryKey[2] === TRANSFER_FILTERS.received,
           });
           onClose();

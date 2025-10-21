@@ -1,11 +1,10 @@
-import { Button, CircleProgress } from '@linode/ui';
-import { createLazyRoute } from '@tanstack/react-router';
+import { useFirewallsQuery } from '@linode/queries';
+import { Button, CircleProgress, ErrorState, Hidden } from '@linode/ui';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import * as React from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
 
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
+import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { GenerateFirewallDialog } from 'src/components/GenerateFirewallDialog/GenerateFirewallDialog';
-import { Hidden } from 'src/components/Hidden';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFooter';
 import { Table } from 'src/components/Table';
@@ -15,12 +14,11 @@ import { TableHead } from 'src/components/TableHead';
 import { TableRow } from 'src/components/TableRow';
 import { TableSortCell } from 'src/components/TableSortCell/TableSortCell';
 import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { useFlags } from 'src/hooks/useFlags';
-import { useOrder } from 'src/hooks/useOrder';
-import { usePagination } from 'src/hooks/usePagination';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
+import { useOrderV2 } from 'src/hooks/useOrderV2';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 import { useSecureVMNoticesEnabled } from 'src/hooks/useSecureVMNoticesEnabled';
-import { useFirewallsQuery } from 'src/queries/firewalls';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import { CreateFirewallDrawer } from './CreateFirewallDrawer';
@@ -34,16 +32,22 @@ import type { Mode } from './FirewallDialog';
 const preferenceKey = 'firewalls';
 
 const FirewallLanding = () => {
+  const navigate = useNavigate();
   const location = useLocation();
-  const history = useHistory();
-  const pagination = usePagination(1, preferenceKey);
-  const { handleOrderChange, order, orderBy } = useOrder(
-    {
-      order: 'asc',
-      orderBy: 'label',
+  const pagination = usePaginationV2({
+    currentRoute: '/firewalls',
+    preferenceKey,
+  });
+  const { handleOrderChange, order, orderBy } = useOrderV2({
+    initialRoute: {
+      defaultOrder: {
+        order: 'asc',
+        orderBy: 'label',
+      },
+      from: '/firewalls',
     },
-    `${preferenceKey}-order`
-  );
+    preferenceKey,
+  });
 
   const filter = {
     ['+order']: order,
@@ -74,9 +78,7 @@ const FirewallLanding = () => {
     (firewall) => firewall.id === selectedFirewallId
   );
 
-  const isFirewallsCreationRestricted = useRestrictedGlobalGrantCheck({
-    globalGrantType: 'add_firewalls',
-  });
+  const { data: permissions } = usePermissions('account', ['create_firewall']);
 
   const openModal = (mode: Mode, id: number) => {
     setSelectedFirewallId(id);
@@ -97,11 +99,11 @@ const FirewallLanding = () => {
   };
 
   const onOpenCreateDrawer = () => {
-    history.replace('/firewalls/create');
+    navigate({ to: '/firewalls/create' });
   };
 
   const onCloseCreateDrawer = () => {
-    history.replace('/firewalls');
+    navigate({ to: '/firewalls' });
   };
 
   const handlers: FirewallHandlers = {
@@ -139,7 +141,13 @@ const FirewallLanding = () => {
 
   return (
     <React.Fragment>
+      <DocumentTitleSegment
+        segment={`${
+          isCreateFirewallDrawerOpen ? 'Create a Firewall' : 'Firewall'
+        }`}
+      />
       <LandingHeader
+        breadcrumbProps={{ pathname: '/firewalls' }}
         buttonDataAttrs={{
           tooltipText: getRestrictedResourceText({
             action: 'create',
@@ -147,6 +155,9 @@ const FirewallLanding = () => {
             resourceType: 'Firewalls',
           }),
         }}
+        disabledCreateButton={!permissions.create_firewall}
+        docsLink="https://techdocs.akamai.com/cloud-computing/docs/getting-started-with-cloud-firewalls"
+        entity="Firewall"
         extraActions={
           secureVMNoticesEnabled && flags.secureVmCopy?.generateActionText ? (
             <Button
@@ -157,10 +168,6 @@ const FirewallLanding = () => {
             </Button>
           ) : undefined
         }
-        breadcrumbProps={{ pathname: '/firewalls' }}
-        disabledCreateButton={isFirewallsCreationRestricted}
-        docsLink="https://techdocs.akamai.com/cloud-computing/docs/getting-started-with-cloud-firewalls"
-        entity="Firewall"
         onButtonClick={onOpenCreateDrawer}
         title="Firewalls"
       />
@@ -172,6 +179,7 @@ const FirewallLanding = () => {
               direction={order}
               handleClick={handleOrderChange}
               label="label"
+              sx={{ width: '20%' }}
             >
               Label
             </TableSortCell>
@@ -180,14 +188,15 @@ const FirewallLanding = () => {
               direction={order}
               handleClick={handleOrderChange}
               label="status"
+              sx={{ width: '10%' }}
             >
               Status
             </TableSortCell>
             <Hidden smDown>
-              <TableCell>Rules</TableCell>
-              <TableCell>Services</TableCell>
+              <TableCell sx={{ width: '15%' }}>Rules</TableCell>
+              <TableCell sx={{ width: '45%' }}>Services</TableCell>
             </Hidden>
-            <TableCell></TableCell>
+            <TableCell sx={{ width: '10%' }} />
           </TableRow>
         </TableHead>
         <TableBody>
@@ -224,9 +233,5 @@ const FirewallLanding = () => {
     </React.Fragment>
   );
 };
-
-export const firewallLandingLazyRoute = createLazyRoute('/firewalls')({
-  component: FirewallLanding,
-});
 
 export default React.memo(FirewallLanding);

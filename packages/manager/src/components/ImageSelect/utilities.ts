@@ -4,7 +4,7 @@ import { MAX_MONTHS_EOL_FILTER } from 'src/constants';
 
 import type { ImageSelectVariant } from './ImageSelect';
 import type { Image, RegionSite } from '@linode/api-v4';
-import type { DisableItemOption } from 'src/components/ListItemOption';
+import type { DisableItemOption } from '@linode/ui';
 
 /**
  * Given a Image Select "variant", this PR returns an
@@ -109,8 +109,7 @@ export const getDisabledImages = (options: DisabledImageOptions) => {
     for (const image of images) {
       if (!image.capabilities.includes('distributed-sites')) {
         disabledImages[image.id] = {
-          reason:
-            'The selected image cannot be deployed to a distributed region.',
+          reason: 'This image cannot be deployed to a distributed region.',
         };
       }
     }

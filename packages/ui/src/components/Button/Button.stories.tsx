@@ -1,10 +1,9 @@
-import { action } from '@storybook/addon-actions';
 import React from 'react';
+import { action } from 'storybook/actions';
 
 import { Button } from './Button';
-import { StyledLinkButton } from './StyledLinkButton';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 /**
  * Buttons allow users to take actions, and make choices, with a single tap.
@@ -60,6 +59,14 @@ export const Secondary: Story = {
   render: (args) => <Button {...args} />,
 };
 
+export const SecondaryWarning: Story = {
+  args: {
+    buttonType: 'secondary',
+    color: 'error',
+  },
+  render: (args) => <Button {...args} />,
+};
+
 /** Outlined Button
  * This hybrid button style should be used with discretion. It is used when:
  * - A primary button is appropriate but is distracting or misleading. One example is a Delete button on an entity and we do not want to suggest deleting is the preferred action.
@@ -75,21 +82,6 @@ export const Outlined: Story = {
     },
   },
   render: (args) => <Button {...args} />,
-};
-
-/**
- * This is a styled component `<StyledLinkButton />` which is a button that looks like a link. Eventually this treatment will go away,
- * but the sake of the MUI migration we need to keep it around for now, and as a styled component in order to get rid of
- * spreading theme.applyLinkStyles.
- */
-export const LinkButton: Story = {
-  parameters: {
-    controls: {
-      exclude: /.*/,
-    },
-  },
-  // _args must be present in order to disable controls
-  render: (_args) => <StyledLinkButton>Button</StyledLinkButton>,
 };
 
 /**

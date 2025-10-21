@@ -1,9 +1,9 @@
-import { createTestLinode } from 'support/util/linodes';
+import { authenticate } from 'support/api/authentication';
+import { LINODE_CREATE_TIMEOUT } from 'support/constants/linodes';
+import { interceptLinodeResize } from 'support/intercepts/linodes';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
-import { authenticate } from 'support/api/authentication';
-import { interceptLinodeResize } from 'support/intercepts/linodes';
-import { LINODE_CREATE_TIMEOUT } from 'support/constants/linodes';
+import { createTestLinode } from 'support/util/linodes';
 
 authenticate();
 describe('resize linode', () => {
@@ -21,7 +21,7 @@ describe('resize linode', () => {
       createTestLinode({ booted: true }, { securityMethod: 'vlan_no_internet' })
     ).then((linode) => {
       interceptLinodeResize(linode.id).as('linodeResize');
-      cy.visitWithLogin(`/linodes/${linode.id}?resize=true`);
+      cy.visitWithLogin(`/linodes/${linode.id}/metrics?resize=true`);
 
       ui.dialog
         .findByTitle(`Resize Linode ${linode.label}`)
@@ -33,25 +33,24 @@ describe('resize linode', () => {
           cy.contains('Linode 8 GB').should('be.visible').click();
 
           // Select warm resize option, and enter Linode label in type-to-confirm field.
-          cy.findByText('Warm resize')
-            .scrollIntoView()
-            .should('be.visible')
-            .click();
+          cy.findByText('Warm resize').as('qaWarmResize').scrollIntoView();
+          cy.get('@qaWarmResize').should('be.visible').click();
 
           cy.findByLabelText('Linode Label').type(linode.label);
 
           // Click "Resize Linode".
           // The Resize Linode button remains disabled while the Linode is provisioning,
           // so we have to wait for that to complete before the button becomes enabled.
+          // Waiting longer (7.5 mins) for Linode to boot
           ui.button
             .findByTitle('Resize Linode')
-            .should('be.enabled', { timeout: LINODE_CREATE_TIMEOUT })
+            .should('be.enabled', { timeout: 1.5 * LINODE_CREATE_TIMEOUT })
             .click();
         });
 
       cy.wait('@linodeResize');
       cy.contains(
-        "Your linode will be warm resized and will automatically attempt to power off and restore to it's previous state."
+        'Your linode will be warm resized and will automatically attempt to power off and restore to its previous state.'
       ).should('be.visible');
     });
   });
@@ -65,7 +64,7 @@ describe('resize linode', () => {
       createTestLinode({ booted: true }, { securityMethod: 'vlan_no_internet' })
     ).then((linode) => {
       interceptLinodeResize(linode.id).as('linodeResize');
-      cy.visitWithLogin(`/linodes/${linode.id}?resize=true`);
+      cy.visitWithLogin(`/linodes/${linode.id}/metrics?resize=true`);
 
       ui.dialog
         .findByTitle(`Resize Linode ${linode.label}`)
@@ -75,19 +74,18 @@ describe('resize linode', () => {
 
           cy.contains('Linode 8 GB').should('be.visible').click();
 
-          cy.findByText('Cold resize')
-            .scrollIntoView()
-            .should('be.visible')
-            .click();
+          cy.findByText('Cold resize').as('qaColdResize').scrollIntoView();
+          cy.get('@qaColdResize').should('be.visible').click();
 
           cy.findByLabelText('Linode Label').type(linode.label);
 
           // Click "Resize Linode".
           // The Resize Linode button remains disabled while the Linode is provisioning,
           // so we have to wait for that to complete before the button becomes enabled.
+          // Waiting longer (7.5 mins) for Linode to boot
           ui.button
             .findByTitle('Resize Linode')
-            .should('be.enabled', { timeout: LINODE_CREATE_TIMEOUT })
+            .should('be.enabled', { timeout: 1.5 * LINODE_CREATE_TIMEOUT })
             .click();
         });
 
@@ -155,7 +153,7 @@ describe('resize linode', () => {
     });
   });
 
-  it.only('resizes a linode by decreasing size', () => {
+  it('resizes a linode by decreasing size', () => {
     // Use `vlan_no_internet` security method.
     // This works around an issue where the Linode API responds with a 400
     // when attempting to interact with it shortly after booting up when the
@@ -172,7 +170,7 @@ describe('resize linode', () => {
       // Error flow when attempting to resize a linode to a smaller size without
       // resizing the disk to the requested size first.
       interceptLinodeResize(linode.id).as('linodeResize');
-      cy.visitWithLogin(`/linodes/${linode.id}?resize=true`);
+      cy.visitWithLogin(`/linodes/${linode.id}/metrics?resize=true`);
 
       ui.dialog
         .findByTitle(`Resize Linode ${linode.label}`)
@@ -186,9 +184,10 @@ describe('resize linode', () => {
           // Click "Resize Linode".
           // The Resize Linode button remains disabled while the Linode is provisioning,
           // so we have to wait for that to complete before the button becomes enabled.
+          // Waiting longer (7.5 mins) for Linode to boot
           ui.button
             .findByTitle('Resize Linode')
-            .should('be.enabled', { timeout: LINODE_CREATE_TIMEOUT })
+            .should('be.enabled', { timeout: 1.5 * LINODE_CREATE_TIMEOUT })
             .click();
         });
 
@@ -198,40 +197,62 @@ describe('resize linode', () => {
       cy.contains(
         'The current disk size of your Linode is too large for the new service plan. Please resize your disk to accommodate the new plan. You can read our Resize Your Linode guide for more detailed instructions.'
       )
-        .scrollIntoView()
-        .should('be.visible');
+        .as('qaTheCurrentDisk')
+        .scrollIntoView();
+      cy.get('@qaTheCurrentDisk').should('be.visible');
 
       // Normal flow when resizing a linode to a smaller size after first resizing
       // its disk.
       cy.visitWithLogin(`/linodes/${linode.id}/storage`);
 
-      // Power off the Linode to resize the disk
-      ui.button.findByTitle('Power Off').should('be.visible').click();
-
-      ui.dialog
-        .findByTitle(`Power Off Linode ${linode.label}?`)
-        .should('be.visible')
-        .then(() => {
-          ui.button
-            .findByTitle(`Power Off Linode`)
-            .should('be.visible')
+      // Check Linode status and power off if needed
+      cy.findByText('RUNNING').then(($runningStatus) => {
+        if ($runningStatus.length > 0) {
+          // Linode is running, need to power it off
+          ui.actionMenu
+            .findByTitle(`Action menu for Linode ${linode.label}`)
             .click();
-        });
 
-      // Wait for Linode to power off, then resize the disk to 50 GB.
-      cy.findByText('OFFLINE', { timeout: LINODE_CREATE_TIMEOUT }).should(
-        'be.visible'
-      );
+          ui.actionMenuItem
+            .findByTitle('Power Off')
+            .should('be.visible')
+            .should('be.enabled')
+            .click();
+
+          ui.dialog
+            .findByTitle(`Power Off Linode ${linode.label}?`)
+            .should('be.visible')
+            .within(() => {
+              ui.button
+                .findByTitle(`Power Off Linode`)
+                .should('be.visible')
+                .click();
+            });
+
+          // Wait for Linode to power off
+          cy.findByText('OFFLINE', { timeout: LINODE_CREATE_TIMEOUT }).should(
+            'be.visible'
+          );
+        }
+        // If Linode is already offline, continue with the test
+      });
+
       cy.findByText(diskName)
         .should('be.visible')
         .closest('tr')
         .within(() => {
-          ui.button
-            .findByTitle('Resize')
+          ui.actionMenu
+            .findByTitle(`Action menu for Disk ${diskName}`)
             .should('be.visible')
             .should('be.enabled')
             .click();
         });
+
+      ui.actionMenuItem
+        .findByTitle('Resize')
+        .should('be.visible')
+        .should('be.enabled')
+        .click();
 
       ui.drawer
         .findByTitle(`Resize ${diskName}`)
@@ -239,7 +260,8 @@ describe('resize linode', () => {
         .within(() => {
           cy.contains('Size (required)').should('be.visible').click();
 
-          cy.focused().clear().type(size);
+          cy.focused().clear();
+          cy.focused().type(size);
 
           ui.buttonGroup
             .findButtonByTitle('Resize')

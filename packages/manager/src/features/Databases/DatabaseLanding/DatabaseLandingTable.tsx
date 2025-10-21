@@ -1,6 +1,6 @@
+import { Hidden } from '@linode/ui';
 import React from 'react';
 
-import { Hidden } from 'src/components/Hidden';
 import { PaginationFooter } from 'src/components/PaginationFooter/PaginationFooter';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
@@ -15,12 +15,13 @@ import DatabaseSettingsResetPasswordDialog from 'src/features/Databases/Database
 import DatabaseLogo from 'src/features/Databases/DatabaseLanding/DatabaseLogo';
 import DatabaseRow from 'src/features/Databases/DatabaseLanding/DatabaseRow';
 import { useIsDatabasesEnabled } from 'src/features/Databases/utilities';
-import { usePagination } from 'src/hooks/usePagination';
+import { usePaginationV2 } from 'src/hooks/usePaginationV2';
 import { useInProgressEvents } from 'src/queries/events/events';
 
-import type { DatabaseInstance } from '@linode/api-v4/lib/databases';
-import type { Order } from 'src/hooks/useOrder';
 import { DatabaseSettingsSuspendClusterDialog } from '../DatabaseDetail/DatabaseSettings/DatabaseSettingsSuspendClusterDialog';
+
+import type { DatabaseInstance } from '@linode/api-v4/lib/databases';
+import type { Order } from '@linode/utilities';
 
 const preferenceKey = 'databases';
 
@@ -30,8 +31,8 @@ interface Props {
   isNewDatabase?: boolean;
   order: 'asc' | 'desc';
   orderBy: string;
-  showSuspend?: boolean;
   results: number | undefined;
+  showSuspend?: boolean;
 }
 const DatabaseLandingTable = ({
   data,
@@ -40,31 +41,29 @@ const DatabaseLandingTable = ({
   order,
   orderBy,
   results,
-  showSuspend,
 }: Props) => {
   const { data: events } = useInProgressEvents();
   const { isDatabasesV2GA } = useIsDatabasesEnabled();
 
   const dbPlatformType = isNewDatabase ? 'new' : 'legacy';
-  const pagination = usePagination(1, preferenceKey, dbPlatformType);
+  const pagination = usePaginationV2({
+    currentRoute: '/databases',
+    initialPage: 1,
+    preferenceKey,
+    queryParamsPrefix: dbPlatformType,
+  });
 
-  const [
-    selectedDatabase,
-    setSelectedDatabase,
-  ] = React.useState<DatabaseInstance>({} as DatabaseInstance);
+  const [selectedDatabase, setSelectedDatabase] =
+    React.useState<DatabaseInstance>({} as DatabaseInstance);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-  const [
-    isResetPasswordsDialogOpen,
-    setIsResetPasswordsDialogOpen,
-  ] = React.useState(false);
+  const [isResetPasswordsDialogOpen, setIsResetPasswordsDialogOpen] =
+    React.useState(false);
   const [
     isManageAccessControlsDialogOpen,
     setIsManageAccessControlsDialogOpen,
   ] = React.useState(false);
-  const [
-    isSuspendClusterDialogOpen,
-    setIsSuspendClusterDialogOpen,
-  ] = React.useState(false);
+  const [isSuspendClusterDialogOpen, setIsSuspendClusterDialogOpen] =
+    React.useState(false);
 
   const handleManageAccessControls = (database: DatabaseInstance) => {
     setSelectedDatabase(database);
@@ -93,7 +92,12 @@ const DatabaseLandingTable = ({
 
   return (
     <>
-      <Table sx={{ marginTop: '10px' }}>
+      <Table
+        aria-label={`List of ${
+          isNewDatabase ? 'New' : 'Legacy'
+        } Database Clusters`}
+        sx={{ marginTop: '10px' }}
+      >
         <TableHead>
           <TableRow>
             <TableSortCell
@@ -114,10 +118,10 @@ const DatabaseLandingTable = ({
             </TableSortCell>
             {isNewDatabase && (
               <TableSortCell
-                active={orderBy === 'plan'}
+                active={orderBy === 'type'}
                 direction={order}
                 handleClick={handleOrderChange}
-                label="plan"
+                label="type"
               >
                 Plan
               </TableSortCell>
@@ -160,12 +164,14 @@ const DatabaseLandingTable = ({
                 Created
               </TableSortCell>
             </Hidden>
-            {isDatabasesV2GA && isNewDatabase && <TableCell></TableCell>}
+            {isDatabasesV2GA && isNewDatabase && <TableCell />}
           </TableRow>
         </TableHead>
         <TableBody>
           {data?.map((database: DatabaseInstance) => (
             <DatabaseRow
+              database={database}
+              events={events}
               handlers={{
                 handleDelete: () => handleDelete(database),
                 handleManageAccessControls: () =>
@@ -173,21 +179,19 @@ const DatabaseLandingTable = ({
                 handleResetPassword: () => handleResetPassword(database),
                 handleSuspend: () => handleSuspend(database),
               }}
-              database={database}
-              events={events}
               isNewDatabase={isNewDatabase}
               key={database.id}
             />
           ))}
           {data?.length === 0 && (
             <TableRowEmpty
+              colSpan={8}
               message={
                 isNewDatabase
                   ? 'You don’t have any Aiven Database Clusters created yet. Click Create Database Cluster to create one.'
                   : ''
               }
-              colSpan={7}
-            ></TableRowEmpty>
+            />
           )}
         </TableBody>
       </Table>

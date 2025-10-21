@@ -1,3 +1,4 @@
+import { useMutateProfile, useProfile } from '@linode/queries';
 import { Autocomplete, Button, Notice } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import { DateTime } from 'luxon';
@@ -6,12 +7,11 @@ import * as React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { timezones } from 'src/assets/timezones/timezones';
-import { useAuthentication } from 'src/hooks/useAuthentication';
-import { useMutateProfile, useProfile } from 'src/queries/profile/profile';
+import { getIsLoggedInAsCustomer } from 'src/OAuth/oauth';
 
 import type { Profile } from '@linode/api-v4';
 
-type Timezone = typeof timezones[number];
+type Timezone = (typeof timezones)[number];
 
 export const getOptionLabel = ({ label, offset }: Timezone) => {
   const minutes = (Math.abs(offset) % 60).toLocaleString(undefined, {
@@ -40,7 +40,7 @@ const timezoneOptions = getTimezoneOptions();
 type Values = Pick<Profile, 'timezone'>;
 
 export const TimezoneForm = () => {
-  const { loggedInAsCustomer } = useAuthentication();
+  const isLoggedInAsCustomer = getIsLoggedInAsCustomer();
   const { enqueueSnackbar } = useSnackbar();
   const { data: profile } = useProfile();
   const { mutateAsync: updateProfile } = useMutateProfile();
@@ -68,7 +68,7 @@ export const TimezoneForm = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      {loggedInAsCustomer && (
+      {isLoggedInAsCustomer && (
         <Notice dataTestId="admin-notice" variant="error">
           While you are logged in as a customer, all times, dates, and graphs
           will be displayed in the user&rsquo;s timezone ({profile?.timezone}).
@@ -76,13 +76,10 @@ export const TimezoneForm = () => {
       )}
       <SingleTextFieldFormContainer>
         <Controller
+          control={control}
+          name="timezone"
           render={({ field, fieldState }) => (
             <Autocomplete
-              value={
-                timezoneOptions.find(
-                  (option) => option.value === field.value
-                ) ?? null
-              }
               autoHighlight
               disableClearable={profile?.timezone !== undefined}
               errorText={fieldState.error?.message}
@@ -92,10 +89,13 @@ export const TimezoneForm = () => {
               onChange={(e, option) => field.onChange(option?.value ?? '')}
               options={timezoneOptions}
               placeholder="Choose a Timezone"
+              value={
+                timezoneOptions.find(
+                  (option) => option.value === field.value
+                ) ?? null
+              }
             />
           )}
-          control={control}
-          name="timezone"
         />
         <Button
           buttonType="primary"

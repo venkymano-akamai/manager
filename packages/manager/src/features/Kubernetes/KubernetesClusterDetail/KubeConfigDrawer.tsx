@@ -1,12 +1,10 @@
-import { Box, Typography } from '@linode/ui';
-import { styled } from '@mui/material/styles';
-import * as React from 'react';
+import { Box, Drawer, IconButton, Typography } from '@linode/ui';
+import { downloadFile } from '@linode/utilities';
+import React from 'react';
 
 import Download from 'src/assets/icons/download.svg';
 import { CodeBlock } from 'src/components/CodeBlock/CodeBlock';
-import { Drawer } from 'src/components/Drawer';
 import { useKubernetesKubeConfigQuery } from 'src/queries/kubernetes';
-import { downloadFile } from 'src/utilities/downloadFile';
 
 interface Props {
   closeDrawer: () => void;
@@ -32,39 +30,24 @@ export const KubeConfigDrawer = (props: Props) => {
       title="View Kubeconfig"
       wide
     >
-      <Box display="flex">
-        <Typography mr={2} variant="h3">
-          {clusterLabel}
-        </Typography>
-        <StyledDownloadButton
+      <Box alignItems="center" display="flex" gap={1.5}>
+        <Typography variant="h3">{clusterLabel}</Typography>
+        <IconButton
           onClick={() =>
             downloadFile(`${clusterLabel}-kubeconfig.yaml`, data ?? '')
           }
+          sx={{ mt: 0.5, p: 0.5 }}
           title="Download"
         >
-          <Download />
-        </StyledDownloadButton>
+          <Download height="16px" width="16px" />
+        </IconButton>
       </Box>
       <CodeBlock
-        command={data ?? ''}
-        commandType="Kube Config Yaml"
+        analyticsLabel="Kube Config Yaml"
+        code={(data ?? '').trim()}
         handleCopyIconClick={() => null}
         language="yaml"
       />
     </Drawer>
   );
 };
-
-export const StyledDownloadButton = styled('button', {
-  label: 'StyledDownloadButton',
-})(({ theme }) => ({
-  '& svg': {
-    color: theme.tokens.color.Ultramarine[70],
-  },
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  font: 'inherit',
-  marginRight: theme.spacing(1),
-  padding: 0,
-}));

@@ -1,12 +1,17 @@
-import { Autocomplete, Box, Typography } from '@linode/ui';
+import { Autocomplete, BetaChip, Box, Typography } from '@linode/ui';
 import React from 'react';
 
+import { useFlags } from 'src/hooks/useFlags';
 import { useCloudPulseDashboardsQuery } from 'src/queries/cloudpulse/dashboards';
 import { useCloudPulseServiceTypes } from 'src/queries/cloudpulse/services';
 
-import { formattedServiceTypes, getAllDashboards } from '../Utils/utils';
+import { getAllDashboards, getEnabledServiceTypes } from '../Utils/utils';
 
-import type { Dashboard, FilterValue } from '@linode/api-v4';
+import type {
+  CloudPulseServiceType,
+  Dashboard,
+  FilterValue,
+} from '@linode/api-v4';
 
 export interface CloudPulseDashboardSelectProps {
   /**
@@ -47,9 +52,18 @@ export const CloudPulseDashboardSelect = React.memo(
       isLoading: serviceTypesLoading,
     } = useCloudPulseServiceTypes(true);
 
-    const serviceTypes: string[] = formattedServiceTypes(serviceTypesList);
-    const serviceTypeMap: Map<string, string> = new Map(
-      serviceTypesList?.data.map((item) => [item.service_type, item.label])
+    const { aclpServices } = useFlags();
+
+    // Get formatted enabled service types based on the LD flag
+    const serviceTypes: CloudPulseServiceType[] = getEnabledServiceTypes(
+      serviceTypesList,
+      aclpServices
+    );
+
+    const serviceTypeMap: Map<CloudPulseServiceType, string> = new Map(
+      (serviceTypesList?.data || [])
+        .filter((item) => item?.service_type !== undefined)
+        .map((item) => [item.service_type, item.label ?? ''])
     );
 
     const {
@@ -60,10 +74,8 @@ export const CloudPulseDashboardSelect = React.memo(
       useCloudPulseDashboardsQuery(serviceTypes),
       serviceTypes
     );
-    const [
-      selectedDashboard,
-      setSelectedDashboard,
-    ] = React.useState<Dashboard>();
+    const [selectedDashboard, setSelectedDashboard] =
+      React.useState<Dashboard>();
 
     const getErrorText = () => {
       if (serviceTypesError) {
@@ -106,15 +118,37 @@ export const CloudPulseDashboardSelect = React.memo(
     }, [dashboardsList]);
     return (
       <Autocomplete
+        autoHighlight
+        clearOnBlur
+        data-testid="cloudpulse-dashboard-select"
+        disabled={isServiceIntegration || !dashboardsList}
+        errorText={dashboardsList?.length ? '' : errorText}
+        fullWidth
+        groupBy={(option: Dashboard) => option.service_type}
+        isOptionEqualToValue={(option, value) => option.id === value.id}
+        label="Dashboard"
+        loading={dashboardsLoading || serviceTypesLoading}
+        noMarginTop
         onChange={(e, dashboard: Dashboard) => {
           setSelectedDashboard(dashboard);
           handleDashboardChange(dashboard, savePreferences);
         }}
+        options={getSortedDashboardsList(dashboardsList ?? [])}
+        placeholder={placeHolder}
         renderGroup={(params) => (
           <Box key={params.key}>
-            <Typography sx={{ marginLeft: '3.5%' }} variant="h3">
-              {serviceTypeMap.get(params.group) || params.group}
-            </Typography>
+            <Box display="flex">
+              <Typography
+                data-qa-id={params.group}
+                sx={{ marginLeft: '3.5%' }}
+                variant="h3"
+              >
+                {serviceTypeMap.get(params.group as CloudPulseServiceType) ||
+                  params.group}
+              </Typography>
+              {aclpServices?.[params.group as CloudPulseServiceType]?.metrics
+                ?.beta && <BetaChip />}
+            </Box>
             {params.children}
           </Box>
         )}
@@ -126,19 +160,6 @@ export const CloudPulseDashboardSelect = React.memo(
         textFieldProps={{
           color: 'primary',
         }}
-        autoHighlight
-        clearOnBlur
-        data-testid="cloudpulse-dashboard-select"
-        disabled={isServiceIntegration || !dashboardsList}
-        errorText={Boolean(dashboardsList?.length) ? '' : errorText}
-        fullWidth
-        groupBy={(option: Dashboard) => option.service_type}
-        isOptionEqualToValue={(option, value) => option.id === value.id}
-        label="Dashboard"
-        loading={dashboardsLoading || serviceTypesLoading}
-        noMarginTop
-        options={getSortedDashboardsList(dashboardsList ?? [])}
-        placeholder={placeHolder}
         value={selectedDashboard ?? null} // Undefined is not allowed for uncontrolled component
       />
     );

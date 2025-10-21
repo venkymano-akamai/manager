@@ -1,11 +1,13 @@
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useMutateProfile, useProfile } from '@linode/queries';
 import { Button, TextField } from '@linode/ui';
+import { UpdateUserEmailSchema } from '@linode/validation';
+import { useSearch } from '@tanstack/react-router';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useLocation } from 'react-router-dom';
 
 import { RESTRICTED_FIELD_TOOLTIP } from 'src/features/Account/constants';
-import { useMutateProfile, useProfile } from 'src/queries/profile/profile';
 
 import { SingleTextFieldFormContainer } from './TimezoneForm';
 
@@ -18,15 +20,15 @@ export const EmailForm = () => {
   const { mutateAsync: updateProfile } = useMutateProfile();
   const { enqueueSnackbar } = useSnackbar();
 
-  const location = useLocation<{ focusEmail: boolean }>();
+  const { focusEmail } = useSearch({ strict: false });
   const emailRef = React.createRef<HTMLInputElement>();
 
   React.useEffect(() => {
-    if (location.state?.focusEmail && emailRef.current) {
+    if (focusEmail && emailRef.current) {
       emailRef.current.focus();
       emailRef.current.scrollIntoView();
     }
-  }, [emailRef, location.state]);
+  }, [emailRef, focusEmail]);
 
   const values = { email: profile?.email ?? '' };
 
@@ -36,6 +38,7 @@ export const EmailForm = () => {
     handleSubmit,
     setError,
   } = useForm<Values>({
+    resolver: yupResolver(UpdateUserEmailSchema),
     defaultValues: values,
     values,
   });
@@ -59,6 +62,8 @@ export const EmailForm = () => {
     <form onSubmit={handleSubmit(onSubmit)}>
       <SingleTextFieldFormContainer>
         <Controller
+          control={control}
+          name="email"
           render={({ field, fieldState }) => (
             <TextField
               containerProps={{
@@ -78,8 +83,6 @@ export const EmailForm = () => {
               value={field.value}
             />
           )}
-          control={control}
-          name="email"
         />
         <Button
           buttonType="primary"

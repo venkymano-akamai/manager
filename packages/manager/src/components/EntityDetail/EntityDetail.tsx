@@ -1,7 +1,8 @@
 import { omittedProps } from '@linode/ui';
+import Grid from '@mui/material/Grid';
 import { styled } from '@mui/material/styles';
-import Grid from '@mui/material/Unstable_Grid2';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 export interface EntityDetailProps {
   body?: JSX.Element;
@@ -27,13 +28,13 @@ export const EntityDetail = (props: EntityDetailProps) => {
         <GridBody
           footer={footer}
           noBodyBottomBorder={noBodyBottomBorder}
-          xs={12}
+          size={{ xs: 12 }}
         >
           {body}
         </GridBody>
       )}
       {footer !== undefined && (
-        <GridFooter body={body} xs={12}>
+        <GridFooter body={body} size={{ xs: 12 }}>
           {footer}
         </GridFooter>
       )}

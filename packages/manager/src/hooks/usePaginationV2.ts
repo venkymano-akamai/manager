@@ -1,12 +1,9 @@
+import { useMutatePreferences, usePreferences } from '@linode/queries';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
-import { MIN_PAGE_SIZE } from 'src/components/PaginationFooter/PaginationFooter';
-import {
-  useMutatePreferences,
-  usePreferences,
-} from 'src/queries/profile/preferences';
+import { MIN_PAGE_SIZE } from 'src/components/PaginationFooter/PaginationFooter.constants';
 
-import type { ToSubOptions } from '@tanstack/react-router';
+import type { RegisteredRouter, ToSubOptions } from '@tanstack/react-router';
 import type { TableSearchParams } from 'src/routes/types';
 
 export interface PaginationPropsV2 {
@@ -15,13 +12,6 @@ export interface PaginationPropsV2 {
   page: number;
   pageSize: number;
 }
-
-const setTableSearchParams = (prev: TableSearchParams) => ({
-  order: prev.order,
-  orderBy: prev.orderBy,
-  page: prev.page,
-  pageSize: prev.pageSize,
-});
 
 export interface UsePaginationV2Props<T extends TableSearchParams> {
   /**
@@ -55,22 +45,26 @@ export const usePaginationV2 = <T extends TableSearchParams>({
   queryParamsPrefix,
   searchParams,
 }: UsePaginationV2Props<T>): PaginationPropsV2 => {
-  const { data: preferences } = usePreferences();
+  const { data: pageSizePreferences } = usePreferences(
+    (preferences) => preferences?.pageSizes
+  );
   const { mutateAsync: updatePreferences } = useMutatePreferences();
 
   const search: TableSearchParams = useSearch({ strict: false });
   const navigate = useNavigate();
-
-  const searchParamPage = search.page;
-  const searchParamPageSize = search.pageSize;
 
   const pageKey = queryParamsPrefix ? `${queryParamsPrefix}-page` : 'page';
   const pageSizeKey = queryParamsPrefix
     ? `${queryParamsPrefix}-pageSize`
     : 'pageSize';
 
+  const searchParamPage =
+    search[pageKey as keyof TableSearchParams] || search.page;
+  const searchParamPageSize =
+    search[pageSizeKey as keyof TableSearchParams] || search.pageSize;
+
   const preferredPageSize = preferenceKey
-    ? preferences?.pageSizes?.[preferenceKey] ?? MIN_PAGE_SIZE
+    ? (pageSizePreferences?.[preferenceKey] ?? MIN_PAGE_SIZE)
     : MIN_PAGE_SIZE;
 
   const page = searchParamPage ? Number(searchParamPage) : initialPage;
@@ -79,9 +73,9 @@ export const usePaginationV2 = <T extends TableSearchParams>({
     : preferredPageSize;
 
   const setPage = (page: number) => {
-    navigate({
+    navigate<RegisteredRouter, string, string>({
       search: (prev: TableSearchParams & T) => ({
-        ...setTableSearchParams(prev),
+        ...prev,
         ...(searchParams?.(prev) ?? {}),
         [pageKey]: page,
         ...(queryParamsPrefix ? {} : { page }),
@@ -91,9 +85,9 @@ export const usePaginationV2 = <T extends TableSearchParams>({
   };
 
   const setPageSize = (pageSize: number) => {
-    navigate({
+    navigate<RegisteredRouter, string, string>({
       search: (prev: TableSearchParams & T) => ({
-        ...setTableSearchParams(prev),
+        ...prev,
         ...(searchParams?.(prev) ?? {}),
         [pageSizeKey]: pageSize,
         ...(queryParamsPrefix ? {} : { pageSize }),
@@ -108,7 +102,7 @@ export const usePaginationV2 = <T extends TableSearchParams>({
     if (preferenceKey) {
       updatePreferences({
         pageSizes: {
-          ...(preferences?.pageSizes ?? {}),
+          ...(pageSizePreferences ?? {}),
           [preferenceKey]: newPageSize,
         },
         [preferenceKey]: undefined, // This may seem weird, but this cleans up the old format so user's preferences don't get too big

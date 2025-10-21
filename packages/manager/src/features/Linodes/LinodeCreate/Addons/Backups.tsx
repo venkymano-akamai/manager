@@ -1,4 +1,9 @@
 import {
+  useAccountSettings,
+  useRegionsQuery,
+  useTypeQuery,
+} from '@linode/queries';
+import {
   Checkbox,
   FormControlLabel,
   Notice,
@@ -11,10 +16,7 @@ import { useController, useFormContext, useWatch } from 'react-hook-form';
 import { Currency } from 'src/components/Currency';
 import { DISK_ENCRYPTION_BACKUPS_CAVEAT_COPY } from 'src/components/Encryption/constants';
 import { Link } from 'src/components/Link';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useAccountSettings } from 'src/queries/account/settings';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { useTypeQuery } from 'src/queries/types';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { getMonthlyBackupsPrice } from 'src/utilities/pricing/backups';
 
 import { getBackupsEnabledValue } from './utilities';
@@ -33,9 +35,7 @@ export const Backups = () => {
     name: ['region', 'type', 'disk_encryption'],
   });
 
-  const isLinodeCreateRestricted = useRestrictedGlobalGrantCheck({
-    globalGrantType: 'add_linodes',
-  });
+  const { data: permissions } = usePermissions('account', ['create_linode']);
 
   const { data: type } = useTypeQuery(typeId, Boolean(typeId));
   const { data: regions } = useRegionsQuery();
@@ -64,9 +64,14 @@ export const Backups = () => {
 
   return (
     <FormControlLabel
+      checked={checked}
+      control={
+        <Checkbox sx={(theme) => ({ mt: `-${theme.tokens.spacing.S8}` })} />
+      }
+      data-testid="backups"
       disabled={
         isDistributedRegionSelected ||
-        isLinodeCreateRestricted ||
+        !permissions.create_linode ||
         isAccountBackupsEnabled
       }
       label={
@@ -83,12 +88,12 @@ export const Backups = () => {
           </Stack>
           {checked && diskEncryption === 'enabled' && (
             <Notice
-              typeProps={{
-                style: { fontSize: '0.875rem' },
-              }}
               spacingBottom={0}
               spacingTop={0}
               text={DISK_ENCRYPTION_BACKUPS_CAVEAT_COPY}
+              typeProps={{
+                style: { fontSize: '0.875rem' },
+              }}
               variant="warning"
             />
           )}
@@ -109,9 +114,6 @@ export const Backups = () => {
           </Typography>
         </Stack>
       }
-      checked={checked}
-      control={<Checkbox />}
-      data-testid="backups"
       onChange={field.onChange}
       sx={{ alignItems: 'start' }}
     />

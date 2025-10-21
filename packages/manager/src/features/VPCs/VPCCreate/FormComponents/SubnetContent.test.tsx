@@ -18,9 +18,9 @@ describe('Subnet form content', () => {
       },
     });
 
-    getByText('Subnets');
-    getByText('Subnet Label');
-    getByText('Subnet IP Address Range');
-    getByText('Add another Subnet');
+    expect(getByText('Subnets')).toBeVisible();
+    expect(getByText('Subnet Label')).toBeVisible();
+    expect(getByText('Subnet IPv4 Range (CIDR)')).toBeVisible();
+    expect(getByText('Add another Subnet')).toBeVisible();
   });
 });

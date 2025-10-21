@@ -1,4 +1,4 @@
-import { Box, List, ListItem, Typography, omittedProps } from '@linode/ui';
+import { Box, List, ListItem, omittedProps, Typography } from '@linode/ui';
 import { styled } from '@mui/material/styles';
 
 import type { RemovableSelectionsListProps } from './RemovableSelectionsList';
@@ -21,7 +21,7 @@ export const SelectedOptionsHeader = styled(Typography, {
   label: 'SelectedOptionsHeader',
 })(({ theme }) => ({
   color: theme.color.headline,
-  fontFamily: theme.font.bold,
+  font: theme.font.bold,
   marginBottom: theme.spacing(2),
 }));
 

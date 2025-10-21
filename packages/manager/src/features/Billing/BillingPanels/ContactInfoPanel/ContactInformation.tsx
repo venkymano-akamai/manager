@@ -1,17 +1,17 @@
+import { useNotificationsQuery, usePreferences } from '@linode/queries';
 import { Box, TooltipIcon, Typography } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { allCountries } from 'country-region-data';
 import * as React from 'react';
 import { useState } from 'react';
-import { useHistory, useRouteMatch } from 'react-router-dom';
 
-import { Link } from 'src/components/Link';
+import { MaskableTextAreaCopy } from 'src/components/MaskableText/MaskableTextArea';
 import { getRestrictedResourceText } from 'src/features/Account/utils';
 import { EDIT_BILLING_CONTACT } from 'src/features/Billing/constants';
+import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { StyledAutorenewIcon } from 'src/features/TopMenu/NotificationMenu/NotificationMenu';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useNotificationsQuery } from 'src/queries/account/notifications';
-import { usePreferences } from 'src/queries/profile/preferences';
+import { useFlags } from 'src/hooks/useFlags';
 
 import {
   BillingActionButton,
@@ -60,21 +60,17 @@ export const ContactInformation = React.memo((props: Props) => {
     zip,
   } = props;
 
-  const history = useHistory<{
-    contactDrawerOpen?: boolean;
-    focusEmail?: boolean;
-  }>();
-
-  const [
-    editContactDrawerOpen,
-    setEditContactDrawerOpen,
-  ] = React.useState<boolean>(false);
+  const { iamRbacPrimaryNavChanges } = useFlags();
+  const navigate = useNavigate();
+  const { contactDrawerOpen, focusEmail } = useSearch({
+    strict: false,
+  });
 
   const { data: notifications } = useNotificationsQuery();
 
-  const { data: preferences } = usePreferences();
-
-  const [focusEmail, setFocusEmail] = React.useState(false);
+  const { data: maskSensitiveDataPreference } = usePreferences(
+    (preferences) => preferences?.maskSensitiveData
+  );
 
   const isChildUser = Boolean(profile?.user_type === 'child');
 
@@ -82,43 +78,24 @@ export const ContactInformation = React.memo((props: Props) => {
     return notification.type === 'tax_id_verifying';
   });
 
-  const isReadOnly =
-    useRestrictedGlobalGrantCheck({
-      globalGrantType: 'account_access',
-      permittedGrantLevel: 'read_write',
-    }) || isChildUser;
+  const { data: permissions } = usePermissions('account', ['update_account']);
 
-  const handleEditDrawerOpen = React.useCallback(
-    () => setEditContactDrawerOpen(true),
-    [setEditContactDrawerOpen]
-  );
+  const isReadOnly = !permissions.update_account || isChildUser;
 
-  // On-the-fly route matching so this component can open the drawer itself.
-  const editBillingContactRouteMatch = Boolean(
-    useRouteMatch('/account/billing/edit')
-  );
-
-  React.useEffect(() => {
-    if (editBillingContactRouteMatch) {
-      handleEditDrawerOpen();
-    }
-  }, [editBillingContactRouteMatch, handleEditDrawerOpen]);
-
-  // Listen for changes to history state and open the drawer if necessary.
-  // This is currently in use by the EmailBounceNotification, which navigates
-  // the user to the Account page and opens the drawer to prompt them to change
-  // their billing email address.
-  React.useEffect(() => {
-    if (!editContactDrawerOpen && history.location.state?.contactDrawerOpen) {
-      setEditContactDrawerOpen(true);
-      if (history.location.state?.focusEmail) {
-        setFocusEmail(true);
-      }
-    }
-  }, [editContactDrawerOpen, history.location.state]);
+  const handleEditDrawerOpen = () => {
+    navigate({
+      to: iamRbacPrimaryNavChanges ? '/billing' : '/account/billing',
+      search: (prev) => ({
+        ...prev,
+        action: 'edit',
+        contactDrawerOpen: true,
+        focusEmail: false,
+      }),
+    });
+  };
 
   const [isContactInfoMasked, setIsContactInfoMasked] = useState(
-    preferences?.maskSensitiveData
+    maskSensitiveDataPreference
   );
 
   /**
@@ -151,37 +128,39 @@ export const ContactInformation = React.memo((props: Props) => {
   };
 
   return (
-    <Grid md={6} xs={12}>
+    <Grid
+      size={{
+        md: 6,
+        xs: 12,
+      }}
+    >
       <BillingPaper data-qa-contact-summary variant="outlined">
         <BillingBox>
           <Typography variant="h3">Billing Contact</Typography>
           <Box display="flex" marginLeft="auto">
             {!isContactInfoMasked && (
               <BillingActionButton
-                onClick={() => {
-                  history.push('/account/billing/edit');
-                  handleEditDrawerOpen();
-                }}
+                data-testid="edit-contact-info"
+                disabled={isReadOnly}
+                disableFocusRipple
+                disableRipple
+                disableTouchRipple
+                onClick={handleEditDrawerOpen}
                 tooltipText={getRestrictedResourceText({
                   includeContactInfo: false,
                   isChildUser,
                   resourceType: 'Account',
                 })}
-                data-testid="edit-contact-info"
-                disableFocusRipple
-                disableRipple
-                disableTouchRipple
-                disabled={isReadOnly}
               >
                 {EDIT_BILLING_CONTACT}
               </BillingActionButton>
             )}
-            {preferences?.maskSensitiveData && (
+            {maskSensitiveDataPreference && (
               <BillingActionButton
+                disabled={isReadOnly}
                 disableFocusRipple
                 disableRipple
                 disableTouchRipple
-                disabled={isReadOnly}
                 onClick={() => setIsContactInfoMasked(!isContactInfoMasked)}
                 sx={{ marginLeft: !isContactInfoMasked ? 2 : 0 }}
               >
@@ -195,12 +174,8 @@ export const ContactInformation = React.memo((props: Props) => {
             )}
           </Box>
         </BillingBox>
-        {preferences?.maskSensitiveData && isContactInfoMasked ? (
-          <Typography>
-            This data is sensitive and hidden for privacy. To unmask all
-            sensitive data by default, go to{' '}
-            <Link to="/profile/settings">profile settings</Link>.
-          </Typography>
+        {maskSensitiveDataPreference && isContactInfoMasked ? (
+          <MaskableTextAreaCopy />
         ) : (
           <Grid container spacing={2}>
             {(firstName ||
@@ -268,7 +243,6 @@ export const ContactInformation = React.memo((props: Props) => {
                   {taxIdIsVerifyingNotification && (
                     <TooltipIcon
                       icon={<StyledAutorenewIcon />}
-                      status="other"
                       text={taxIdIsVerifyingNotification.label}
                     />
                   )}
@@ -279,13 +253,17 @@ export const ContactInformation = React.memo((props: Props) => {
         )}
       </BillingPaper>
       <BillingContactDrawer
+        // This is currently in use by the EmailBounceNotification, which navigates
+        // the user to the Account page and opens the drawer to prompt them to change
+        // their billing email address.
+        focusEmail={Boolean(focusEmail)}
         onClose={() => {
-          history.replace('/account/billing', { contactDrawerOpen: false });
-          setEditContactDrawerOpen(false);
-          setFocusEmail(false);
+          navigate({
+            to: iamRbacPrimaryNavChanges ? '/billing' : '/account/billing',
+            search: undefined,
+          });
         }}
-        focusEmail={focusEmail}
-        open={editContactDrawerOpen}
+        open={Boolean(contactDrawerOpen)}
       />
     </Grid>
   );

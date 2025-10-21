@@ -10,13 +10,16 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "precommit": "tsc"
+    "typecheck": "tsc"
   },
   "dependencies": {
-    "peggy": "^4.0.3"
+    "peggy": "^4.0.3",
+    "@linode/api-v4": "workspace:*"
+  },
+  "devDependencies": {
+    "@linode/tsconfig": "workspace:*"
   },
   "peerDependencies": {
-    "@linode/api-v4": "*",
     "vite": "*"
   }
 }

@@ -1,30 +1,46 @@
-import { Autocomplete, Box, Paper, Stack, Typography } from '@linode/ui';
+import { useFirewallsQuery } from '@linode/queries';
+import {
+  Autocomplete,
+  Box,
+  LinkButton,
+  Paper,
+  Stack,
+  Typography,
+} from '@linode/ui';
 import { styled } from '@mui/material/styles';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import { CreateFirewallDrawer } from 'src/features/Firewalls/FirewallLanding/CreateFirewallDrawer';
 import { useFlags } from 'src/hooks/useFlags';
 import { useSecureVMNoticesEnabled } from 'src/hooks/useSecureVMNoticesEnabled';
-import { useFirewallsQuery } from 'src/queries/firewalls';
 
 import { AkamaiBanner } from '../AkamaiBanner/AkamaiBanner';
 import { GenerateFirewallDialog } from '../GenerateFirewallDialog/GenerateFirewallDialog';
-import { LinkButton } from '../LinkButton';
 
-import type { Firewall, FirewallDeviceEntityType } from '@linode/api-v4';
+import type {
+  Firewall,
+  FirewallDeviceEntityType,
+  PermissionType,
+} from '@linode/api-v4';
+
+type PermissionsSubset<T extends PermissionType> = T;
+type SelectFirewallPanelPermissions = PermissionsSubset<
+  'create_firewall' | 'create_nodebalancer'
+>;
 
 interface Props {
-  disabled?: boolean;
   entityType: FirewallDeviceEntityType | undefined;
   handleFirewallChange: (firewallID: number | undefined) => void;
   helperText: JSX.Element;
+  permissions: Record<SelectFirewallPanelPermissions, boolean>;
   selectedFirewallId: number | undefined;
 }
 
 export const SelectFirewallPanel = (props: Props) => {
   const {
-    disabled,
     entityType,
+    permissions,
     handleFirewallChange,
     helperText,
     selectedFirewallId,
@@ -63,10 +79,7 @@ export const SelectFirewallPanel = (props: Props) => {
       : null;
 
   return (
-    <Paper
-      data-testid="select-firewall-panel"
-      sx={(theme) => ({ marginTop: theme.spacing(3) })}
-    >
+    <Paper data-testid="select-firewall-panel">
       <Typography
         sx={(theme) => ({ marginBottom: theme.spacing(2) })}
         variant="h2"
@@ -90,7 +103,7 @@ export const SelectFirewallPanel = (props: Props) => {
             />
           )}
         <Autocomplete
-          disabled={disabled}
+          disabled={!permissions.create_nodebalancer}
           errorText={error?.[0].reason}
           label="Assign Firewall"
           loading={isLoading}
@@ -101,7 +114,10 @@ export const SelectFirewallPanel = (props: Props) => {
           value={selectedFirewall}
         />
         <StyledLinkButtonBox>
-          <LinkButton isDisabled={disabled} onClick={handleCreateFirewallClick}>
+          <LinkButton
+            disabled={!permissions.create_firewall}
+            onClick={handleCreateFirewallClick}
+          >
             Create Firewall
           </LinkButton>
         </StyledLinkButtonBox>

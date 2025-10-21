@@ -7,7 +7,6 @@ import {
   kubernetesDashboardUrlFactory,
 } from '@src/factories';
 import {
-  kubernetesVersions,
   latestEnterpriseTierKubernetesVersion,
   latestStandardTierKubernetesVersion,
 } from 'support/constants/lke';
@@ -24,30 +23,8 @@ import type {
   KubernetesControlPlaneACLPayload,
   KubernetesTier,
   KubernetesTieredVersion,
-  KubernetesVersion,
   PriceType,
 } from '@linode/api-v4';
-
-/**
- * Intercepts GET request to retrieve Kubernetes versions and mocks response.
- *
- * @param versions - Optional array of strings containing mocked versions.
- *
- * @returns Cypress chainable.
- */
-export const mockGetKubernetesVersions = (versions?: string[] | undefined) => {
-  const versionObjects = (versions ? versions : kubernetesVersions).map(
-    (kubernetesVersionString: string): KubernetesVersion => {
-      return { id: kubernetesVersionString };
-    }
-  );
-
-  return cy.intercept(
-    'GET',
-    apiMatcher('lke/versions*'),
-    paginateResponse(versionObjects)
-  );
-};
 
 /**
  * Intercepts GET request to retrieve tiered Kubernetes versions and mocks response.
@@ -77,7 +54,7 @@ export const mockGetTieredKubernetesVersions = (
 
   return cy.intercept(
     'GET',
-    apiMatcher(`lke/versions/${tier}*`),
+    apiMatcher(`lke/tiers/${tier}/versions*`),
     paginateResponse(versionObjects)
   );
 };
@@ -252,6 +229,17 @@ export const mockAddNodePool = (
     apiMatcher(`lke/clusters/${clusterId}/pools`),
     makeResponse(nodePool)
   );
+};
+
+/**
+ * Intercepts POST request to create Node Pool.
+ *
+ * @returns Cypress chainable.
+ */
+export const interceptCreateNodePool = (
+  clusterId: number
+): Cypress.Chainable<null> => {
+  return cy.intercept('POST', apiMatcher(`lke/clusters/${clusterId}/pools`));
 };
 
 /**
@@ -507,4 +495,48 @@ export const mockGetLKEClusterTypes = (
   types: PriceType[]
 ): Cypress.Chainable<null> => {
   return cy.intercept('GET', apiMatcher('lke/types*'), paginateResponse(types));
+};
+
+/**
+ * Intercepts PUT request to update an LKE cluster and mocks an error response.
+ *
+ * @param clusterId - ID of cluster for which to intercept PUT request.
+ * @param errorMessage - Optional error message with which to mock response.
+ * @param statusCode - HTTP status code with which to mock response.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockUpdateClusterError = (
+  clusterId: number,
+  errorMessage: string = 'An unknown error occurred.',
+  statusCode: number = 500
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'PUT',
+    apiMatcher(`lke/clusters/${clusterId}`),
+    makeErrorResponse(errorMessage, statusCode)
+  );
+};
+
+/**
+ * Intercepts PUT request to update an LKE cluster node pool and mocks an error response.
+ *
+ * @param clusterId - ID of cluster for which to intercept PUT request.
+ * @param nodePoolId - Numeric ID of node pool for which to mock response.
+ * @param errorMessage - Optional error message with which to mock response.
+ * @param statusCode - HTTP status code with which to mock response.
+ *
+ * @returns Cypress chainable.
+ */
+export const mockUpdateNodePoolError = (
+  clusterId: number,
+  nodePool: KubeNodePoolResponse,
+  errorMessage: string = 'An unknown error occurred.',
+  statusCode: number = 500
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'PUT',
+    apiMatcher(`lke/clusters/${clusterId}/pools/${nodePool.id}`),
+    makeErrorResponse(errorMessage, statusCode)
+  );
 };

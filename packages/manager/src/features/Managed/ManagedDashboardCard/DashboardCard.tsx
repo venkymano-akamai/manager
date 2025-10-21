@@ -1,6 +1,7 @@
 import { Typography } from '@linode/ui';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid';
 import * as React from 'react';
+import type { JSX } from 'react';
 
 import {
   StyledHeaderGrid,
@@ -19,13 +20,8 @@ interface DashboardCardProps {
 }
 
 const DashboardCard = (props: DashboardCardProps) => {
-  const {
-    alignHeader,
-    alignItems,
-    headerAction,
-    noHeaderActionStyles,
-    title,
-  } = props;
+  const { alignHeader, alignItems, headerAction, noHeaderActionStyles, title } =
+    props;
 
   const ConditionalTypography = !noHeaderActionStyles
     ? StyledTypography
@@ -34,7 +30,7 @@ const DashboardCard = (props: DashboardCardProps) => {
   return (
     <StyledRootGrid container data-qa-card={title} spacing={2}>
       {(title || headerAction) && (
-        <Grid xs={12}>
+        <Grid size={12}>
           <StyledHeaderGrid
             alignItems={alignItems || 'flex-start'}
             container
@@ -56,7 +52,7 @@ const DashboardCard = (props: DashboardCardProps) => {
           </StyledHeaderGrid>
         </Grid>
       )}
-      <Grid xs={12}>{props.children}</Grid>
+      <Grid size={12}>{props.children}</Grid>
     </StyledRootGrid>
   );
 };

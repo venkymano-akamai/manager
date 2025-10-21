@@ -1,19 +1,20 @@
-import { FormControl, Notice, Typography } from '@linode/ui';
+import { useDatabaseEnginesQuery, useDatabaseMutation } from '@linode/queries';
+import {
+  ActionsPanel,
+  Autocomplete,
+  FormControl,
+  Notice,
+  Typography,
+} from '@linode/ui';
 import { useTheme } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Autocomplete } from '@linode/ui';
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
 import {
   DATABASE_ENGINE_MAP,
   upgradableVersions,
 } from 'src/features/Databases/utilities';
-import {
-  useDatabaseEnginesQuery,
-  useDatabaseMutation,
-} from 'src/queries/databases/databases';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import type { Engine } from '@linode/api-v4/lib/databases';
@@ -60,10 +61,8 @@ export const DatabaseSettingsUpgradeVersionDialog = (props: Props) => {
     };
   });
 
-  const [
-    selectedVersion,
-    setSelectedVersion,
-  ] = React.useState<VersionOption | null>(null);
+  const [selectedVersion, setSelectedVersion] =
+    React.useState<null | VersionOption>(null);
   const [error, setError] = React.useState('');
   const [loading, setIsLoading] = React.useState(false);
 
@@ -109,11 +108,11 @@ export const DatabaseSettingsUpgradeVersionDialog = (props: Props) => {
   return (
     <ConfirmationDialog
       actions={renderActions}
+      error={error}
       onClose={onClose}
       open={open}
       title={`Upgrade ${dialogTitle}`}
     >
-      {error && <Notice text={error} variant="error" />}
       <Typography sx={{ mb: theme.spacing(1.5) }}>
         Current Version: v{databaseVersion}
       </Typography>

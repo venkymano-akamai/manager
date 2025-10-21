@@ -1,16 +1,12 @@
 import { OBJECT_STORAGE_DELIMITER } from 'src/constants';
 
 import type { AccountSettings } from '@linode/api-v4/lib/account';
-import type {
-  ACLType,
-  ObjectStorageObject,
-} from '@linode/api-v4/lib/object-storage';
+import type { ObjectStorageObject } from '@linode/api-v4/lib/object-storage';
 import type { ObjectStorageEndpoint } from '@linode/api-v4/lib/object-storage';
 import type { FormikProps } from 'formik';
-import type { Item } from 'src/components/EnhancedSelect/Select';
 
 export const generateObjectUrl = (hostname: string, objectName: string) => {
-  return `https://${hostname}/${objectName}`;
+  return `https://${hostname}/${encodeURIComponent(objectName)}`;
 };
 
 // Objects ending with a / and having a size of 0 are often used to represent
@@ -43,17 +39,20 @@ export const basename = (
   return path.substr(idx + 1);
 };
 
+export interface ACLType {
+  label: string;
+  value: string;
+}
+
 export interface ExtendedObject extends ObjectStorageObject {
   _displayName: string;
   _isFolder: boolean;
-  _manuallyCreated: boolean;
   _shouldDisplayObject: boolean;
 }
 
 export const extendObject = (
   object: ObjectStorageObject,
-  prefix: string,
-  manuallyCreated = false
+  prefix: string
 ): ExtendedObject => {
   const _isFolder = isFolder(object);
 
@@ -68,9 +67,6 @@ export const extendObject = (
     ...object,
     _displayName,
     _isFolder,
-    // If we're in a folder called "my-folder", we don't want to show the object
-    // called "my-folder/". We can look at the prefix to make this decision,
-    _manuallyCreated: manuallyCreated,
     // since it will also be "my-folder/".
     _shouldDisplayObject: object.name !== prefix,
   };
@@ -100,7 +96,7 @@ export const displayName = (objectName: string) => {
 export const tableUpdateAction = (
   currentPrefix: string,
   objectName: string
-): { name: string; type: 'FILE' | 'FOLDER' } | null => {
+): null | { name: string; type: 'FILE' | 'FOLDER' } => {
   if (objectName.startsWith(currentPrefix) || currentPrefix === '') {
     // If the prefix matches the beginning of the objectName, we "subtract" it
     // from the objectName, and make decisions based on that.
@@ -153,18 +149,18 @@ export const confirmObjectStorage = async <T extends {}>(
   }
 };
 
-export const objectACLOptions: Item<ACLType>[] = [
+export const objectACLOptions: ACLType[] = [
   { label: 'Private', value: 'private' },
   { label: 'Authenticated Read', value: 'authenticated-read' },
   { label: 'Public Read', value: 'public-read' },
 ];
 
-export const bucketACLOptions: Item<ACLType>[] = [
+export const bucketACLOptions: ACLType[] = [
   ...objectACLOptions,
   { label: 'Public Read/Write', value: 'public-read-write' },
 ];
 
-export const objectACLHelperText: Record<ACLType, string> = {
+export const objectACLHelperText: Record<string, string> = {
   'authenticated-read': 'Authenticated Read ACL',
   custom: 'Custom ACL',
   private: 'Private ACL',

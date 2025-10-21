@@ -1,25 +1,31 @@
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import { useTheme } from '@mui/material/styles';
 import { default as _TextField } from '@mui/material/TextField';
-import React from 'react';
+import React, { type JSX } from 'react';
 
-import { clamp, convertToKebabCase } from '../../utilities';
+import { CloseIcon } from '../../assets';
 import { Box } from '../Box';
 import { CircleProgress } from '../CircleProgress';
 import { FormHelperText } from '../FormHelperText';
 import { InputAdornment } from '../InputAdornment';
 import { InputLabel } from '../InputLabel';
 import { TooltipIcon } from '../TooltipIcon';
+import { getClampedValue, useFieldIds } from './TextField.utils';
 
 import type { BoxProps } from '../Box';
 import type { TooltipProps } from '../Tooltip';
 import type { StandardTextFieldProps } from '@mui/material/TextField';
+import type { SlotComponentProps } from '@mui/utils';
 
 interface BaseProps {
   /**
    * className to apply to the underlying TextField component
    */
   className?: string;
+  /**
+   * If true, shows a clear (X) icon when there is a value
+   */
+  clearable?: boolean;
   /**
    * Props applied to the root element
    */
@@ -28,6 +34,10 @@ interface BaseProps {
    * Data attributes are applied to the underlying TextField component for testing purposes
    */
   dataAttrs?: Record<string, any>;
+  /**
+   * boolean value to disable the Text Field
+   */
+  disabled?: boolean;
   /**
    * Applies editable styles
    * @default false
@@ -66,6 +76,11 @@ interface BaseProps {
    */
   inputId?: string;
   /**
+   * Position of the label. Supports 'top' (default) or 'left'.
+   * @default 'top'
+   */
+  labelPosition?: 'left' | 'top';
+  /**
    * Displays a loading spinner at the end of the Text Field
    * @default false
    */
@@ -83,6 +98,10 @@ interface BaseProps {
    * @default false
    */
   noMarginTop?: boolean;
+  /**
+   * Clear the input value
+   */
+  onClear?: () => void;
   /**
    * Adds `(optional)` to the Label
    * @default false
@@ -102,6 +121,16 @@ interface BaseProps {
 type Value = null | number | string | undefined;
 
 interface LabelToolTipProps {
+  /**
+   * Position of the tooltip icon
+   * @default right
+   */
+  labelTooltipIconPosition?: 'left' | 'right';
+  /**
+   * Size of the tooltip icon
+   * @default small
+   */
+  labelTooltipIconSize?: 'large' | 'small';
   labelTooltipText?: JSX.Element | string;
 }
 
@@ -114,7 +143,7 @@ interface InputToolTipProps {
 }
 
 interface TextFieldPropsOverrides
-  extends Omit<StandardTextFieldProps, 'label'> {
+  extends Omit<StandardTextFieldProps, 'label' | 'select'> {
   // We override this prop to make it required
   label: string;
 }
@@ -131,8 +160,10 @@ export const TextField = (props: TextFieldProps) => {
     SelectProps,
     children,
     className,
+    clearable = false,
     containerProps,
     dataAttrs,
+    disabled = false,
     editable,
     error,
     errorGroup,
@@ -144,16 +175,21 @@ export const TextField = (props: TextFieldProps) => {
     hideLabel,
     inputId,
     inputProps,
+    labelPosition,
     label,
     labelTooltipText,
+    labelTooltipIconPosition = 'right',
+    labelTooltipIconSize = 'small',
     loading,
     max,
     min,
     noMarginTop,
     onBlur,
     onChange,
+    onClear,
     optional,
     required,
+    slotProps,
     tooltipClasses,
     tooltipOnMouseEnter,
     tooltipPosition,
@@ -165,16 +201,47 @@ export const TextField = (props: TextFieldProps) => {
     ...textFieldProps
   } = props;
 
-  const [_value, setValue] = React.useState<Value>(value);
+  const [_value, setValue] = React.useState<Value>(value ?? '');
   const theme = useTheme();
-  const fallbackId = React.useId();
+
+  const sxTooltipIconLeft = {
+    marginRight: `${theme.spacingFunction(4)}`,
+    padding: `${theme.spacingFunction(4)} ${theme.spacingFunction(4)} ${theme.spacingFunction(4)} ${theme.spacingFunction(2)}`,
+    '&& svg': {
+      fill: theme.tokens.component.Label.Icon,
+      stroke: theme.tokens.component.Label.Icon,
+      strokeWidth: 0,
+      ':hover': {
+        color: theme.tokens.alias.Content.Icon.Primary.Hover,
+        fill: theme.tokens.alias.Content.Icon.Primary.Hover,
+        stroke: theme.tokens.alias.Content.Icon.Primary.Hover,
+      },
+    },
+  };
+
+  const sxTooltipIconRight = {
+    marginLeft: `${theme.spacingFunction(4)}`,
+    padding: `${theme.spacingFunction(4)}`,
+  };
+
+  const { errorScrollClassName, errorTextId, helperTextId, validInputId } =
+    useFieldIds({
+      errorGroup,
+      hasError: Boolean(errorText),
+      inputId: inputId ?? inputProps?.id ?? InputProps?.id,
+      label,
+    });
+
+  const isControlled = value !== undefined;
 
   React.useEffect(() => {
-    setValue(value);
-  }, [value]);
+    if (isControlled) {
+      setValue(value);
+    }
+  }, [value, isControlled]);
 
   const handleBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     if (trimmed) {
       const trimmedValue = e.target.value.trim();
@@ -188,22 +255,17 @@ export const TextField = (props: TextFieldProps) => {
 
   const handleChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const numberTypes = ['tel', 'number'];
-
-      // Because !!0 is falsy :(
-      const minAndMaxExist = typeof min === 'number' && typeof max === 'number';
-
       /**
        * If we've provided a min and max value, make sure the user
        * input doesn't go outside of those bounds ONLY if the input
        * type matches a number type.
        */
-      const cleanedValue =
-        minAndMaxExist &&
-        numberTypes.some((eachType) => eachType === type) &&
-        e.target.value !== ''
-          ? clamp(min, max, +e.target.value)
-          : e.target.value;
+      const cleanedValue = getClampedValue({
+        max,
+        min,
+        type,
+        value: e.target.value,
+      });
 
       /**
        * If the cleanedValue is undefined, set the value to an empty
@@ -239,93 +301,96 @@ export const TextField = (props: TextFieldProps) => {
         }
       }
     },
-    [min, max, type, onChange]
+    [min, max, type, onChange],
   );
-
-  let errorScrollClassName = '';
-
-  if (errorText) {
-    errorScrollClassName = errorGroup
-      ? `error-for-scroll-${errorGroup}`
-      : `error-for-scroll`;
-  }
-
-  const validInputId =
-    inputId ||
-    (label
-      ? convertToKebabCase(label)
-      : // label could still be an empty string
-        fallbackId);
-
-  const helperTextId = `${validInputId}-helper-text`;
-  const errorTextId = `${validInputId}-error-text`;
 
   const labelSuffixText = required
     ? '(required)'
     : optional
-    ? '(optional)'
-    : null;
+      ? '(optional)'
+      : null;
 
   return (
     <Box
       {...containerProps}
-      className={`${errorText ? errorScrollClassName : ''} ${
-        containerProps?.className || ''
-      }`}
+      className={`${errorText ? errorScrollClassName : ''} ${containerProps?.className || ''}`}
       sx={{
         ...(Boolean(tooltipText) && {
           alignItems: 'flex-end',
           display: 'flex',
           flexWrap: 'wrap',
         }),
+        ...(!noMarginTop &&
+          labelPosition === 'left' && { marginTop: theme.spacing(3) }),
+        ...(labelPosition === 'left' && {
+          flexDirection: 'row',
+          display: 'flex',
+          gap: theme.spacing(1),
+          alignItems: 'center',
+        }),
         ...containerProps?.sx,
       }}
     >
       <Box
-        sx={{
-          marginBottom: theme.spacing(1),
-          ...(!noMarginTop && { marginTop: theme.spacing(2) }),
-        }}
         alignItems={'center'}
         className={hideLabel ? 'visually-hidden' : ''}
         data-testid="inputLabelWrapper"
         display="flex"
+        sx={{
+          ...(labelPosition !== 'left' && {
+            marginBottom: theme.spacing(1),
+            ...(!noMarginTop && { marginTop: theme.spacing(2) }),
+          }),
+        }}
       >
+        {labelTooltipText && labelTooltipIconPosition === 'left' && (
+          <TooltipIcon
+            labelTooltipIconSize={labelTooltipIconSize}
+            status="info"
+            sxTooltipIcon={sxTooltipIconLeft}
+            text={labelTooltipText}
+            width={tooltipWidth}
+          />
+        )}
         <InputLabel
+          data-qa-textfield-label={label}
+          htmlFor={validInputId}
           sx={{
             marginBottom: 0,
             transform: 'none',
+            fontSize:
+              labelTooltipIconSize === 'large'
+                ? theme.tokens.font.FontSize.S
+                : theme.tokens.font.FontSize.Xs,
           }}
-          data-qa-textfield-label={label}
-          htmlFor={validInputId}
+          {...InputLabelProps} // We should change this name so that it's not conflicting with the deprecated prop
         >
           {label}
           {labelSuffixText && (
-            <Box component="span" sx={{ fontFamily: theme.font.normal }}>
+            <Box component="span" sx={{ font: theme.font.normal }}>
               {' '}
               {labelSuffixText}
             </Box>
           )}
         </InputLabel>
-        {labelTooltipText && (
+        {labelTooltipText && labelTooltipIconPosition === 'right' && (
           <TooltipIcon
-            sxTooltipIcon={{
-              marginLeft: `${theme.spacing(0.5)}`,
-              padding: `${theme.spacing(0.5)}`,
-            }}
-            status="help"
+            labelTooltipIconSize={labelTooltipIconSize}
+            status="info"
+            sxTooltipIcon={sxTooltipIconRight}
             text={labelTooltipText}
+            width={tooltipWidth}
           />
         )}
       </Box>
 
       {helperText && helperTextPosition === 'top' && (
         <FormHelperText
+          data-qa-textfield-helper-text
+          id={helperTextId}
           sx={{
             marginTop: 0,
           }}
-          data-qa-textfield-helper-text
-          id={helperTextId}
         >
           {helperText}
         </FormHelperText>
@@ -336,58 +401,14 @@ export const TextField = (props: TextFieldProps) => {
             display: 'flex',
             width: '100%',
           }),
+          width: '100%',
         }}
       >
         <_TextField
           {...textFieldProps}
           {...dataAttrs}
-          InputLabelProps={{
-            ...InputLabelProps,
-            required: false,
-            shrink: true,
-          }}
-          InputProps={{
-            className,
-            disableUnderline: true,
-            endAdornment: loading && (
-              <InputAdornment position="end">
-                <CircleProgress size="sm" />
-              </InputAdornment>
-            ),
-            sx: {
-              ...(expand && {
-                maxWidth: '100%',
-              }),
-            },
-            ...InputProps,
-          }}
-          SelectProps={{
-            IconComponent: KeyboardArrowDown,
-            MenuProps: {
-              MenuListProps: { className: 'selectMenuList' },
-              PaperProps: { className: 'selectMenuDropdown' },
-              anchorOrigin: { horizontal: 'left', vertical: 'bottom' },
-              transformOrigin: { horizontal: 'left', vertical: 'top' },
-            },
-            disableUnderline: true,
-            ...SelectProps,
-          }}
-          inputProps={{
-            'aria-describedby': helperText ? helperTextId : undefined,
-            'aria-errormessage': errorText ? errorTextId : undefined,
-            'aria-invalid': !!error || !!errorText,
-            'data-testid': 'textfield-input',
-            id: validInputId,
-            ...inputProps,
-          }}
-          sx={{
-            marginTop: 0,
-            ...(Boolean(tooltipText) && {
-              width: '416px',
-            }),
-            ...props.sx,
-          }}
           className={className}
+          disabled={disabled}
           error={!!error || !!errorText}
           fullWidth
           helperText={''}
@@ -398,6 +419,69 @@ export const TextField = (props: TextFieldProps) => {
           label={''}
           onBlur={handleBlur}
           onChange={handleChange}
+          slotProps={{
+            htmlInput: {
+              'aria-describedby': helperText ? helperTextId : undefined,
+              'aria-errormessage': errorText ? errorTextId : undefined,
+              'aria-invalid': !!error || !!errorText,
+              'data-testid': 'textfield-input',
+              id: validInputId,
+              ...inputProps, // Included for backward compatibility until migration is complete
+              ...slotProps?.htmlInput,
+            },
+            input: {
+              className,
+              disableUnderline: true,
+              endAdornment: (
+                <>
+                  {loading && (
+                    <InputAdornment position="end">
+                      <CircleProgress noPadding size="xs" />
+                    </InputAdornment>
+                  )}
+                  {clearable && _value && !disabled && (
+                    <InputAdornment
+                      onClick={() => {
+                        setValue('');
+                        onClear?.();
+                      }}
+                      position="end"
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </InputAdornment>
+                  )}
+                </>
+              ),
+              sx: {
+                ...(expand && {
+                  maxWidth: '100%',
+                }),
+              },
+              ...(InputProps as SlotComponentProps<React.ElementType, {}, {}>), // Included for backward compatibility until migration is complete
+              ...slotProps?.input,
+            },
+            select: {
+              IconComponent: KeyboardArrowDown,
+              MenuProps: {
+                MenuListProps: { className: 'selectMenuList' },
+                PaperProps: { className: 'selectMenuDropdown' },
+                anchorOrigin: { horizontal: 'left', vertical: 'bottom' },
+                transformOrigin: { horizontal: 'left', vertical: 'top' },
+              },
+              disableUnderline: true,
+              ...(SelectProps as SlotComponentProps<React.ElementType, {}, {}>), // Included for backward compatibility until migration is complete
+              ...slotProps?.select,
+            },
+            ...slotProps,
+          }}
+          sx={{
+            marginTop: 0,
+            ...(Boolean(tooltipText) && {
+              width: '416px',
+            }),
+            ...props.sx,
+          }}
           type={type}
           /*
            * Let us explicitly pass an empty string to the input
@@ -410,15 +494,15 @@ export const TextField = (props: TextFieldProps) => {
         </_TextField>
         {tooltipText && (
           <TooltipIcon
+            classes={{ popper: tooltipClasses }}
+            onMouseEnter={tooltipOnMouseEnter}
+            status="info"
             sxTooltipIcon={{
               height: '34px',
               margin: '0px 0px 0px 4px',
-              padding: '17px',
+              padding: '8px',
               width: '34px',
             }}
-            classes={{ popper: tooltipClasses }}
-            onMouseEnter={tooltipOnMouseEnter}
-            status="help"
             text={tooltipText}
             tooltipPosition={tooltipPosition}
             width={tooltipWidth}
@@ -427,6 +511,9 @@ export const TextField = (props: TextFieldProps) => {
       </Box>
       {errorText && (
         <FormHelperText
+          data-qa-textfield-error-text={label}
+          error
+          role="alert"
           sx={{
             ...((editable || hasAbsoluteError) && {
               position: 'absolute',
@@ -436,14 +523,11 @@ export const TextField = (props: TextFieldProps) => {
               wordBreak: 'keep-all',
             }),
             alignItems: 'center',
-            color: theme.palette.error.dark,
             display: 'flex',
             left: 5,
             top: 42,
             width: '100%',
           }}
-          data-qa-textfield-error-text={label}
-          role="alert"
         >
           {errorText}
         </FormHelperText>

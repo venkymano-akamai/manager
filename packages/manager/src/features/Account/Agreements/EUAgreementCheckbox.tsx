@@ -8,6 +8,7 @@ interface Props {
   centerCheckbox?: boolean;
   checked: boolean;
   className?: string;
+  disabled?: boolean;
   onChange: (
     event: React.ChangeEvent<HTMLInputElement>,
     checked: boolean
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export const EUAgreementCheckbox = (props: Props) => {
-  const { centerCheckbox, checked, className, onChange } = props;
+  const { centerCheckbox, checked, className, onChange, disabled } = props;
   const theme = useTheme();
 
   const checkboxStyle = centerCheckbox
@@ -26,20 +27,21 @@ export const EUAgreementCheckbox = (props: Props) => {
 
   return (
     <Box
+      alignItems={centerCheckbox ? 'center' : 'flex-start'}
+      className={className}
+      data-testid="eu-agreement-checkbox"
+      display="flex"
+      flexDirection="row"
       sx={{
         [theme.breakpoints.down('md')]: {
           marginLeft: theme.spacing(1),
           marginRight: theme.spacing(1),
         },
       }}
-      alignItems={centerCheckbox ? 'center' : 'flex-start'}
-      className={className}
-      data-testid="eu-agreement-checkbox"
-      display="flex"
-      flexDirection="row"
     >
       <Checkbox
         checked={checked}
+        disabled={disabled}
         id="gdpr-checkbox"
         onChange={onChange}
         sx={checkboxStyle}
