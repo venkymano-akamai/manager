@@ -9,6 +9,7 @@ import {
   Brush,
   CartesianGrid,
   Legend,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -203,6 +204,76 @@ export const AreaChart = (props: AreaChartProps) => {
   );
 
   const [chartData, setChartData] = React.useState<any[]>(data);
+  // --- NEW state for click-and-drag selection ---
+  const [isSelecting, setIsSelecting] = React.useState(false);
+  const [selectionStart, setSelectionStart] = React.useState<null | number>(
+    data[0].timestamp
+  );
+  const [selectionEnd, setSelectionEnd] = React.useState<null | number>(
+    data[1].timestamp
+  );
+
+  // --- NEW handlers ---
+  const handleChartMouseDown = (e: any) => {
+    // e.activeLabel is the x value (timestamp) when type="number" on XAxis
+    if (!e || e.activeLabel == null) return;
+    setIsSelecting(true);
+    setSelectionStart(e.activeLabel as number);
+  };
+
+  const handleChartMouseMove = (e: any) => {
+    if (!isSelecting) return;
+    if (!e || e.activeLabel == null) return;
+    setSelectionEnd(e.activeLabel as number);
+  };
+
+  const handleChartMouseUp = (e: any) => {
+    if (!isSelecting) return;
+    setIsSelecting(false);
+
+    // If mouseup gives activeLabel, prefer it; otherwise use current selectionEnd
+    const endLabel =
+      e && e.activeLabel != null ? (e.activeLabel as number) : selectionEnd;
+    const start = Math.min(selectionStart ?? 0, endLabel ?? 0);
+    const end = Math.max(selectionStart ?? 0, endLabel ?? 0);
+
+    // Ignore tiny / accidental selections
+    if (start === end) {
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      return;
+    }
+
+    // Update xDomain and slice chartData similar to brush behavior
+    // Note: we find indices from the original `data` (not the already-sliced chartData)
+    const newStartIndex = data.findIndex((d) => d.timestamp >= start);
+    let newEndIndex = -1;
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i].timestamp <= end) {
+        newEndIndex = i;
+        break;
+      }
+    }
+
+    if (newStartIndex >= 0 && newEndIndex >= newStartIndex) {
+      const startTimestamp = data[newStartIndex].timestamp;
+      const endTimestamp = data[newEndIndex].timestamp;
+      if (
+        startTimestamp &&
+        endTimestamp &&
+        !(xDomain[0] === startTimestamp && xDomain[1] === endTimestamp)
+      ) {
+        // Slice the chartData based on the brush range
+        const newChartData = data.slice(newStartIndex, newEndIndex + 1);
+        setXDomain([startTimestamp, endTimestamp]);
+        setChartData(newChartData);
+      }
+    }
+
+    // reset selection rectangle
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  };
 
   React.useEffect(() => {
     const newStartIndex = 0;
@@ -344,18 +415,20 @@ export const AreaChart = (props: AreaChartProps) => {
   return (
     <div onWheel={handleZoom}>
       <ResponsiveContainer height={height} width={width}>
-        <_AreaChart aria-label={ariaLabel} data={data} margin={margin}>
+        <_AreaChart
+          aria-label={ariaLabel}
+          data={chartData}
+          margin={margin}
+          onMouseDown={handleChartMouseDown}
+          onMouseMove={handleChartMouseMove}
+          onMouseUp={handleChartMouseUp}
+        >
           <CartesianGrid
             stroke={theme.color.grey7}
             strokeDasharray="3 3"
             vertical={false}
           />
           <XAxis
-            ticks={
-              xAxisTickCount
-                ? generate12HourTicks(chartData, timezone, xAxisTickCount)
-                : []
-            }
             dataKey="timestamp"
             domain={xDomain}
             interval={xAxisTickCount ? 0 : 'preserveEnd'}
@@ -363,6 +436,11 @@ export const AreaChart = (props: AreaChartProps) => {
             scale="time"
             stroke={theme.color.label}
             tickFormatter={xAxisTickFormatter}
+            ticks={
+              xAxisTickCount
+                ? generate12HourTicks(chartData, timezone, xAxisTickCount)
+                : []
+            }
             // ticks={
             //   xAxisTickCount
             //     ? generate12HourTicks(data, timezone, xAxisTickCount)
@@ -424,7 +502,17 @@ export const AreaChart = (props: AreaChartProps) => {
               type="monotone"
             />
           ))}
-          <Brush
+          {selectionStart != null && selectionEnd != null && (
+            <ReferenceArea
+              fill="rgba(77, 46, 3, 0.15)"
+              ifOverflow="extendDomain"
+              stroke="rgba(206, 131, 26, 0.6)"
+              // strokeOpacity={0.3}
+              x1={Math.min(selectionStart, selectionEnd)}
+              x2={Math.max(selectionStart, selectionEnd)}
+            />
+          )}
+          {/* <Brush
             dataKey="timestamp"
             fill="rgba(76, 175, 80, 0.2)" // Light green semi-transparent background
             height={10} // Increase the height for a better visual
@@ -432,7 +520,7 @@ export const AreaChart = (props: AreaChartProps) => {
             stroke="#4CAF50" // Stylish green stroke
             tickFormatter={xAxisTickFormatter}
             travellerWidth={15} // Wider handles
-          />
+          /> */}
         </_AreaChart>
       </ResponsiveContainer>
       <AccessibleAreaChart
