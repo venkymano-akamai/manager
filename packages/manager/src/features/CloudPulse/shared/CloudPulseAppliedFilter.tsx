@@ -13,6 +13,7 @@ export const CloudPulseAppliedFilter = (
 
   return (
     <Box
+      data-qa-applied-filter-id="applied-filter"
       data-testid="applied-filter"
       display="flex"
       flexDirection={{ sm: 'row', xs: 'column' }}
@@ -41,6 +42,7 @@ export const CloudPulseAppliedFilter = (
             {filterValue.map((value, index) => {
               return (
                 <Chip
+                  data-qa-value={`${label} ${value}`}
                   key={`${label} ${value}`}
                   label={value}
                   sx={(theme) => ({
