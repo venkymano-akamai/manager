@@ -62,6 +62,15 @@ const nodeBalancerDetailConfigurationsRoute = createRoute({
   ).then((m) => m.nodeBalancerDetailLazyRoute)
 );
 
+const nodeBalancerDetailMetricsRoute = createRoute({
+  getParentRoute: () => nodeBalancersRoute,
+  path: '$id/metrics',
+}).lazy(() =>
+  import(
+    'src/features/NodeBalancers/NodeBalancerDetail/nodeBalancersDetailLazyRoute'
+  ).then((m) => m.nodeBalancerDetailLazyRoute)
+);
+
 const nodeBalancerDetailConfigurationRoute = createRoute({
   getParentRoute: () => nodeBalancerDetailConfigurationsRoute,
   path: '$configId',
@@ -129,6 +138,7 @@ export const nodeBalancersRouteTree = nodeBalancersRoute.addChildren([
       nodeBalancerDetailSettingsAddFirewallRoute,
       nodeBalancerDetailSettingsUnassignFirewallRoute,
     ]),
+    nodeBalancerDetailMetricsRoute,
   ]),
   nodeBalancerDeleteRoute,
 ]);

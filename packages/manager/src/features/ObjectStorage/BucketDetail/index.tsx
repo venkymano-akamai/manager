@@ -8,6 +8,7 @@ import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
 import { TabPanels } from 'src/components/Tabs/TabPanels';
 import { Tabs } from 'src/components/Tabs/Tabs';
 import { TanStackTabLinkList } from 'src/components/Tabs/TanStackTabLinkList';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 import { useIsObjectStorageGen2Enabled } from 'src/features/ObjectStorage/hooks/useIsObjectStorageGen2Enabled';
 import { useTabs } from 'src/hooks/useTabs';
 import { useObjectStorageBuckets } from 'src/queries/object-storage/queries';
@@ -55,6 +56,10 @@ export const BucketDetailLanding = React.memo(() => {
       title: 'SSL/TLS',
       to: `/object-storage/buckets/$clusterId/$bucketName/ssl`,
     },
+    {
+      title: 'Metrics',
+      to: `/object-storage/buckets/$clusterId/$bucketName/metrics`,
+    },
   ]);
 
   return (
@@ -92,8 +97,19 @@ export const BucketDetailLanding = React.memo(() => {
                 endpointType={endpoint_type}
               />
             </SafeTabPanel>
-            <SafeTabPanel index={tabs.length - 1}>
-              <BucketSSL bucketName={bucketName} clusterId={clusterId} />
+            {!(!bucketsData || isGen2Endpoint) && (
+              <SafeTabPanel index={2}>
+                <BucketSSL bucketName={bucketName} clusterId={clusterId} />
+              </SafeTabPanel>
+            )}
+            <SafeTabPanel
+              index={!(!bucketsData || isGen2Endpoint) ? tabs.length - 1 : 2}
+            >
+              <CloudPulseDashboardWithFilters
+                region={bucket?.region}
+                resource={bucket?.hostname || ''}
+                serviceType="objectstorage"
+              />
             </SafeTabPanel>
           </TabPanels>
         </React.Suspense>
