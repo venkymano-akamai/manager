@@ -54,3 +54,16 @@ jobs:
         run: |
           cd packages/manager
           pnpm cy:run -s 'cypress/e2e/core/cloudpulse/cloudpulse-region-support.spec.ts'
+      - name: Comment result on PR
+        if: always()
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.inputs.pr_number }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            ✅ **Cloudpulse E2E completed**
+
+            **Status:** `${{ job.status }}`
+            **PR:** #${{ github.event.inputs.pr_number }}
+
+            🔗 Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
