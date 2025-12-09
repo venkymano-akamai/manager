@@ -1,0 +1,33 @@
+name: Dispatch Cloudpulse E2E from PR comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  dispatch-e2e:
+    runs-on: ubuntu-latest
+    if: >
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, 'run_cypress') &&
+      (github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'OWNER'  ||
+       github.event.comment.author_association == 'COLLABORATOR')
+
+    steps:
+      - name: Trigger trusted E2E workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.issue.number;
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'trusted_e2e_cloudpulse_cypress.yml',
+              ref: 'aclp_develop',
+              inputs: {
+                pr_number: prNumber.toString(),
+              },
+            });
