@@ -106,3 +106,17 @@ jobs:
               description: `Cloudpulse E2E ${state}`,
               target_url: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
             });
+      - name: Notify Webex (Cloudpulse E2E result)
+        if: always()
+        env:
+          status: ${{ job.status }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ROOM_ID: ${{ secrets.CYPRESS_ROOM_ID }}
+          url: ${{ github.event.pull_request.html_url }}
+          title: ${{ github.event.pull_request.title }}
+          author: ${{ github.event.pull_request.user.login }}
+          run: |
+                cd scripts
+                cypress_status_notifier.py
