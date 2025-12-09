@@ -31,7 +31,7 @@ def send_message():
     }
     data = {        
         'roomId': ROOM_ID,
-        'markdown': getRandomMessage().format(TITLE=TITLE, AUTHOR=AUTHOR, URL=URL, STATUS=STATUS),
+        'markdown': getRandomMessage().format(TITLE=TITLE, AUTHOR=AUTHOR, URL=URL, STATUS=STATUS, RUN_URL=RUN_URL),
     }
 
     requests.post(url, headers=headers, json=data)
