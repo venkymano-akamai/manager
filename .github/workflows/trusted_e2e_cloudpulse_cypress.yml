@@ -26,14 +26,6 @@ jobs:
       REACT_APP_APP_ROOT: http://localhost:3000
       REACT_APP_LAUNCH_DARKLY_ID: ${{ secrets.REACT_APP_LAUNCH_DARKLY_ID }}
       REACT_APP_LKE_HIGH_AVAILABILITY_PRICE: "60"
-      status: ${{ job.status }}
-      run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      REPO: ${{ github.repository }}
-      BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      ROOM_ID: ${{ secrets.CYPRESS_ROOM_ID }}
-      url: ${{ github.event.pull_request.html_url }}
-      title: ${{ github.event.pull_request.title }}
-      author: ${{ github.event.pull_request.user.login }}
 
     steps:
       - name: Get PR info
@@ -115,6 +107,15 @@ jobs:
               target_url: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
             });
       - name: Notify Webex (Cloudpulse E2E result)
+        env:
+          status: ${{ job.status }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ROOM_ID: ${{ secrets.CYPRESS_ROOM_ID }}
+          url: ${{ github.event.pull_request.html_url }}
+          title: ${{ github.event.pull_request.title }}
+          author: ${{ github.event.pull_request.user.login }}
         if: always()
         run: |
                 cd scripts
