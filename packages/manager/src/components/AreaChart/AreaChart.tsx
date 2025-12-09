@@ -1,5 +1,5 @@
-import { Box, Paper, Typography } from '@linode/ui';
-import { useTheme } from '@mui/material';
+import { Box, Button, Paper, Typography } from '@linode/ui';
+import { Grid, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DateTime } from 'luxon';
 import React from 'react';
@@ -8,6 +8,7 @@ import {
   Area,
   CartesianGrid,
   Legend,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -26,6 +27,7 @@ import {
 } from './utils';
 
 import type { TooltipProps } from 'recharts';
+import type { CategoricalChartState } from 'recharts/types/chart/types';
 import type { MetricsDisplayRow } from 'src/components/LineGraph/MetricsDisplay';
 
 export interface DataSet {
@@ -192,6 +194,114 @@ export const AreaChart = (props: AreaChartProps) => {
   } = props;
 
   const theme = useTheme();
+  const [xDomain, setXDomain] = React.useState<[number, number]>(
+    data && data.length > 0
+      ? [data[0].timestamp, data[data.length - 1].timestamp]
+      : [0, 0]
+  );
+
+  const [chartData, setChartData] = React.useState<any[]>(data);
+  // --- NEW state for click-and-drag selection ---
+  const [isSelecting, setIsSelecting] = React.useState(false);
+  const [selectionStart, setSelectionStart] = React.useState<null | number>(
+    data.length ? data[0].timestamp : null
+  );
+  const [selectionEnd, setSelectionEnd] = React.useState<null | number>(
+    data.length > 1 ? data[1].timestamp : null
+  );
+
+  // --- NEW handlers ---
+  const handleChartMouseDown = (e: CategoricalChartState) => {
+    // e.activeLabel is the x value (timestamp) when type="number" on XAxis
+    if (!e || !e.activePayload || e.activePayload === null) return;
+    setIsSelecting(true);
+    setSelectionStart(
+      e.activePayload[e.activePayload.length - 1].payload.timestamp
+    );
+  };
+
+  const handleChartMouseMove = (e: CategoricalChartState) => {
+    if (!isSelecting) return;
+    if (!e || !e.activePayload || e.activePayload === null) return;
+    setSelectionEnd(
+      e.activePayload[e.activePayload.length - 1].payload.timestamp
+    );
+  };
+
+  const handleChartMouseUp = (e: CategoricalChartState) => {
+    if (!isSelecting) return;
+    setIsSelecting(false);
+
+    // If mouseup gives activeLabel, prefer it; otherwise use current selectionEnd
+    const endLabel =
+      !e || !e.activePayload || e.activePayload === null
+        ? selectionEnd
+        : e.activePayload[e.activePayload.length - 1].payload.timestamp;
+    const start = Math.min(selectionStart ?? 0, endLabel ?? 0);
+    const end = Math.max(selectionStart ?? 0, endLabel ?? 0);
+
+    // Ignore tiny / accidental selections
+    if (start === end) {
+      setSelectionStart(null);
+      setSelectionEnd(null);
+      return;
+    }
+
+    // Update xDomain and slice chartData similar to brush behavior
+    // Note: we find indices from the original `data` (not the already-sliced chartData)
+    const newStartIndex = data.findIndex((d: any) => {
+      return d.timestamp >= start;
+    });
+    let newEndIndex = -1;
+    for (let i = data.length - 1; i >= 0; i--) {
+      if (data[i].timestamp <= end) {
+        newEndIndex = i;
+        break;
+      }
+    }
+
+    if (newStartIndex >= 0 && newEndIndex >= newStartIndex) {
+      const startTimestamp = data[newStartIndex].timestamp;
+      const endTimestamp = data[newEndIndex].timestamp;
+      if (
+        startTimestamp &&
+        endTimestamp &&
+        !(xDomain[0] === startTimestamp && xDomain[1] === endTimestamp)
+      ) {
+        // Slice the chartData based on the brush range
+        const newChartData = data.slice(newStartIndex, newEndIndex + 1);
+        setXDomain([startTimestamp, endTimestamp]);
+        setChartData(newChartData);
+      }
+    }
+
+    // reset selection rectangle
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  };
+
+  const handleResetZoom = () => {
+    if (data.length === 0) {
+      return;
+    }
+    const newStartIndex = 0;
+    const newEndIndex = data.length - 1;
+
+    // Update the brush range
+    const startTimestamp = data[newStartIndex].timestamp;
+    const endTimestamp = data[newEndIndex].timestamp;
+
+    if (
+      startTimestamp &&
+      endTimestamp &&
+      !(xDomain[0] === startTimestamp && xDomain[1] === endTimestamp)
+    ) {
+      // Slice the chartData based on the brush range
+      const newChartData = data.slice(newStartIndex, newEndIndex + 1);
+      setXDomain([startTimestamp, endTimestamp]);
+      setChartData(newChartData);
+    }
+  };
 
   const [activeSeries, setActiveSeries] = React.useState<Array<string>>([]);
   const handleLegendClick = (dataKey: string) => {
@@ -266,21 +376,41 @@ export const AreaChart = (props: AreaChartProps) => {
   };
 
   return (
-    <>
+    <Grid container spacing={3}>
+      <Button
+        buttonType="primary"
+        name="Reset Zoom"
+        onClick={handleResetZoom}
+        sx={{
+          height: '26px',
+          width: '124px',
+        }}
+        variant="contained"
+      >
+        Reset Zoom
+      </Button>
       <ResponsiveContainer
         data-testid="area-chart-container"
         height={height}
         width={width}
       >
-        <_AreaChart aria-label={ariaLabel} data={data} margin={margin}>
+        <_AreaChart
+          aria-label={ariaLabel}
+          data={chartData}
+          margin={margin}
+          onMouseDown={handleChartMouseDown}
+          onMouseMove={handleChartMouseMove}
+          onMouseUp={handleChartMouseUp}
+        >
           <CartesianGrid
             stroke={theme.color.grey7}
             strokeDasharray="3 3"
             vertical={false}
           />
           <XAxis
+            allowDataOverflow
             dataKey="timestamp"
-            domain={['dataMin', 'dataMax']}
+            domain={xDomain}
             interval={xAxisTickCount ? 0 : 'preserveEnd'}
             minTickGap={xAxis.tickGap}
             scale="time"
@@ -288,7 +418,13 @@ export const AreaChart = (props: AreaChartProps) => {
             tickFormatter={xAxisTickFormatter}
             ticks={
               xAxisTickCount
-                ? generate12HourTicks(data, timezone, xAxisTickCount)
+                ? generate12HourTicks(
+                    chartData,
+                    timezone,
+                    xAxisTickCount > chartData.length
+                      ? chartData.length
+                      : xAxisTickCount
+                  )
                 : []
             }
             type="number"
@@ -347,6 +483,16 @@ export const AreaChart = (props: AreaChartProps) => {
               type="monotone"
             />
           ))}
+          {selectionStart !== null && selectionEnd !== null && (
+            <ReferenceArea
+              fill="rgba(77, 46, 3, 0.15)"
+              ifOverflow="extendDomain"
+              stroke="rgba(206, 131, 26, 0.6)"
+              strokeOpacity={0.3}
+              x1={Math.min(selectionStart, selectionEnd)}
+              x2={Math.max(selectionStart, selectionEnd)}
+            />
+          )}
         </_AreaChart>
       </ResponsiveContainer>
       <AccessibleAreaChart
@@ -356,7 +502,7 @@ export const AreaChart = (props: AreaChartProps) => {
         timezone={timezone}
         unit={unit}
       />
-    </>
+    </Grid>
   );
 };
 
