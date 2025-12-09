@@ -13,7 +13,8 @@ jobs:
 
     env:
       # Cypress secret
-      CYPRESS_MANAGER_OAUTH: ${{ secrets.MANAGER_OAUTH }}
+      CYPRESS_MANAGER_OAUTH: ${{ secrets.MANAGER_OAUTH_SECRET }}
+      MANAGER_OAUTH: ${{secrets.MANAGER_OAUTH_SECRET}}
 
       # App env
       REACT_APP_LOGIN_ROOT: https://login.linode.com
