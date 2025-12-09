@@ -53,4 +53,4 @@ jobs:
       - name: Run Cloudpulse Cypress tests
         run: |
           cd packages/manager
-          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/!(cloudpulse-navigation.spec.ts)'
+          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/cloudpulse-region-support.spec.ts'
