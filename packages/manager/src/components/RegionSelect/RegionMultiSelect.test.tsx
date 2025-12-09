@@ -1,29 +1,27 @@
+import { regionFactory } from '@linode/utilities';
 import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 
-import { regionFactory } from 'src/factories/regions';
+// @todo: modularization - Replace 'testHelpers' with 'testHelpers' from the shared package once available.
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { RegionMultiSelect } from './RegionMultiSelect';
 
-import type { RegionSelectOption } from 'src/components/RegionSelect/RegionSelect.types';
+import type { Region } from '@linode/api-v4';
 
-const regions = regionFactory.buildList(1, {
+const regionNewark = regionFactory.build({
   id: 'us-east',
   label: 'Newark, NJ',
 });
 
-const regionsNewark = regionFactory.buildList(1, {
-  id: 'us-east',
-  label: 'Newark, NJ',
-});
-const regionsAtlanta = regionFactory.buildList(1, {
+const regionAtlanta = regionFactory.build({
   id: 'us-southeast',
   label: 'Atlanta, GA',
 });
+
 interface SelectedRegionsProps {
   onRemove: (region: string) => void;
-  selectedRegions: RegionSelectOption[];
+  selectedRegions: Region[];
 }
 const SelectedRegionsList = ({
   onRemove,
@@ -32,8 +30,8 @@ const SelectedRegionsList = ({
   <ul>
     {selectedRegions.map((region, index) => (
       <li aria-label={region.label} key={index}>
-        {region.label}
-        <button onClick={() => onRemove(region.value)}>Remove</button>
+        {region.label} ({region.id})
+        <button onClick={() => onRemove(region.id)}>Remove</button>
       </li>
     ))}
   </ul>
@@ -46,8 +44,9 @@ describe('RegionMultiSelect', () => {
     renderWithTheme(
       <RegionMultiSelect
         currentCapability="Block Storage"
-        handleSelection={mockHandleSelection}
-        regions={regions}
+        isGeckoLAEnabled={false}
+        onChange={mockHandleSelection}
+        regions={[regionNewark, regionAtlanta]}
         selectedIds={[]}
       />
     );
@@ -56,11 +55,13 @@ describe('RegionMultiSelect', () => {
   });
 
   it('should be able to select all the regions correctly', () => {
+    const onChange = vi.fn();
     renderWithTheme(
       <RegionMultiSelect
         currentCapability="Block Storage"
-        handleSelection={mockHandleSelection}
-        regions={[...regionsNewark, ...regionsAtlanta]}
+        isGeckoLAEnabled={false}
+        onChange={onChange}
+        regions={[regionNewark, regionAtlanta]}
         selectedIds={[]}
       />
     );
@@ -70,26 +71,18 @@ describe('RegionMultiSelect', () => {
 
     fireEvent.click(screen.getByRole('option', { name: 'Select All' }));
 
-    // Check if all the option is selected
-    expect(
-      screen.getByRole('option', {
-        name: 'Newark, NJ (us-east)',
-      })
-    ).toHaveAttribute('aria-selected', 'true');
-    expect(
-      screen.getByRole('option', {
-        name: 'Newark, NJ (us-east)',
-      })
-    ).toHaveAttribute('aria-selected', 'true');
+    expect(onChange).toHaveBeenCalledWith([regionAtlanta.id, regionNewark.id]);
   });
 
   it('should be able to deselect all the regions', () => {
+    const onChange = vi.fn();
     renderWithTheme(
       <RegionMultiSelect
         currentCapability="Block Storage"
-        handleSelection={mockHandleSelection}
-        regions={[...regionsNewark, ...regionsAtlanta]}
-        selectedIds={['us-east', 'us-southeast']}
+        isGeckoLAEnabled={false}
+        onChange={onChange}
+        regions={[regionNewark, regionAtlanta]}
+        selectedIds={[regionAtlanta.id, regionNewark.id]}
       />
     );
 
@@ -98,53 +91,48 @@ describe('RegionMultiSelect', () => {
 
     fireEvent.click(screen.getByRole('option', { name: 'Deselect All' }));
 
-    // Check if all the option is deselected selected
-    expect(
-      screen.getByRole('option', {
-        name: 'Newark, NJ (us-east)',
-      })
-    ).toHaveAttribute('aria-selected', 'false');
-    expect(
-      screen.getByRole('option', {
-        name: 'Newark, NJ (us-east)',
-      })
-    ).toHaveAttribute('aria-selected', 'false');
+    expect(onChange).toHaveBeenCalledWith([]);
   });
 
   it('should render selected regions correctly', () => {
     renderWithTheme(
       <RegionMultiSelect
+        currentCapability="Block Storage"
+        isGeckoLAEnabled={false}
+        onChange={mockHandleSelection}
+        regions={[regionNewark, regionAtlanta]}
+        selectedIds={[regionNewark.id]}
         SelectedRegionsList={({ onRemove, selectedRegions }) => (
           <SelectedRegionsList
             onRemove={onRemove}
             selectedRegions={selectedRegions}
           />
         )}
-        currentCapability="Block Storage"
-        handleSelection={mockHandleSelection}
-        regions={[...regionsNewark, ...regionsAtlanta]}
-        selectedIds={[]}
       />
     );
 
     // Open the dropdown
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
 
-    fireEvent.click(screen.getByRole('option', { name: 'Select All' }));
-
-    // Close the dropdown
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-
-    // Check if all the options are rendered
+    // Check Newark chip shows because it is selected
     expect(
       screen.getByRole('listitem', {
-        name: 'Newark, NJ (us-east)',
+        name: 'Newark, NJ',
       })
     ).toBeInTheDocument();
+
+    // Newark is selected
     expect(
-      screen.getByRole('listitem', {
+      screen.getByRole('option', {
         name: 'Newark, NJ (us-east)',
       })
-    ).toBeInTheDocument();
+    ).toHaveAttribute('aria-selected', 'true');
+
+    // Atlanta is not selected
+    expect(
+      screen.getByRole('option', {
+        name: 'Atlanta, GA (us-southeast)',
+      })
+    ).toHaveAttribute('aria-selected', 'false');
   });
 });

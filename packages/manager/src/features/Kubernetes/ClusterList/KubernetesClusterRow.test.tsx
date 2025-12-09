@@ -1,12 +1,18 @@
-import { render } from '@testing-library/react';
+import { regionFactory } from '@linode/utilities';
 import * as React from 'react';
 
-import { kubernetesClusterFactory, regionFactory } from 'src/factories';
+import { kubernetesClusterFactory } from 'src/factories';
 import { makeResourcePage } from 'src/mocks/serverHandlers';
 import { http, HttpResponse, server } from 'src/mocks/testServer';
-import { wrapWithTableBody, wrapWithTheme } from 'src/utilities/testHelpers';
+import {
+  renderWithTheme,
+  wrapWithTableBody,
+  wrapWithTheme,
+} from 'src/utilities/testHelpers';
 
-import { KubernetesClusterRow, Props } from './KubernetesClusterRow';
+import { KubernetesClusterRow } from './KubernetesClusterRow';
+
+import type { Props } from './KubernetesClusterRow';
 
 const cluster = kubernetesClusterFactory.build({ region: 'us-central' });
 
@@ -17,8 +23,8 @@ const props: Props = {
 };
 
 describe('ClusterRow component', () => {
-  it('should render', () => {
-    const { getByTestId } = render(
+  it('should render', async () => {
+    const { getByTestId } = renderWithTheme(
       wrapWithTheme(wrapWithTableBody(<KubernetesClusterRow {...props} />))
     );
 
@@ -36,16 +42,16 @@ describe('ClusterRow component', () => {
       })
     );
 
-    const { getByText, findByText } = render(
+    const { findByText, getByText } = renderWithTheme(
       wrapWithTableBody(<KubernetesClusterRow {...props} />)
     );
 
-    getByText('cluster-0');
-    await findByText('Fake Region, NC');
+    getByText('cluster-1');
+    await findByText('US, Fake Region, NC');
   });
 
-  it('renders HA chip for highly available clusters and hides chip for non-ha clusters', () => {
-    const { getByTestId, queryByTestId, rerender } = render(
+  it('renders HA chip for highly available clusters and hides chip for non-ha clusters', async () => {
+    const { getByTestId, queryByTestId, rerender } = renderWithTheme(
       wrapWithTableBody(
         <KubernetesClusterRow
           {...props}

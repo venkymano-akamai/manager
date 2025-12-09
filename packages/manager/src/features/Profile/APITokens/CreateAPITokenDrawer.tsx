@@ -1,42 +1,48 @@
+import {
+  useCreatePersonalAccessTokenMutation,
+  useProfile,
+} from '@linode/queries';
+import {
+  ActionsPanel,
+  Drawer,
+  FormControl,
+  FormHelperText,
+  Notice,
+  Radio,
+  Select,
+  TextField,
+} from '@linode/ui';
 import { useFormik } from 'formik';
 import { DateTime } from 'luxon';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import Select, { Item } from 'src/components/EnhancedSelect/Select';
-import { FormControl } from 'src/components/FormControl';
-import { FormHelperText } from 'src/components/FormHelperText';
-import { Notice } from 'src/components/Notice/Notice';
-import { Radio } from 'src/components/Radio/Radio';
 import { TableBody } from 'src/components/TableBody';
 import { TableCell } from 'src/components/TableCell';
 import { TableHead } from 'src/components/TableHead';
 import { TableRow } from 'src/components/TableRow';
-import { TextField } from 'src/components/TextField';
 import { ISO_DATETIME_NO_TZ_FORMAT } from 'src/constants';
 import { AccessCell } from 'src/features/ObjectStorage/AccessKeyLanding/AccessCell';
 import { VPC_READ_ONLY_TOOLTIP } from 'src/features/VPCs/constants';
-import { useFlags } from 'src/hooks/useFlags';
 import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useProfile } from 'src/queries/profile';
-import { useCreatePersonalAccessTokenMutation } from 'src/queries/tokens';
 import { getErrorMap } from 'src/utilities/errorUtils';
 
 import {
   StyledAccessCell,
   StyledPermissionsCell,
   StyledPermsTable,
+  StyledSelectAllPermissionsCell,
   StyledSelectCell,
 } from './APITokenDrawer.styles';
 import {
-  basePermNameMap as _basePermNameMap,
-  Permission,
   allScopesAreTheSame,
-  filterPermsNameMap,
+  basePermNameMap,
+  hasAccessBeenSelectedForAllScopes,
+  levelMap,
   permTuplesToScopeString,
   scopeStringToPermTuples,
 } from './utils';
+
+import type { Permission } from './utils';
 
 type Expiry = [string, string];
 
@@ -93,21 +99,17 @@ export const CreateAPITokenDrawer = (props: Props) => {
   const expiryTups = genExpiryTups();
   const { onClose, open, showSecret } = props;
 
-  const flags = useFlags();
-
   const initialValues = {
     expiry: expiryTups[0][1],
     label: '',
-    scopes: scopeStringToPermTuples(''),
+    scopes: scopeStringToPermTuples('', true),
   };
 
   const { data: profile } = useProfile();
 
-  const isParentUser = profile?.user_type === 'parent';
-
   const {
     error,
-    isLoading,
+    isPending,
     mutateAsync: createPersonalAccessToken,
   } = useCreatePersonalAccessTokenMutation();
 
@@ -115,16 +117,9 @@ export const CreateAPITokenDrawer = (props: Props) => {
     globalGrantType: 'child_account_access',
   });
 
-  const hasParentChildAccountAccess = Boolean(flags.parentChildAccountAccess);
-
-  // @TODO: Parent/Child - once in GA, remove _basePermNameMap logic and references.
-  // Just use the basePermNameMap import directly w/o any manipulation.
-  const basePermNameMap = filterPermsNameMap(_basePermNameMap, [
-    {
-      name: 'child_account',
-      shouldBeIncluded: hasParentChildAccountAccess,
-    },
-  ]);
+  // Visually hide the "Child Account Access" permission even though it's still part of the base perms.
+  const hideChildAccountAccessScope =
+    profile?.user_type !== 'parent' || isChildAccountAccessRestricted;
 
   const form = useFormik<{
     expiry: string;
@@ -136,7 +131,10 @@ export const CreateAPITokenDrawer = (props: Props) => {
       const { token } = await createPersonalAccessToken({
         expiry: values.expiry,
         label: values.label,
-        scopes: permTuplesToScopeString(values.scopes),
+        scopes: permTuplesToScopeString(
+          values.scopes,
+          hideChildAccountAccessScope ? ['child_account'] : []
+        ),
       });
       onClose();
       showSecret(token ?? 'Secret not available');
@@ -164,43 +162,46 @@ export const CreateAPITokenDrawer = (props: Props) => {
     e: React.SyntheticEvent<RadioButton>
   ): void => {
     const value = +e.currentTarget.value;
-    const newScopes = (showFilteredPermissions
-      ? filteredPermissions
-      : allPermissions
-    ).map(
-      (scope): Permission => {
-        // Check the excluded scopes object to see if the current scope will have its own defaults.
-        const indexOfExcludedScope = excludedScopesFromSelectAll.findIndex(
-          (excludedScope) =>
-            excludedScope.name === scope[0] &&
-            excludedScope.invalidAccessLevels.includes(value)
-        );
+    const newScopes = form.values.scopes.map((scope): Permission => {
+      // Check the excluded scopes object to see if the current scope will have its own defaults.
+      const indexOfExcludedScope = excludedScopesFromSelectAll.findIndex(
+        (excludedScope) =>
+          excludedScope.name === scope[0] &&
+          excludedScope.invalidAccessLevels.includes(value)
+      );
 
-        // Set an excluded scope based on its default access level, not the given Select All value.
-        if (indexOfExcludedScope >= 0) {
-          return [
-            scope[0],
-            excludedScopesFromSelectAll[indexOfExcludedScope]
-              .defaultAccessLevel,
-          ];
-        }
-        return [scope[0], value];
+      // Set an excluded scope based on its default access level, not the given Select All value.
+      if (indexOfExcludedScope >= 0) {
+        return [
+          scope[0],
+          excludedScopesFromSelectAll[indexOfExcludedScope].defaultAccessLevel,
+        ];
       }
-    );
+      return [scope[0], value];
+    });
     form.setFieldValue('scopes', newScopes);
-  };
-
-  const handleExpiryChange = (e: Item<string>) => {
-    form.setFieldValue('expiry', e.value);
   };
 
   // Permission scopes with a different default when Selecting All for the specified access level.
   const excludedScopesFromSelectAll: ExcludedScope[] = [
     {
-      defaultAccessLevel: 0,
-      invalidAccessLevels: [1],
+      defaultAccessLevel: levelMap.none,
+      invalidAccessLevels: [levelMap.read_only],
       name: 'vpc',
     },
+    ...(hideChildAccountAccessScope
+      ? [
+          {
+            defaultAccessLevel: levelMap.hidden,
+            invalidAccessLevels: [
+              levelMap.read_only,
+              levelMap.read_write,
+              levelMap.none,
+            ],
+            name: 'child_account',
+          },
+        ]
+      : []),
   ];
 
   const indexOfColumnWhereAllAreSelected = allScopesAreTheSame(
@@ -217,17 +218,6 @@ export const CreateAPITokenDrawer = (props: Props) => {
   // Filter permissions for all users except parent user accounts.
   const allPermissions = form.values.scopes;
 
-  // Filter permissions for all users *except* parent user accounts with access to child accounts enabled.
-  const showFilteredPermissions =
-    !flags.parentChildAccountAccess ||
-    (flags.parentChildAccountAccess &&
-      (!isParentUser || isChildAccountAccessRestricted));
-
-  const filteredPermissions = allPermissions.filter(
-    // @TODO: Parent/Child - Once feature is released and all perms are always returned, use basePermNameMap[scopeTup[0]] !== 'Child Account Access'.
-    (scopeTup) => scopeTup[0] !== 'child_account'
-  );
-
   return (
     <Drawer onClose={onClose} open={open} title="Add Personal Access Token">
       {errorMap.none && <Notice text={errorMap.none} variant="error" />}
@@ -240,10 +230,10 @@ export const CreateAPITokenDrawer = (props: Props) => {
       />
       <FormControl data-testid="expiry-select">
         <Select
-          isClearable={false}
           label="Expiry"
-          name="expiry"
-          onChange={handleExpiryChange}
+          onChange={(_, selected) => {
+            form.setFieldValue('expiry', selected.value);
+          }}
           options={expiryList}
           value={expiryList.find((item) => item.value === form.values.expiry)}
         />
@@ -256,8 +246,8 @@ export const CreateAPITokenDrawer = (props: Props) => {
         <TableHead>
           <TableRow>
             <TableCell data-qa-perm-access>Access</TableCell>
-            <TableCell data-qa-perm-none style={{ textAlign: 'center' }}>
-              None
+            <TableCell data-qa-perm-no-access style={{ textAlign: 'center' }}>
+              No Access
             </TableCell>
             <TableCell data-qa-perm-read noWrap style={{ textAlign: 'center' }}>
               Read Only
@@ -269,108 +259,102 @@ export const CreateAPITokenDrawer = (props: Props) => {
         </TableHead>
         <TableBody>
           <TableRow data-qa-row="Select All">
-            <StyledSelectCell padding="checkbox" parentColumn="Access">
-              Select All
-            </StyledSelectCell>
-            <StyledPermissionsCell padding="checkbox" parentColumn="None">
+            <StyledSelectCell padding="checkbox">Select All</StyledSelectCell>
+            <StyledSelectAllPermissionsCell padding="checkbox">
               <Radio
-                inputProps={{
-                  'aria-label': 'Select none for all',
-                }}
                 checked={indexOfColumnWhereAllAreSelected === 0}
-                data-qa-perm-none-radio
-                data-testid="set-all-none"
+                data-qa-perm-no-access-radio
+                data-testid="set-all-no-access"
+                inputProps={{
+                  'aria-label': 'Select no access for all',
+                }}
                 name="Select All"
                 onChange={handleSelectAllScopes}
                 value="0"
               />
-            </StyledPermissionsCell>
-            <StyledPermissionsCell padding="checkbox" parentColumn="Read Only">
+            </StyledSelectAllPermissionsCell>
+            <StyledSelectAllPermissionsCell padding="checkbox">
               <Radio
-                inputProps={{
-                  'aria-label': 'Select read-only for all',
-                }}
                 checked={indexOfColumnWhereAllAreSelected === 1}
                 data-qa-perm-read-radio
                 data-testid="set-all-read"
+                inputProps={{
+                  'aria-label': 'Select read-only for all',
+                }}
                 name="Select All"
                 onChange={handleSelectAllScopes}
                 value="1"
               />
-            </StyledPermissionsCell>
-            <StyledPermissionsCell padding="checkbox" parentColumn="Read/Write">
+            </StyledSelectAllPermissionsCell>
+            <StyledSelectAllPermissionsCell padding="checkbox">
               <Radio
-                inputProps={{
-                  'aria-label': 'Select read/write for all',
-                }}
                 checked={indexOfColumnWhereAllAreSelected === 2}
                 data-qa-perm-rw-radio
                 data-testid="set-all-write"
+                inputProps={{
+                  'aria-label': 'Select read/write for all',
+                }}
                 name="Select All"
                 onChange={handleSelectAllScopes}
                 value="2"
               />
-            </StyledPermissionsCell>
+            </StyledSelectAllPermissionsCell>
           </TableRow>
-          {(showFilteredPermissions ? filteredPermissions : allPermissions).map(
-            (scopeTup) => {
-              if (!basePermNameMap[scopeTup[0]]) {
-                return null;
-              }
-
-              const scopeIsForVPC = scopeTup[0] === 'vpc';
-
-              return (
-                <TableRow
-                  data-qa-row={basePermNameMap[scopeTup[0]]}
-                  key={scopeTup[0]}
-                >
-                  <StyledAccessCell padding="checkbox" parentColumn="Access">
-                    {basePermNameMap[scopeTup[0]]}
-                  </StyledAccessCell>
-                  <StyledPermissionsCell padding="checkbox" parentColumn="None">
-                    <AccessCell
-                      active={scopeTup[1] === 0}
-                      disabled={false}
-                      onChange={handleScopeChange}
-                      scope="0"
-                      scopeDisplay={scopeTup[0]}
-                      viewOnly={false}
-                    />
-                  </StyledPermissionsCell>
-                  <StyledPermissionsCell
-                    padding="checkbox"
-                    parentColumn="Read Only"
-                  >
-                    <AccessCell
-                      tooltipText={
-                        scopeIsForVPC ? VPC_READ_ONLY_TOOLTIP : undefined
-                      }
-                      active={scopeTup[1] === 1}
-                      disabled={scopeIsForVPC} // "Read Only" is not a valid scope for VPC
-                      onChange={handleScopeChange}
-                      scope="1"
-                      scopeDisplay={scopeTup[0]}
-                      viewOnly={false}
-                    />
-                  </StyledPermissionsCell>
-                  <StyledPermissionsCell
-                    padding="checkbox"
-                    parentColumn="Read/Write"
-                  >
-                    <AccessCell
-                      active={scopeTup[1] === 2}
-                      disabled={false}
-                      onChange={handleScopeChange}
-                      scope="2"
-                      scopeDisplay={scopeTup[0]}
-                      viewOnly={false}
-                    />
-                  </StyledPermissionsCell>
-                </TableRow>
-              );
+          {allPermissions.map((scopeTup) => {
+            if (
+              !basePermNameMap[scopeTup[0]] ||
+              (hideChildAccountAccessScope &&
+                basePermNameMap[scopeTup[0]] === 'Child Account Access')
+            ) {
+              return null;
             }
-          )}
+
+            const scopeIsForVPC = scopeTup[0] === 'vpc';
+
+            return (
+              <TableRow
+                data-qa-row={basePermNameMap[scopeTup[0]]}
+                key={scopeTup[0]}
+              >
+                <StyledAccessCell padding="checkbox">
+                  {basePermNameMap[scopeTup[0]]}
+                </StyledAccessCell>
+                <StyledPermissionsCell padding="checkbox">
+                  <AccessCell
+                    active={scopeTup[1] === 0}
+                    disabled={false}
+                    onChange={handleScopeChange}
+                    scope="0"
+                    scopeDisplay={scopeTup[0]}
+                    viewOnly={false}
+                  />
+                </StyledPermissionsCell>
+                <StyledPermissionsCell padding="checkbox">
+                  <AccessCell
+                    active={scopeTup[1] === 1}
+                    disabled={scopeIsForVPC} // "Read Only" is not a valid scope for VPC
+                    onChange={handleScopeChange}
+                    scope="1"
+                    scopeDisplay={scopeTup[0]}
+                    tooltipText={
+                      scopeIsForVPC ? VPC_READ_ONLY_TOOLTIP : undefined
+                    }
+                    viewOnly={false}
+                  />
+                </StyledPermissionsCell>
+                <StyledPermissionsCell padding="checkbox">
+                  <AccessCell
+                    active={scopeTup[1] === 2}
+                    disabled={false}
+                    onChange={handleScopeChange}
+                    scope="2"
+                    scopeDisplay={scopeTup[0]}
+                    viewOnly={false}
+                  />
+                </StyledPermissionsCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </StyledPermsTable>
       {errorMap.scopes && (
@@ -379,8 +363,12 @@ export const CreateAPITokenDrawer = (props: Props) => {
       <ActionsPanel
         primaryButtonProps={{
           'data-testid': 'create-button',
+          disabled: !hasAccessBeenSelectedForAllScopes(
+            form.values.scopes,
+            hideChildAccountAccessScope ? ['child_account'] : []
+          ),
           label: 'Create Token',
-          loading: isLoading,
+          loading: isPending,
           onClick: () => form.handleSubmit(),
         }}
         secondaryButtonProps={{ label: 'Cancel', onClick: onClose }}

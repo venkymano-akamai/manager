@@ -1,47 +1,63 @@
-import { AFFINITY_TYPES } from '@linode/api-v4';
-import { APIError } from '@linode/api-v4/lib/types';
-import { SxProps } from '@mui/system';
+import { useAllPlacementGroupsQuery } from '@linode/queries';
+import { Autocomplete } from '@linode/ui';
 import * as React from 'react';
 
-import { Autocomplete } from 'src/components/Autocomplete/Autocomplete';
-import { TextFieldProps } from 'src/components/TextField';
+import { PLACEMENT_GROUP_HAS_NO_CAPACITY } from 'src/features/PlacementGroups/constants';
 import { hasPlacementGroupReachedCapacity } from 'src/features/PlacementGroups/utils';
-import { useAllPlacementGroupsQuery } from 'src/queries/placementGroups';
 
 import { PlacementGroupSelectOption } from './PlacementGroupSelectOption';
 
-import type { PlacementGroup, Region } from '@linode/api-v4';
+import type { APIError, PlacementGroup, Region } from '@linode/api-v4';
+import type { TextFieldProps } from '@linode/ui';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 export interface PlacementGroupsSelectProps {
-  clearable?: boolean;
-  defaultValue?: PlacementGroup;
+  /**
+   * If true, the component will be disabled.
+   */
   disabled?: boolean;
-  errorText?: string;
-  handlePlacementGroupChange: (selected: PlacementGroup) => void;
-  id?: string;
+  /**
+   * A callback to execute when the selected Placement Group changes.
+   * The selection is handled by a parent component.
+   */
+  handlePlacementGroupChange: (selected: null | PlacementGroup) => void;
+  /**
+   * The label for the TextField component.
+   */
   label: string;
+  /**
+   * If true, the component will display a loading spinner. (usually when fetching data)
+   */
   loading?: boolean;
+  /**
+   * The message to display when there are no options available.
+   */
   noOptionsMessage?: string;
-  onBlur?: (e: React.FocusEvent) => void;
-  selectedPlacementGroup: PlacementGroup | null;
-  selectedRegion?: Region;
-  sx?: SxProps;
+  /**
+   * The ID of the selected Placement Group.
+   */
+  selectedPlacementGroupId: null | number;
+  /**
+   * We want to pass the full region object here so we can check if the selected Placement Group is at capacity.
+   */
+  selectedRegion: Region | undefined;
+  /**
+   * Any additional styles to apply to the root element.
+   */
+  sx?: SxProps<Theme>;
+  /**
+   * Any additional props to pass to the TextField component.
+   */
   textFieldProps?: Partial<TextFieldProps>;
 }
 
 export const PlacementGroupsSelect = (props: PlacementGroupsSelectProps) => {
   const {
-    clearable = true,
-    defaultValue,
     disabled,
-    errorText,
     handlePlacementGroupChange,
-    id,
     label,
-    loading,
     noOptionsMessage,
-    onBlur,
-    selectedPlacementGroup,
+    selectedPlacementGroupId,
     selectedRegion,
     sx,
     ...textFieldProps
@@ -50,8 +66,15 @@ export const PlacementGroupsSelect = (props: PlacementGroupsSelectProps) => {
   const {
     data: placementGroups,
     error,
+    isFetching,
     isLoading,
-  } = useAllPlacementGroupsQuery(Boolean(selectedRegion?.id));
+  } = useAllPlacementGroupsQuery({
+    enabled: Boolean(selectedRegion?.id),
+    // Placement Group selection is always dependent on a selected region.
+    filter: {
+      region: selectedRegion?.id,
+    },
+  });
 
   const isDisabledPlacementGroup = (
     selectedPlacementGroup: PlacementGroup,
@@ -67,55 +90,54 @@ export const PlacementGroupsSelect = (props: PlacementGroupsSelectProps) => {
     });
   };
 
-  if (!placementGroups) {
-    return null;
-  }
-
-  const formatLabel = (placementGroup: PlacementGroup) =>
-    `${placementGroup.label} (${AFFINITY_TYPES[placementGroup.affinity_type]})`;
-
-  const placementGroupsOptions: PlacementGroup[] = placementGroups.filter(
-    (placementGroup) => placementGroup.region === selectedRegion?.id
-  );
-
   const selection =
-    placementGroupsOptions.find(
-      (placementGroup) => placementGroup.id === selectedPlacementGroup?.id
+    placementGroups?.find(
+      (placementGroup) => placementGroup.id === selectedPlacementGroupId
     ) ?? null;
 
   return (
     <Autocomplete
+      clearOnBlur={true}
+      data-testid="placement-groups-select"
+      disabled={Boolean(!selectedRegion?.id) || disabled}
+      disabledItemsFocusable
+      errorText={error?.[0]?.reason}
+      getOptionDisabled={(placementGroup) =>
+        isDisabledPlacementGroup(placementGroup, selectedRegion)
+      }
+      getOptionLabel={(placementGroup: PlacementGroup) => placementGroup.label}
+      helperText={
+        !selectedRegion
+          ? 'Select a Region to see available placement groups.'
+          : undefined
+      }
+      label={label}
+      loading={isFetching}
       noOptionsText={
         noOptionsMessage ?? getDefaultNoOptionsMessage(error, isLoading)
       }
-      onChange={(_, selectedOption: PlacementGroup) => {
-        handlePlacementGroupChange(selectedOption);
+      onChange={(_, selectedOption) => {
+        handlePlacementGroupChange(selectedOption ?? null);
       }}
+      options={placementGroups ?? []}
+      placeholder="None"
       renderOption={(props, option, { selected }) => {
+        const { key, ...rest } = props;
+
         return (
           <PlacementGroupSelectOption
-            disabled={isDisabledPlacementGroup(option, selectedRegion)}
-            key={option.id}
-            label={formatLabel(option)}
-            props={props}
+            disabledOptions={
+              isDisabledPlacementGroup(option, selectedRegion)
+                ? { reason: PLACEMENT_GROUP_HAS_NO_CAPACITY }
+                : undefined
+            }
+            item={option}
+            key={key}
+            props={rest}
             selected={selected}
-            value={option}
           />
         );
       }}
-      clearOnBlur={false}
-      data-testid="placement-groups-select"
-      defaultValue={defaultValue}
-      disableClearable={!clearable}
-      disabled={Boolean(!selectedRegion?.id) || disabled}
-      errorText={errorText}
-      getOptionLabel={formatLabel}
-      id={id}
-      label={label}
-      loading={isLoading || loading}
-      onBlur={onBlur}
-      options={placementGroupsOptions ?? []}
-      placeholder="Select a Placement Group"
       sx={sx}
       value={selection}
       {...textFieldProps}

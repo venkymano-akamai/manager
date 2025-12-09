@@ -1,7 +1,7 @@
+import { profileFactory } from '@linode/utilities';
 import { fireEvent, waitFor } from '@testing-library/react';
 import * as React from 'react';
 
-import { profileFactory } from 'src/factories';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import CloseAccountSetting from './CloseAccountSetting';
@@ -14,10 +14,16 @@ import {
 // Mock the useProfile hook to immediately return the expected data, circumventing the HTTP request and loading state.
 const queryMocks = vi.hoisted(() => ({
   useProfile: vi.fn().mockReturnValue({}),
+  userPermissions: vi.fn(() => ({
+    data: { cancel_account: true },
+  })),
 }));
 
-vi.mock('src/queries/profile', async () => {
-  const actual = await vi.importActual('src/queries/profile');
+vi.mock('src/features/IAM/hooks/usePermissions', () => ({
+  usePermissions: queryMocks.userPermissions,
+}));
+vi.mock('@linode/queries', async () => {
+  const actual = await vi.importActual('@linode/queries');
   return {
     ...actual,
     useProfile: queryMocks.useProfile,
@@ -25,22 +31,21 @@ vi.mock('src/queries/profile', async () => {
 });
 
 describe('Close Account Settings', () => {
-  it('should render subheading text', () => {
-    const { container } = renderWithTheme(<CloseAccountSetting />);
-    const subheading = container.querySelector(
-      '[data-qa-panel-subheading="true"]'
-    );
-    expect(subheading).toBeInTheDocument();
-    expect(subheading?.textContent).toBe('Close Account');
+  it('should render a heading and button', () => {
+    const { getAllByText } = renderWithTheme(<CloseAccountSetting />);
+    expect(getAllByText('Close Account')).toHaveLength(2);
   });
 
   it('should render a Close Account Button', () => {
+    queryMocks.useProfile.mockReturnValue({
+      data: profileFactory.build({ user_type: 'default' }),
+    });
+
     const { getByTestId } = renderWithTheme(<CloseAccountSetting />);
     const button = getByTestId('close-account-button');
-    const span = button.querySelector('span');
     expect(button).toBeInTheDocument();
     expect(button).toBeEnabled();
-    expect(span).toHaveTextContent('Close Account');
+    expect(button).toHaveTextContent('Close Account');
   });
 
   it('should render a disabled Close Account button with tooltip for a parent account user', async () => {
@@ -49,10 +54,7 @@ describe('Close Account Settings', () => {
     });
 
     const { getByRole, getByTestId, getByText } = renderWithTheme(
-      <CloseAccountSetting />,
-      {
-        flags: { parentChildAccountAccess: true },
-      }
+      <CloseAccountSetting />
     );
     const button = getByTestId('close-account-button');
     fireEvent.mouseOver(button);
@@ -73,10 +75,7 @@ describe('Close Account Settings', () => {
     });
 
     const { getByRole, getByTestId, getByText } = renderWithTheme(
-      <CloseAccountSetting />,
-      {
-        flags: { parentChildAccountAccess: true },
-      }
+      <CloseAccountSetting />
     );
     const button = getByTestId('close-account-button');
     fireEvent.mouseOver(button);
@@ -97,10 +96,7 @@ describe('Close Account Settings', () => {
     });
 
     const { getByRole, getByTestId, getByText } = renderWithTheme(
-      <CloseAccountSetting />,
-      {
-        flags: { parentChildAccountAccess: true },
-      }
+      <CloseAccountSetting />
     );
     const button = getByTestId('close-account-button');
     fireEvent.mouseOver(button);
@@ -113,5 +109,19 @@ describe('Close Account Settings', () => {
     expect(button).toHaveAttribute('aria-describedby', 'button-tooltip');
     expect(button).not.toHaveAttribute('disabled');
     expect(button).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('should disable Close Account button if the user does not have close_account permissions', async () => {
+    queryMocks.userPermissions.mockReturnValue({
+      data: { cancel_account: false },
+    });
+    queryMocks.useProfile.mockReturnValue({
+      data: profileFactory.build({ user_type: 'default' }),
+    });
+
+    const { getByTestId } = renderWithTheme(<CloseAccountSetting />);
+    const button = getByTestId('close-account-button');
+    expect(button).toBeInTheDocument();
+    expect(button).toBeDisabled();
   });
 });

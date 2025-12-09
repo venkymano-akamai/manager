@@ -1,20 +1,18 @@
-import { profileFactory, securityQuestionsFactory } from '@src/factories';
+import {
+  grantsFactory,
+  profileFactory,
+  securityQuestionsFactory,
+} from '@linode/utilities';
 import { accountUserFactory } from '@src/factories/accountUsers';
-import { grantsFactory } from '@src/factories/grants';
+import { verificationBannerNotice } from 'support/constants/user';
 import {
   mockGetUser,
   mockGetUserGrants,
   mockGetUsers,
 } from 'support/intercepts/account';
 import { mockGetSecurityQuestions } from 'support/intercepts/profile';
-import {
-  mockAppendFeatureFlags,
-  mockGetFeatureFlagClientstream,
-} from 'support/intercepts/feature-flags';
-import { ui } from 'support/ui';
 import { mockGetProfile } from 'support/intercepts/profile';
-import { makeFeatureFlagData } from 'support/util/feature-flags';
-import { verificationBannerNotice } from 'support/constants/user';
+import { ui } from 'support/ui';
 
 describe('User verification banner', () => {
   /*
@@ -23,15 +21,15 @@ describe('User verification banner', () => {
    */
   it('can show up when a child user has not associated a phone number or set up security questions for their account', () => {
     const mockChildProfile = profileFactory.build({
-      username: 'child-user',
       user_type: 'child',
+      username: 'child-user',
       verified_phone_number: null,
     });
 
     const mockChildUser = accountUserFactory.build({
       restricted: false,
-      username: 'child-user',
       user_type: 'child',
+      username: 'child-user',
       verified_phone_number: null,
     });
 
@@ -45,12 +43,6 @@ describe('User verification banner', () => {
     const mockUserGrants = grantsFactory.build({
       global: { account_access: 'read_write' },
     });
-
-    // TODO: Parent/Child - M3-7559 clean up when feature is live in prod and feature flag is removed.
-    mockAppendFeatureFlags({
-      parentChildAccountAccess: makeFeatureFlagData(true),
-    }).as('getFeatureFlags');
-    mockGetFeatureFlagClientstream();
 
     mockGetUsers([mockRestrictedProxyUser]);
     mockGetUser(mockChildUser);
@@ -87,7 +79,10 @@ describe('User verification banner', () => {
       .should('be.visible')
       .should('be.enabled')
       .click();
-    cy.url().should('endWith', `/profile/auth`);
+    cy.url().should(
+      'endWith',
+      `/profile/auth?focusSecurityQuestions=true&focusTel=false`
+    );
   });
 
   /*
@@ -96,15 +91,15 @@ describe('User verification banner', () => {
    */
   it('can show up when a child user has set up security questions but not a phone number for their account', () => {
     const mockChildProfile = profileFactory.build({
-      username: 'child-user',
       user_type: 'child',
+      username: 'child-user',
       verified_phone_number: null,
     });
 
     const mockChildUser = accountUserFactory.build({
       restricted: false,
-      username: 'child-user',
       user_type: 'child',
+      username: 'child-user',
       verified_phone_number: null,
     });
 
@@ -127,12 +122,6 @@ describe('User verification banner', () => {
       mockSecurityQuestionAnswers[1];
     mockSecurityQuestions.security_questions[2].response =
       mockSecurityQuestionAnswers[2];
-
-    // TODO: Parent/Child - M3-7559 clean up when feature is live in prod and feature flag is removed.
-    mockAppendFeatureFlags({
-      parentChildAccountAccess: makeFeatureFlagData(true),
-    }).as('getFeatureFlags');
-    mockGetFeatureFlagClientstream().as('getClientStream');
 
     mockGetUsers([mockRestrictedProxyUser]).as('getUsers');
     mockGetUser(mockChildUser);
@@ -171,7 +160,10 @@ describe('User verification banner', () => {
       .should('be.visible')
       .should('be.enabled')
       .click();
-    cy.url().should('endWith', `/profile/auth`);
+    cy.url().should(
+      'endWith',
+      `/profile/auth?focusSecurityQuestions=true&focusTel=false`
+    );
   });
 
   /*
@@ -179,15 +171,15 @@ describe('User verification banner', () => {
    */
   it('does not show up when a child user adds a phone number and sets up security questions', () => {
     const mockChildProfile = profileFactory.build({
-      username: 'child-user',
       user_type: 'child',
+      username: 'child-user',
       verified_phone_number: '+15555555555',
     });
 
     const mockChildUser = accountUserFactory.build({
       restricted: false,
-      username: 'child-user',
       user_type: 'child',
+      username: 'child-user',
       verified_phone_number: '+15555555555',
     });
 
@@ -210,12 +202,6 @@ describe('User verification banner', () => {
       mockSecurityQuestionAnswers[1];
     mockSecurityQuestions.security_questions[2].response =
       mockSecurityQuestionAnswers[2];
-
-    // TODO: Parent/Child - M3-7559 clean up when feature is live in prod and feature flag is removed.
-    mockAppendFeatureFlags({
-      parentChildAccountAccess: makeFeatureFlagData(true),
-    }).as('getFeatureFlags');
-    mockGetFeatureFlagClientstream().as('getClientStream');
 
     mockGetUsers([mockRestrictedProxyUser]).as('getUsers');
     mockGetUser(mockChildUser);

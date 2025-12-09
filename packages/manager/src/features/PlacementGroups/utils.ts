@@ -1,21 +1,12 @@
-import { AFFINITY_TYPES } from '@linode/api-v4/lib/placement-groups';
+import { PLACEMENT_GROUP_TYPES } from '@linode/api-v4/lib/placement-groups';
+import { useAccount } from '@linode/queries';
 
 import type {
-  AffinityEnforcement,
   CreatePlacementGroupPayload,
   Linode,
   PlacementGroup,
   Region,
 } from '@linode/api-v4';
-
-/**
- * Helper to get the affinity enforcement readable string.
- */
-export const getAffinityTypeEnforcement = (
-  is_strict: boolean
-): AffinityEnforcement => {
-  return is_strict ? 'Strict' : 'Flexible';
-};
 
 /**
  * Helper to get the full linodes objects assigned to a Placement Group.
@@ -41,7 +32,7 @@ interface HasPlacementGroupReachedCapacityOptions {
 /**
  * Helper to determine if a Placement Group has reached its linode capacity.
  *
- * based on the region's `maximum_vms_per_pg`.
+ * based on the region's `maximum_linodes_per_pg`.
  */
 export const hasPlacementGroupReachedCapacity = ({
   placementGroup,
@@ -51,7 +42,10 @@ export const hasPlacementGroupReachedCapacity = ({
     return false;
   }
 
-  return placementGroup.members.length >= region.maximum_vms_per_pg;
+  return (
+    placementGroup.members.length >=
+    region.placement_group_limits.maximum_linodes_per_pg
+  );
 };
 
 interface HasRegionReachedPlacementGroupCapacityOptions {
@@ -68,14 +62,19 @@ export const hasRegionReachedPlacementGroupCapacity = ({
   allPlacementGroups,
   region,
 }: HasRegionReachedPlacementGroupCapacityOptions): boolean => {
-  if (!region || !allPlacementGroups) {
+  if (!region?.placement_group_limits || !allPlacementGroups) {
     return false;
   }
 
-  const { maximum_pgs_per_customer } = region;
+  const { placement_group_limits } = region;
+  const { maximum_pgs_per_customer } = placement_group_limits;
   const placementGroupsInRegion = allPlacementGroups.filter(
     (pg) => pg.region === region.id
   );
+
+  if (maximum_pgs_per_customer === null) {
+    return false;
+  }
 
   return (
     placementGroupsInRegion.length >= maximum_pgs_per_customer ||
@@ -84,15 +83,15 @@ export const hasRegionReachedPlacementGroupCapacity = ({
 };
 
 /**
- * Helper to populate the affinity_type select options.
+ * Helper to populate the placement_group_type select options.
  */
-export const affinityTypeOptions = Object.entries(AFFINITY_TYPES).map(
-  ([key, value]) => ({
-    disabled: false,
-    label: value,
-    value: key as CreatePlacementGroupPayload['affinity_type'],
-  })
-);
+export const placementGroupTypeOptions = Object.entries(
+  PLACEMENT_GROUP_TYPES
+).map(([key, value]) => ({
+  disabled: false,
+  label: value,
+  value: key as CreatePlacementGroupPayload['placement_group_type'],
+}));
 
 /**
  * Helper to get all linodes assigned to any placement group. (and reduce to unique linodes)
@@ -113,4 +112,42 @@ export const getLinodesFromAllPlacementGroups = (
   }, []);
 
   return Array.from(new Set(linodeIds));
+};
+
+/**
+ * Hook to determine if the Placement Group feature should be visible to the user.
+ * Based on the user's account capability and the feature flag.
+ *
+ * @returns {boolean} - Whether the Placement Group feature is enabled for the current user.
+ */
+export const useIsPlacementGroupsEnabled = (): {
+  isPlacementGroupsEnabled: boolean;
+} => {
+  const { data: account } = useAccount();
+
+  const isPlacementGroupsEnabled = Boolean(
+    account?.capabilities?.includes('Placement Group')
+  );
+
+  return { isPlacementGroupsEnabled };
+};
+
+/**
+ * Helper to get the maximum number of Placement Groups per region a customer is allowed to create.
+ * When the limit is `null` (no limit), we show "unlimited" in the UI.
+ *
+ * @param region
+ * @returns {number | 'unlimited' | undefined} - The maximum number of Placement Groups per region a customer is allowed to create.
+ */
+export const getMaxPGsPerCustomer = (
+  region: Region | undefined
+): 'unlimited' | number | undefined => {
+  if (!region) {
+    return;
+  }
+
+  const maxPgsPerCustomer =
+    region.placement_group_limits.maximum_pgs_per_customer;
+
+  return maxPgsPerCustomer === null ? 'unlimited' : maxPgsPerCustomer;
 };

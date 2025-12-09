@@ -7,8 +7,8 @@ const queryMocks = vi.hoisted(() => ({
   useProfile: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('src/queries/profile', async () => {
-  const actual = await vi.importActual('src/queries/profile');
+vi.mock('@linode/queries', async () => {
+  const actual = await vi.importActual('@linode/queries');
   return {
     ...actual,
     useGrants: queryMocks.useGrants,

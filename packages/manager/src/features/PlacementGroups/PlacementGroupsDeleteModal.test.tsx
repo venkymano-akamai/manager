@@ -1,70 +1,80 @@
-import { act, fireEvent } from '@testing-library/react';
+import { linodeFactory } from '@linode/utilities';
+import { userEvent } from '@testing-library/user-event';
 import * as React from 'react';
 
-import { linodeFactory, placementGroupFactory } from 'src/factories';
+import { placementGroupFactory } from 'src/factories';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { PlacementGroupsDeleteModal } from './PlacementGroupsDeleteModal';
 
-import type { RenderResult } from '@testing-library/react';
+import type { ManagerPreferences } from '@linode/utilities';
+
+const preference: ManagerPreferences['type_to_confirm'] = true;
 
 const queryMocks = vi.hoisted(() => ({
   useDeletePlacementGroup: vi.fn().mockReturnValue({
     mutateAsync: vi.fn().mockResolvedValue({}),
     reset: vi.fn(),
   }),
+  usePreferences: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('src/queries/placementGroups', async () => {
-  const actual = await vi.importActual('src/queries/placementGroups');
+vi.mock('@linode/queries', async () => {
+  const actual = await vi.importActual('@linode/queries');
   return {
     ...actual,
     useDeletePlacementGroup: queryMocks.useDeletePlacementGroup,
+    usePreferences: queryMocks.usePreferences,
   };
+});
+
+queryMocks.usePreferences.mockReturnValue({
+  data: preference,
 });
 
 const props = {
   isLoading: false,
   onClose: vi.fn(),
   open: true,
+  selectedPlacementGroupError: null,
 };
 
 describe('PlacementGroupsDeleteModal', () => {
-  it('should render the right form elements', async () => {
-    let renderResult: RenderResult;
-    await act(async () => {
-      renderResult = renderWithTheme(
-        <PlacementGroupsDeleteModal
-          {...props}
-          linodes={[
-            linodeFactory.build({
-              id: 1,
-              label: 'test-linode',
-              region: 'us-east',
-            }),
-          ]}
-          selectedPlacementGroup={placementGroupFactory.build({
-            affinity_type: 'anti_affinity:local',
-            id: 1,
-            label: 'PG-to-delete',
-            members: [
-              {
-                is_compliant: true,
-                linode_id: 1,
-              },
-            ],
-            region: 'us-east',
-          })}
-          disableUnassignButton={false}
-        />
-      );
+  it('should render the right form elements', () => {
+    queryMocks.usePreferences.mockReturnValue({
+      data: preference,
     });
 
-    const { getByRole, getByTestId, getByText } = renderResult!;
+    const { getByRole, getByTestId, getByText } = renderWithTheme(
+      <PlacementGroupsDeleteModal
+        {...props}
+        disableUnassignButton={false}
+        isFetching={false}
+        linodes={[
+          linodeFactory.build({
+            id: 1,
+            label: 'test-linode',
+            region: 'us-east',
+          }),
+        ]}
+        selectedPlacementGroup={placementGroupFactory.build({
+          id: 1,
+          label: 'PG-to-delete',
+          members: [
+            {
+              is_compliant: true,
+              linode_id: 1,
+            },
+          ],
+          placement_group_type: 'anti_affinity:local',
+          region: 'us-east',
+        })}
+      />
+    );
 
     expect(
       getByRole('heading', {
-        name: 'Delete Placement Group PG-to-delete',
+        name: 'Delete Placement Group PG-to-delete?',
       })
     ).toBeInTheDocument();
     expect(
@@ -80,30 +90,30 @@ describe('PlacementGroupsDeleteModal', () => {
   });
 
   it("should be enabled when there's no assigned linodes", async () => {
-    let renderResult: RenderResult;
-    await act(async () => {
-      renderResult = renderWithTheme(
-        <PlacementGroupsDeleteModal
-          {...props}
-          linodes={[
-            linodeFactory.build({
-              id: 1,
-              label: 'test-linode',
-              region: 'us-east',
-            }),
-          ]}
-          selectedPlacementGroup={placementGroupFactory.build({
-            affinity_type: 'anti_affinity:local',
-            id: 1,
-            label: 'PG-to-delete',
-            members: [],
-          })}
-          disableUnassignButton={false}
-        />
-      );
+    queryMocks.usePreferences.mockReturnValue({
+      data: preference,
     });
 
-    const { getByRole, getByTestId } = renderResult!;
+    const { getByRole, getByTestId } = renderWithTheme(
+      <PlacementGroupsDeleteModal
+        {...props}
+        disableUnassignButton={false}
+        isFetching={false}
+        linodes={[
+          linodeFactory.build({
+            id: 1,
+            label: 'test-linode',
+            region: 'us-east',
+          }),
+        ]}
+        selectedPlacementGroup={placementGroupFactory.build({
+          id: 1,
+          label: 'PG-to-delete',
+          members: [],
+          placement_group_type: 'anti_affinity:local',
+        })}
+      />
+    );
 
     const textField = getByTestId('textfield-input');
     const deleteButton = getByRole('button', { name: 'Delete' });
@@ -111,10 +121,10 @@ describe('PlacementGroupsDeleteModal', () => {
     expect(textField).toBeEnabled();
     expect(deleteButton).toBeDisabled();
 
-    fireEvent.change(textField, { target: { value: 'PG-to-delete' } });
+    await userEvent.type(textField, 'PG-to-delete');
 
     expect(deleteButton).toBeEnabled();
-    fireEvent.click(deleteButton);
+    await userEvent.click(deleteButton);
 
     expect(queryMocks.useDeletePlacementGroup).toHaveBeenCalled();
   });

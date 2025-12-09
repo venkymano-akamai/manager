@@ -1,8 +1,11 @@
+/**
+ * ONLY USED IN THE LINE GRAPH COMPONENT (Longview)
+ * Delete when LineGraph is sunsetted
+ */
+import { Box } from '@linode/ui';
 import { visuallyHidden } from '@mui/utils';
 import { DateTime } from 'luxon';
 import * as React from 'react';
-
-import { Box } from 'src/components/Box';
 
 import type { ChartData, ChartPoint } from 'chart.js';
 
@@ -12,8 +15,6 @@ export interface GraphTabledDataProps {
   chartInstance: React.MutableRefObject<Chart | null>['current'];
   hiddenDatasets: number[];
 }
-
-// @todo recharts: delete this file when we decide recharts is stable (new version is AccessibleAreaChart)
 
 /**
  * This component is used to provide an accessible representation of the data
@@ -68,10 +69,10 @@ const AccessibleGraphData = (props: GraphTabledDataProps) => {
     return (
       !hidden && (
         <table
+          key={`accessible-graph-data-table-${tableID}`}
           summary={`This table contains the data for the ${
             ariaLabel && label ? ariaLabel + ` (${label})` : 'graph below'
           }`}
-          key={`accessible-graph-data-table-${tableID}`}
         >
           <thead>{TableHeader}</thead>
           <tbody>{TableBody}</tbody>

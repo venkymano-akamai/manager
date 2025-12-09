@@ -1,7 +1,12 @@
+import { useIsGeckoEnabled } from '@linode/shared';
 import * as React from 'react';
 
 import { RegionSelect } from 'src/components/RegionSelect/RegionSelect';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+import { useObjectStorageRegions } from 'src/features/ObjectStorage/hooks/useObjectStorageRegions';
+import { useFlags } from 'src/hooks/useFlags';
+
+import { useIsObjectStorageGen2Enabled } from '../hooks/useIsObjectStorageGen2Enabled';
+import { WHITELISTED_REGIONS } from '../utilities';
 
 interface Props {
   disabled?: boolean;
@@ -9,30 +14,43 @@ interface Props {
   onBlur: (e: any) => void;
   onChange: (value: string) => void;
   required?: boolean;
-  selectedRegion: null | string;
+  selectedRegion: string | undefined;
 }
 
 export const BucketRegions = (props: Props) => {
   const { disabled, error, onBlur, onChange, required, selectedRegion } = props;
 
-  const { data: regions, error: regionsError } = useRegionsQuery();
+  const { allRegionsError, availableStorageRegions } =
+    useObjectStorageRegions();
+
+  const { isObjectStorageGen2Enabled } = useIsObjectStorageGen2Enabled();
+
+  const flags = useFlags();
+  const { isGeckoLAEnabled } = useIsGeckoEnabled(
+    flags.gecko2?.enabled,
+    flags.gecko2?.la
+  );
 
   // Error could be: 1. General Regions error, 2. Field error, 3. Nothing
-  const errorText = error || regionsError?.[0]?.reason;
+  const errorText = error || allRegionsError?.[0]?.reason;
 
   return (
     <RegionSelect
       currentCapability="Object Storage"
+      disableClearable
       disabled={disabled}
       errorText={errorText}
-      handleSelection={(id) => onChange(id)}
-      isClearable={false}
+      forcefullyShownRegionIds={
+        isObjectStorageGen2Enabled ? WHITELISTED_REGIONS : undefined
+      }
+      isGeckoLAEnabled={isGeckoLAEnabled}
       label="Region"
       onBlur={onBlur}
+      onChange={(e, region) => onChange(region.id)}
       placeholder="Select a Region"
-      regions={regions ?? []}
+      regions={availableStorageRegions ?? []}
       required={required}
-      selectedId={selectedRegion}
+      value={selectedRegion ?? null}
     />
   );
 };

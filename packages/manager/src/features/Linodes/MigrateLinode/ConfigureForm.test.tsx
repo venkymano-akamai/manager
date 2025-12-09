@@ -48,6 +48,7 @@ const mockLinodeType = typeFactory.build({
 });
 
 const handleSelectRegion = vi.fn();
+const handlePlacementGroupChange = vi.fn();
 const currentPriceLabel = 'Current Price';
 const newPriceLabel = 'New Price';
 const currentPricePanel = 'current-price-panel';
@@ -57,6 +58,7 @@ describe('ConfigureForm component with price comparison', () => {
   const props = {
     backupEnabled: true,
     currentRegion: 'us-east',
+    handlePlacementGroupChange,
     handleSelectRegion,
     linodeType: 'g6-standard-1',
     selectedRegion: '',
@@ -163,6 +165,23 @@ describe('ConfigureForm component with price comparison', () => {
       expect(getByTestId(newPricePanel)).toHaveTextContent(
         '$14.40/month, $0.021/hour'
       );
+    });
+  });
+
+  it('should render the PlacementGroupsSelect component when a new region is selected', async () => {
+    const wrapper = renderWithTheme(
+      <ConfigureForm
+        {...props}
+        currentRegion="us-east"
+        selectedRegion="us-central"
+      />
+    );
+
+    // Verify that the PlacementGroupsSelect component is rendered
+    await waitFor(() => {
+      expect(
+        wrapper.getByTestId('placement-groups-select')
+      ).toBeInTheDocument();
     });
   });
 });

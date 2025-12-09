@@ -1,11 +1,8 @@
-import Grid from '@mui/material/Unstable_Grid2';
+import { useProfile } from '@linode/queries';
+import { Box, Button, Paper, Typography } from '@linode/ui';
 import * as React from 'react';
 
-import { Accordion } from 'src/components/Accordion';
-import { Button } from 'src/components/Button/Button';
-import { useFlags } from 'src/hooks/useFlags';
-import { useProfile } from 'src/queries/profile';
-
+import { usePermissions } from '../IAM/hooks/usePermissions';
 import CloseAccountDialog from './CloseAccountDialog';
 import {
   CHILD_USER_CLOSE_ACCOUNT_TOOLTIP_TEXT,
@@ -13,16 +10,15 @@ import {
   PROXY_USER_CLOSE_ACCOUNT_TOOLTIP_TEXT,
 } from './constants';
 
-const CloseAccountSetting = () => {
+export const CloseAccountSetting = () => {
   const [dialogOpen, setDialogOpen] = React.useState<boolean>(false);
 
   const { data: profile } = useProfile();
-  const flags = useFlags();
+
+  const { data: permissions } = usePermissions('account', ['cancel_account']);
 
   // Disable the Close Account button for users with a Parent/Proxy/Child user type.
-  const isCloseAccountDisabled = Boolean(
-    flags.parentChildAccountAccess && profile?.user_type !== 'default'
-  );
+  const isCloseAccountDisabled = Boolean(profile?.user_type !== 'default');
 
   let closeAccountButtonTooltipText;
   const userType = profile?.user_type;
@@ -41,21 +37,24 @@ const CloseAccountSetting = () => {
 
   return (
     <>
-      <Accordion defaultExpanded={true} heading="Close Account">
-        <Grid container direction="column">
-          <Grid>
-            <Button
-              buttonType="outlined"
-              data-testid="close-account-button"
-              disabled={isCloseAccountDisabled}
-              onClick={() => setDialogOpen(true)}
-              tooltipText={closeAccountButtonTooltipText}
-            >
-              Close Account
-            </Button>
-          </Grid>
-        </Grid>
-      </Accordion>
+      <Paper data-testid="close-account">
+        <Typography variant="h2">Close Account</Typography>
+        <Box mt={1}>
+          <Button
+            buttonType="outlined"
+            data-testid="close-account-button"
+            disabled={isCloseAccountDisabled || !permissions.cancel_account}
+            onClick={() => setDialogOpen(true)}
+            tooltipText={
+              !permissions.cancel_account
+                ? "You don't have permission to close this account."
+                : closeAccountButtonTooltipText
+            }
+          >
+            Close Account
+          </Button>
+        </Box>
+      </Paper>
       <CloseAccountDialog
         closeDialog={() => setDialogOpen(false)}
         open={dialogOpen}

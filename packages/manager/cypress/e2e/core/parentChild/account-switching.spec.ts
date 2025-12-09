@@ -1,31 +1,33 @@
+import { grantsFactory, profileFactory } from '@linode/utilities';
 import {
   accountFactory,
   appTokenFactory,
   paymentMethodFactory,
-  profileFactory,
 } from '@src/factories';
 import { accountUserFactory } from '@src/factories/accountUsers';
 import { DateTime } from 'luxon';
 import {
   interceptGetInvoices,
-  interceptGetPayments,
   interceptGetPaymentMethods,
+  interceptGetPayments,
   mockCreateChildAccountToken,
   mockCreateChildAccountTokenError,
   mockGetAccount,
   mockGetChildAccounts,
   mockGetChildAccountsError,
   mockGetInvoices,
+  mockGetMaintenance,
   mockGetPaymentMethods,
   mockGetPayments,
   mockGetUser,
 } from 'support/intercepts/account';
 import { mockGetEvents, mockGetNotifications } from 'support/intercepts/events';
-import {
-  mockAppendFeatureFlags,
-  mockGetFeatureFlagClientstream,
-} from 'support/intercepts/feature-flags';
+import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockAllApiRequests } from 'support/intercepts/general';
+import {
+  mockGetRolePermissionsError,
+  mockGetUserAccountPermissionsError,
+} from 'support/intercepts/iam';
 import { mockGetLinodes } from 'support/intercepts/linodes';
 import {
   mockGetProfile,
@@ -33,10 +35,8 @@ import {
 } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
-import { makeFeatureFlagData } from 'support/util/feature-flags';
 import { assertLocalStorageValue } from 'support/util/local-storage';
 import { randomLabel, randomNumber, randomString } from 'support/util/random';
-import { grantsFactory } from '@src/factories/grants';
 
 /**
  * Confirms expected username and company name are shown in user menu button and yields the button.
@@ -78,13 +78,13 @@ const mockParentAccount = accountFactory.build({
 });
 
 const mockParentProfile = profileFactory.build({
-  username: randomLabel(),
   user_type: 'parent',
+  username: randomLabel(),
 });
 
 const mockParentUser = accountUserFactory.build({
-  username: mockParentProfile.username,
   user_type: 'parent',
+  username: mockParentProfile.username,
 });
 
 const mockChildAccount = accountFactory.build({
@@ -97,25 +97,25 @@ const mockAlternateChildAccount = accountFactory.build({
 });
 
 const mockChildAccountProxyUser = accountUserFactory.build({
-  username: mockParentProfile.username,
   user_type: 'proxy',
+  username: mockParentProfile.username,
 });
 
 // Used for testing flows involving multiple children (e.g. switching child -> child).
 const mockAlternateChildAccountProxyUser = accountUserFactory.build({
-  username: mockParentProfile.username,
   user_type: 'proxy',
+  username: mockParentProfile.username,
 });
 
 const mockChildAccountProfile = profileFactory.build({
-  username: mockChildAccountProxyUser.username,
   user_type: 'proxy',
+  username: mockChildAccountProxyUser.username,
 });
 
 // Used for testing flows involving multiple children (e.g. switching child -> child).
 const mockAlternateChildAccountProfile = profileFactory.build({
-  username: mockAlternateChildAccountProxyUser.username,
   user_type: 'proxy',
+  username: mockAlternateChildAccountProxyUser.username,
 });
 
 const childAccountAccessGrantEnabled = grantsFactory.build({
@@ -127,26 +127,26 @@ const childAccountAccessGrantDisabled = grantsFactory.build({
 });
 
 const mockChildAccountToken = appTokenFactory.build({
-  id: randomNumber(),
   created: DateTime.now().toISO(),
   expiry: DateTime.now().plus({ minutes: 15 }).toISO(),
+  id: randomNumber(),
   label: `${mockChildAccount.company}_proxy`,
   scopes: '*',
+  thumbnail_url: undefined,
   token: randomString(32),
   website: undefined,
-  thumbnail_url: undefined,
 });
 
 // Used for testing flows involving multiple children (e.g. switching child -> child).
 const mockAlternateChildAccountToken = appTokenFactory.build({
-  id: randomNumber(),
   created: DateTime.now().toISO(),
   expiry: DateTime.now().plus({ minutes: 15 }).toISO(),
+  id: randomNumber(),
   label: `${mockAlternateChildAccount.company}_proxy`,
   scopes: '*',
+  thumbnail_url: undefined,
   token: randomString(32),
   website: undefined,
-  thumbnail_url: undefined,
 });
 
 const mockErrorMessage = 'An unknown error has occurred.';
@@ -157,13 +157,10 @@ describe('Parent/Child account switching', () => {
    */
   describe('From Parent to Child', () => {
     beforeEach(() => {
-      // @TODO M3-7554, M3-7559: Remove feature flag mocks after feature launch and clean-up.
       mockAppendFeatureFlags({
-        parentChildAccountAccess: makeFeatureFlagData(true),
+        iamRbacPrimaryNavChanges: false,
       });
-      mockGetFeatureFlagClientstream();
     });
-
     /*
      * - Confirms that Parent account user can switch to Child account from Account Billing page.
      * - Confirms that Child account information is displayed in user menu button after switch.
@@ -179,6 +176,7 @@ describe('Parent/Child account switching', () => {
       interceptGetInvoices().as('getInvoices');
 
       cy.visitWithLogin('/account/billing');
+      cy.trackPageVisit().as('pageVisit');
       cy.wait(['@getPayments', '@getInvoices', '@getPaymentMethods']);
 
       // Confirm that "Switch Account" button is present, then click it.
@@ -220,6 +218,7 @@ describe('Parent/Child account switching', () => {
         });
 
       cy.wait('@switchAccount');
+      cy.expectNewPageVisit('@pageVisit');
 
       // Confirm that Cloud Manager updates local storage authentication values.
       // Satisfy TypeScript using non-null assertions since we know what the mock data contains.
@@ -253,6 +252,7 @@ describe('Parent/Child account switching', () => {
       mockGetUser(mockParentUser);
 
       cy.visitWithLogin('/');
+      cy.trackPageVisit().as('pageVisit');
 
       // Confirm that Parent account username and company name are shown in user
       // menu button, then click the button.
@@ -301,6 +301,7 @@ describe('Parent/Child account switching', () => {
         });
 
       cy.wait('@switchAccount');
+      cy.expectNewPageVisit('@pageVisit');
 
       // Confirm that Cloud Manager updates local storage authentication values.
       // Satisfy TypeScript using non-null assertions since we know what the mock data contains.
@@ -316,6 +317,72 @@ describe('Parent/Child account switching', () => {
         mockChildAccount.company
       );
     });
+
+    /*
+     * - Confirms search functionality in the account switching drawer.
+     */
+    it('can search child accounts', () => {
+      mockGetProfile(mockParentProfile);
+      mockGetAccount(mockParentAccount);
+      mockGetChildAccounts([mockChildAccount, mockAlternateChildAccount]);
+      mockGetUser(mockParentUser);
+
+      cy.visitWithLogin('/');
+      cy.trackPageVisit().as('pageVisit');
+
+      // Confirm that Parent account username and company name are shown in user
+      // menu button, then click the button.
+      assertUserMenuButton(
+        mockParentProfile.username,
+        mockParentAccount.company
+      ).click();
+
+      // Click "Switch Account" button in user menu.
+      ui.userMenu
+        .find()
+        .should('be.visible')
+        .within(() => {
+          ui.button
+            .findByTitle('Switch Account')
+            .should('be.visible')
+            .should('be.enabled')
+            .click();
+        });
+
+      // Confirm search functionality.
+      ui.drawer
+        .findByTitle('Switch Account')
+        .should('be.visible')
+        .within(() => {
+          // Confirm all child accounts are displayed when drawer loads.
+          cy.findByText(mockChildAccount.company).should('be.visible');
+          cy.findByText(mockAlternateChildAccount.company).should('be.visible');
+
+          // Confirm no results message.
+          mockGetChildAccounts([]).as('getEmptySearchResults');
+          cy.findByPlaceholderText('Search').click();
+          cy.focused().type('Fake Name');
+          cy.wait('@getEmptySearchResults');
+
+          cy.contains(mockChildAccount.company).should('not.exist');
+          cy.findByText(
+            'There are no child accounts that match this query.'
+          ).should('be.visible');
+
+          // Confirm filtering by company name displays only one search result.
+          mockGetChildAccounts([mockChildAccount]).as('getSearchResults');
+          cy.findByPlaceholderText('Search').click();
+          cy.focused().clear();
+          cy.focused().type(mockChildAccount.company);
+          cy.wait('@getSearchResults');
+
+          cy.findByText(mockChildAccount.company).should('be.visible');
+          cy.contains(mockAlternateChildAccount.company).should('not.exist');
+          cy.contains(
+            'There are no child accounts that match this query.'
+          ).should('not.exist');
+        });
+    });
   });
 
   /**
@@ -324,11 +391,9 @@ describe('Parent/Child account switching', () => {
   describe('From Child to Parent', () => {
     beforeEach(() => {
       mockAppendFeatureFlags({
-        parentChildAccountAccess: makeFeatureFlagData(true),
+        iamRbacPrimaryNavChanges: false,
       });
-      mockGetFeatureFlagClientstream();
     });
-
     /*
      * - Confirms that a Child account Proxy user can switch back to a Parent account from Billing page.
      * - Confirms that Parent account information is displayed in user menu button after switch.
@@ -350,12 +415,16 @@ describe('Parent/Child account switching', () => {
       // data set to mock values.
       cy.visitWithLogin('/account/billing', {
         localStorageOverrides: {
-          proxy_user: true,
-          'authentication/parent_token/token': `Bearer ${mockParentToken}`,
           'authentication/parent_token/expire': mockParentExpiration,
           'authentication/parent_token/scopes': '*',
+          'authentication/parent_token/token': `Bearer ${mockParentToken}`,
+          proxy_user: true,
         },
       });
+
+      // Track the initial page visit so that we can later assert that Cloud has
+      // reloaded upon switching accounts.
+      cy.trackPageVisit().as('pageVisit');
 
       // Wait for page to finish loading before proceeding with account switch.
       cy.wait(['@getPayments', '@getPaymentMethods', '@getInvoices']);
@@ -373,6 +442,9 @@ describe('Parent/Child account switching', () => {
       // We'll mitigate this by broadly mocking ALL API-v4 requests, then applying more specific mocks to the
       // individual requests as needed.
       mockAllApiRequests();
+      mockGetRolePermissionsError('Not found', 404);
+      mockGetUserAccountPermissionsError('Not found', 404);
+      mockGetMaintenance([], []);
       mockGetLinodes([]);
       mockGetRegions([]);
       mockGetEvents([]);
@@ -380,6 +452,7 @@ describe('Parent/Child account switching', () => {
       mockGetAccount(mockParentAccount);
       mockGetProfile(mockParentProfile);
       mockGetUser(mockParentUser);
+      mockGetChildAccounts([]);
       mockGetPaymentMethods(paymentMethodFactory.buildList(1)).as(
         'getPaymentMethods'
       );
@@ -390,23 +463,21 @@ describe('Parent/Child account switching', () => {
         .findByTitle('Switch Account')
         .should('be.visible')
         .within(() => {
-          cy.findByText('There are no indirect customer accounts.').should(
-            'be.visible'
-          );
+          cy.findByText('There are no child accounts.').should('be.visible');
           cy.findByText('switch back to your account')
             .should('be.visible')
             .click();
         });
 
-      // Allow page to load before asserting user menu, ensuring no app crash, etc.
+      cy.expectNewPageVisit('@pageVisit');
       cy.wait(['@getInvoices', '@getPayments', '@getPaymentMethods']);
+
+      assertAuthLocalStorage(mockParentToken, mockParentExpiration, '*');
 
       assertUserMenuButton(
         mockParentProfile.username,
         mockParentAccount.company
       );
-
-      assertAuthLocalStorage(mockParentToken, mockParentExpiration, '*');
     });
   });
 
@@ -414,6 +485,11 @@ describe('Parent/Child account switching', () => {
    * Tests to confirm that Proxy users can switch to other Child accounts as expected.
    */
   describe('From Child to Child', () => {
+    beforeEach(() => {
+      mockAppendFeatureFlags({
+        iamRbacPrimaryNavChanges: false,
+      });
+    });
     /*
      * - Confirms that a Child account Proxy user can switch to another Child account from Billing page.
      * - Confirms that alternate Child account information is displayed in user menu button after switch.
@@ -435,12 +511,14 @@ describe('Parent/Child account switching', () => {
       // data set to mock values.
       cy.visitWithLogin('/account/billing', {
         localStorageOverrides: {
-          proxy_user: true,
-          'authentication/parent_token/token': `Bearer ${mockParentToken}`,
           'authentication/parent_token/expire': mockParentExpiration,
           'authentication/parent_token/scopes': '*',
+          'authentication/parent_token/token': `Bearer ${mockParentToken}`,
+          proxy_user: true,
         },
       });
+
+      cy.trackPageVisit().as('pageVisit');
 
       // Wait for page to finish loading before proceeding with account switch.
       cy.wait(['@getPayments', '@getPaymentMethods', '@getInvoices']);
@@ -458,6 +536,8 @@ describe('Parent/Child account switching', () => {
       // We'll mitigate this by broadly mocking ALL API-v4 requests, then applying more specific mocks to the
       // individual requests as needed.
       mockAllApiRequests();
+      mockGetRolePermissionsError('Not found', 404);
+      mockGetUserAccountPermissionsError('Not found', 404);
       mockGetLinodes([]);
       mockGetRegions([]);
       mockGetEvents([]);
@@ -489,6 +569,7 @@ describe('Parent/Child account switching', () => {
 
       // Allow page to load before asserting user menu, ensuring no app crash, etc.
       cy.wait('@switchAccount');
+      cy.expectNewPageVisit('@pageVisit');
       cy.wait(['@getInvoices', '@getPayments', '@getPaymentMethods']);
 
       assertUserMenuButton(
@@ -509,6 +590,11 @@ describe('Parent/Child account switching', () => {
   });
 
   describe('Child Account Access', () => {
+    beforeEach(() => {
+      mockAppendFeatureFlags({
+        iamRbacPrimaryNavChanges: false,
+      });
+    });
     /*
      * - Smoke test to confirm that restricted parent users with the child_account_access grant can switch accounts.
      * - Confirms that the "Switch Account" button is rendered.
@@ -587,6 +673,11 @@ describe('Parent/Child account switching', () => {
    * Tests to confirm that Cloud handles account switching errors gracefully.
    */
   describe('Error flows', () => {
+    beforeEach(() => {
+      mockAppendFeatureFlags({
+        iamRbacPrimaryNavChanges: false,
+      });
+    });
     /*
      * - Confirms error handling upon failure to fetch child accounts.
      * - Confirms "Try Again" button can be used to re-fetch child accounts successfully.

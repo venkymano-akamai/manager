@@ -1,34 +1,26 @@
+import { regionFactory } from '@linode/utilities';
 import * as React from 'react';
 
-import { placementGroupFactory, regionFactory } from 'src/factories';
+import { placementGroupFactory } from 'src/factories';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { PlacementGroupsDetailPanel } from './PlacementGroupsDetailPanel';
 
 const defaultProps = {
   handlePlacementGroupChange: vi.fn(),
+  selectedPlacementGroupId: null,
 };
 
 const queryMocks = vi.hoisted(() => ({
-  useRegionsQuery: vi.fn().mockReturnValue({}),
   useAllPlacementGroupsQuery: vi.fn().mockReturnValue({}),
+  useRegionsQuery: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('src/queries/regions/regions', async () => {
-  const actual = await vi.importActual('src/queries/regions/regions');
-  return {
-    ...actual,
-    useRegionsQuery: queryMocks.useRegionsQuery,
-  };
-});
-
-vi.mock('src/queries/placementGroups', async () => {
-  const actual = await vi.importActual('src/queries/placementGroups');
-  return {
-    ...actual,
-    useAllPlacementGroupsQuery: queryMocks.useAllPlacementGroupsQuery,
-  };
-});
+vi.mock('@linode/queries', async (importOriginal) => ({
+  ...(await importOriginal()),
+  useAllPlacementGroupsQuery: queryMocks.useAllPlacementGroupsQuery,
+  useRegionsQuery: queryMocks.useRegionsQuery,
+}));
 
 describe('PlacementGroupsDetailPanel', () => {
   beforeEach(() => {
@@ -41,12 +33,16 @@ describe('PlacementGroupsDetailPanel', () => {
         regionFactory.build({
           capabilities: ['Placement Group'],
           id: 'ca-central',
-          maximum_vms_per_pg: 1,
+          placement_group_limits: {
+            maximum_linodes_per_pg: 1,
+          },
         }),
         regionFactory.build({
           capabilities: ['Placement Group'],
           id: 'us-west',
-          maximum_pgs_per_customer: 1,
+          placement_group_limits: {
+            maximum_pgs_per_customer: 1,
+          },
         }),
         regionFactory.build({
           id: 'us-southeast',
@@ -56,10 +52,8 @@ describe('PlacementGroupsDetailPanel', () => {
     queryMocks.useAllPlacementGroupsQuery.mockReturnValue({
       data: [
         placementGroupFactory.build({
-          affinity_type: 'affinity:local',
           id: 1,
           is_compliant: true,
-          is_strict: true,
           label: 'my-placement-group',
           members: [
             {
@@ -67,6 +61,8 @@ describe('PlacementGroupsDetailPanel', () => {
               linode_id: 1,
             },
           ],
+          placement_group_policy: 'strict',
+          placement_group_type: 'affinity:local',
           region: 'us-west',
         }),
       ],
@@ -107,8 +103,10 @@ describe('PlacementGroupsDetailPanel', () => {
     );
 
     expect(getByRole('combobox')).toBeDisabled();
-    expect(getByTestId('notice-warning')).toHaveTextContent(
-      'The selected region does not currently have Placement Group capabilities.'
+    expect(
+      getByTestId('placement-groups-no-capability-notice')
+    ).toHaveTextContent(
+      'Currently, only specific regions support placement groups.'
     );
     expect(
       queryByRole('button', { name: /create placement group/i })
@@ -123,7 +121,7 @@ describe('PlacementGroupsDetailPanel', () => {
       />
     );
 
-    const select = getByPlaceholderText('Select a Placement Group');
+    const select = getByPlaceholderText('None');
     expect(select).toBeEnabled();
     expect(
       getByRole('button', { name: /create placement group/i })

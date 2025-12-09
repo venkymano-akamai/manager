@@ -1,16 +1,15 @@
-import { PriceObject } from '@linode/api-v4';
-import { styled } from '@mui/material/styles';
+import { Box, Typography } from '@linode/ui';
+import { isNumber } from '@linode/utilities';
 import { useTheme } from '@mui/material';
-import { isNumber } from 'lodash';
+import { styled } from '@mui/material/styles';
 import * as React from 'react';
 
-import { Box } from 'src/components/Box';
 import { DisplayPrice } from 'src/components/DisplayPrice';
-import { Typography } from 'src/components/Typography';
 
 import { StyledSpan } from './ConfigureForm.styles';
 
 import type { MigratePricePanelType } from './ConfigureForm';
+import type { PriceObject } from '@linode/api-v4';
 
 export interface MigrationPricingProps {
   backups: 'disabled' | PriceObject | undefined;
@@ -33,8 +32,8 @@ export const MigrationPricing = (props: MigrationPricingProps) => {
 
   return shouldShowPrice ? (
     <StyledMigrationPricingContainer
-      panelType={panelType}
       data-testid="migration-pricing"
+      panelType={panelType}
     >
       <StyledSpan>{currentPanel ? 'Current' : 'New'} Price</StyledSpan>
       <Box
@@ -57,7 +56,7 @@ export const MigrationPricing = (props: MigrationPricingProps) => {
         {shouldShowBackupsPrice && (
           <>
             &nbsp;
-            <Typography fontFamily={theme.font.bold} fontSize={priceFontSize}>
+            <Typography fontSize={priceFontSize} sx={{ font: theme.font.bold }}>
               | Backups&nbsp;
             </Typography>
             <DisplayPrice

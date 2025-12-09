@@ -1,33 +1,27 @@
-import { Theme, useTheme } from '@mui/material/styles';
-import { styled } from '@mui/material/styles';
+import {
+  useNodeBalancerQuery,
+  useNodeBalancerStatsQuery,
+  useProfile,
+} from '@linode/queries';
+import { Box, CircleProgress, ErrorState, Paper, Typography } from '@linode/ui';
+import { formatNumber, getMetrics, getUserTimezone } from '@linode/utilities';
+import { styled, useTheme } from '@mui/material/styles';
+import { useParams } from '@tanstack/react-router';
 import * as React from 'react';
-import { useParams } from 'react-router-dom';
 
 import PendingIcon from 'src/assets/icons/pending.svg';
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
-import {
+import { formatBitsPerSecond } from 'src/features/Longview/shared/utilities';
+import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
+
+import type { Theme } from '@mui/material/styles';
+import type {
   NodeBalancerConnectionsTimeData,
   Point,
 } from 'src/components/AreaChart/types';
-import { Box } from 'src/components/Box';
-import { CircleProgress } from 'src/components/CircleProgress';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
-import { LineGraph } from 'src/components/LineGraph/LineGraph';
-import MetricsDisplay from 'src/components/LineGraph/MetricsDisplay';
-import { Paper } from 'src/components/Paper';
-import { Typography } from 'src/components/Typography';
-import { formatBitsPerSecond } from 'src/features/Longview/shared/utilities';
-import { useFlags } from 'src/hooks/useFlags';
-import {
-  NODEBALANCER_STATS_NOT_READY_API_MESSAGE,
-  useNodeBalancerQuery,
-  useNodeBalancerStats,
-} from 'src/queries/nodebalancers';
-import { useProfile } from 'src/queries/profile';
-import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
-import { getUserTimezone } from 'src/utilities/getUserTimezone';
-import { formatNumber, getMetrics } from 'src/utilities/statMetrics';
 
+const NODEBALANCER_STATS_NOT_READY_API_MESSAGE =
+  'Stats are unavailable at this time.';
 const STATS_NOT_READY_TITLE =
   'Stats for this NodeBalancer are not available yet';
 
@@ -35,16 +29,16 @@ export const TablesPanel = () => {
   const theme = useTheme<Theme>();
   const { data: profile } = useProfile();
   const timezone = getUserTimezone(profile?.timezone);
-  const { nodeBalancerId } = useParams<{ nodeBalancerId: string }>();
-  const id = Number(nodeBalancerId);
-  const { data: nodebalancer } = useNodeBalancerQuery(id);
+  const { id } = useParams({
+    from: '/nodebalancers/$id/summary',
+  });
+  const { data: nodebalancer } = useNodeBalancerQuery(Number(id), Boolean(id));
 
-  const { data: stats, error, isLoading } = useNodeBalancerStats(
-    nodebalancer?.id ?? -1,
-    nodebalancer?.created
-  );
-
-  const flags = useFlags();
+  const {
+    data: stats,
+    error,
+    isLoading,
+  } = useNodeBalancerStatsQuery(nodebalancer?.id ?? -1);
 
   const statsErrorString = error
     ? getAPIErrorOrDefault(error, 'Unable to load stats')[0].reason
@@ -59,6 +53,12 @@ export const TablesPanel = () => {
     if (statsNotReadyError) {
       return (
         <ErrorState
+          CustomIcon={() => (
+            <PendingIcon
+              style={{ color: theme.tokens.alias.Content.Icon.Positive }}
+            />
+          )}
+          CustomIconStyles={{ height: 64, width: 64 }}
           errorText={
             <>
               <div>
@@ -73,8 +73,6 @@ export const TablesPanel = () => {
               </div>
             </>
           }
-          CustomIcon={PendingIcon}
-          CustomIconStyles={{ height: 64, width: 64 }}
         />
       );
     }
@@ -89,82 +87,52 @@ export const TablesPanel = () => {
 
     const metrics = getMetrics(data);
 
-    // @TODO recharts: remove conditional code and delete old chart when we decide recharts is stable
-    if (flags.recharts) {
-      const timeData = data.reduce(
-        (acc: NodeBalancerConnectionsTimeData[], point: Point) => {
-          acc.push({
-            Connections: point[1],
-            timestamp: point[0],
-          });
-          return acc;
-        },
-        []
-      );
-
-      return (
-        <Box marginLeft={-3}>
-          <AreaChart
-            areas={[
-              {
-                color: theme.graphs.purple,
-                dataKey: 'Connections',
-              },
-            ]}
-            legendRows={[
-              {
-                data: metrics,
-                format: formatNumber,
-                legendColor: 'purple',
-                legendTitle: 'Connections',
-              },
-            ]}
-            xAxis={{
-              tickFormat: 'hh a',
-              tickGap: 60,
-            }}
-            ariaLabel="Connections Graph"
-            data={timeData}
-            height={412}
-            showLegend
-            timezone={timezone}
-            unit={' CXN/s'}
-          />
-        </Box>
-      );
-    }
+    const timeData = data.reduce(
+      (acc: NodeBalancerConnectionsTimeData[], point: Point) => {
+        acc.push({
+          Connections: point[1],
+          timestamp: point[0],
+        });
+        return acc;
+      },
+      []
+    );
 
     return (
-      <>
-        <StyledChart>
-          <LineGraph
-            data={[
-              {
-                backgroundColor: theme.graphs.purple,
-                borderColor: 'transparent',
-                data,
-                label: 'Connections',
-              },
-            ]}
-            accessibleDataTable={{ unit: 'CXN/s' }}
-            ariaLabel="Connections Graph"
-            showToday={true}
-            timezone={timezone}
-          />
-        </StyledChart>
-        <StyledBottomLegend>
-          <MetricsDisplay
-            rows={[
-              {
-                data: metrics,
-                format: formatNumber,
-                legendColor: 'purple',
-                legendTitle: 'Connections',
-              },
-            ]}
-          />
-        </StyledBottomLegend>
-      </>
+      <Box>
+        <AreaChart
+          areas={[
+            {
+              color: theme.graphs.purple,
+              dataKey: 'Connections',
+            },
+          ]}
+          ariaLabel="Connections Graph"
+          data={timeData}
+          height={412}
+          legendRows={[
+            {
+              data: metrics,
+              format: formatNumber,
+              legendColor: theme.graphs.purple,
+              legendTitle: 'Connections',
+            },
+          ]}
+          margin={{
+            bottom: 0,
+            left: -15,
+            right: 0,
+            top: 0,
+          }}
+          showLegend
+          timezone={timezone}
+          unit={' CXN/s'}
+          xAxis={{
+            tickFormat: 'hh a',
+            tickGap: 60,
+          }}
+        />
+      </Box>
     );
   };
 
@@ -173,8 +141,7 @@ export const TablesPanel = () => {
     const trafficOut = stats?.data.traffic.out ?? [];
     const timeData = [];
 
-    // @TODO recharts: remove conditional code and delete old chart when we decide recharts is stable
-    if (flags.recharts && trafficIn) {
+    if (trafficIn) {
       for (let i = 0; i < trafficIn.length; i++) {
         timeData.push({
           'Traffic In': trafficIn[i][1],
@@ -187,6 +154,8 @@ export const TablesPanel = () => {
     if (statsNotReadyError) {
       return (
         <ErrorState
+          CustomIcon={PendingIcon}
+          CustomIconStyles={{ height: 64, width: 64 }}
           errorText={
             <>
               <div>
@@ -201,8 +170,6 @@ export const TablesPanel = () => {
               </div>
             </>
           }
-          CustomIcon={PendingIcon}
-          CustomIconStyles={{ height: 64, width: 64 }}
         />
       );
     }
@@ -215,92 +182,51 @@ export const TablesPanel = () => {
       return <Loading />;
     }
 
-    if (flags.recharts) {
-      return (
-        <Box marginLeft={-3}>
-          <AreaChart
-            areas={[
-              {
-                color: theme.graphs.darkGreen,
-                dataKey: 'Traffic In',
-              },
-              {
-                color: theme.graphs.lightGreen,
-                dataKey: 'Traffic Out',
-              },
-            ]}
-            legendRows={[
-              {
-                data: getMetrics(trafficIn),
-                format: formatBitsPerSecond,
-                legendColor: 'darkGreen',
-                legendTitle: 'Traffic In',
-              },
-              {
-                data: getMetrics(trafficOut),
-                format: formatBitsPerSecond,
-                legendColor: 'lightGreen',
-                legendTitle: 'Traffic Out',
-              },
-            ]}
-            xAxis={{
-              tickFormat: 'hh a',
-              tickGap: 60,
-            }}
-            ariaLabel="Network Traffic Graph"
-            data={timeData}
-            height={412}
-            showLegend
-            timezone={timezone}
-            unit={' bits/s'}
-          />
-        </Box>
-      );
-    }
-
     return (
-      <React.Fragment>
-        <StyledChart>
-          <LineGraph
-            data={[
-              {
-                backgroundColor: theme.graphs.darkGreen,
-                borderColor: 'transparent',
-                data: trafficIn,
-                label: 'Traffic In',
-              },
-              {
-                backgroundColor: theme.graphs.lightGreen,
-                borderColor: 'transparent',
-                data: trafficOut,
-                label: 'Traffic Out',
-              },
-            ]}
-            accessibleDataTable={{ unit: 'bits/s' }}
-            ariaLabel="Traffic Graph"
-            showToday={true}
-            timezone={timezone}
-          />
-        </StyledChart>
-        <StyledBottomLegend>
-          <MetricsDisplay
-            rows={[
-              {
-                data: getMetrics(trafficIn),
-                format: formatBitsPerSecond,
-                legendColor: 'darkGreen',
-                legendTitle: 'Inbound',
-              },
-              {
-                data: getMetrics(trafficOut),
-                format: formatBitsPerSecond,
-                legendColor: 'lightGreen',
-                legendTitle: 'Outbound',
-              },
-            ]}
-          />
-        </StyledBottomLegend>
-      </React.Fragment>
+      <Box>
+        <AreaChart
+          areas={[
+            {
+              color: theme.graphs.darkGreen,
+              dataKey: 'Traffic In',
+            },
+            {
+              color: theme.graphs.lightGreen,
+              dataKey: 'Traffic Out',
+            },
+          ]}
+          ariaLabel="Network Traffic Graph"
+          data={timeData}
+          height={412}
+          legendRows={[
+            {
+              data: getMetrics(trafficIn),
+              format: formatBitsPerSecond,
+              legendColor: theme.graphs.darkGreen,
+              legendTitle: 'Traffic In',
+            },
+            {
+              data: getMetrics(trafficOut),
+              format: formatBitsPerSecond,
+              legendColor: theme.graphs.lightGreen,
+              legendTitle: 'Traffic Out',
+            },
+          ]}
+          margin={{
+            bottom: 0,
+            left: -15,
+            right: 0,
+            top: 0,
+          }}
+          showLegend
+          timezone={timezone}
+          unit={' bits/s'}
+          xAxis={{
+            tickFormat: 'hh a',
+            tickGap: 60,
+          }}
+        />
+      </Box>
     );
   };
 
@@ -340,21 +266,14 @@ const StyledTitle = styled(Typography, {
   },
 }));
 
-const StyledChart = styled('div', {
-  label: 'StyledChart',
-})(({ theme }) => ({
-  paddingLeft: theme.spacing(1),
-  position: 'relative',
-  width: '100%',
-}));
-
 export const StyledBottomLegend = styled('div', {
   label: 'StyledBottomLegend',
-})(({ theme }) => ({
-  backgroundColor: theme.bg.offWhite,
-  color: '#777',
+  shouldForwardProp: (prop) => prop !== 'legendHeight',
+})<{ legendHeight?: string }>(({ legendHeight, theme }) => ({
+  color: theme.tokens.color.Neutrals[70],
   fontSize: 14,
-  margin: `${theme.spacing(2)} ${theme.spacing(1)} ${theme.spacing(1)}`,
+  height: legendHeight,
+  overflowY: 'auto',
 }));
 
 const StyledPanel = styled(Paper, {
@@ -380,6 +299,6 @@ const Loading = () => (
       minHeight: 300,
     }}
   >
-    <CircleProgress mini />
+    <CircleProgress size="sm" />
   </div>
 );

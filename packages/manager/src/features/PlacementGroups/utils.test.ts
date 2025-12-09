@@ -1,17 +1,29 @@
-import {
-  linodeFactory,
-  placementGroupFactory,
-  regionFactory,
-} from 'src/factories';
+import { linodeFactory, regionFactory } from '@linode/utilities';
+import { renderHook } from '@testing-library/react';
+
+import { placementGroupFactory } from 'src/factories';
 
 import {
-  affinityTypeOptions,
-  getAffinityTypeEnforcement,
   getLinodesFromAllPlacementGroups,
+  getMaxPGsPerCustomer,
   getPlacementGroupLinodes,
   hasPlacementGroupReachedCapacity,
   hasRegionReachedPlacementGroupCapacity,
+  placementGroupTypeOptions,
+  useIsPlacementGroupsEnabled,
 } from './utils';
+
+const queryMocks = vi.hoisted(() => ({
+  useAccount: vi.fn().mockReturnValue({}),
+}));
+
+vi.mock('@linode/queries', async () => {
+  const actual = await vi.importActual('@linode/queries');
+  return {
+    ...actual,
+    useAccount: queryMocks.useAccount,
+  };
+});
 
 const initialLinodeData = [
   {
@@ -30,7 +42,7 @@ const initialLinodeData = [
 
 describe('affinityTypeOptions', () => {
   it('returns an array of objects with label and value properties', () => {
-    expect(affinityTypeOptions).toEqual(
+    expect(placementGroupTypeOptions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           label: expect.any(String),
@@ -49,7 +61,9 @@ describe('hasPlacementGroupReachedCapacity', () => {
           members: initialLinodeData,
         }),
         region: regionFactory.build({
-          maximum_vms_per_pg: 3,
+          placement_group_limits: {
+            maximum_linodes_per_pg: 3,
+          },
         }),
       })
     ).toBe(true);
@@ -62,7 +76,9 @@ describe('hasPlacementGroupReachedCapacity', () => {
           members: initialLinodeData,
         }),
         region: regionFactory.build({
-          maximum_vms_per_pg: 4,
+          placement_group_limits: {
+            maximum_linodes_per_pg: 4,
+          },
         }),
       })
     ).toBe(false);
@@ -99,16 +115,6 @@ describe('getLinodesFromAllPlacementGroups', () => {
   });
 });
 
-describe('getAffinityEnforcement', () => {
-  it('returns "Strict" if `is_strict` is true', () => {
-    expect(getAffinityTypeEnforcement(true)).toBe('Strict');
-  });
-
-  it('returns "Flexible" if `is_strict` is false', () => {
-    expect(getAffinityTypeEnforcement(false)).toBe('Flexible');
-  });
-});
-
 describe('hasRegionReachedPlacementGroupCapacity', () => {
   it('returns true if the region has reached its placement group capacity', () => {
     expect(
@@ -118,7 +124,9 @@ describe('hasRegionReachedPlacementGroupCapacity', () => {
         }),
         region: regionFactory.build({
           id: 'us-east',
-          maximum_pgs_per_customer: 2,
+          placement_group_limits: {
+            maximum_pgs_per_customer: 2,
+          },
         }),
       })
     ).toBe(true);
@@ -132,7 +140,9 @@ describe('hasRegionReachedPlacementGroupCapacity', () => {
         }),
         region: regionFactory.build({
           id: 'us-east',
-          maximum_pgs_per_customer: 4,
+          placement_group_limits: {
+            maximum_pgs_per_customer: 4,
+          },
         }),
       })
     ).toBe(false);
@@ -191,5 +201,59 @@ describe('getPlacementGroupLinodes', () => {
     const placementGroup = undefined;
 
     expect(getPlacementGroupLinodes(placementGroup, linodes)).toBeUndefined();
+  });
+});
+
+describe('useIsPlacementGroupsEnabled', () => {
+  it('returns true if the account has the Placement Group capability', () => {
+    queryMocks.useAccount.mockReturnValue({
+      data: {
+        capabilities: ['Placement Group'],
+      },
+    });
+
+    const { result } = renderHook(() => useIsPlacementGroupsEnabled());
+    expect(result.current).toStrictEqual({
+      isPlacementGroupsEnabled: true,
+    });
+  });
+
+  it('returns false if the account does not have the Placement Group capability', () => {
+    queryMocks.useAccount.mockReturnValue({
+      data: {
+        capabilities: [],
+      },
+    });
+
+    const { result } = renderHook(() => useIsPlacementGroupsEnabled());
+    expect(result.current).toStrictEqual({
+      isPlacementGroupsEnabled: false,
+    });
+  });
+});
+
+describe('getMaxPGsPerCustomer', () => {
+  it('returns the maximum number of Placement Groups per region a customer is allowed to create', () => {
+    const region = regionFactory.build({
+      placement_group_limits: {
+        maximum_pgs_per_customer: 5,
+      },
+    });
+
+    expect(getMaxPGsPerCustomer(region)).toBe(5);
+  });
+
+  it('returns "unlimited" if the limit is `null`', () => {
+    const region = regionFactory.build({
+      placement_group_limits: {
+        maximum_pgs_per_customer: null,
+      },
+    });
+
+    expect(getMaxPGsPerCustomer(region)).toBe('unlimited');
+  });
+
+  it('returns undefined if the region is not provided', () => {
+    expect(getMaxPGsPerCustomer(undefined)).toBeUndefined();
   });
 });

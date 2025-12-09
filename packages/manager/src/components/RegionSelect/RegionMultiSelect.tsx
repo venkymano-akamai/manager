@@ -1,121 +1,164 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useAllAccountAvailabilitiesQuery } from '@linode/queries';
+import {
+  Autocomplete,
+  Chip,
+  CloseIcon,
+  Stack,
+  StyledListItem,
+} from '@linode/ui';
+import React from 'react';
 
-import { Autocomplete } from 'src/components/Autocomplete/Autocomplete';
-import { StyledListItem } from 'src/components/Autocomplete/Autocomplete.styles';
-import { useAllAccountAvailabilitiesQuery } from 'src/queries/account/availability';
+// @todo: modularization - Move `getRegionCountryGroup` utility to `@linode/shared` package
+// as it imports GLOBAL_QUOTA_VALUE from RegionSelect's constants.ts and update the import.
+import { getRegionCountryGroup } from 'src/utilities/formatRegion';
 
+// @todo: modularization - Move `Flag` component to `@linode/shared` package.
+import { Flag } from '../Flag';
 import { RegionOption } from './RegionOption';
 import { StyledAutocompleteContainer } from './RegionSelect.styles';
 import {
   getRegionOptions,
-  getSelectedRegionsByIds,
+  isRegionOptionUnavailable,
 } from './RegionSelect.utils';
 
-import type {
-  RegionMultiSelectProps,
-  RegionSelectOption,
-} from './RegionSelect.types';
+import type { RegionMultiSelectProps } from './RegionSelect.types';
+import type { Region } from '@linode/api-v4';
+import type { DisableItemOption } from '@linode/ui';
+
+interface RegionChipLabelProps {
+  region: Region;
+}
+
+const RegionChipLabel = ({ region }: RegionChipLabelProps) => {
+  return (
+    <Stack alignItems="center" direction="row" gap={1}>
+      <Flag country={region.country} sx={{ fontSize: '1rem' }} />
+      {region.label} ({region.id})
+    </Stack>
+  );
+};
 
 export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
   const {
     SelectedRegionsList,
     currentCapability,
     disabled,
+    disabledRegions: disabledRegionsFromProps,
     errorText,
-    handleSelection,
+    forcefullyShownRegionIds,
     helperText,
     isClearable,
+    isGeckoLAEnabled,
     label,
-    onBlur,
+    onChange,
     placeholder,
     regions,
     required,
     selectedIds,
     sortRegionOptions,
     width,
+    ...rest
   } = props;
 
-  const {
-    data: accountAvailability,
-    isLoading: accountAvailabilityLoading,
-  } = useAllAccountAvailabilitiesQuery();
+  const { data: accountAvailability, isLoading: accountAvailabilityLoading } =
+    useAllAccountAvailabilitiesQuery(!!currentCapability);
 
-  const [selectedRegions, setSelectedRegions] = useState<RegionSelectOption[]>(
-    getSelectedRegionsByIds({
-      accountAvailabilityData: accountAvailability,
-      currentCapability,
-      regions,
-      selectedRegionIds: selectedIds ?? [],
-    })
-  );
+  const regionOptions = getRegionOptions({
+    currentCapability,
+    forcefullyShownRegionIds,
+    regions,
+  });
 
-  const handleRegionChange = (selection: RegionSelectOption[]) => {
-    setSelectedRegions(selection);
-    const selectedIds = selection.map((region) => region.value);
-    handleSelection(selectedIds);
-  };
-
-  useEffect(() => {
-    setSelectedRegions(
-      getSelectedRegionsByIds({
-        accountAvailabilityData: accountAvailability,
-        currentCapability,
-        regions,
-        selectedRegionIds: selectedIds ?? [],
-      })
-    );
-  }, [selectedIds, accountAvailability, currentCapability, regions]);
-
-  const options = useMemo(
-    () =>
-      getRegionOptions({
-        accountAvailabilityData: accountAvailability,
-        currentCapability,
-        regions,
-      }),
-    [accountAvailability, currentCapability, regions]
+  const selectedRegions = regionOptions.filter((r) =>
+    selectedIds.includes(r.id)
   );
 
   const handleRemoveOption = (regionToRemove: string) => {
-    const updatedSelectedOptions = selectedRegions.filter(
-      (option) => option.value !== regionToRemove
-    );
-    const updatedSelectedIds = updatedSelectedOptions.map(
-      (region) => region.value
-    );
-    setSelectedRegions(updatedSelectedOptions);
-    handleSelection(updatedSelectedIds);
+    onChange(selectedIds.filter((value) => value !== regionToRemove));
   };
+
+  const disabledRegions = regionOptions.reduce<
+    Record<string, DisableItemOption>
+  >((acc, region) => {
+    if (disabledRegionsFromProps?.[region.id]) {
+      acc[region.id] = disabledRegionsFromProps[region.id];
+    }
+    if (
+      isRegionOptionUnavailable({
+        accountAvailabilityData: accountAvailability,
+        currentCapability,
+        region,
+      })
+    ) {
+      acc[region.id] = {
+        reason:
+          'This region is currently unavailable. For help, open a support ticket.',
+      };
+    }
+    return acc;
+  }, {});
 
   return (
     <>
       <StyledAutocompleteContainer sx={{ width }}>
         <Autocomplete
-          groupBy={(option: RegionSelectOption) => {
-            return option?.data?.region;
+          autoHighlight
+          clearOnBlur
+          data-testid="region-select"
+          disableClearable={!isClearable}
+          disabled={disabled}
+          errorText={errorText}
+          getOptionDisabled={(option) => Boolean(disabledRegions[option.id])}
+          groupBy={(option) => {
+            if (!option.site_type) {
+              // Render empty group for "Select All / Deselect All"
+              return '';
+            }
+            return getRegionCountryGroup(option);
           }}
-          isOptionEqualToValue={(
-            option: RegionSelectOption,
-            value: RegionSelectOption
-          ) => option.value === value.value}
-          onChange={(_, selectedOption) =>
-            handleRegionChange(selectedOption as RegionSelectOption[])
+          label={label ?? 'Regions'}
+          loading={accountAvailabilityLoading}
+          multiple
+          noOptionsText="No results"
+          onChange={(_, selectedOptions) =>
+            onChange(selectedOptions?.map((region) => region.id) ?? [])
           }
+          options={regionOptions}
+          placeholder={placeholder ?? 'Select Regions'}
           renderOption={(props, option, { selected }) => {
-            if (!option.data) {
-              // Render options like "Select All / Deselect All "
-              return <StyledListItem {...props}>{option.label}</StyledListItem>;
+            const { key, ...rest } = props;
+            if (!option.site_type) {
+              // Render options like "Select All / Deselect All"
+              return (
+                <StyledListItem {...rest} key={key}>
+                  {option.label}
+                </StyledListItem>
+              );
             }
 
             // Render regular options
             return (
               <RegionOption
-                key={option.value}
-                option={option}
-                props={props}
+                disabledOptions={disabledRegions[option.id]}
+                isGeckoLAEnabled={isGeckoLAEnabled}
+                item={option}
+                key={key}
+                props={rest}
                 selected={selected}
               />
             );
+          }}
+          renderTags={(tagValue, getTagProps) => {
+            return tagValue.map((option, index) => (
+              <Chip
+                {...getTagProps({ index })}
+                data-testid={option.id}
+                deleteIcon={<CloseIcon data-testid="CloseIcon" />}
+                key={index}
+                label={<RegionChipLabel region={option} />}
+                onDelete={() => handleRemoveOption(option.id)}
+              />
+            ));
           }}
           sx={(theme) => ({
             [theme.breakpoints.up('md')]: {
@@ -128,32 +171,18 @@ export const RegionMultiSelect = React.memo((props: RegionMultiSelectProps) => {
             },
             tooltipText: helperText,
           }}
-          autoHighlight
-          clearOnBlur
-          data-testid="region-select"
-          disableClearable={!isClearable}
-          disabled={disabled}
-          errorText={errorText}
-          getOptionDisabled={(option: RegionSelectOption) => option.unavailable}
-          label={label ?? 'Regions'}
-          loading={accountAvailabilityLoading}
-          multiple
-          noOptionsText="No results"
-          onBlur={onBlur}
-          options={options}
-          placeholder={placeholder ?? 'Select Regions'}
-          renderTags={() => null}
           value={selectedRegions}
+          {...rest}
         />
       </StyledAutocompleteContainer>
       {selectedRegions.length > 0 && SelectedRegionsList && (
         <SelectedRegionsList
+          onRemove={handleRemoveOption}
           selectedRegions={
             sortRegionOptions
               ? [...selectedRegions].sort(sortRegionOptions)
               : selectedRegions
           }
-          onRemove={handleRemoveOption}
         />
       )}
     </>

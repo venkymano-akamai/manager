@@ -1,510 +1,468 @@
+/**
+ * @file Linode Create end-to-end tests.
+ */
+
 import {
-  containsVisible,
-  fbtClick,
-  fbtVisible,
-  getClick,
-  getVisible,
-} from 'support/helpers';
-import { ui } from 'support/ui';
-import { apiMatcher } from 'support/util/intercepts';
-import { randomString, randomLabel, randomNumber } from 'support/util/random';
-import { chooseRegion } from 'support/util/regions';
-import { getRegionById } from 'support/util/regions';
-import {
-  subnetFactory,
-  vpcFactory,
+  grantsFactory,
   linodeFactory,
-  linodeConfigFactory,
+  linodeTypeFactory,
+  profileFactory,
   regionFactory,
-  VLANFactory,
-  LinodeConfigInterfaceFactory,
-  LinodeConfigInterfaceFactoryWithVPC,
-} from '@src/factories';
+} from '@linode/utilities';
 import { authenticate } from 'support/api/authentication';
-import { cleanUp } from 'support/util/cleanup';
-import { mockGetRegions } from 'support/intercepts/regions';
+import { LINODE_CREATE_TIMEOUT } from 'support/constants/linodes';
+import { mockGetAccount, mockGetUser } from 'support/intercepts/account';
+import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import {
-  dcPricingPlanPlaceholder,
-  dcPricingMockLinodeTypes,
-  dcPricingDocsLabel,
-  dcPricingDocsUrl,
-} from 'support/constants/dc-specific-pricing';
-import { mockGetVLANs } from 'support/intercepts/vlans';
-import { mockGetLinodeConfigs } from 'support/intercepts/configs';
-import {
+  interceptCreateLinode,
   mockCreateLinode,
-  mockGetLinodeType,
+  mockCreateLinodeError,
   mockGetLinodeTypes,
-  mockGetLinodeDisks,
-  mockGetLinodeVolumes,
 } from 'support/intercepts/linodes';
-import { mockGetVPC, mockGetVPCs } from 'support/intercepts/vpc';
 import {
-  mockAppendFeatureFlags,
-  mockGetFeatureFlagClientstream,
-} from 'support/intercepts/feature-flags';
-import { makeFeatureFlagData } from 'support/util/feature-flags';
+  interceptGetProfile,
+  mockGetProfile,
+  mockGetProfileGrants,
+} from 'support/intercepts/profile';
+import { mockGetRegions } from 'support/intercepts/regions';
+import { ui } from 'support/ui';
+import { linodeCreatePage } from 'support/ui/pages';
+import { cleanUp } from 'support/util/cleanup';
+import { randomLabel, randomNumber, randomString } from 'support/util/random';
+import { chooseRegion } from 'support/util/regions';
+import { skip } from 'support/util/skip';
 
-import type { Config, VLAN, Disk, Region } from '@linode/api-v4';
+import { accountFactory, accountUserFactory } from 'src/factories';
 
-const mockRegions: Region[] = [
-  regionFactory.build({
-    capabilities: ['Linodes'],
-    country: 'uk',
-    id: 'eu-west',
-    label: 'London, UK',
-  }),
-  regionFactory.build({
-    capabilities: ['Linodes'],
-    country: 'sg',
-    id: 'ap-south',
-    label: 'Singapore, SG',
-  }),
-  regionFactory.build({
-    capabilities: ['Linodes'],
-    id: 'us-east',
-    label: 'Newark, NJ',
-  }),
-  regionFactory.build({
-    capabilities: ['Linodes'],
-    id: 'us-central',
-    label: 'Dallas, TX',
-  }),
-];
+let username: string;
 
 authenticate();
-describe('create linode', () => {
+describe('Create Linode', () => {
   before(() => {
     cleanUp('linodes');
+    cleanUp('ssh-keys');
+  });
+  beforeEach(() => {
+    mockAppendFeatureFlags({
+      linodeInterfaces: { enabled: false },
+    });
   });
 
   /*
-   * Region select test.
-   * - Confirms that region select dropdown is visible and interactive.
-   * - Confirms that region select dropdown is populated with expected regions.
-   * - Confirms that region select dropdown is sorted alphabetically by region, with North America first.
-   * - Confirms that region select dropdown is populated with expected DCs, sorted alphabetically.
+   * End-to-end tests to create Linodes for each available plan type.
    */
-  it('region select', () => {
-    mockGetRegions(mockRegions).as('getRegions');
+  describe('End-to-end', () => {
+    // Run an end-to-end test to create a basic Linode for each plan type described below.
+    describe('By plan type', () => {
+      [
+        {
+          planId: 'g6-nanode-1',
+          planLabel: 'Nanode 1 GB',
+          planType: 'Shared CPU',
+        },
+        {
+          planId: 'g6-dedicated-2',
+          planLabel: 'Dedicated 4 GB',
+          planType: 'Dedicated CPU',
+        },
+        {
+          planId: 'g7-highmem-1',
+          planLabel: 'Linode 24 GB',
+          planType: 'High Memory',
+        },
+        // TODO Include GPU plan types.
+        // TODO Include Accelerated plan types (when they're no longer as restricted)
+      ].forEach((planConfig) => {
+        /*
+         * - Parameterized end-to-end test to create a Linode for each plan type.
+         * - Confirms that a Linode of the given plan type can be deployed.
+         */
+        it(`creates a ${planConfig.planType} Linode`, () => {
+          const linodeRegion = chooseRegion({
+            capabilities: ['Linodes', 'Vlans'],
+          });
 
-    cy.visitWithLogin('linodes/create');
+          const linodeLabel = randomLabel();
 
-    cy.wait(['@getRegions']);
+          interceptGetProfile().as('getProfile');
 
-    // Confirm that region select dropdown is visible and interactive.
-    ui.regionSelect.find().click();
-    cy.get('[data-qa-autocomplete-popper="true"]').should('be.visible');
+          interceptCreateLinode().as('createLinode');
+          cy.visitWithLogin('/linodes/create');
 
-    // Confirm that region select dropdown are grouped by region,
-    // sorted alphabetically, with North America first.
-    cy.get('.MuiAutocomplete-groupLabel')
-      .should('have.length', 3)
-      .should((group) => {
-        expect(group[0]).to.contain('North America');
-        expect(group[1]).to.contain('Asia');
-        expect(group[2]).to.contain('Europe');
+          // Set Linode label, OS, plan type, password, etc.
+          linodeCreatePage.setLabel(linodeLabel);
+          linodeCreatePage.selectImage('Debian 12');
+          linodeCreatePage.selectRegionById(linodeRegion.id);
+          linodeCreatePage.selectPlan(
+            planConfig.planType,
+            planConfig.planLabel
+          );
+          linodeCreatePage.setRootPassword(randomString(32));
+
+          // Confirm information in summary is shown as expected.
+          cy.get('[data-qa-linode-create-summary]').scrollIntoView();
+          cy.get('[data-qa-linode-create-summary]').within(() => {
+            cy.findByText('Debian 12').should('be.visible');
+            cy.findByText(linodeRegion.label).should('be.visible');
+            cy.findByText(planConfig.planLabel).should('be.visible');
+          });
+
+          // Create Linode and confirm it's provisioned as expected.
+          ui.button
+            .findByTitle('Create Linode')
+            .should('be.visible')
+            .should('be.enabled')
+            .click();
+
+          cy.wait('@createLinode').then((xhr) => {
+            const requestPayload = xhr.request.body;
+            const responsePayload = xhr.response?.body;
+
+            // Confirm that API request and response contain expected data
+            expect(requestPayload['label']).to.equal(linodeLabel);
+            expect(requestPayload['region']).to.equal(linodeRegion.id);
+            expect(requestPayload['type']).to.equal(planConfig.planId);
+
+            expect(responsePayload['label']).to.equal(linodeLabel);
+            expect(responsePayload['region']).to.equal(linodeRegion.id);
+            expect(responsePayload['type']).to.equal(planConfig.planId);
+
+            // Confirm that Cloud redirects to details page
+            cy.url().should('endWith', `/linodes/${responsePayload['id']}`);
+          });
+
+          cy.wait('@getProfile').then((xhr) => {
+            username = xhr.response?.body.username;
+          });
+
+          // Confirm toast notification should appear on Linode create.
+          ui.toast.assertMessage(
+            `Your Linode ${linodeLabel} is being created.`
+          );
+          cy.findByText('RUNNING', { timeout: LINODE_CREATE_TIMEOUT }).should(
+            'be.visible'
+          );
+
+          // confirm that LISH Console via SSH section is correct
+          cy.contains('LISH Console via SSH')
+            .should('be.visible')
+            .closest('tr')
+            .within(() => {
+              cy.contains(
+                `ssh -t ${username}@lish-${linodeRegion.id}.linode.com ${linodeLabel}`
+              ).should('be.visible');
+            });
+        });
       });
 
-    // Confirm that region select dropdown is populated with expected regions, sorted alphabetically.
-    cy.get('[data-qa-option]').should('exist').should('have.length', 4);
-    mockRegions.forEach((region) => {
-      cy.get('[data-qa-option]').contains(region.label);
-    });
+      /*
+       * - Confirms Premium Plan Linode can be created end-to-end.
+       * - Confirms creation flow, that Linode boots, and that UI reflects status.
+       */
+      it(`creates a Premium CPU Linode`, () => {
+        cy.tag('env:premiumPlans');
 
-    // Select an option
-    cy.findByTestId('eu-west').click();
-    // Confirm the popper is closed
-    cy.get('[data-qa-autocomplete-popper="true"]').should('not.exist');
-    // Confirm that the selected region is displayed in the input field.
-    cy.get('[data-testid="textfield-input"]').should(
-      'have.value',
-      'London, UK (eu-west)'
-    );
+        // TODO Allow `chooseRegion` to be configured not to throw.
+        const linodeRegion = (() => {
+          try {
+            return chooseRegion({
+              capabilities: ['Linodes', 'Premium Plans', 'Vlans'],
+            });
+          } catch {
+            skip();
+          }
+          return;
+        })()!;
 
-    // Confirm that selecting a valid region updates the Plan Selection panel.
-    expect(cy.get('[data-testid="table-row-empty"]').should('not.exist'));
-  });
+        const linodeLabel = randomLabel();
+        const planId = 'g7-premium-2';
+        const planLabel = 'Premium 4 GB';
+        const planType = 'Premium CPU';
 
-  it('creates a nanode', () => {
-    const rootpass = randomString(32);
-    const linodeLabel = randomLabel();
-    // intercept request
-    cy.visitWithLogin('/linodes/create');
-    cy.get('[data-qa-deploy-linode]');
-    cy.intercept('POST', apiMatcher('linode/instances')).as('linodeCreated');
-    cy.get('[data-qa-header="Create"]').should('have.text', 'Create');
-    ui.regionSelect.find().click();
-    ui.regionSelect.findItemByRegionLabel(chooseRegion().label).click();
-    fbtClick('Shared CPU');
-    getClick('[id="g6-nanode-1"]');
-    getClick('#linode-label').clear().type(linodeLabel);
-    cy.get('#root-password').type(rootpass);
-    getClick('[data-qa-deploy-linode]');
-    cy.wait('@linodeCreated').its('response.statusCode').should('eq', 200);
-    ui.toast.assertMessage(`Your Linode ${linodeLabel} is being created.`);
-    containsVisible('PROVISIONING');
-    fbtVisible(linodeLabel);
-    cy.contains('RUNNING', { timeout: 300000 }).should('be.visible');
-  });
+        interceptGetProfile().as('getProfile');
+        interceptCreateLinode().as('createLinode');
+        cy.visitWithLogin('/linodes/create');
 
-  it('creates a linode via CLI', () => {
-    const linodeLabel = randomLabel();
-    const linodePass = randomString(32);
-    const linodeRegion = chooseRegion();
+        // Set Linode label, OS, plan type, password, etc.
+        linodeCreatePage.setLabel(linodeLabel);
+        linodeCreatePage.selectImage('Debian 12');
+        linodeCreatePage.selectRegionById(linodeRegion.id);
+        linodeCreatePage.selectPlan(planType, planLabel);
+        linodeCreatePage.setRootPassword(randomString(32));
 
-    cy.visitWithLogin('/linodes/create');
+        // Confirm information in summary is shown as expected.
+        cy.get('[data-qa-linode-create-summary]').scrollIntoView();
+        cy.get('[data-qa-linode-create-summary]').within(() => {
+          cy.findByText('Debian 12').should('be.visible');
+          cy.findByText(linodeRegion.label).should('be.visible');
+          cy.findByText(planLabel).should('be.visible');
+        });
 
-    ui.regionSelect.find().click();
-    ui.autocompletePopper
-      .findByTitle(`${linodeRegion.label} (${linodeRegion.id})`)
-      .should('exist')
-      .click();
-
-    cy.get('[id="g6-dedicated-2"]').click();
-
-    cy.findByLabelText('Linode Label')
-      .should('be.visible')
-      .should('be.enabled')
-      .clear()
-      .type(linodeLabel);
-
-    cy.findByLabelText('Root Password')
-      .should('be.visible')
-      .should('be.enabled')
-      .type(linodePass);
-
-    ui.button
-      .findByTitle('Create using command line')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
-
-    ui.dialog
-      .findByTitle('Create Linode')
-      .should('be.visible')
-      .within(() => {
-        // Switch to cURL view if necessary.
-        cy.findByText('cURL')
-          .should('be.visible')
-          .should('have.attr', 'data-selected');
-
-        // Confirm that cURL command has expected details.
-        [
-          `"region": "${linodeRegion.id}"`,
-          `"type": "g6-dedicated-2"`,
-          `"label": "${linodeLabel}"`,
-          `"root_pass": "${linodePass}"`,
-          '"booted": true',
-        ].forEach((line: string) =>
-          cy.findByText(line, { exact: false }).should('be.visible')
-        );
-
-        cy.findByText('Linode CLI').should('be.visible').click();
-
-        [
-          `--region ${linodeRegion.id}`,
-          '--type g6-dedicated-2',
-          `--label ${linodeLabel}`,
-          `--root_pass ${linodePass}`,
-          `--booted true`,
-        ].forEach((line: string) => cy.contains(line).should('be.visible'));
-
-        ui.buttonGroup
-          .findButtonByTitle('Close')
+        // Create Linode and confirm it's provisioned as expected.
+        ui.button
+          .findByTitle('Create Linode')
           .should('be.visible')
           .should('be.enabled')
           .click();
+
+        cy.wait('@createLinode').then((xhr) => {
+          const requestPayload = xhr.request.body;
+          const responsePayload = xhr.response?.body;
+
+          // Confirm that API request and response contain expected data
+          expect(requestPayload['label']).to.equal(linodeLabel);
+          expect(requestPayload['region']).to.equal(linodeRegion.id);
+          expect(requestPayload['type']).to.equal(planId);
+
+          expect(responsePayload['label']).to.equal(linodeLabel);
+          expect(responsePayload['region']).to.equal(linodeRegion.id);
+          expect(responsePayload['type']).to.equal(planId);
+
+          // Confirm that Cloud redirects to details page
+          cy.url().should('endWith', `/linodes/${responsePayload['id']}`);
+        });
+
+        cy.wait('@getProfile').then((xhr) => {
+          username = xhr.response?.body.username;
+        });
+
+        // Confirm toast notification should appear on Linode create.
+        ui.toast.assertMessage(`Your Linode ${linodeLabel} is being created.`);
+        cy.findByText('RUNNING', { timeout: LINODE_CREATE_TIMEOUT }).should(
+          'be.visible'
+        );
       });
+    });
+  });
+
+  // Mocks creating an accelerated Linode due to accelerated linodes currently having limited deployment availability
+  // TODO: eventually transition this to an e2e test (in the above test)
+  it('creates a mock accelerated Linode and confirms response', () => {
+    // Create mocks
+    const linodeLabel = randomLabel();
+    const mockLinode = linodeFactory.build({
+      label: linodeLabel,
+      specs: {
+        accelerated_devices: 2,
+        disk: 51200,
+        gpus: 0,
+        memory: 2048,
+        transfer: 2000,
+        vcpus: 1,
+      },
+      type: 'accelerated-1',
+    });
+    const mockAcceleratedType = [
+      linodeTypeFactory.build({
+        class: 'accelerated',
+        id: 'accelerated-1',
+        label: 'accelerated-1',
+      }),
+    ];
+    const mockRegions = [
+      regionFactory.build({
+        capabilities: ['Linodes', 'Kubernetes', 'NETINT Quadra T1U'],
+        id: 'us-east',
+        label: 'Newark, NJ',
+      }),
+    ];
+    const linodeRegion = mockRegions[0];
+
+    // Create request intercepts
+    mockGetAccount(
+      accountFactory.build({
+        capabilities: ['NETINT Quadra T1U'],
+      })
+    ).as('getAccount');
+    mockAppendFeatureFlags({
+      acceleratedPlans: {
+        linodePlans: true,
+        lkePlans: false,
+      },
+    }).as('getFeatureFlags');
+    mockGetRegions(mockRegions).as('getRegions');
+    mockGetLinodeTypes([...mockAcceleratedType]).as('getLinodeTypes');
+    mockCreateLinode(mockLinode).as('createLinode');
+
+    cy.visitWithLogin('/linodes/create');
+    cy.wait([
+      '@getRegions',
+      '@getLinodeTypes',
+      '@getAccount',
+      '@getFeatureFlags',
+    ]);
+
+    // Set Linode label, OS, plan type, password, etc.
+    linodeCreatePage.setLabel(linodeLabel);
+    linodeCreatePage.selectImage('Debian 12');
+    linodeCreatePage.selectRegionById(linodeRegion.id);
+    linodeCreatePage.selectPlan('Accelerated', mockAcceleratedType[0].label);
+    linodeCreatePage.setRootPassword(randomString(32));
+
+    // Confirm information in summary is shown as expected.
+    cy.get('[data-qa-linode-create-summary]').scrollIntoView();
+    cy.get('[data-qa-linode-create-summary]').within(() => {
+      cy.findByText('Debian 12').should('be.visible');
+      cy.findByText(`US, ${linodeRegion.label}`).should('be.visible');
+      cy.findByText(mockAcceleratedType[0].label).should('be.visible');
+    });
+
+    // Create Linode and confirm it's provisioned as expected.
+    ui.button
+      .findByTitle('Create Linode')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
+
+    cy.wait('@createLinode').then((xhr) => {
+      const requestPayload = xhr.request.body;
+      const responsePayload = xhr.response?.body;
+
+      // Confirm that API request and response contain expected data
+      expect(requestPayload['label']).to.equal(linodeLabel);
+      expect(requestPayload['region']).to.equal(linodeRegion.id);
+      expect(requestPayload['type']).to.equal(mockAcceleratedType[0].id);
+
+      expect(responsePayload['label']).to.equal(linodeLabel);
+      expect(responsePayload['region']).to.equal(linodeRegion.id);
+      expect(responsePayload['type']).to.equal(mockAcceleratedType[0].id);
+
+      // Accelerated linodes: Confirm accelerated_devices value is returned as expected
+      expect(responsePayload['specs']).has.property('accelerated_devices', 2);
+
+      // Confirm that Cloud redirects to details page
+      cy.url().should('endWith', `/linodes/${responsePayload['id']}`);
+    });
   });
 
   /*
-   * - Confirms DC-specific pricing UI flow works as expected during Linode creation.
-   * - Confirms that pricing docs link is shown in "Region" section.
-   * - Confirms that backups pricing is correct when selecting a region with a different price structure.
+   * - Confirms error message can show up during Linode create flow.
+   * - Confirms Linode can be created after retry.
    */
-  it('shows DC-specific pricing information during create flow', () => {
-    const rootpass = randomString(32);
-    const linodeLabel = randomLabel();
-    const initialRegion = getRegionById('us-west');
-    const newRegion = getRegionById('us-east');
-
-    const mockLinode = linodeFactory.build({
-      label: linodeLabel,
-      region: initialRegion.id,
-      type: dcPricingMockLinodeTypes[0].id,
-    });
-
-    const currentPrice = dcPricingMockLinodeTypes[0].region_prices.find(
-      (regionPrice) => regionPrice.id === initialRegion.id
-    )!;
-    const currentBackupPrice = dcPricingMockLinodeTypes[0].addons.backups.region_prices.find(
-      (regionPrice) => regionPrice.id === initialRegion.id
-    )!;
-    const newPrice = dcPricingMockLinodeTypes[1].region_prices.find(
-      (linodeType) => linodeType.id === newRegion.id
-    )!;
-    const newBackupPrice = dcPricingMockLinodeTypes[1].addons.backups.region_prices.find(
-      (regionPrice) => regionPrice.id === newRegion.id
-    )!;
-
-    // Mock requests to get individual types.
-    mockGetLinodeType(dcPricingMockLinodeTypes[0]);
-    mockGetLinodeType(dcPricingMockLinodeTypes[1]);
-    mockGetLinodeTypes(dcPricingMockLinodeTypes).as('getLinodeTypes');
-
-    // intercept request
-    cy.visitWithLogin('/linodes/create');
-    cy.wait(['@getLinodeTypes']);
-
-    mockCreateLinode(mockLinode).as('linodeCreated');
-    cy.get('[data-qa-header="Create"]').should('have.text', 'Create');
-    getClick('[data-qa-deploy-linode]');
-
-    // A message is shown to instruct users to select a region in order to view plans and prices
-    cy.get('[data-qa-tp="Linode Plan"]').should(
-      'contain.text',
-      'Plan is required.'
-    );
-    cy.get('[data-qa-tp="Linode Plan"]').should(
-      'contain.text',
-      dcPricingPlanPlaceholder
-    );
-
-    // Check the 'Backups' add on
-    cy.get('[data-testid="backups"]').should('be.visible').click();
-    ui.regionSelect.find().click();
-    ui.regionSelect.findItemByRegionLabel(initialRegion.label).click();
-    fbtClick('Shared CPU');
-    getClick(`[id="${dcPricingMockLinodeTypes[0].id}"]`);
-    // Confirm that the backup prices are displayed as expected.
-    cy.get('[data-qa-add-ons="true"]')
-      .eq(1)
-      .within(() => {
-        cy.findByText(`$${currentBackupPrice.monthly}`).should('be.visible');
-        cy.findByText('per month').should('be.visible');
-      });
-    // Confirm that the checkout summary at the bottom of the page reflects the correct price.
-    cy.get('[data-qa-summary="true"]').within(() => {
-      cy.findByText(`$${currentPrice.monthly!.toFixed(2)}/month`).should(
-        'be.visible'
-      );
-      cy.findByText('Backups').should('be.visible');
-      cy.findByText(`$${currentBackupPrice.monthly!.toFixed(2)}/month`).should(
-        'be.visible'
-      );
-    });
-
-    // Confirm there is a docs link to the pricing page.
-    cy.findByText(dcPricingDocsLabel)
-      .should('be.visible')
-      .should('have.attr', 'href', dcPricingDocsUrl);
-
-    ui.regionSelect.find().click().type(`${newRegion.label} {enter}`);
-    fbtClick('Shared CPU');
-    getClick(`[id="${dcPricingMockLinodeTypes[0].id}"]`);
-    // Confirm that the backup prices are displayed as expected.
-    cy.get('[data-qa-add-ons="true"]')
-      .eq(1)
-      .within(() => {
-        cy.findByText(`$${newBackupPrice.monthly}`).should('be.visible');
-        cy.findByText('per month').should('be.visible');
-      });
-    // Confirms that the summary updates to reflect price changes if the user changes their region and plan selection.
-    cy.get('[data-qa-summary="true"]').within(() => {
-      cy.findByText(`$${newPrice.monthly!.toFixed(2)}/month`).should(
-        'be.visible'
-      );
-      cy.findByText('Backups').should('be.visible');
-      cy.findByText(`$${newBackupPrice.monthly!.toFixed(2)}/month`).should(
-        'be.visible'
-      );
-    });
-
-    getClick('#linode-label').clear().type(linodeLabel);
-    cy.get('#root-password').type(rootpass);
-    getClick('[data-qa-deploy-linode]');
-    cy.wait('@linodeCreated').its('response.statusCode').should('eq', 200);
-    fbtVisible(linodeLabel);
-    cy.contains('RUNNING', { timeout: 300000 }).should('be.visible');
-  });
-
-  it("prevents a VPC from being assigned in a region that doesn't support VPCs during the Linode Create flow", () => {
-    const region: Region = getRegionById('us-southeast');
-    const mockNoVPCRegion = regionFactory.build({
-      id: region.id,
-      label: region.label,
+  it('shows unexpected error during Linode create flow', () => {
+    const linodeRegion = chooseRegion({
       capabilities: ['Linodes'],
     });
-
-    // Mock requests to get individual types.
-    mockGetLinodeType(dcPricingMockLinodeTypes[0]);
-    mockGetLinodeType(dcPricingMockLinodeTypes[1]);
-    mockGetLinodeTypes(dcPricingMockLinodeTypes).as('getLinodeTypes');
-
-    mockAppendFeatureFlags({
-      vpc: makeFeatureFlagData(true),
-    }).as('getFeatureFlags');
-    mockGetFeatureFlagClientstream().as('getClientStream');
-
-    mockGetRegions([mockNoVPCRegion]).as('getRegions');
-
-    // intercept request
-    cy.visitWithLogin('/linodes/create');
-    cy.wait(['@getLinodeTypes', '@getClientStream', '@getFeatureFlags']);
-
-    cy.get('[data-qa-header="Create"]').should('have.text', 'Create');
-
-    // Check the 'Backups' add on
-    cy.get('[data-testid="backups"]').should('be.visible').click();
-    ui.regionSelect.find().click().type(`${region.label} {enter}`);
-    fbtClick('Shared CPU');
-    getClick(`[id="${dcPricingMockLinodeTypes[0].id}"]`);
-
-    // the "VPC" section is present
-    getVisible('[data-testid="vpc-panel"]').within(() => {
-      containsVisible(
-        'Allow Linode to communicate in an isolated environment.'
-      );
-      // Helper text appears if VPC is not available in selected region.
-      containsVisible('VPC is not available in the selected region.');
+    const linodeLabel = randomLabel();
+    const mockLinode = linodeFactory.build({
+      id: randomNumber(),
+      label: linodeLabel,
+      region: linodeRegion.id,
     });
+    const createLinodeErrorMessage =
+      'An error has occurred during Linode creation flow';
+
+    mockCreateLinodeError(createLinodeErrorMessage).as('createLinodeError');
+    cy.visitWithLogin('/linodes/create');
+
+    // Set Linode label, OS, plan type, password, etc.
+    linodeCreatePage.setLabel(linodeLabel);
+    linodeCreatePage.selectImage('Debian 12');
+    linodeCreatePage.selectRegionById(linodeRegion.id);
+    linodeCreatePage.selectPlan('Shared CPU', 'Nanode 1 GB');
+    linodeCreatePage.setRootPassword(randomString(32));
+
+    // Create Linode by clicking the button.
+    ui.button
+      .findByTitle('Create Linode')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
+    cy.wait('@createLinodeError');
+
+    // Confirm the createLinodeErrorMessage show up on the web page.
+    cy.findByText(`${createLinodeErrorMessage}`).should('be.visible');
+
+    // Retry to create a Linode.
+    mockCreateLinode(mockLinode).as('createLinode');
+    ui.button
+      .findByTitle('Create Linode')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
+    cy.wait('@createLinode');
+    // Confirm toast notification should appear on Linode create.
+    ui.toast.assertMessage(`Your Linode ${linodeLabel} is being created.`);
+    // Confirm the createLinodeErrorMessage disappears.
+    cy.findByText(`${createLinodeErrorMessage}`).should('not.exist');
   });
 
-  it('assigns a VPC to the linode during create flow', () => {
-    const rootpass = randomString(32);
-    const linodeLabel = randomLabel();
-    const region: Region = getRegionById('us-southeast');
-    const diskLabel: string = 'Debian 10 Disk';
-    const mockLinode = linodeFactory.build({
-      label: linodeLabel,
-      region: region.id,
-      type: dcPricingMockLinodeTypes[0].id,
-    });
-    const mockVLANs: VLAN[] = VLANFactory.buildList(2);
-    const mockSubnet = subnetFactory.build({
-      id: randomNumber(2),
-      label: randomLabel(),
-    });
-    const mockVPC = vpcFactory.build({
-      id: randomNumber(),
-      region: 'us-southeast',
-      subnets: [mockSubnet],
-    });
-    const mockVPCRegion = regionFactory.build({
-      id: region.id,
-      label: region.label,
-      capabilities: ['Linodes', 'VPCs', 'Vlans'],
-    });
-    const mockPublicConfigInterface = LinodeConfigInterfaceFactory.build({
-      ipam_address: null,
-      purpose: 'public',
-    });
-    const mockVlanConfigInterface = LinodeConfigInterfaceFactory.build();
-    const mockVpcConfigInterface = LinodeConfigInterfaceFactoryWithVPC.build({
-      vpc_id: mockVPC.id,
-      purpose: 'vpc',
-      active: true,
-    });
-    const mockConfig: Config = linodeConfigFactory.build({
-      id: randomNumber(),
-      interfaces: [
-        // The order of this array is significant. Index 0 (eth0) should be public.
-        mockPublicConfigInterface,
-        mockVlanConfigInterface,
-        mockVpcConfigInterface,
-      ],
-    });
-    const mockDisks: Disk[] = [
-      {
-        id: 44311273,
-        status: 'ready',
-        label: diskLabel,
-        created: '2020-08-21T17:26:14',
-        updated: '2020-08-21T17:26:30',
-        filesystem: 'ext4',
-        size: 81408,
-      },
-      {
-        id: 44311274,
-        status: 'ready',
-        label: '512 MB Swap Image',
-        created: '2020-08-21T17:26:14',
-        updated: '2020-08-21T17:26:31',
-        filesystem: 'swap',
-        size: 512,
-      },
-    ];
-
-    // Mock requests to get individual types.
-    mockGetLinodeType(dcPricingMockLinodeTypes[0]);
-    mockGetLinodeType(dcPricingMockLinodeTypes[1]);
-    mockGetLinodeTypes(dcPricingMockLinodeTypes).as('getLinodeTypes');
-
-    mockAppendFeatureFlags({
-      vpc: makeFeatureFlagData(true),
-    }).as('getFeatureFlags');
-    mockGetFeatureFlagClientstream().as('getClientStream');
-
-    mockGetRegions([mockVPCRegion]).as('getRegions');
-
-    mockGetVLANs(mockVLANs);
-    mockGetVPC(mockVPC).as('getVPC');
-    mockGetVPCs([mockVPC]).as('getVPCs');
-    mockCreateLinode(mockLinode).as('linodeCreated');
-    mockGetLinodeConfigs(mockLinode.id, [mockConfig]).as('getLinodeConfigs');
-    mockGetLinodeDisks(mockLinode.id, mockDisks).as('getDisks');
-    mockGetLinodeVolumes(mockLinode.id, []).as('getVolumes');
-
-    // intercept request
+  it('shows correct validation errors if no backup or plan is selected', () => {
     cy.visitWithLogin('/linodes/create');
-    cy.wait([
-      '@getLinodeTypes',
-      '@getClientStream',
-      '@getFeatureFlags',
-      '@getVPCs',
-    ]);
 
-    cy.get('[data-qa-header="Create"]').should('have.text', 'Create');
+    // Navigate to Linode Create page "Backups" tab
+    cy.get('[role="tablist"]')
+      .should('be.visible')
+      .findByText('Backups')
+      .click();
 
-    // Check the 'Backups' add on
-    cy.get('[data-testid="backups"]').should('be.visible').click();
-    ui.regionSelect.find().click().type(`${region.label} {enter}`);
-    fbtClick('Shared CPU');
-    getClick(`[id="${dcPricingMockLinodeTypes[0].id}"]`);
+    // Submit without selecting any options
+    ui.button
+      .findByTitle('Create Linode')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
 
-    // the "VPC" section is present, and the VPC in the same region of
-    // the linode can be selected.
-    getVisible('[data-testid="vpc-panel"]').within(() => {
-      containsVisible('Assign this Linode to an existing VPC.');
-      // select VPC
-      cy.get('[data-qa-enhanced-select="None"]')
-        .should('be.visible')
-        .click()
-        .type(`${mockVPC.label}{enter}`);
-      // select subnet
-      cy.findByText('Select Subnet')
-        .should('be.visible')
-        .click()
-        .type(`${mockSubnet.label}{enter}`);
+    // Confirm the correct validation errors show up on the page.
+    cy.findByText('You must select a Backup.').should('be.visible');
+    cy.findByText('Plan is required.').should('be.visible');
+  });
+
+  /*
+   * - Confirms UI flow when creating a Linode with a restricted user.
+   * - Confirms that a notice is shown informing the user they do not have permission to create a Linode.
+   * - Confirms that "Regions" field is disabled.
+   * - Confirms that "Linux Distribution" field is disabled.
+   * - Confirms that "Create Linode" button is disabled.
+   */
+  it('should not allow restricted users to create linodes', () => {
+    // Mock setup for user profile, account user, and user grants with restricted permissions,
+    // simulating a default user without the ability to add Linodes.
+    const mockProfile = profileFactory.build({
+      restricted: true,
+      username: randomLabel(),
     });
 
-    getClick('#linode-label').clear().type(linodeLabel);
-    cy.get('#root-password').type(rootpass);
-    getClick('[data-qa-deploy-linode]');
-    cy.wait('@linodeCreated').its('response.statusCode').should('eq', 200);
-    fbtVisible(linodeLabel);
-    cy.contains('RUNNING', { timeout: 300000 }).should('be.visible');
-
-    fbtClick('Configurations');
-    //cy.wait(['@getLinodeConfigs', '@getVPC', '@getDisks', '@getVolumes']);
-
-    // Confirm that VLAN and VPC have been assigned.
-    cy.findByLabelText('List of Configurations').within(() => {
-      cy.get('tr').should('have.length', 2);
-      containsVisible(`${mockConfig.label} – GRUB 2`);
-      containsVisible('eth0 – Public Internet');
-      containsVisible(`eth2 – VPC: ${mockVPC.label}`);
+    const mockUser = accountUserFactory.build({
+      restricted: true,
+      user_type: 'default',
+      username: mockProfile.username,
     });
+
+    const mockGrants = grantsFactory.build({
+      global: {
+        add_linodes: false,
+      },
+    });
+
+    mockGetProfile(mockProfile);
+    mockGetProfileGrants(mockGrants);
+    mockGetUser(mockUser);
+
+    // Login and wait for application to load
+    cy.visitWithLogin('/linodes/create');
+
+    // Confirm that a notice should be shown informing the user they do not have permission to create a Linode.
+    cy.findByText(
+      "You don't have permissions to create Linodes. Please contact your account administrator to request the necessary permissions."
+    ).should('be.visible');
+
+    // Confirm that "Region" select dropdown is disabled
+    ui.regionSelect.find().should('be.visible').should('be.disabled');
+
+    // Confirm that "Linux Distribution" select dropdown is disabled
+    cy.get('[data-qa-autocomplete="Linux Distribution"]').within(() => {
+      cy.get('[placeholder="Choose a Linux distribution"]')
+        .should('be.visible')
+        .should('be.disabled');
+
+      cy.get('[aria-label="Open"]').should('be.visible').should('be.disabled');
+    });
+
+    // Confirm that "Create Linode" button is visible and disabled
+    ui.button
+      .findByTitle('Create Linode')
+      .should('be.visible')
+      .and('be.disabled');
   });
 });

@@ -1,14 +1,17 @@
-import { getStorage, setStorage } from 'src/utilities/storage';
+import { useFlags } from 'src/hooks/useFlags';
 
 import { ADMINISTRATOR, PARENT_USER } from './constants';
 
-import type { GlobalGrantTypes, GrantLevel, Token } from '@linode/api-v4';
+import type { GlobalGrantTypes, GrantLevel } from '@linode/api-v4';
 import type { GrantTypeMap } from 'src/features/Account/types';
 
 export type ActionType =
+  | 'attach'
   | 'clone'
   | 'create'
   | 'delete'
+  | 'detach'
+  | 'download'
   | 'edit'
   | 'migrate'
   | 'modify'
@@ -16,10 +19,12 @@ export type ActionType =
   | 'rebuild'
   | 'rescue'
   | 'resize'
+  | 'resume'
+  | 'suspend'
   | 'view';
 
 interface GetRestrictedResourceText {
-  action?: ActionType;
+  action?: ActionType | ActionType[];
   includeContactInfo?: boolean;
   isChildUser?: boolean;
   isSingular?: boolean;
@@ -42,7 +47,7 @@ export type RestrictedGlobalGrantType =
   | NonAccountAccessGrant;
 
 /**
- * Get a resource restricted message based on action and resource type.
+ * Get a resource restricted message based on action(s) and resource type.
  */
 export const getRestrictedResourceText = ({
   action = 'edit',
@@ -57,7 +62,9 @@ export const getRestrictedResourceText = ({
 
   const contactPerson = isChildUser ? PARENT_USER : ADMINISTRATOR;
 
-  let message = `You don't have permissions to ${action} ${resource}.`;
+  const actionText = formatAction(action);
+
+  let message = `You don't have permissions to ${actionText} ${resource}.`;
 
   if (includeContactInfo) {
     message += ` Please contact your ${contactPerson} to request the necessary permissions.`;
@@ -66,88 +73,60 @@ export const getRestrictedResourceText = ({
   return message;
 };
 
-// TODO: Parent/Child: FOR MSW ONLY, REMOVE WHEN API IS READY
-// ================================================================
-// const mockExpiredTime =
-//   'Mon Nov 20 2023 22:50:52 GMT-0800 (Pacific Standard Time)';
-// ================================================================
-
 /**
- * Determine whether the tokens used for switchable accounts are still valid.
+ * Hook to determine if the Tax Id feature should be visible to the user.
+ * Based on the user's account capability and the feature flag.
+ *
+ * @returns {boolean} - Whether the TaxId feature is enabled for the current user.
  */
-export const isParentTokenValid = (): boolean => {
-  const now = new Date().toISOString();
+export const useIsTaxIdEnabled = (): {
+  isTaxIdEnabled: boolean;
+} => {
+  const flags = useFlags();
 
-  // From a proxy user, check whether parent token is still valid before switching.
-  if (
-    now >
-    new Date(getStorage('authentication/parent_token/expire')).toISOString()
-
-    // TODO: Parent/Child: FOR MSW ONLY, REMOVE WHEN API IS READY
-    // ================================================================
-    // new Date(mockExpiredTime).toISOString()
-    // ================================================================
-  ) {
-    return false;
+  if (!flags) {
+    return { isTaxIdEnabled: false };
   }
-  return true;
+
+  const isTaxIdEnabled = Boolean(flags.taxId?.enabled);
+
+  return { isTaxIdEnabled };
 };
 
 /**
- * Set token information in the local storage.
- * This allows us to store a token for later use, such as switching between parent and proxy accounts.
+ * Hook to determine if the VM Host Maintenance feature should be visible to the user.
+ * Based on the feature flag.
  */
-export const setTokenInLocalStorage = ({
-  prefix,
-  token = { expiry: '', scopes: '', token: '' },
-}: {
-  prefix: string;
-  token?: Pick<Token, 'expiry' | 'scopes' | 'token'>;
-}) => {
-  const { expiry, scopes, token: tokenValue } = token;
+export const useVMHostMaintenanceEnabled = () => {
+  const flags = useFlags();
 
-  if (!tokenValue || !expiry) {
-    return;
+  if (!flags) {
+    return { isVMHostMaintenanceEnabled: false };
   }
 
-  setStorage(`${prefix}/token`, tokenValue);
-  setStorage(`${prefix}/expire`, expiry);
-  setStorage(`${prefix}/scopes`, scopes);
+  const isVMHostMaintenanceEnabled = Boolean(flags.vmHostMaintenance?.enabled);
+  const isVMHostMaintenanceInBeta = Boolean(flags.vmHostMaintenance?.beta);
+  const isVMHostMaintenanceNew = Boolean(flags.vmHostMaintenance?.new);
+
+  return {
+    isVMHostMaintenanceEnabled,
+    isVMHostMaintenanceInBeta,
+    isVMHostMaintenanceNew,
+  };
 };
 
 /**
- * Set the active token in the local storage.
+ * Formats one or more actions into a readable string
+ * @param action - A single action or array of actions
+ *
+ * @returns A formatted string representing the action(s)
  */
-export const updateCurrentTokenBasedOnUserType = ({
-  userType,
-}: {
-  userType: 'parent' | 'proxy';
-}) => {
-  const storageKeyPrefix = `authentication/${userType}_token`;
+function formatAction(action: ActionType | ActionType[]): string {
+  if (!Array.isArray(action)) return action;
 
-  const userToken = getStorage(`${storageKeyPrefix}/token`);
-  const userScope = getStorage(`${storageKeyPrefix}/scopes`);
-  const userExpiry = getStorage(`${storageKeyPrefix}/expire`);
+  const len = action.length;
+  if (len === 1) return action[0];
+  if (len === 2) return `${action[0]} or ${action[1]}`;
 
-  if (userToken) {
-    setStorage('authentication/token', userToken);
-    setStorage('authentication/scopes', userScope);
-    setStorage('authentication/expire', userExpiry);
-  }
-};
-
-/**
- * Finds a personal access token stored locally for revocation,
- * typically used when switching between accounts. Searching local storage
- * for the token is necessary because the token is not persisted in state.
- */
-export async function getPersonalAccessTokenForRevocation(
-  tokens: Token[],
-  currentTokenWithBearer: string
-): Promise<Token | undefined> {
-  return tokens.find(
-    (token) =>
-      token.token &&
-      currentTokenWithBearer.replace('Bearer ', '').startsWith(token.token)
-  );
+  return `${action.slice(0, -1).join(', ')}, or ${action[action.length - 1]}`;
 }

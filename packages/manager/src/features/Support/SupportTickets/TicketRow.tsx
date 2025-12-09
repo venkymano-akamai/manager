@@ -1,16 +1,18 @@
-import { SupportTicket } from '@linode/api-v4/lib/support';
+import { Typography } from '@linode/ui';
+import { Hidden } from '@linode/ui';
 import * as React from 'react';
-import { Link } from 'react-router-dom';
 
 import { DateTimeDisplay } from 'src/components/DateTimeDisplay';
-import { Hidden } from 'src/components/Hidden';
+import { Link } from 'src/components/Link';
 import { TableCell } from 'src/components/TableCell';
 import { TableRow } from 'src/components/TableRow';
-import { Typography } from 'src/components/Typography';
 import { getLinkTargets } from 'src/utilities/getEventsActionLink';
 import { sanitizeHTML } from 'src/utilities/sanitizeHTML';
 
-import { severityLabelMap, useTicketSeverityCapability } from './ticketUtils';
+import { SEVERITY_LABEL_MAP } from './constants';
+import { useTicketSeverityCapability } from './ticketUtils';
+
+import type { SupportTicket } from '@linode/api-v4/lib/support';
 
 interface Props {
   ticket: SupportTicket;
@@ -45,7 +47,6 @@ export const TicketRow = ({ ticket }: Props) => {
 
   return (
     <TableRow
-      ariaLabel={`Ticket subject ${ticketSummary}`}
       data-qa-support-ticket={ticket.id}
       data-testid="ticket-row"
       key={`ticket-${ticket.id}`}
@@ -58,17 +59,17 @@ export const TicketRow = ({ ticket }: Props) => {
       </Hidden>
       <Hidden mdDown>
         <TableCell
+          data-qa-support-entity
           sx={{
             lineHeight: 1.1,
           }}
-          data-qa-support-entity
         >
           {renderEntityLink(ticket)}
         </TableCell>
       </Hidden>
       {hasSeverityCapability && (
         <TableCell data-qa-support-severity>
-          {ticket.severity ? severityLabelMap.get(ticket.severity) : ''}
+          {ticket.severity ? SEVERITY_LABEL_MAP.get(ticket.severity) : ''}
         </TableCell>
       )}
       <Hidden smDown>

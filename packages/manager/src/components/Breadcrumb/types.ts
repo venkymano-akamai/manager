@@ -1,4 +1,4 @@
-import { CSSProperties } from 'react';
+import type { CSSProperties, JSX } from 'react';
 
 export interface LabelProps {
   linkTo?: string;
@@ -10,7 +10,6 @@ export interface LabelProps {
 
 export interface EditableProps {
   editableTextTitle: string;
-  editableTextTitleSuffix?: string;
   errorText?: string;
   handleAnalyticsEvent?: () => void;
   onCancel: () => void;

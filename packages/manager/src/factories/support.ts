@@ -1,5 +1,9 @@
-import { SupportReply, SupportTicket } from '@linode/api-v4/lib/support/types';
-import * as Factory from 'factory.ts';
+import { Factory } from '@linode/utilities';
+
+import type {
+  SupportReply,
+  SupportTicket,
+} from '@linode/api-v4/lib/support/types';
 
 export const supportTicketFactory = Factory.Sync.makeFactory<SupportTicket>({
   attachments: [],

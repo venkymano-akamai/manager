@@ -1,54 +1,43 @@
-import { NodeBalancer } from '@linode/api-v4';
-import { useTheme } from '@mui/material';
-import { useSnackbar } from 'notistack';
-import * as React from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
-import sanitize from 'sanitize-html';
-
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { Drawer } from 'src/components/Drawer';
-import { Link } from 'src/components/Link';
-import { Notice } from 'src/components/Notice/Notice';
-import { SupportLink } from 'src/components/SupportLink';
-import { FIREWALL_LIMITS_CONSIDERATIONS_LINK } from 'src/constants';
-import { NodeBalancerSelect } from 'src/features/NodeBalancers/NodeBalancerSelect';
-import { useFlags } from 'src/hooks/useFlags';
 import {
   useAddFirewallDeviceMutation,
   useAllFirewallsQuery,
-} from 'src/queries/firewalls';
-import { queryKey } from 'src/queries/nodebalancers';
-import { useGrants, useProfile } from 'src/queries/profile';
+} from '@linode/queries';
+import { ActionsPanel, Drawer, Notice } from '@linode/ui';
+import { useTheme } from '@mui/material';
+import { useParams } from '@tanstack/react-router';
+import { useSnackbar } from 'notistack';
+import * as React from 'react';
+
+import { Link } from 'src/components/Link';
+import { SupportLink } from 'src/components/SupportLink';
+import { FIREWALL_LIMITS_CONSIDERATIONS_LINK } from 'src/constants';
+import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { NodeBalancerSelect } from 'src/features/NodeBalancers/NodeBalancerSelect';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
-import { getEntityIdsByPermission } from 'src/utilities/grants';
+import { sanitizeHTML } from 'src/utilities/sanitizeHTML';
+
+import type { NodeBalancer } from '@linode/api-v4';
 
 interface Props {
+  disabled?: boolean;
   helperText: string;
   onClose: () => void;
   open: boolean;
 }
 
 export const AddNodebalancerDrawer = (props: Props) => {
-  const { helperText, onClose, open } = props;
+  const { helperText, onClose, open, disabled } = props;
   const { enqueueSnackbar } = useSnackbar();
-  const { id } = useParams<{ id: string }>();
-  const { data: grants } = useGrants();
-  const { data: profile } = useProfile();
-  const isRestrictedUser = Boolean(profile?.restricted);
-  const queryClient = useQueryClient();
-  const flags = useFlags();
+  const { id } = useParams({ strict: false });
 
-  const { data, error, isLoading } = useAllFirewallsQuery();
+  const { data, error, isLoading } = useAllFirewallsQuery(open);
 
   const firewall = data?.find((firewall) => firewall.id === Number(id));
 
   const theme = useTheme();
 
-  const {
-    isLoading: addDeviceIsLoading,
-    mutateAsync: addDevice,
-  } = useAddFirewallDeviceMutation(Number(id));
+  const { isPending: addDeviceIsLoading, mutateAsync: addDevice } =
+    useAddFirewallDeviceMutation();
 
   const [selectedNodebalancers, setSelectedNodebalancers] = React.useState<
     NodeBalancer[]
@@ -64,7 +53,11 @@ export const AddNodebalancerDrawer = (props: Props) => {
 
     const results = await Promise.allSettled(
       selectedNodebalancers.map((nodebalancer) =>
-        addDevice({ id: nodebalancer.id, type: 'nodebalancer' })
+        addDevice({
+          firewallId: Number(id),
+          id: nodebalancer.id,
+          type: 'nodebalancer',
+        })
       )
     );
 
@@ -75,12 +68,6 @@ export const AddNodebalancerDrawer = (props: Props) => {
         enqueueSnackbar(`NodeBalancer ${label} successfully added`, {
           variant: 'success',
         });
-        queryClient.invalidateQueries([
-          queryKey,
-          'nodebalancer',
-          id,
-          'firewalls',
-        ]);
         return;
       }
       failedNodebalancers.push(selectedNodebalancers[index]);
@@ -103,10 +90,14 @@ export const AddNodebalancerDrawer = (props: Props) => {
   };
 
   const errorNotice = () => {
-    let errorMsg = sanitize(localError || '', {
-      allowedAttributes: {},
-      allowedTags: [], // Disallow all HTML tags,
-    });
+    let errorMsg = sanitizeHTML({
+      sanitizeOptions: {
+        ALLOWED_ATTR: [],
+        ALLOWED_TAGS: [], // Disallow all HTML tags,
+      },
+      sanitizingTier: 'strict',
+      text: localError || '',
+    }).toString();
     // match something like: NodeBalancer <nodebalancer_label> (ID <nodebalancer_id>)
 
     const nodebalancer = /NodeBalancer (.+?) \(ID ([^\)]+)\)/i.exec(errorMsg);
@@ -131,7 +122,7 @@ export const AddNodebalancerDrawer = (props: Props) => {
       return (
         <Notice
           sx={{
-            fontFamily: theme.font.bold,
+            font: theme.font.bold,
             fontSize: '1rem',
             lineHeight: '20px',
           }}
@@ -152,32 +143,16 @@ export const AddNodebalancerDrawer = (props: Props) => {
     }
   };
 
-  // If a user is restricted, they can not add a read-only Nodebalancer to a firewall.
-  const readOnlyNodebalancerIds = isRestrictedUser
-    ? getEntityIdsByPermission(grants, 'nodebalancer', 'read_only')
-    : [];
+  const assignedNodeBalancers = data
+    ?.map((firewall) => firewall.entities)
+    .flat()
+    ?.filter((service) => service.type === 'nodebalancer');
 
-  const nodebalancerOptionsFilter = (() => {
-    // When `firewallNodebalancer` feature flag is disabled, no filtering
-    // occurs. In this case, pass a filter callback that always returns `true`.
-    if (!flags.firewallNodebalancer) {
-      return () => true;
-    }
-
-    const assignedNodeBalancers = data
-      ?.map((firewall) => firewall.entities)
-      .flat()
-      ?.filter((service) => service.type === 'nodebalancer');
-
-    return (nodebalancer: NodeBalancer) => {
-      return (
-        !readOnlyNodebalancerIds.includes(nodebalancer.id) &&
-        !assignedNodeBalancers?.some(
-          (service) => service.id === nodebalancer.id
-        )
-      );
-    };
-  })();
+  const nodebalancerOptionsFilter = (nodebalancer: NodeBalancer) => {
+    return !assignedNodeBalancers?.some(
+      (service) => service.id === nodebalancer.id
+    );
+  };
 
   React.useEffect(() => {
     if (error) {
@@ -195,6 +170,14 @@ export const AddNodebalancerDrawer = (props: Props) => {
       open={open}
       title={`Add Nodebalancer to Firewall: ${firewall?.label}`}
     >
+      {disabled && (
+        <Notice
+          text={getRestrictedResourceText({
+            resourceType: 'Firewalls',
+          })}
+          variant="error"
+        />
+      )}
       <Notice variant={'warning'}>
         Only the Firewall's inbound rules apply to NodeBalancers. Any existing
         outbound rules won't be applied.{' '}
@@ -208,18 +191,19 @@ export const AddNodebalancerDrawer = (props: Props) => {
       >
         {localError ? errorNotice() : null}
         <NodeBalancerSelect
+          disabled={isLoading || disabled}
+          helperText={helperText}
+          loading={isLoading}
+          multiple
           onSelectionChange={(nodebalancers) =>
             setSelectedNodebalancers(nodebalancers)
           }
-          disabled={isLoading}
-          helperText={helperText}
-          multiple
           optionsFilter={nodebalancerOptionsFilter}
           value={selectedNodebalancers.map((nodebalancer) => nodebalancer.id)}
         />
         <ActionsPanel
           primaryButtonProps={{
-            disabled: selectedNodebalancers.length === 0,
+            disabled: selectedNodebalancers.length === 0 || disabled,
             label: 'Add',
             loading: addDeviceIsLoading,
             onClick: handleSubmit,

@@ -1,17 +1,12 @@
-import { Scope } from '@linode/api-v4/lib/object-storage/types';
+import { FormControlLabel, Toggle, TooltipIcon, Typography } from '@linode/ui';
 import * as React from 'react';
 
-import { FormControlLabel } from 'src/components/FormControlLabel';
-import { Toggle } from 'src/components/Toggle/Toggle';
-import { TooltipIcon } from 'src/components/TooltipIcon';
-import { Typography } from 'src/components/Typography';
-import { useAccountManagement } from 'src/hooks/useAccountManagement';
-import { useFlags } from 'src/hooks/useFlags';
-import { isFeatureEnabled } from 'src/utilities/accountCapabilities';
-
+import { useIsObjMultiClusterEnabled } from '../hooks/useIsObjectStorageGen2Enabled';
 import { AccessTable } from './AccessTable';
 import { BucketPermissionsTable } from './BucketPermissionsTable';
-import { MODE } from './types';
+
+import type { MODE } from './types';
+import type { ObjectStorageKeyBucketAccess } from '@linode/api-v4/lib/object-storage/types';
 
 type LabelWithTooltipProps = {
   labelText: string;
@@ -24,30 +19,23 @@ const LabelWithTooltip = ({
 }: LabelWithTooltipProps) => (
   <React.Fragment>
     <Typography component="span">{labelText}</Typography>
-    {tooltipText && <TooltipIcon status="help" text={tooltipText} />}
+    {tooltipText && <TooltipIcon status="info" text={tooltipText} />}
   </React.Fragment>
 );
 
 interface Props {
-  bucket_access: Scope[] | null;
+  bucket_access: null | ObjectStorageKeyBucketAccess[];
   checked: boolean;
   handleToggle: () => void;
   mode: MODE;
   selectedRegions?: string[];
-  updateScopes: (newScopes: Scope[]) => void;
+  updateScopes: (newScopes: ObjectStorageKeyBucketAccess[]) => void;
 }
 
 export const LimitedAccessControls = React.memo((props: Props) => {
   const { checked, handleToggle, ...rest } = props;
 
-  const flags = useFlags();
-  const { account } = useAccountManagement();
-
-  const isObjMultiClusterEnabled = isFeatureEnabled(
-    'Object Storage Access Key Regions',
-    Boolean(flags.objMultiCluster),
-    account?.capabilities ?? []
-  );
+  const { isObjMultiClusterEnabled } = useIsObjMultiClusterEnabled();
 
   return (
     <>

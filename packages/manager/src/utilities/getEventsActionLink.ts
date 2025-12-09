@@ -1,9 +1,13 @@
-import { Entity, EventAction } from '@linode/api-v4/lib/account';
-
 import { nonClickEvents } from 'src/constants';
+
+import type { Entity, EventAction } from '@linode/api-v4/lib/account';
 
 export const getEngineFromDatabaseEntityURL = (url: string) => {
   return url.match(/databases\/(\w*)\/instances/i)?.[1];
+};
+
+export const getRegionFromObjectStorageEntityURL = (url: string) => {
+  return url.match(/\/buckets\/([^/]+)/)?.[1];
 };
 
 export const getLinkForEvent = (action: EventAction, entity: Entity | null) => {
@@ -62,28 +66,22 @@ export const getLinkForEvent = (action: EventAction, entity: Entity | null) => {
   }
 
   switch (type) {
-    case 'linode':
-      return action === 'linode_addip'
-        ? `/linodes/${id}/networking`
-        : `/linodes/${id}`;
-
-    case 'ticket':
-      return `/support/tickets/${id}`;
-
     case 'domain':
       return `/domains/${id}`;
 
     case 'entity_transfer':
       return `/account/service-transfers`;
 
-    case 'volume':
-      return `/volumes`;
-
-    case 'stackscript':
-      return `/stackscripts/${id}`;
-
     case 'firewall':
       return `/firewalls/${id}`;
+
+    case 'linode':
+      return action === 'linode_addip'
+        ? `/linodes/${id}/networking`
+        : `/linodes/${id}`;
+
+    case 'lkecluster':
+      return `/kubernetes/clusters/${id}/summary`;
 
     case 'nodebalancer':
       // eslint-disable-next-line sonarjs/no-small-switch
@@ -100,14 +98,23 @@ export const getLinkForEvent = (action: EventAction, entity: Entity | null) => {
         entity?.url
       )}/${id}/summary`;
 
+    case 'placement_group':
+      return `/placement-groups/${id}`;
+
+    case 'stackscript':
+      return `/stackscripts/${id}`;
+
+    case 'ticket':
+      return `/support/tickets/${id}`;
+
     case 'user':
       return `/account/users/${label}/profile`;
 
+    case 'volume':
+      return `/volumes`;
+
     case 'vpc':
       return `/vpcs/${id}`;
-
-    case 'placement_group':
-      return `/placement-groups/${id}`;
 
     default:
       return;
@@ -120,30 +127,36 @@ export const getLinkTargets = (entity: Entity | null) => {
   }
 
   switch (entity.type) {
-    case 'linode':
-      return `/linodes/${entity.id}`;
-    case 'domain':
-      return `/domains/${entity.id}`;
-    case 'firewall':
-      return `/firewalls/${entity.id}`;
-    case 'stackscript':
-      return `/stackscripts/${entity.id}`;
-    case 'nodebalancer':
-      return `/nodebalancers/${entity.id}`;
-    case 'lkecluster':
-      return `/kubernetes/clusters/${entity.id}`;
     case 'database':
       return `/databases/${getEngineFromDatabaseEntityURL(entity.url)}/${
         entity.id
       }/summary`;
+    case 'domain':
+      return `/domains/${entity.id}`;
+    case 'firewall':
+      return `/firewalls/${entity.id}`;
     case 'image':
       return '/images';
+    case 'linode':
+      return `/linodes/${entity.id}`;
+    case 'lkecluster':
+      return `/kubernetes/clusters/${entity.id}/summary`;
     case 'longview':
       return '/longview';
-    case 'volume':
-      return '/volumes';
+    case 'nodebalancer':
+      return `/nodebalancers/${entity.id}`;
+    case 'object_storage_bucket':
+      return `/object-storage/buckets/${getRegionFromObjectStorageEntityURL(
+        entity.url
+      )}/${entity.label}`;
     case 'placement_group':
       return `/placement-groups/${entity.id}`;
+    case 'stackscript':
+      return `/stackscripts/${entity.id}`;
+    case 'volume':
+      return '/volumes';
+    case 'vpc':
+      return `/vpcs/${entity.id}`;
     default:
       return null;
   }

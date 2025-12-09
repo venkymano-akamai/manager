@@ -1,12 +1,12 @@
-import { action } from '@storybook/addon-actions';
+import { linodeFactory } from '@linode/utilities';
 import * as React from 'react';
+import { action } from 'storybook/actions';
 
-import { linodeFactory } from 'src/factories/linodes';
 import { LinodeEntityDetail } from 'src/features/Linodes/LinodeEntityDetail';
 
 import { EntityDetail } from './EntityDetail';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 type Story = StoryObj<typeof EntityDetail>;
 
@@ -38,7 +38,6 @@ export const LinodeExample: Story = {
           }}
           id={0}
           linode={linodeFactory.build()}
-          openTagDrawer={action('openTagDrawer')}
         />
       </div>
     );

@@ -1,53 +1,32 @@
-import { AFFINITY_TYPES } from '@linode/api-v4';
-import * as React from 'react';
-import { useHistory, useParams } from 'react-router-dom';
-
-import { CircleProgress } from 'src/components/CircleProgress';
-import { DocumentTitleSegment } from 'src/components/DocumentTitle';
-import { ErrorState } from 'src/components/ErrorState/ErrorState';
-import { LandingHeader } from 'src/components/LandingHeader';
-import { NotFound } from 'src/components/NotFound';
-import { Notice } from 'src/components/Notice/Notice';
-import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
-import { TabLinkList } from 'src/components/Tabs/TabLinkList';
-import { TabPanels } from 'src/components/Tabs/TabPanels';
-import { Tabs } from 'src/components/Tabs/Tabs';
-import { getRestrictedResourceText } from 'src/features/Account/utils';
-import { useFlags } from 'src/hooks/useFlags';
-import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
-import { useAllLinodesQuery } from 'src/queries/linodes/linodes';
+import { PLACEMENT_GROUP_TYPES } from '@linode/api-v4';
 import {
   useMutatePlacementGroup,
   usePlacementGroupQuery,
-} from 'src/queries/placementGroups';
-import { useRegionsQuery } from 'src/queries/regions/regions';
+  useRegionsQuery,
+} from '@linode/queries';
+import { CircleProgress, ErrorState, Notice } from '@linode/ui';
+import { NotFound } from '@linode/ui';
+import { useParams } from '@tanstack/react-router';
+import * as React from 'react';
+
+import { DocumentTitleSegment } from 'src/components/DocumentTitle';
+import { LandingHeader } from 'src/components/LandingHeader';
+import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { useRestrictedGlobalGrantCheck } from 'src/hooks/useRestrictedGlobalGrantCheck';
 import { getErrorStringOrDefault } from 'src/utilities/errorUtils';
 
+import { PLACEMENT_GROUPS_DOCS_LINK } from '../constants';
 import { PlacementGroupsLinodes } from './PlacementGroupsLinodes/PlacementGroupsLinodes';
 import { PlacementGroupsSummary } from './PlacementGroupsSummary/PlacementGroupsSummary';
 
 export const PlacementGroupsDetail = () => {
-  const flags = useFlags();
-  const { id, tab } = useParams<{ id: string; tab?: string }>();
-  const history = useHistory();
-  const placementGroupId = +id;
+  const { id: placementGroupId } = useParams({ from: '/placement-groups/$id' });
 
   const {
     data: placementGroup,
     error: placementGroupError,
     isLoading,
-  } = usePlacementGroupQuery(
-    placementGroupId,
-    Boolean(flags.placementGroups?.enabled)
-  );
-  const { data: linodes, isFetching: isFetchingLinodes } = useAllLinodesQuery(
-    {},
-    {
-      '+or': placementGroup?.members.map((member) => ({
-        id: member.linode_id,
-      })),
-    }
-  );
+  } = usePlacementGroupQuery(placementGroupId);
   const { data: regions } = useRegionsQuery();
 
   const region = regions?.find(
@@ -80,26 +59,10 @@ export const PlacementGroupsDetail = () => {
     );
   }
 
-  const assignedLinodes = linodes?.filter((linode) =>
-    placementGroup?.members.some((pgLinode) => pgLinode.linode_id === linode.id)
-  );
-
-  const linodeCount = placementGroup.members.length;
-  const tabs = [
-    {
-      routeName: `/placement-groups/${id}`,
-      title: 'Summary',
-    },
-    {
-      routeName: `/placement-groups/${id}/linodes`,
-      title: `Linodes (${linodeCount})`,
-    },
-  ];
-  const { affinity_type, label } = placementGroup;
-  const tabIndex = tab ? tabs.findIndex((t) => t.routeName.endsWith(tab)) : -1;
+  const { label, placement_group_type } = placementGroup;
 
   const resetEditableLabel = () => {
-    return `${label} (${AFFINITY_TYPES[affinity_type]})`;
+    return `${label} (${PLACEMENT_GROUP_TYPES[placement_group_type]})`;
   };
 
   const handleLabelEdit = (newLabel: string) => {
@@ -123,7 +86,6 @@ export const PlacementGroupsDetail = () => {
           ],
           onEditHandlers: {
             editableTextTitle: label,
-            editableTextTitleSuffix: ` (${AFFINITY_TYPES[affinity_type]})`,
             errorText,
             onCancel: resetEditableLabel,
             onEdit: handleLabelEdit,
@@ -132,42 +94,25 @@ export const PlacementGroupsDetail = () => {
         }}
         disabledBreadcrumbEditButton={isLinodeReadOnly}
         docsLabel="Docs"
-        docsLink="TODO VM_Placement: add doc link"
+        docsLink={PLACEMENT_GROUPS_DOCS_LINK}
         title="Placement Group Detail"
       />
       {isLinodeReadOnly && (
         <Notice
+          spacingTop={16}
           text={getRestrictedResourceText({
             action: 'edit',
             resourceType: 'Placement Groups',
           })}
-          spacingTop={16}
           variant="warning"
         />
       )}
-      <Tabs
-        index={tabIndex === -1 ? 0 : tabIndex}
-        onChange={(i: number) => history.push(tabs[i].routeName)}
-      >
-        <TabLinkList tabs={tabs} />
-        <TabPanels>
-          <SafeTabPanel index={0}>
-            <PlacementGroupsSummary
-              placementGroup={placementGroup}
-              region={region}
-            />
-          </SafeTabPanel>
-          <SafeTabPanel index={1}>
-            <PlacementGroupsLinodes
-              assignedLinodes={assignedLinodes}
-              isFetchingLinodes={isFetchingLinodes}
-              isLinodeReadOnly={isLinodeReadOnly}
-              placementGroup={placementGroup}
-              region={region}
-            />
-          </SafeTabPanel>
-        </TabPanels>
-      </Tabs>
+      <PlacementGroupsSummary placementGroup={placementGroup} region={region} />
+      <PlacementGroupsLinodes
+        isLinodeReadOnly={isLinodeReadOnly}
+        placementGroup={placementGroup}
+        region={region}
+      />
     </>
   );
 };

@@ -1,35 +1,33 @@
+import { useAccountSettings } from '@linode/queries';
 import {
-  AccessType,
-  ObjectStorageBucket,
-  ObjectStorageKey,
-  ObjectStorageKeyRequest,
-  Scope,
-} from '@linode/api-v4/lib/object-storage';
+  ActionsPanel,
+  CircleProgress,
+  Drawer,
+  Notice,
+  TextField,
+  Typography,
+} from '@linode/ui';
 import { createObjectStorageKeysSchema } from '@linode/validation/lib/objectStorageKeys.schema';
-import { Formik, FormikProps } from 'formik';
+import { Formik } from 'formik';
 import * as React from 'react';
 
-import { ActionsPanel } from 'src/components/ActionsPanel/ActionsPanel';
-import { CircleProgress } from 'src/components/CircleProgress';
-import { Drawer } from 'src/components/Drawer';
 import { Link } from 'src/components/Link';
-import { Notice } from 'src/components/Notice/Notice';
-import { TextField } from 'src/components/TextField';
-import { Typography } from 'src/components/Typography';
-import { useAccountManagement } from 'src/hooks/useAccountManagement';
-import { useFlags } from 'src/hooks/useFlags';
-import { useAccountSettings } from 'src/queries/account/settings';
-import {
-  useObjectStorageBuckets,
-  useObjectStorageClusters,
-} from 'src/queries/objectStorage';
-import { useRegionsQuery } from 'src/queries/regions/regions';
-import { isFeatureEnabled } from 'src/utilities/accountCapabilities';
+import { useObjectStorageBuckets } from 'src/queries/object-storage/queries';
 
 import { EnableObjectStorageModal } from '../EnableObjectStorageModal';
 import { confirmObjectStorage } from '../utilities';
 import { LimitedAccessControls } from './LimitedAccessControls';
-import { MODE } from './types';
+
+import type { MODE } from './types';
+import type {
+  CreateObjectStorageKeyPayload,
+  ObjectStorageBucket,
+  ObjectStorageKey,
+  ObjectStorageKeyBucketAccess,
+  ObjectStorageKeyBucketAccessPermissions,
+  UpdateObjectStorageKeyPayload,
+} from '@linode/api-v4/lib/object-storage';
+import type { FormikProps } from 'formik';
 
 export interface AccessKeyDrawerProps {
   isRestrictedUser: boolean;
@@ -38,14 +36,14 @@ export interface AccessKeyDrawerProps {
   objectStorageKey?: ObjectStorageKey;
   onClose: () => void;
   onSubmit: (
-    values: ObjectStorageKeyRequest,
-    formikProps: FormikProps<ObjectStorageKeyRequest>
+    values: CreateObjectStorageKeyPayload | UpdateObjectStorageKeyPayload,
+    formikProps: FormikProps<CreateObjectStorageKeyPayload>
   ) => void;
   open: boolean;
 }
 
 interface FormState {
-  bucket_access: Scope[] | null;
+  bucket_access: null | ObjectStorageKeyBucketAccess[];
   label: string;
 }
 
@@ -55,7 +53,10 @@ interface FormState {
  * bucket_access in the shape the API will expect,
  * sorted by cluster.
  */
-export const sortByCluster = (a: Scope, b: Scope) => {
+export const sortByCluster = (
+  a: ObjectStorageKeyBucketAccess,
+  b: ObjectStorageKeyBucketAccess
+) => {
   if (a.cluster > b.cluster) {
     return 1;
   }
@@ -65,64 +66,29 @@ export const sortByCluster = (a: Scope, b: Scope) => {
   return 0;
 };
 
-export const getDefaultScopes = (buckets: ObjectStorageBucket[]): Scope[] =>
+export const getDefaultScopes = (
+  buckets: ObjectStorageBucket[]
+): ObjectStorageKeyBucketAccess[] =>
   buckets
     .map((thisBucket) => ({
       bucket_name: thisBucket.label,
       cluster: thisBucket.cluster,
-      permissions: 'none' as AccessType,
+      permissions: 'none' as ObjectStorageKeyBucketAccessPermissions,
       region: thisBucket.region ?? '',
     }))
     .sort(sortByCluster);
 
 export const AccessKeyDrawer = (props: AccessKeyDrawerProps) => {
-  const {
-    isRestrictedUser,
-    mode,
-    objectStorageKey,
-    onClose,
-    onSubmit,
-    open,
-  } = props;
+  const { isRestrictedUser, mode, objectStorageKey, onClose, onSubmit, open } =
+    props;
 
   const { data: accountSettings } = useAccountSettings();
-  const { account } = useAccountManagement();
-  const flags = useFlags();
-  const { data: regions } = useRegionsQuery();
 
-  const isObjMultiClusterEnabled = isFeatureEnabled(
-    'Object Storage Access Key Regions',
-    Boolean(flags.objMultiCluster),
-    account?.capabilities ?? []
-  );
-
-  const regionsSupportingObjectStorage = regions?.filter((region) =>
-    region.capabilities.includes('Object Storage')
-  );
-
-  const {
-    data: objectStorageClusters,
-    isLoading: areClustersLoading,
-  } = useObjectStorageClusters(!isObjMultiClusterEnabled);
-
-  /*
-   @TODO OBJ Multicluster:'region' will become required, and the
-   'cluster' field will be deprecated once the feature is fully rolled out in production.
-   As part of the process of cleaning up after the 'objMultiCluster' feature flag, we will
-   remove 'cluster' and retain 'regions'.
-  */
   const {
     data: objectStorageBucketsResponse,
     error: bucketsError,
     isLoading: areBucketsLoading,
-  } = useObjectStorageBuckets({
-    clusters: isObjMultiClusterEnabled ? undefined : objectStorageClusters,
-    enabled: true,
-    isObjMultiClusterEnabled,
-    regions: isObjMultiClusterEnabled
-      ? regionsSupportingObjectStorage
-      : undefined,
-  });
+  } = useObjectStorageBuckets();
 
   const buckets = objectStorageBucketsResponse?.buckets || [];
 
@@ -155,23 +121,35 @@ export const AccessKeyDrawer = (props: AccessKeyDrawerProps) => {
   };
 
   const handleSubmit = (
-    values: ObjectStorageKeyRequest,
-    formikProps: FormikProps<ObjectStorageKeyRequest>
+    values: CreateObjectStorageKeyPayload,
+    formikProps: FormikProps<CreateObjectStorageKeyPayload>
   ) => {
     // If the user hasn't toggled the Limited Access button,
     // don't include any bucket_access information in the payload.
 
     // If any/all values are 'none', don't include them in the response.
-    const access = values.bucket_access ?? [];
-    const payload = limitedAccessChecked
-      ? {
-          ...values,
-          bucket_access: access.filter(
-            (thisAccess) => thisAccess.permissions !== 'none'
-          ),
-        }
-      : { ...values, bucket_access: null };
+    let payload = {};
+    if (
+      mode === 'creating' &&
+      values?.bucket_access !== null &&
+      limitedAccessChecked
+    ) {
+      const access = values?.bucket_access ?? [];
+      payload = {
+        ...values,
+        bucket_access: access.filter(
+          (thisAccess) => thisAccess.permissions !== 'none'
+        ),
+      };
+    } else {
+      payload = { ...values, bucket_access: null };
+    }
 
+    if (mode === 'editing') {
+      payload = {
+        label: values.label,
+      };
+    }
     return onSubmit(payload, formikProps);
   };
 
@@ -182,7 +160,7 @@ export const AccessKeyDrawer = (props: AccessKeyDrawerProps) => {
       title={title}
       wide={createMode && hasBuckets}
     >
-      {areBucketsLoading || areClustersLoading ? (
+      {areBucketsLoading ? (
         <CircleProgress />
       ) : (
         <Formik
@@ -212,7 +190,9 @@ export const AccessKeyDrawer = (props: AccessKeyDrawerProps) => {
               );
             };
 
-            const handleScopeUpdate = (newScopes: Scope[]) => {
+            const handleScopeUpdate = (
+              newScopes: ObjectStorageKeyBucketAccess[]
+            ) => {
               setFieldValue('bucket_access', newScopes);
             };
 
@@ -235,8 +215,7 @@ export const AccessKeyDrawer = (props: AccessKeyDrawerProps) => {
 
                 {isRestrictedUser && (
                   <Notice
-                    important
-                    text="You don't have bucket_access to create an Access Key. Please contact an account administrator for details."
+                    text="You don't have permissions to create an Access Key. Please contact an account administrator for details."
                     variant="error"
                   />
                 )}
@@ -247,7 +226,7 @@ export const AccessKeyDrawer = (props: AccessKeyDrawerProps) => {
                     Generate an Access Key for use with an{' '}
                     <Link
                       className="h-u"
-                      to="https://linode.com/docs/platform/object-storage/how-to-use-object-storage/#object-storage-tools"
+                      to="https://techdocs.akamai.com/cloud-computing/docs/getting-started-with-object-storage#object-storage-tools"
                     >
                       S3-compatible client
                     </Link>

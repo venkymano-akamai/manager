@@ -1,7 +1,8 @@
+import { Hidden } from '@linode/ui';
 import * as React from 'react';
 import { Waypoint } from 'react-waypoint';
 
-import { Hidden } from 'src/components/Hidden';
+import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { Table } from 'src/components/Table';
 import { TableBody } from 'src/components/TableBody';
 import { TableCell } from 'src/components/TableCell';
@@ -10,6 +11,7 @@ import { TableRow } from 'src/components/TableRow';
 import { TableRowEmpty } from 'src/components/TableRowEmpty/TableRowEmpty';
 import { TableRowError } from 'src/components/TableRowError/TableRowError';
 import { TableRowLoading } from 'src/components/TableRowLoading/TableRowLoading';
+import { EVENTS_LIST_FILTER } from 'src/features/Events/constants';
 import { useEventsInfiniteQuery } from 'src/queries/events/events';
 
 import { EventRow } from './EventRow';
@@ -30,7 +32,7 @@ interface Props {
 export const EventsLanding = (props: Props) => {
   const { emptyMessage, entityId } = props;
 
-  const filter: Filter = { action: { '+neq': 'profile_update' } };
+  const filter: Filter = { ...EVENTS_LIST_FILTER };
 
   if (entityId) {
     filter['entity.id'] = entityId;
@@ -42,6 +44,7 @@ export const EventsLanding = (props: Props) => {
     events,
     fetchNextPage,
     hasNextPage,
+    isFetching,
     isFetchingNextPage,
     isLoading,
   } = useEventsInfiniteQuery(filter);
@@ -88,34 +91,35 @@ export const EventsLanding = (props: Props) => {
 
   return (
     <>
+      <DocumentTitleSegment segment="Events" />
       {/* Only display this title on the main Events landing page */}
       {!entityId && <StyledH1Header title="Events" />}
       <Table aria-label="List of Events">
         <TableHead>
           <TableRow>
-            <Hidden smDown>
-              <TableCell style={{ padding: 0, width: '1%' }} />
-            </Hidden>
             <StyledLabelTableCell>Event</StyledLabelTableCell>
-            <StyledTableCell>Relative Date</StyledTableCell>
+            <Hidden smDown>
+              <TableCell data-qa-events-username-header sx={{ width: 150 }}>
+                User
+              </TableCell>
+            </Hidden>
+            <StyledTableCell sx={{ width: 175 }}>Start Date</StyledTableCell>
             <Hidden mdDown>
-              <StyledTableCell data-qa-events-time-header>
-                Absolute Date
+              <StyledTableCell data-qa-events-time-header sx={{ width: 175 }}>
+                Duration
               </StyledTableCell>
             </Hidden>
           </TableRow>
         </TableHead>
         <TableBody>{renderTableBody()}</TableBody>
       </Table>
-      {hasNextPage ? (
+      {!isFetching && hasNextPage && (
         <Waypoint onEnter={() => fetchNextPage()}>
           <div />
         </Waypoint>
-      ) : (
-        events &&
-        events.length > 0 && (
-          <StyledTypography>No more events to show</StyledTypography>
-        )
+      )}
+      {events && events.length > 0 && !isFetching && !hasNextPage && (
+        <StyledTypography>No more events to show</StyledTypography>
       )}
     </>
   );

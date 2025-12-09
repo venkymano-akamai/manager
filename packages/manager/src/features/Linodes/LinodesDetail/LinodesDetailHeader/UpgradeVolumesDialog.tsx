@@ -1,16 +1,15 @@
+import {
+  useLinodeVolumesQuery,
+  useNotificationsQuery,
+  useVolumesMigrateMutation,
+} from '@linode/queries';
+import { Button, Notice, Stack, Typography } from '@linode/ui';
 import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
-import { Button } from 'src/components/Button/Button';
 import { ConfirmationDialog } from 'src/components/ConfirmationDialog/ConfirmationDialog';
-import { Notice } from 'src/components/Notice/Notice';
-import { Stack } from 'src/components/Stack';
-import { Typography } from 'src/components/Typography';
-import { VolumeUpgradeCopy } from 'src/features/Volumes/UpgradeVolumeDialog';
+import { VolumeUpgradeCopy } from 'src/features/Volumes/Dialogs/UpgradeVolumeDialog';
 import { getUpgradeableVolumeIds } from 'src/features/Volumes/utils';
-import { useNotificationsQuery } from 'src/queries/account/notifications';
-import { useLinodeVolumesQuery } from 'src/queries/volumes';
-import { useVolumesMigrateMutation } from 'src/queries/volumesMigrations';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import type { Linode } from '@linode/api-v4';
@@ -27,7 +26,7 @@ export const UpgradeVolumesDialog = (props: Props) => {
 
   const {
     error,
-    isLoading,
+    isPending,
     mutateAsync: migrateVolumes,
   } = useVolumesMigrateMutation();
 
@@ -56,7 +55,7 @@ export const UpgradeVolumesDialog = (props: Props) => {
       <Button buttonType="secondary" onClick={onClose}>
         Cancel
       </Button>
-      <Button buttonType="primary" loading={isLoading} onClick={onSubmit}>
+      <Button buttonType="primary" loading={isPending} onClick={onSubmit}>
         Enter Upgrade Queue
       </Button>
     </Stack>
@@ -64,12 +63,12 @@ export const UpgradeVolumesDialog = (props: Props) => {
 
   return (
     <ConfirmationDialog
+      actions={actions}
       error={
         error
           ? getAPIErrorOrDefault(error, 'Unable to migrate volumes.')[0].reason
           : undefined
       }
-      actions={actions}
       onClose={onClose}
       open={open}
       title={`Upgrade Volume${numUpgradeableVolumes === 1 ? '' : 's'}`}
