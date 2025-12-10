@@ -13,8 +13,10 @@ import { Presets } from '../DateRangePicker/Presets';
 import { DateTimeField } from '../DateTimeField';
 import { TimePicker } from '../TimePicker';
 import { TimeZoneSelect } from '../TimeZoneSelect';
+import { PRESET_LABELS } from '../utils';
 
 import type { SxProps } from '@mui/material/styles';
+
 export interface DateTimeRangePickerProps {
   /** Properties for the end date field */
   endDateProps?: {
@@ -104,9 +106,9 @@ type TimeZoneStrategy = {
 };
 
 const strategies: Record<string, TimeZoneStrategy> = {
-  'last month': { keepStartTime: true, keepEndTime: true },
-  reset: { keepStartTime: true, keepEndTime: true },
-  'this month': { keepStartTime: true, keepEndTime: false },
+  'Last month': { keepStartTime: true, keepEndTime: true },
+  Reset: { keepStartTime: true, keepEndTime: true },
+  'This month': { keepStartTime: true, keepEndTime: false },
   default: { keepStartTime: false, keepEndTime: false },
 };
 
@@ -125,7 +127,7 @@ export const DateTimeRangePicker = ({
     startDateProps?.defaultValue ?? null,
   );
   const [selectedPreset, setSelectedPreset] = useState<null | string>(
-    presetsProps?.defaultValue ?? 'reset',
+    presetsProps?.defaultValue ?? PRESET_LABELS.RESET,
   );
   const [endDate, setEndDate] = useState<DateTime | null>(
     endDateProps?.defaultValue ?? null,
@@ -276,7 +278,7 @@ export const DateTimeRangePicker = ({
   };
 
   const handleDateSelection = (date: DateTime) => {
-    setSelectedPreset('reset'); // Reset preset selection on manual date selection
+    setSelectedPreset(PRESET_LABELS.RESET); // Reset preset selection on manual date selection
 
     if (focusedField === 'start') {
       setStartDate(date);
@@ -359,6 +361,13 @@ export const DateTimeRangePicker = ({
           }}
           open={open}
           role="dialog"
+          slotProps={{
+            paper: {
+              sx: {
+                overflow: 'inherit', // Allow timezone to overflow
+              },
+            },
+          }}
           sx={(theme) => ({
             boxShadow: 3,
             zIndex: 1300,
@@ -367,7 +376,7 @@ export const DateTimeRangePicker = ({
           transformOrigin={{ horizontal: 'left', vertical: 'top' }}
         >
           <Box
-            bgcolor="background.paper"
+            bgcolor={theme.tokens.component.Calendar.Background}
             boxShadow={4}
             display="flex"
             gap={2}
@@ -377,12 +386,13 @@ export const DateTimeRangePicker = ({
             {presetsProps?.enablePresets && (
               <Presets
                 onPresetSelect={handlePresetSelect}
+                presetLabels={PRESET_LABELS}
                 selectedPreset={selectedPreset}
                 timeZone={timeZone}
               />
             )}
             <Box>
-              <Box display="flex" gap={2}>
+              <Box display="flex" sx={{ padding: theme.spacingFunction(8) }}>
                 <Calendar
                   direction="left"
                   endDate={endDate}
@@ -406,7 +416,7 @@ export const DateTimeRangePicker = ({
               </Box>
               <Box
                 display="flex"
-                gap={2}
+                gap={() => theme.spacingFunction(8)}
                 justifyContent="space-between"
                 paddingBottom={2}
               >
@@ -426,6 +436,13 @@ export const DateTimeRangePicker = ({
                       });
                     }
                   }}
+                  sx={{
+                    flex: 1,
+                    // Allows timezone selector to expand as needed
+                    '& .MuiPickersInputBase-sectionsContainer': {
+                      width: 'inherit',
+                    },
+                  }}
                   value={startDate}
                 />
                 <TimePicker
@@ -444,6 +461,13 @@ export const DateTimeRangePicker = ({
                       });
                     }
                   }}
+                  sx={{
+                    flex: 1,
+                    // Allows timezone selector to expand as needed
+                    '& .MuiPickersInputBase-sectionsContainer': {
+                      width: 'inherit',
+                    },
+                  }}
                   value={endDate}
                 />
                 <TimeZoneSelect
@@ -456,7 +480,13 @@ export const DateTimeRangePicker = ({
             </Box>
           </Box>
           <Divider spacingBottom={0} spacingTop={0} />
-          <Box display="flex" gap={2} justifyContent="flex-end" padding={2}>
+          <Box
+            bgcolor={theme.tokens.component.Calendar.Background}
+            display="flex"
+            gap={2}
+            justifyContent="flex-end"
+            padding={2}
+          >
             <Button buttonType="outlined" data-qa-buttons onClick={handleClose}>
               Cancel
             </Button>
@@ -473,3 +503,6 @@ export const DateTimeRangePicker = ({
     </LocalizationProvider>
   );
 };
+
+// Expose the constant via a static property on the component
+DateTimeRangePicker.PRESET_LABELS = PRESET_LABELS;

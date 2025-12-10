@@ -6,7 +6,7 @@ import {
   RESOURCES,
   TAGS,
 } from './constants';
-import { FILTER_CONFIG } from './FilterConfig';
+import { FILTER_CONFIG, getAssociatedEntityType } from './FilterConfig';
 import { CloudPulseAvailableViews, CloudPulseSelectTypes } from './models';
 
 import type {
@@ -14,10 +14,11 @@ import type {
   FilterValueType,
 } from '../Dashboard/CloudPulseDashboardLanding';
 import type { CloudPulseCustomSelectProps } from '../shared/CloudPulseCustomSelect';
+import type { CloudPulseEndpointsSelectProps } from '../shared/CloudPulseEndpointsSelect';
 import type {
-  CloudPulseEndpoints,
-  CloudPulseEndpointsSelectProps,
-} from '../shared/CloudPulseEndpointsSelect';
+  CloudPulseFirewallNodebalancersSelectProps,
+  CloudPulseNodebalancers,
+} from '../shared/CloudPulseFirewallNodebalancersSelect';
 import type { CloudPulseNodeTypeFilterProps } from '../shared/CloudPulseNodeTypeFilter';
 import type { CloudPulseRegionSelectProps } from '../shared/CloudPulseRegionSelect';
 import type {
@@ -31,12 +32,14 @@ import type {
 import type { CloudPulseTextFilterProps } from '../shared/CloudPulseTextFilter';
 import type { CloudPulseTimeRangeSelectProps } from '../shared/CloudPulseTimeRangeSelect';
 import type { CloudPulseMetricsAdditionalFilters } from '../Widget/CloudPulseWidget';
+import type { MetricsDimensionFilter } from '../Widget/components/DimensionFilters/types';
 import type { CloudPulseServiceTypeFilters } from './models';
 import type {
   AclpConfig,
   Dashboard,
   DateTimeWithPreset,
   Filters,
+  NodeBalancer,
   TimeDuration,
 } from '@linode/api-v4';
 
@@ -138,7 +141,6 @@ export const getRegionProperties = (
         dashboard
       ),
     xFilter: filterBasedOnConfig(config, dependentFilters ?? {}),
-    selectedEntities: (dependentFilters?.[RESOURCE_ID] ?? []) as string[],
   };
 };
 
@@ -184,6 +186,8 @@ export const getResourcesProperties = (
     resourceType: dashboard.service_type,
     savePreferences: !isServiceAnalyticsIntegration,
     xFilter: filterBasedOnConfig(config, dependentFilters ?? {}),
+    associatedEntityType: getAssociatedEntityType(dashboard.id),
+    filterFn: config.configuration.filterFn,
   };
 };
 
@@ -248,6 +252,7 @@ export const getCustomSelectProperties = (
     options,
     placeholder,
     isOptional,
+    filterFn,
   } = props.config.configuration;
   const {
     dashboard,
@@ -286,6 +291,8 @@ export const getCustomSelectProperties = (
     type: options
       ? CloudPulseSelectTypes.static
       : CloudPulseSelectTypes.dynamic,
+    filterFn,
+    dashboardId: dashboard.id,
   };
 };
 
@@ -396,15 +403,58 @@ export const getEndpointsProperties = (
         preferences
       ),
     handleEndpointsSelection: handleEndpointsChange,
+    dashboardId: dashboard.id,
     label,
     placeholder,
     serviceType: dashboard.service_type,
     region: dependentFilters?.[REGION],
     savePreferences: !isServiceAnalyticsIntegration,
     xFilter: filterBasedOnConfig(config, dependentFilters ?? {}),
+    hasRestrictedSelections: config.configuration.hasRestrictedSelections,
   };
 };
 
+/**
+ *
+ * @param props The cloudpulse filter properties selected so far
+ * @param handleFirewallNodebalancersChange The callback function when selection of nodebalancers changes
+ * @returns CloudPulseFirewallNodebalancersSelectProps
+ */
+export const getFirewallNodebalancersProperties = (
+  props: CloudPulseFilterProperties,
+  handleFirewallNodebalancersChange: (
+    nodebalancers: CloudPulseNodebalancers[],
+    savePref?: boolean
+  ) => void
+): CloudPulseFirewallNodebalancersSelectProps => {
+  const { filterKey, name: label, placeholder } = props.config.configuration;
+  const {
+    config,
+    dashboard,
+    dependentFilters,
+    isServiceAnalyticsIntegration,
+    preferences,
+    shouldDisable,
+  } = props;
+  return {
+    defaultValue: preferences?.[config.configuration.filterKey],
+    selectedDashboard: dashboard,
+    disabled:
+      shouldDisable ||
+      shouldDisableFilterByFilterKey(
+        filterKey,
+        dependentFilters ?? {},
+        dashboard,
+        preferences
+      ),
+    handleNodebalancersSelection: handleFirewallNodebalancersChange,
+    label,
+    placeholder,
+    savePreferences: !isServiceAnalyticsIntegration,
+    xFilter: filterBasedOnConfig(config, dependentFilters ?? {}),
+    isOptional: config.configuration.isOptional,
+  };
+};
 /**
  * This function helps in builder the xFilter needed to passed in a apiV4 call
  *
@@ -581,6 +631,27 @@ export const constructAdditionalRequestFilters = (
 };
 
 /**
+ * @param dimensionFilters The selected dimension filters from the dimension filter component
+ * @returns The list of filters for the metric API call, based the additional custom select components
+ */
+export const constructWidgetDimensionFilters = (
+  dimensionFilters: MetricsDimensionFilter[]
+): Filters[] => {
+  const filters: Filters[] = [];
+  for (const { dimension_label, operator, value } of dimensionFilters) {
+    if (dimension_label && operator && value) {
+      // push to the filters
+      filters.push({
+        dimension_label,
+        operator,
+        value,
+      });
+    }
+  }
+  return filters;
+};
+
+/**
  *
  * @param filterKey The filterKey of the actual filter
  * @param dashboard The selected dashboard from the global filter view
@@ -603,72 +674,6 @@ const getDependentFiltersByFilterKey = (
         ? RESOURCES
         : configuration.filterKey
     );
-};
-
-/**
- * @param obj1 The first object to be compared
- * @param obj2 The second object to be compared
- * @returns True if, both are equal else false
- */
-export const deepEqual = <T>(obj1: T, obj2: T): boolean => {
-  if (obj1 === obj2) {
-    return true; // Identical references or values
-  }
-
-  // If either is null or undefined, or they are not of object type, return false
-  if (
-    obj1 === null ||
-    obj2 === null ||
-    typeof obj1 !== 'object' ||
-    typeof obj2 !== 'object'
-  ) {
-    return false;
-  }
-
-  // Handle array comparison separately
-  if (Array.isArray(obj1) && Array.isArray(obj2)) {
-    return compareArrays(obj1, obj2);
-  }
-
-  // Ensure both objects have the same number of keys
-  const keys1 = Object.keys(obj1);
-  const keys2 = Object.keys(obj2);
-
-  if (keys1.length !== keys2.length) {
-    return false;
-  }
-
-  // Recursively check each key
-  for (const key of keys1) {
-    if (!(key in obj2)) {
-      return false;
-    }
-    // Recursive deep equal check
-    if (!deepEqual((obj1 as any)[key], (obj2 as any)[key])) {
-      return false;
-    }
-  }
-
-  return true;
-};
-
-/**
- * @param arr1 Array for comparison
- * @param arr2 Array for comparison
- * @returns True if, both the arrays are equal, else false
- */
-export const compareArrays = <T>(arr1: T[], arr2: T[]): boolean => {
-  if (arr1.length !== arr2.length) {
-    return false;
-  }
-
-  for (let i = 0; i < arr1.length; i++) {
-    if (!deepEqual(arr1[i], arr2[i])) {
-      return false;
-    }
-  }
-
-  return true;
 };
 
 /**
@@ -721,7 +726,7 @@ export const filterUsingDependentFilters = (
       return resourceValue === filterValue;
     });
   });
-}
+};
 
 /**
  * @param data The endpoints for which the filter needs to be applied
@@ -729,9 +734,9 @@ export const filterUsingDependentFilters = (
  * @returns The filtered endpoints
  */
 export const filterEndpointsUsingRegion = (
-  data?: CloudPulseEndpoints[],
+  data?: CloudPulseResources[],
   regionFilter?: CloudPulseMetricsFilter
-): CloudPulseEndpoints[] | undefined => {
+): CloudPulseResources[] | undefined => {
   if (!data) {
     return data;
   }
@@ -744,4 +749,46 @@ export const filterEndpointsUsingRegion = (
   }
 
   return data.filter(({ region }) => region === regionFromFilter);
+};
+
+/**
+ *
+ * @param data The nodebalancers for which the filter needs to be applied
+ * @param xFilter The selected filters that will be used to filter the nodebalancers
+ * @param firewalls The firewalls for which the filter needs to be applied
+ * @returns The filtered nodebalancers
+ */
+
+export const filterFirewallNodebalancers = (
+  data?: NodeBalancer[],
+  xFilter?: CloudPulseMetricsFilter,
+  firewalls?: CloudPulseResources[]
+): CloudPulseNodebalancers[] | undefined => {
+  // If data is undefined or xFilter/firewalls is undefined or empty, return undefined
+  if (!data || !xFilter || !Object.keys(xFilter).length || !firewalls?.length) {
+    return undefined;
+  }
+
+  // Map the nodebalancers to the CloudPulseNodebalancers interface
+  const nodebalancers: CloudPulseNodebalancers[] = data.map((nodebalancer) => ({
+    id: String(nodebalancer.id),
+    label: nodebalancer.label,
+    associated_entity_region: nodebalancer.region,
+  }));
+
+  const firewallObj = firewalls.find(
+    (firewall) => firewall.id === String(xFilter[RESOURCE_ID])
+  );
+
+  return nodebalancers.filter((nodebalancer) => {
+    return Object.entries(xFilter).every(([key, filterValue]) => {
+      // If the filter key is the resource id, check if the nodebalancer is associated with the selected firewall
+      if (key === RESOURCE_ID) {
+        return firewallObj?.entities?.[nodebalancer.id];
+      }
+      const nodebalancerValue =
+        nodebalancer[key as keyof CloudPulseNodebalancers];
+      return nodebalancerValue === filterValue;
+    });
+  });
 };

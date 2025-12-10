@@ -14,6 +14,7 @@ import { useCloudPulseServiceByServiceType } from 'src/queries/cloudpulse/servic
 
 import {
   CREATE_ALERT_ERROR_FIELD_MAP as EDIT_ALERT_ERROR_FIELD_MAP,
+  entityLabelMap,
   MULTILINE_ERROR_SEPARATOR,
   SINGLELINE_ERROR_SEPARATOR,
   UPDATE_ALERT_SUCCESS_MESSAGE,
@@ -23,6 +24,7 @@ import { TriggerConditions } from '../CreateAlert/Criteria/TriggerConditions';
 import { EntityScopeRenderer } from '../CreateAlert/EntityScopeRenderer';
 import { AlertEntityScopeSelect } from '../CreateAlert/GeneralInformation/AlertEntityScopeSelect';
 import { CloudPulseAlertSeveritySelect } from '../CreateAlert/GeneralInformation/AlertSeveritySelect';
+import { EntityTypeSelect } from '../CreateAlert/GeneralInformation/EntityTypeSelect';
 import { CloudPulseServiceSelect } from '../CreateAlert/GeneralInformation/ServiceTypeSelect';
 import { AddChannelListing } from '../CreateAlert/NotificationChannels/AddChannelListing';
 import { alertDefinitionFormSchema } from '../CreateAlert/schemas';
@@ -65,12 +67,23 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     alertDetails,
     serviceType
   );
+
+  const entityType =
+    serviceType === 'firewall'
+      ? alertDetails.rule_criteria.rules[0]?.label.includes(
+          entityLabelMap['nodebalancer']
+        )
+        ? 'nodebalancer'
+        : 'linode'
+      : undefined;
+
   const flags = useFlags();
   const formMethods = useForm<EditAlertDefintionForm>({
     defaultValues: {
       ...filteredAlertDefinitionValues,
       serviceType,
       scope: alertDetails.scope,
+      entity_type: entityType,
     },
     mode: 'onBlur',
     resolver: yupResolver(
@@ -136,7 +149,21 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
       position: 1,
     },
   ];
-
+  const { resetField } = formMethods;
+  const handleEntityTypeChange = React.useCallback(() => {
+    // Reset the criteria when entity type changes
+    resetField('rule_criteria.rules', {
+      defaultValue: [
+        {
+          aggregate_function: null,
+          dimension_filters: [],
+          metric: null,
+          operator: null,
+          threshold: 0,
+        },
+      ],
+    });
+  }, [resetField]);
   const previousSubmitCount = React.useRef<number>(0);
   React.useEffect(() => {
     if (
@@ -187,7 +214,13 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
               />
             )}
           />
-          <CloudPulseServiceSelect isDisabled={true} name="serviceType" />
+          <CloudPulseServiceSelect isDisabled name="serviceType" />
+          {serviceType === 'firewall' && (
+            <EntityTypeSelect
+              name="entity_type"
+              onEntityTypeChange={handleEntityTypeChange}
+            />
+          )}
           <CloudPulseAlertSeveritySelect name="severity" />
           <AlertEntityScopeSelect
             disabled
@@ -208,7 +241,10 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
             serviceMetadataError={serviceMetadataError}
             serviceMetadataLoading={serviceMetadataLoading}
           />
-          <AddChannelListing name="channel_ids" />
+          <AddChannelListing
+            name="channel_ids"
+            serviceType={alertDetails.service_type}
+          />
           <ActionsPanel
             primaryButtonProps={{
               label: 'Submit',

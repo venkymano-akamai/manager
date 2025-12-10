@@ -1,5 +1,11 @@
 import {
+  acceleratedTypeFactory,
   configFactory,
+  dedicatedTypeFactory,
+  gcpDedicatedTypeFactory,
+  gpuTypeAdaFactory,
+  gpuTypeRtxFactory,
+  gpuTypeRtxProFactory,
   linodeBackupFactory,
   linodeConfigInterfaceFactory,
   linodeConfigInterfaceFactoryWithVPC,
@@ -10,6 +16,9 @@ import {
   linodeIPFactory,
   linodeStatsFactory,
   linodeTransferFactory,
+  linodeTypeFactory,
+  premiumHTTypeFactory,
+  premiumNestedTypeFactory,
 } from '@linode/utilities';
 import { DateTime } from 'luxon';
 import { http } from 'msw';
@@ -33,6 +42,7 @@ import type {
   Linode,
   LinodeBackupsResponse,
   LinodeIPsResponse,
+  LinodeType,
   RegionalNetworkUtilization,
   Stats,
 } from '@linode/api-v4';
@@ -75,6 +85,46 @@ export const getLinodes = () => [
       }
 
       return makeResponse(linode);
+    }
+  ),
+];
+
+export const getLinodePlans = () => [
+  http.get(
+    '*/v4/linode/types',
+    async ({
+      request,
+    }): Promise<
+      StrictResponse<APIErrorResponse | APIPaginatedResponse<LinodeType>>
+    > => {
+      const nanodeType = linodeTypeFactory.build({ id: 'g6-nanode-1' });
+      const standardTypes = linodeTypeFactory.buildList(7);
+      const dedicatedTypes = [
+        ...dedicatedTypeFactory.buildList(16),
+        ...Array.from(gcpDedicatedTypeFactory.build()),
+      ];
+      const gpuTypesAda = gpuTypeAdaFactory.buildList(20);
+      const gpuTypesRtx = gpuTypeRtxFactory.buildList(20);
+      const gpuTypesRtxPro = gpuTypeRtxProFactory.buildList(20);
+      const premiumTypes = [
+        premiumNestedTypeFactory.build(),
+        premiumHTTypeFactory.build(),
+      ];
+      const acceleratedType = acceleratedTypeFactory.buildList(7);
+      const mockPlans = [
+        nanodeType,
+        ...standardTypes,
+        ...dedicatedTypes,
+        ...gpuTypesAda,
+        ...gpuTypesRtx,
+        ...gpuTypesRtxPro,
+        ...premiumTypes,
+        ...acceleratedType,
+      ];
+      return makePaginatedResponse({
+        data: mockPlans,
+        request,
+      });
     }
   ),
 ];
@@ -170,6 +220,7 @@ export const createLinode = (mockState: MockState) => [
     }
 
     await mswDB.add('linodes', linode, mockState);
+
     if (linode.interface_generation === 'linode') {
       if (
         payload.interfaces &&
@@ -444,6 +495,12 @@ export const deleteLinode = (mockState: MockState) => [
         sequence: [{ status: 'finished' }],
       }).then(async () => {
         await mswDB.delete('linodes', id, mockState);
+        await mswDB.delete('linodeInterfaces', linode.id, mockState);
+        await mswDB.delete('linodeConfigs', linode.id, mockState);
+        await mswDB.delete('linodeIps', linode.id, mockState);
+        await mswDB.delete('userEntityPermissions', linode.id, mockState);
+        await mswDB.delete('userAccountPermissions', linode.id, mockState);
+        await mswDB.delete('userRoles', linode.id, mockState);
       });
     });
 

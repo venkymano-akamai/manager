@@ -1,14 +1,39 @@
-import { transformDimensionValue } from '../../../Utils/utils';
+import {
+  DIMENSION_TRANSFORM_CONFIG,
+  TRANSFORMS,
+} from 'src/features/CloudPulse/shared/DimensionTransform';
 
 import type { Item } from '../../../constants';
 import type { OperatorGroup } from './constants';
 import type {
+  AlertDefinitionScope,
   CloudPulseServiceType,
   DimensionFilterOperatorType,
   Linode,
+  NodeBalancer,
   VPC,
 } from '@linode/api-v4';
 import type { CloudPulseResources } from 'src/features/CloudPulse/shared/CloudPulseResourcesSelect';
+import type { FirewallEntity } from 'src/features/CloudPulse/shared/types';
+
+/**
+ * Transform a dimension value using the appropriate transform function
+ * @param serviceType - The cloud pulse service type
+ * @param dimensionLabel - The dimension label
+ * @param value - The value to transform
+ * @returns Transformed value
+ */
+export const transformDimensionValue = (
+  serviceType: CloudPulseServiceType | null,
+  dimensionLabel: string,
+  value: string
+): string => {
+  return (
+    (
+      serviceType && DIMENSION_TRANSFORM_CONFIG[serviceType]?.[dimensionLabel]
+    )?.(value) ?? TRANSFORMS.capitalize(value)
+  );
+};
 
 /**
  * Resolves the selected value(s) for the Autocomplete component from raw string.
@@ -77,9 +102,9 @@ export const getOperatorGroup = (
  * @returns - List of label/value option objects.
  */
 export const getStaticOptions = (
-  serviceType: CloudPulseServiceType | undefined,
+  serviceType: CloudPulseServiceType | null,
   dimensionLabel: string,
-  values: null | string[]
+  values: string[]
 ): Item<string, string>[] => {
   return (
     values?.map((val: string) => ({
@@ -98,13 +123,19 @@ export const getStaticOptions = (
 export const getFilteredFirewallParentEntities = (
   firewallResources: CloudPulseResources[] | undefined,
   entities: string[] | undefined
-): string[] => {
+): FirewallEntity[] => {
   if (!(firewallResources?.length && entities?.length)) return [];
 
   return firewallResources
     .filter((firewall) => entities.includes(firewall.id))
     .flatMap((firewall) =>
-      firewall.entities ? Object.keys(firewall.entities) : []
+      // combine key as id and value as label for each entity
+      firewall.entities
+        ? Object.entries(firewall.entities).map(([id, label]) => ({
+            id,
+            label,
+          }))
+        : []
     );
 };
 
@@ -124,6 +155,25 @@ export const getFirewallLinodes = (
 };
 
 /**
+ * Extracts nodebalancer items from firewall resources.
+ * @param nodebalancers - List of nodebalancers.
+ * @returns - Flattened list of nodebalancer ID/label pairs as options.
+ */
+export const getFirewallNodebalancers = (
+  nodebalancers: NodeBalancer[]
+): Item<string, string>[] => {
+  if (!nodebalancers) return [];
+  return nodebalancers.map((nodebalancer) => ({
+    label: transformDimensionValue(
+      'firewall',
+      'nodebalancer_id',
+      nodebalancer.label
+    ),
+    value: String(nodebalancer.id),
+  }));
+};
+
+/**
  * Extracts unique region values from a list of linodes.
  * @param linodes - Linode objects with region information.
  * @returns - Deduplicated list of regions as options.
@@ -132,6 +182,23 @@ export const getLinodeRegions = (linodes: Linode[]): Item<string, string>[] => {
   if (!linodes) return [];
   const regions = new Set<string>();
   linodes.forEach(({ region }) => region && regions.add(region));
+  return Array.from(regions).map((region) => ({
+    label: transformDimensionValue('firewall', 'region_id', region),
+    value: region,
+  }));
+};
+
+/**
+ * Extracts unique region values from a list of nodebalancers.
+ * @param nodebalancers - Nodebalancer objects with region information.
+ * @returns - Deduplicated list of regions as options.
+ */
+export const getNodebalancerRegions = (
+  nodebalancers: NodeBalancer[]
+): Item<string, string>[] => {
+  if (!nodebalancers) return [];
+  const regions = new Set<string>();
+  nodebalancers.forEach(({ region }) => region && regions.add(region));
   return Array.from(regions).map((region) => ({
     label: transformDimensionValue('firewall', 'region_id', region),
     value: region,
@@ -152,4 +219,66 @@ export const getVPCSubnets = (vpcs: VPC[]): Item<string, string>[] => {
       value: String(subnetId),
     }))
   );
+};
+
+interface ScopeBasedFilteredResourcesProps {
+  /**
+   * A list of entity IDs to filter by when scope is `entity`.
+   */
+  entities?: string[];
+  /**
+   * The full list of available CloudPulse resources.
+   */
+  resources: CloudPulseResources[];
+  /**
+   * The scope of the alert definition (`account`, `entity`, `region`, or `null`).
+   */
+  scope: AlertDefinitionScope | null;
+  /**
+   * A list of region IDs to filter by when scope is `region`.
+   */
+  selectedRegions?: null | string[];
+}
+
+/* Filters a list of Resource objects based on the given alert definition scope.
+ *
+ * @param props - Object containing filter parameters.
+ * @returns A filtered list of resources based on the provided scope.
+ */
+export const scopeBasedFilteredResources = (
+  props: ScopeBasedFilteredResourcesProps
+): CloudPulseResources[] => {
+  const { scope, resources, selectedRegions, entities } = props;
+
+  switch (scope) {
+    case 'account':
+      return resources;
+    case 'entity':
+      return entities
+        ? resources.filter((resource) => entities.includes(resource.id))
+        : [];
+    case 'region':
+      return selectedRegions
+        ? resources.filter((resource) =>
+            selectedRegions.includes(resource.region ?? '')
+          )
+        : [];
+    default:
+      return resources;
+  }
+};
+
+/**
+ * Extracts linode items from firewall resources by merging entities.
+ * @param resources - List of firewall resources with entity mappings.
+ * @returns - Flattened list of linode ID/label pairs as options.
+ */
+export const getBlockStorageLinodes = (
+  linodes: Linode[]
+): Item<string, string>[] => {
+  if (!linodes) return [];
+  return linodes.map((linode) => ({
+    label: transformDimensionValue('blockstorage', 'linode_id', linode.label),
+    value: String(linode.id),
+  }));
 };

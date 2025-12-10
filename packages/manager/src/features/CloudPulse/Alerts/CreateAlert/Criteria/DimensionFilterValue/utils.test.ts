@@ -1,17 +1,20 @@
-import { linodeFactory } from '@linode/utilities';
+import { linodeFactory, nodeBalancerFactory } from '@linode/utilities';
 
-import { transformDimensionValue } from '../../../Utils/utils';
 import {
   getFilteredFirewallParentEntities,
   getFirewallLinodes,
+  getFirewallNodebalancers,
   getLinodeRegions,
+  getNodebalancerRegions,
   getOperatorGroup,
   getStaticOptions,
   handleValueChange,
   resolveSelectedValues,
+  scopeBasedFilteredResources,
+  transformDimensionValue,
 } from './utils';
 
-import type { Linode } from '@linode/api-v4';
+import type { Linode, NodeBalancer } from '@linode/api-v4';
 import type { CloudPulseResources } from 'src/features/CloudPulse/shared/CloudPulseResourcesSelect';
 
 describe('Utils', () => {
@@ -103,7 +106,7 @@ describe('Utils', () => {
     });
 
     it('should return empty array if input is null', () => {
-      expect(getStaticOptions('linode', 'dim', null)).toEqual([]);
+      expect(getStaticOptions('linode', 'dim', [])).toEqual([]);
     });
   });
 
@@ -119,16 +122,30 @@ describe('Utils', () => {
         entities: { b: 'linode-2' },
         label: 'firewall-2',
       },
+      {
+        id: '3',
+        entities: { c: 'nodebalancer-1' },
+        label: 'firewall-3',
+      },
     ];
 
     it('should return matched resources by entity IDs', () => {
       expect(getFilteredFirewallParentEntities(resources, ['1'])).toEqual([
-        'a',
+        {
+          label: 'linode-1',
+          id: 'a',
+        },
+      ]);
+      expect(getFilteredFirewallParentEntities(resources, ['3'])).toEqual([
+        {
+          label: 'nodebalancer-1',
+          id: 'c',
+        },
       ]);
     });
 
     it('should return empty array if no match', () => {
-      expect(getFilteredFirewallParentEntities(resources, ['3'])).toEqual([]);
+      expect(getFilteredFirewallParentEntities(resources, ['4'])).toEqual([]);
     });
 
     it('should handle undefined inputs', () => {
@@ -161,6 +178,28 @@ describe('Utils', () => {
     });
   });
 
+  describe('getFirewallNodeBalancers', () => {
+    const nodebalancers: NodeBalancer[] = nodeBalancerFactory.buildList(2);
+
+    it('should return nodebalancer options with transformed labels', () => {
+      // checking for same label as nodebalancer_id dimension filter should not have any transformation
+      expect(getFirewallNodebalancers(nodebalancers)).toEqual([
+        {
+          label: nodebalancers[0].label,
+          value: nodebalancers[0].id.toString(),
+        },
+        {
+          label: nodebalancers[1].label,
+          value: nodebalancers[1].id.toString(),
+        },
+      ]);
+    });
+
+    it('should handle empty nodebalancer list', () => {
+      expect(getFirewallNodebalancers([])).toEqual([]);
+    });
+  });
+
   describe('getLinodeRegions', () => {
     it('should extract and deduplicate regions', () => {
       const linodes = linodeFactory.buildList(3, {
@@ -187,6 +226,125 @@ describe('Utils', () => {
           value: 'us-west',
         },
       ]);
+    });
+  });
+
+  describe('getNodebalancerRegions', () => {
+    it('should extract and deduplicate regions', () => {
+      const nodebalancers = nodeBalancerFactory.buildList(3, {
+        region: 'us-east',
+      });
+      nodebalancers[1].region = 'us-west'; // introduce a second unique region
+
+      const result = getNodebalancerRegions(nodebalancers);
+      expect(result).toEqual([
+        {
+          label: transformDimensionValue(
+            'firewall',
+            'region_id',
+            nodebalancers[0].region
+          ),
+          value: 'us-east',
+        },
+        {
+          label: transformDimensionValue(
+            'firewall',
+            'region_id',
+            nodebalancers[1].region
+          ),
+          value: 'us-west',
+        },
+      ]);
+    });
+  });
+
+  describe('scopeBasedFilteredBuckets', () => {
+    const buckets: CloudPulseResources[] = [
+      { label: 'bucket-1', id: 'bucket-1', region: 'us-east' },
+      { label: 'bucket-2', id: 'bucket-2', region: 'us-west' },
+      { label: 'bucket-3', id: 'bucket-3', region: 'eu-central' },
+    ];
+
+    it('returns all buckets for account scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'account',
+        resources: buckets,
+      });
+      expect(result).toEqual(buckets);
+    });
+
+    it('filters buckets by entity IDs for entity scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'entity',
+        resources: buckets,
+        entities: ['bucket-1', 'bucket-3'],
+      });
+      expect(result).toEqual([
+        { id: 'bucket-1', label: 'bucket-1', region: 'us-east' },
+        { id: 'bucket-3', label: 'bucket-3', region: 'eu-central' },
+      ]);
+    });
+
+    it('returns empty array if no entities match for entity scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'entity',
+        resources: buckets,
+        entities: ['bucket-99'],
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array if entities is undefined for entity scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'entity',
+        resources: buckets,
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('filters buckets by region IDs for region scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'region',
+        resources: buckets,
+        selectedRegions: ['us-east', 'eu-central'],
+      });
+      expect(result).toEqual([
+        { id: 'bucket-1', label: 'bucket-1', region: 'us-east' },
+        { id: 'bucket-3', label: 'bucket-3', region: 'eu-central' },
+      ]);
+    });
+
+    it('returns empty array if no regions match for region scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'region',
+        resources: buckets,
+        selectedRegions: ['ap-south'],
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array if selectedRegions is undefined for region scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: 'region',
+        resources: buckets,
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('returns all buckets for null scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: null,
+        resources: buckets,
+      });
+      expect(result).toEqual(buckets);
+    });
+
+    it('returns all buckets for unrecognized scope', () => {
+      const result = scopeBasedFilteredResources({
+        scope: null,
+        resources: buckets,
+      });
+      expect(result).toEqual(buckets);
     });
   });
 });

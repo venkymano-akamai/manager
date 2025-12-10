@@ -7,10 +7,13 @@
  * New handlers should be added to the CRUD baseline preset instead (ex: src/mocks/presets/crud/handlers/linodes.ts) which support a much more dynamic data mocking.
  */
 import {
+  acceleratedTypeFactory,
   accountAvailabilityFactory,
   accountBetaFactory,
   betaFactory,
   dedicatedTypeFactory,
+  gpuTypeAdaFactory,
+  gpuTypeRtxFactory,
   grantFactory,
   grantsFactory,
   linodeFactory,
@@ -22,6 +25,7 @@ import {
   nodeBalancerConfigNodeFactory,
   nodeBalancerFactory,
   pickRandom,
+  premiumTypeFactory,
   proDedicatedTypeFactory,
   profileFactory,
   regionAvailabilityFactory,
@@ -41,6 +45,8 @@ import {
   alertFactory,
   alertRulesFactory,
   appTokenFactory,
+  blockStorageMetricCriteria,
+  blockStorageMetricRules,
   contactFactory,
   credentialFactory,
   creditPaymentResponseFactory,
@@ -60,6 +66,11 @@ import {
   firewallFactory,
   firewallMetricDefinitionsResponse,
   firewallMetricRulesFactory,
+  firewallNodebalancerMetricCriteria,
+  firewallPrefixListFactory,
+  firewallRuleFactory,
+  firewallRuleSetFactory,
+  firewallRulesFactory,
   imageFactory,
   incidentResponseFactory,
   invoiceFactory,
@@ -84,6 +95,9 @@ import {
   managedStatsFactory,
   monitorFactory,
   mysqlConfigResponse,
+  networkLoadBalancerFactory,
+  networkLoadBalancerListenerFactory,
+  networkLoadBalancerNodeFactory,
   nodeBalancerTypeFactory,
   nodePoolFactory,
   notificationChannelFactory,
@@ -92,6 +106,8 @@ import {
   objectStorageClusterFactory,
   objectStorageEndpointsFactory,
   objectStorageKeyFactory,
+  objectStorageMetricCriteria,
+  objectStorageMetricRules,
   objectStorageOverageTypeFactory,
   objectStorageTypeFactory,
   paymentFactory,
@@ -134,10 +150,11 @@ import { maintenancePolicyFactory } from 'src/factories/maintenancePolicy';
 import { userAccountPermissionsFactory } from 'src/factories/userAccountPermissions';
 import { userEntityPermissionsFactory } from 'src/factories/userEntityPermissions';
 import { userRolesFactory } from 'src/factories/userRoles';
-import { MTC_SUPPORTED_REGIONS } from 'src/features/components/PlansPanel/constants';
+import { SPECIAL_PREFIX_LIST_NAMES } from 'src/features/Firewalls/FirewallDetail/Rules/shared';
 
 import type {
   AccountMaintenance,
+  AlertDefinitionScope,
   AlertDefinitionType,
   AlertSeverityType,
   AlertStatusType,
@@ -195,9 +212,19 @@ const makeMockDatabase = (params: PathParams): Database => {
     db.ssl_connection = true;
   }
   const database = databaseFactory.build(db);
+
   if (database.platform !== 'rdbms-default') {
     delete database.private_network;
   }
+
+  if (database.platform === 'rdbms-default' && !!database.private_network) {
+    // When a database is configured with a VPC, the primary and standby hostnames are prepended with 'private-' in the backend
+    database.hosts = {
+      primary: 'private-db-mysql-primary-0.b.linodeb.net',
+      standby: 'private-db-mysql-standby-0.b.linodeb.net',
+    };
+  }
+
   return database;
 };
 
@@ -519,25 +546,76 @@ const entities = [
   }),
 ];
 
+const netLoadBalancers = [
+  http.get('*/v4beta/netloadbalancers', () => {
+    const nlbWithListener1 = networkLoadBalancerFactory.buildList(5, {
+      listeners: networkLoadBalancerListenerFactory.buildList(
+        Math.floor(Math.random() * 10) + 1
+      ),
+    });
+    const nlbWithListener2 = networkLoadBalancerFactory.buildList(5, {
+      region: 'eu-west',
+      lke_cluster: {
+        id: 1,
+        label: 'lke-e-123',
+        type: 'lkecluster',
+        url: 'v4/lke/clusters/1',
+      },
+      listeners: networkLoadBalancerListenerFactory.buildList(
+        Math.floor(Math.random() * 20) + 1
+      ),
+    });
+    const nlbWithoutListener = networkLoadBalancerFactory.buildList(20);
+    return HttpResponse.json(
+      makeResourcePage([
+        ...nlbWithListener1,
+        ...nlbWithListener2,
+        ...nlbWithoutListener,
+      ])
+    );
+  }),
+  http.get('*/v4beta/netloadbalancers/:id', () => {
+    return HttpResponse.json(
+      networkLoadBalancerFactory.build({
+        lke_cluster: {
+          id: 1,
+          label: 'lke-e-123',
+          type: 'lkecluster',
+          url: 'v4/lke/clusters/1',
+        },
+        listeners: networkLoadBalancerListenerFactory.buildList(
+          Math.floor(Math.random() * 10) + 1
+        ),
+      })
+    );
+  }),
+  http.get('*/v4beta/netloadbalancers/:id/listeners', () => {
+    return HttpResponse.json(
+      makeResourcePage(networkLoadBalancerListenerFactory.buildList(30))
+    );
+  }),
+  http.get('*/v4beta/netloadbalancers/:id/listeners/:listenerId', () => {
+    return HttpResponse.json(networkLoadBalancerListenerFactory.build());
+  }),
+  http.get(
+    '*/v4beta/netloadbalancers/:id/listeners/:listenerId/nodes',
+    async () => {
+      await sleep(1000);
+      return HttpResponse.json(
+        makeResourcePage(networkLoadBalancerNodeFactory.buildList(30))
+      );
+    }
+  ),
+];
+
 const nanodeType = linodeTypeFactory.build({ id: 'g6-nanode-1' });
 const standardTypes = linodeTypeFactory.buildList(7);
 const dedicatedTypes = dedicatedTypeFactory.buildList(7);
 const proDedicatedType = proDedicatedTypeFactory.build();
-const gpuTypesAda = linodeTypeFactory.buildList(7, {
-  class: 'gpu',
-  gpus: 5,
-  label: 'Ada Lovelace',
-  transfer: 0,
-});
-const gpuTypesRX = linodeTypeFactory.buildList(7, {
-  class: 'gpu',
-  gpus: 1,
-  transfer: 5000,
-});
+const gpuTypesAda = gpuTypeAdaFactory.buildList(7);
+const gpuTypesRX = gpuTypeRtxFactory.buildList(7);
 const premiumTypes = [
-  ...linodeTypeFactory.buildList(6, {
-    class: 'premium',
-  }),
+  ...premiumTypeFactory.buildList(6),
   linodeTypeFactory.build({
     class: 'premium',
     disk: 10240000,
@@ -553,13 +631,8 @@ const premiumTypes = [
     vcpus: 128,
   }),
 ];
+const acceleratedType = acceleratedTypeFactory.buildList(7);
 
-const acceleratedType = linodeTypeFactory.buildList(7, {
-  accelerated_devices: 1,
-  class: 'accelerated',
-  label: 'Netint Quadra T1U X',
-  transfer: 0,
-});
 const proxyAccountUser = accountUserFactory.build({
   email: 'partner@proxy.com',
   last_login: null,
@@ -744,6 +817,13 @@ export const handlers = [
     const linodesWithFirewall = linodeFactory.buildList(10, {
       region: 'ap-west',
     });
+    const linodesWithAclpAlerts = linodeFactory.buildList(10, {
+      region: 'ap-west',
+      alerts: {
+        system_alerts: [1, 2, 3, 4, 5],
+        user_alerts: [6, 7, 8, 9, 10],
+      },
+    });
     const metadataLinodeWithCompatibleImage = linodeFactory.build({
       image: 'metadata-test-image',
       label: 'metadata-test-image',
@@ -802,7 +882,7 @@ export const handlers = [
       }),
       linodeFactory.build({
         label: 'mtc-custom-plan-linode-2',
-        region: 'no-east',
+        region: 'no-osl-1',
         type: 'g8-premium-128-ht',
         id: 1002,
       }),
@@ -831,6 +911,7 @@ export const handlers = [
     });
     const linodes = [
       ...linodesWithFirewall,
+      ...linodesWithAclpAlerts,
       ...mtcLinodes,
       ...aclpSupportedRegionLinodes,
       nonMTCPlanInMTCSupportedRegionsLinode,
@@ -994,7 +1075,7 @@ export const handlers = [
           id,
           backups: { enabled: false },
           label: 'mtc-custom-plan-linode-2',
-          region: 'no-east',
+          region: 'no-osl-1',
           type: 'g8-premium-128-ht',
         }),
       ];
@@ -1153,7 +1234,13 @@ export const handlers = [
 
   http.get('*/lke/clusters', async () => {
     const clusters = kubernetesAPIResponse.buildList(10);
-    return HttpResponse.json(makeResourcePage(clusters));
+    const enterpriseClusters = kubernetesAPIResponse.buildList(11, {
+      tier: 'enterprise',
+      region: 'ap-west',
+    });
+    return HttpResponse.json(
+      makeResourcePage([...clusters, ...enterpriseClusters])
+    );
   }),
   http.get('*/lke/types', async () => {
     const lkeTypes = [
@@ -1203,7 +1290,17 @@ export const handlers = [
   }),
   http.get('*/v4beta/networking/firewalls', () => {
     const firewalls = [
-      ...firewallFactory.buildList(10),
+      ...firewallFactory.buildList(9),
+      firewallFactory.build({
+        entities: [
+          firewallEntityfactory.build({
+            type: 'nodebalancer',
+            parent_entity: null,
+            id: 333,
+            label: 'NodeBalancer-33',
+          }),
+        ],
+      }),
       firewallFactory.build({
         entities: [
           firewallEntityfactory.build({
@@ -1222,6 +1319,30 @@ export const handlers = [
           }),
         ],
       }),
+      firewallFactory.build({
+        label: 'Firewall - Nodebalancer',
+        id: 25,
+        entities: [
+          firewallEntityfactory.build({
+            type: 'nodebalancer',
+            label: 'Nodebalancer-test',
+            parent_entity: null,
+            id: 333,
+          }),
+        ],
+      }),
+      // Firewall with the Rule and RuleSet Reference
+      firewallFactory.build({
+        id: 1001,
+        label: 'firewall with rule and ruleset reference',
+        rules: firewallRulesFactory.build({
+          inbound: [
+            { ruleset: 123 }, // Referenced Ruleset to the Firewall (ID 123)
+            { ruleset: 123456789 }, // Referenced Ruleset to the Firewall (ID 123456789)
+            ...firewallRuleFactory.buildList(1),
+          ],
+        }),
+      }),
     ];
     firewallFactory.resetSequenceNumber();
     return HttpResponse.json(makeResourcePage(firewalls));
@@ -1230,8 +1351,172 @@ export const handlers = [
     const devices = firewallDeviceFactory.buildList(10);
     return HttpResponse.json(makeResourcePage(devices));
   }),
-  http.get('*/v4beta/networking/firewalls/:firewallId', () => {
-    const firewall = firewallFactory.build();
+  http.get('*/v4beta/networking/firewalls/rulesets', () => {
+    const rulesetWithPrefixLists = firewallRuleSetFactory.build({
+      rules: firewallRuleFactory.buildList(1, {
+        addresses: {
+          ipv4: [
+            'pl:system:resolvers:test',
+            'pl:system:test',
+            '192.168.1.200',
+            '192.168.1.201',
+          ],
+          ipv6: [
+            '2001:db8:85a3::8a2e:371:7335/128',
+            'pl:system:test',
+            'pl::vpcs:test',
+          ],
+        },
+      }),
+    });
+    const rulesets = [
+      rulesetWithPrefixLists,
+      ...firewallRuleSetFactory.buildList(9),
+    ];
+    return HttpResponse.json(makeResourcePage(rulesets));
+  }),
+  http.get('*/v4beta/networking/prefixlists', ({ request }) => {
+    const prefixlists = [
+      ...firewallPrefixListFactory.buildList(10),
+      ...Array.from({ length: 2 }, (_, i) =>
+        firewallPrefixListFactory.build({
+          name: `pl::vpcs:supports-both-${i + 1}`,
+          description: `pl::vpcs:supports-both-${i + 1} description`,
+        })
+      ),
+      // Prefix List variants / cases
+      ...[
+        { name: 'pl::supports-both' },
+        { name: 'pl:system:supports-only-ipv4', ipv6: null },
+        { name: 'pl::supports-only-ipv6', ipv4: null },
+        { name: 'pl::supports-both-but-ipv6-empty', ipv6: [] },
+        { name: 'pl::supports-both-but-empty-both', ipv4: [], ipv6: [] },
+        { name: 'pl::marked-for-deletion', deleted: '2025-11-18T18:51:11' },
+        { name: 'pl::not-supported', ipv4: null, ipv6: null },
+      ].map((variant) =>
+        firewallPrefixListFactory.build({
+          ...variant,
+          description: `${variant.name} description`,
+        })
+      ),
+    ];
+
+    if (request.headers.get('x-filter')) {
+      const filter = JSON.parse(request.headers.get('x-filter') || '{}');
+
+      if (filter['name']) {
+        const existingPrefixList = prefixlists.find(
+          (pl) => pl.name === filter.name
+        );
+
+        // SPECIAL_PREFIX_LIST_NAMES may expand in the future if returned by the API
+        const isPrefixListSpecial = SPECIAL_PREFIX_LIST_NAMES.includes(
+          filter.name
+        );
+
+        const match = isPrefixListSpecial
+          ? [] // Special PLs: API currently returns empty; @TODO: update with actual response once API supports them
+          : [
+              existingPrefixList ??
+                firewallPrefixListFactory.build({
+                  name: filter.name,
+                  description: `${filter.name} description`,
+                }),
+            ];
+        return HttpResponse.json(makeResourcePage(match));
+      }
+    }
+    return HttpResponse.json(makeResourcePage(prefixlists));
+  }),
+  http.get(
+    '*/v4beta/networking/firewalls/rulesets/:rulesetId',
+    ({ params }) => {
+      const getRuleSetDetailById = (rulesetId: number) => {
+        switch (rulesetId) {
+          case 123:
+            // Ruleset with 123 Id
+            return firewallRuleSetFactory.build({
+              id: 123,
+            });
+          case 123456789:
+            // Ruleset with larger ID 123456789, Longer label with 32 chars, PrefixLists, and
+            // Marked for deletion status
+            return firewallRuleSetFactory.build({
+              id: 123456789,
+              label: 'ruleset-with-a-longer-32ch-label',
+              deleted: '2025-11-18T18:51:11',
+              description:
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a fermentum quam. Mauris posuere dapibus aliquet. Ut id dictum magna, vitae congue turpis. Curabitur sollicitudin odio vel lacus vehicula maximus.',
+              rules: firewallRuleFactory.buildList(1, {
+                addresses: {
+                  ipv4: [
+                    'pl:system:resolvers:test',
+                    'pl:system:test',
+                    'pl::vpcs:<current>', // special prefixlist
+                    '192.168.1.200',
+                    '192.168.1.201',
+                  ],
+                  ipv6: [
+                    '2001:db8:85a3::8a2e:371:7335/128',
+                    'pl:system:test',
+                    'pl::vpcs:test',
+                  ],
+                },
+              }),
+            });
+          default:
+            return firewallRuleSetFactory.build();
+        }
+      };
+      const firewallRuleSet = getRuleSetDetailById(Number(params.rulesetId));
+      return HttpResponse.json(firewallRuleSet);
+    }
+  ),
+  http.get('*/v4beta/networking/firewalls/:firewallId', ({ params }) => {
+    const firewall =
+      params.firewallId === '1001'
+        ? firewallFactory.build({
+            id: 1001,
+            label: 'firewall with rule and ruleset reference',
+            rules: firewallRulesFactory.build({
+              inbound: [
+                { ruleset: 123 }, // Referenced Ruleset to the Firewall (ID 123)
+                { ruleset: 123456789 }, // Referenced Ruleset to the Firewall (ID 123456789)
+                ...firewallRuleFactory.buildList(1, {
+                  addresses: {
+                    ipv4: [
+                      'pl::supports-both',
+                      'pl:system:supports-only-ipv4',
+                      '192.168.1.213',
+                      '192.168.1.214',
+                      'pl::vpcs:supports-both-1',
+                      'pl::supports-both-but-empty-both',
+                      '172.31.255.255',
+                      'pl::marked-for-deletion',
+                      'pl::vpcs:<current>', // special prefixlist
+                    ],
+                    ipv6: [
+                      'pl::supports-both',
+                      'pl::supports-only-ipv6',
+                      'pl::supports-both-but-ipv6-empty',
+                      'pl::vpcs:supports-both-2',
+                      '2001:db8:85a3::8a2e:370:7334/128',
+                      '2001:db8:85a3::8a2e:371:7335/128',
+                      // Duplicate PrefixList entries like the below one, may not appear, but if they do,
+                      // our logic will treat them as a single entity within the ipv4 or ipv6 array.
+                      'pl::vpcs:supports-both-2',
+                      '2001:db8:85a3::8a2e:372:7336/128',
+                      'pl::subnets:<current>', // special prefixlist
+                    ],
+                  },
+                  ports: '22, 53, 80, 100, 443, 3306',
+                  protocol: 'UDP',
+                  action: 'ACCEPT',
+                }),
+              ],
+            }),
+          })
+        : firewallFactory.build();
     return HttpResponse.json(firewall);
   }),
   http.put<{}, { status: FirewallStatus }>(
@@ -1257,6 +1542,13 @@ export const handlers = [
   }),
   http.get('*/v4/nodebalancers', () => {
     const nodeBalancers = nodeBalancerFactory.buildList(3);
+    nodeBalancers.push(
+      nodeBalancerFactory.build({
+        id: 333,
+        label: 'NodeBalancer-33',
+        region: 'ap-west',
+      })
+    );
     return HttpResponse.json(makeResourcePage(nodeBalancers));
   }),
   http.get('*/v4/nodebalancers/types', () => {
@@ -1340,10 +1632,15 @@ export const handlers = [
         region: 'us-mia',
         s3_endpoint: 'us-mia-1.linodeobjects.com',
       }),
-      objectStorageBucketFactoryGen2.build({
+      objectStorageEndpointsFactory.build({
         endpoint_type: 'E3',
         region: 'ap-west',
         s3_endpoint: 'ap-west-1.linodeobjects.com',
+      }),
+      objectStorageEndpointsFactory.build({
+        endpoint_type: 'E3',
+        region: 'us-iad',
+        s3_endpoint: 'us-iad-1.linodeobjects.com',
       }),
     ];
     return HttpResponse.json(makeResourcePage(endpoints));
@@ -1446,26 +1743,49 @@ export const handlers = [
       Math.random() * 4
     )}` as ObjectStorageEndpointTypes;
 
-    const buckets = objectStorageBucketFactoryGen2.buildList(1, {
-      cluster: `${region}-1`,
-      endpoint_type: randomEndpointType,
-      hostname: `obj-bucket-${randomBucketNumber}.${region}.linodeobjects.com`,
-      label: `obj-bucket-${randomBucketNumber}`,
-      region,
-    });
+    const buckets =
+      region !== 'ap-west' && region !== 'us-iad'
+        ? objectStorageBucketFactoryGen2.buildList(1, {
+            cluster: `${region}-1`,
+            endpoint_type: randomEndpointType,
+            hostname: `obj-bucket-${randomBucketNumber}.${region}.linodeobjects.com`,
+            label: `obj-bucket-${randomBucketNumber}`,
+            region,
+          })
+        : [];
     if (region === 'ap-west') {
       buckets.push(
         objectStorageBucketFactoryGen2.build({
-          cluster: `${region}-1`,
+          cluster: `ap-west-1`,
           endpoint_type: 'E3',
           s3_endpoint: 'ap-west-1.linodeobjects.com',
-          hostname: `obj-bucket-${randomBucketNumber}.${region}.linodeobjects.com`,
-          label: `obj-bucket-${randomBucketNumber}`,
+          hostname: `obj-bucket-804.ap-west.linodeobjects.com`,
+          label: `obj-bucket-804`,
+          region,
+        })
+      );
+      buckets.push(
+        objectStorageBucketFactoryGen2.build({
+          cluster: `ap-west-1`,
+          endpoint_type: 'E3',
+          s3_endpoint: 'ap-west-1.linodeobjects.com',
+          hostname: `obj-bucket-902.ap-west.linodeobjects.com`,
+          label: `obj-bucket-902`,
           region,
         })
       );
     }
-
+    if (region === 'us-iad')
+      buckets.push(
+        objectStorageBucketFactoryGen2.build({
+          cluster: `us-iad-1`,
+          endpoint_type: 'E3',
+          s3_endpoint: 'us-iad-1.linodeobjects.com',
+          hostname: `obj-bucket-230.us-iad.linodeobjects.com`,
+          label: `obj-bucket-230`,
+          region,
+        })
+      );
     return HttpResponse.json({
       data: buckets.slice(
         (page - 1) * pageSize,
@@ -1630,8 +1950,44 @@ export const handlers = [
       'offline',
       'resizing',
     ];
-    const volumes = statuses.map((status) => volumeFactory.build({ status }));
+    const volumes = statuses.map((status) =>
+      volumeFactory.build({
+        status,
+        id: 1,
+        region: 'ap-west',
+        linode_id: 1,
+        linode_label: 'linode-1',
+      })
+    );
+    volumes.push(
+      ...volumeFactory.buildList(1, { region: 'us-east', linode_id: 2 })
+    );
+    volumes.push(
+      ...volumeFactory.buildList(1, { region: 'us-east', linode_id: 3 })
+    );
+    volumes.push(
+      ...volumeFactory.buildList(1, { region: 'us-east', linode_id: 4 })
+    );
+    volumes.push(
+      ...volumeFactory.buildList(1, { region: 'us-east', linode_id: 5 })
+    );
+    volumes.push(
+      ...volumeFactory.buildList(1, { region: 'eu-central', linode_id: 6 })
+    );
+    volumes.push(
+      ...volumeFactory.buildList(1, {
+        id: 7,
+        label: 'volume-7',
+        region: 'ap-west',
+        linode_id: 7,
+        linode_label: 'linode-7',
+      })
+    );
     return HttpResponse.json(makeResourcePage(volumes));
+  }),
+  http.get('*/v4/volumes/:id', () => {
+    const volume = volumeFactory.build();
+    return HttpResponse.json(volume);
   }),
   http.get('*/volumes/types', () => {
     const volumeTypes = volumeTypeFactory.buildList(1);
@@ -2604,7 +2960,7 @@ export const handlers = [
       }),
       // MTC plans are region-specific. The supported regions list below is hardcoded for testing purposes and will expand over time.
       // The availability of MTC plans is fully handled by this endpoint, which determines the plan's availability status (true/false) for the selected region.
-      ...(MTC_SUPPORTED_REGIONS.includes(selectedRegion)
+      ...(['no-osl-1', 'us-iad', 'us-iad-2'].includes(selectedRegion)
         ? [
             regionAvailabilityFactory.build({
               available: true, // In supported regions, this can be `true` (plan available) or `false` (plan sold-out).
@@ -2962,6 +3318,59 @@ export const handlers = [
           rules: [firewallMetricRulesFactory.build()],
         },
       }),
+      alertFactory.build({
+        id: 550,
+        label: 'Object Storage - testing',
+        type: 'user',
+        service_type: 'objectstorage',
+        entity_ids: ['obj-bucket-804.ap-west.linodeobjects.com'],
+      }),
+      alertFactory.build({
+        id: 300,
+        type: 'user',
+        label: 'block-storage - testing',
+        service_type: 'blockstorage',
+        entity_ids: ['1', '2', '4', '3', '5', '6', '7', '8', '9', '10'],
+        rule_criteria: {
+          rules: [blockStorageMetricCriteria.build()],
+        },
+      }),
+      alertFactory.build({
+        id: 650,
+        label: 'Firewall - nodebalancer',
+        type: 'user',
+        service_type: 'firewall',
+        entity_ids: ['25'],
+        rule_criteria: {
+          rules: [firewallNodebalancerMetricCriteria.build()],
+        },
+      }),
+      alertFactory.build({
+        id: 340,
+        label: 'Firewall-nodebalancer-system',
+        type: 'system',
+        service_type: 'firewall',
+        entity_ids: ['25'],
+        rule_criteria: {
+          rules: [
+            firewallNodebalancerMetricCriteria.build({ dimension_filters: [] }),
+          ],
+        },
+      }),
+      alertFactory.build({
+        id: 123,
+        label: 'Firewall-linode-system',
+        type: 'system',
+        service_type: 'firewall',
+        entity_ids: ['1', '4'],
+        rule_criteria: {
+          rules: [firewallMetricRulesFactory.build()],
+        },
+      }),
+      ...alertFactory.buildList(3, { status: 'enabling', type: 'user' }),
+      ...alertFactory.buildList(3, { status: 'disabling', type: 'user' }),
+      ...alertFactory.buildList(3, { status: 'provisioning', type: 'user' }),
+      ...alertFactory.buildList(3, { status: 'in progress', type: 'user' }),
     ];
     return HttpResponse.json(makeResourcePage(alerts));
   }),
@@ -2971,11 +3380,90 @@ export const handlers = [
       if (params.id === '999' && params.serviceType === 'firewall') {
         return HttpResponse.json(
           alertFactory.build({
-            scope: 'account',
+            scope: 'entity',
+            entity_ids: ['1', '2', '3'],
             id: 999,
             label: 'Firewall - testing',
             service_type: 'firewall',
             type: 'user',
+            rule_criteria: {
+              rules: [firewallMetricRulesFactory.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '550' && params.serviceType === 'objectstorage') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 550,
+            type: 'user',
+            label: 'object-storage -testing',
+            service_type: 'objectstorage',
+            entity_ids: [
+              'obj-bucket-804.ap-west.linodeobjects.com',
+              'obj-bucket-230.us-iad.linodeobjects.com',
+            ],
+            rule_criteria: {
+              rules: [objectStorageMetricCriteria.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '300' && params.serviceType === 'blockstorage') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 300,
+            type: 'user',
+            label: 'block-storage - testing',
+            service_type: 'blockstorage',
+            entity_ids: ['1', '2', '4', '3', '5', '6', '7', '8', '9', '10'],
+            rule_criteria: {
+              rules: [blockStorageMetricCriteria.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '650' && params.serviceType === 'firewall') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 650,
+            label: 'Firewall - nodebalancer',
+            type: 'user',
+            scope: 'entity',
+            service_type: 'firewall',
+            entity_ids: ['25'],
+            rule_criteria: {
+              rules: [firewallNodebalancerMetricCriteria.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '340' && params.serviceType === 'firewall') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 340,
+            label: 'Firewall - nodebalancer - system',
+            type: 'system',
+            service_type: 'firewall',
+            entity_ids: ['25'],
+            rule_criteria: {
+              rules: [
+                firewallNodebalancerMetricCriteria.build({
+                  dimension_filters: [],
+                }),
+              ],
+            },
+          })
+        );
+      }
+      if (params.id === '123' && params.serviceType === 'firewall') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 123,
+            label: 'Firewall-linode-system',
+            type: 'system',
+            service_type: 'firewall',
+            entity_ids: ['1', '4'],
             rule_criteria: {
               rules: [firewallMetricRulesFactory.build()],
             },
@@ -2997,6 +3485,14 @@ export const handlers = [
             service_type: params.serviceType === 'linode' ? 'linode' : 'dbaas',
             type: 'user',
             scope: pickRandom(['account', 'region', 'entity']),
+            status: pickRandom([
+              'enabled',
+              'disabled',
+              'in progress',
+              'enabling',
+              'disabling',
+              'provisioning',
+            ]),
           })
         );
       }
@@ -3020,6 +3516,63 @@ export const handlers = [
           })
         );
       }
+      if (params.id === '650' && params.serviceType === 'firewall') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 650,
+            label: 'Firewall - nodebalancer',
+            type: 'user',
+            service_type: 'firewall',
+            entity_ids: ['25'],
+            rule_criteria: {
+              rules: [firewallNodebalancerMetricCriteria.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '550' && params.serviceType === 'objectstorage') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 550,
+            label: 'object-storage -testing',
+            type: 'user',
+            rule_criteria: {
+              rules: [objectStorageMetricCriteria.build()],
+            },
+            service_type: 'objectstorage',
+            entity_ids: ['obj-bucket-804.ap-west.linodeobjects.com'],
+          })
+        );
+      }
+      if (params.id === '300' && params.serviceType === 'blockstorage') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 300,
+            type: 'user',
+            label: 'block-storage - testing',
+            service_type: 'blockstorage',
+            entity_ids: ['1', '2', '4', '3', '5', '6', '7', '8', '9', '10'],
+            rule_criteria: {
+              rules: [blockStorageMetricCriteria.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '650' && params.serviceType === 'firewall') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 650,
+            label: 'Firewall - nodebalancer',
+            type: 'user',
+            scope: 'entity',
+            service_type: 'firewall',
+            entity_ids: ['25'],
+            rule_criteria: {
+              rules: [firewallNodebalancerMetricCriteria.build()],
+            },
+          })
+        );
+      }
       const body: any = request.json();
       return HttpResponse.json(
         alertFactory.build({
@@ -3037,9 +3590,17 @@ export const handlers = [
     return HttpResponse.json({});
   }),
   http.get('*/monitor/alert-channels', () => {
-    return HttpResponse.json(
-      makeResourcePage(notificationChannelFactory.buildList(7))
+    const notificationChannels = notificationChannelFactory.buildList(3);
+    notificationChannels.push(
+      notificationChannelFactory.build({
+        label: 'Email test channel',
+        updated: '2023-11-05T04:00:00',
+        updated_by: 'user3',
+        created_by: 'admin',
+      })
     );
+    notificationChannels.push(...notificationChannelFactory.buildList(75));
+    return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
   http.delete('*/monitor/services/:serviceType/alert-definitions/:id', () => {
     return HttpResponse.json({});
@@ -3076,7 +3637,25 @@ export const handlers = [
           label: 'Object Storage',
           service_type: 'objectstorage',
           regions: 'us-iad,us-east',
-          alert: serviceAlertFactory.build({ scope: ['entity'] }),
+          alert: serviceAlertFactory.build({
+            scope: ['entity', 'account', 'region'],
+          }),
+        }),
+        serviceTypesFactory.build({
+          label: 'Block Storage',
+          service_type: 'blockstorage',
+          regions: 'us-iad,us-east',
+          alert: serviceAlertFactory.build({
+            scope: ['entity', 'account', 'region'],
+          }),
+        }),
+        serviceTypesFactory.build({
+          label: 'LKE Enterprise',
+          service_type: 'lke',
+          regions: 'us-iad,us-east',
+          alert: serviceAlertFactory.build({
+            scope: ['entity', 'account', 'region'],
+          }),
         }),
       ],
     };
@@ -3092,6 +3671,20 @@ export const handlers = [
       nodebalancer: 'NodeBalancers',
       firewall: 'Firewalls',
       objectstorage: 'Object Storage',
+      blockstorage: 'Block Storage',
+      lke: 'LKE',
+    };
+    const serviceTypeScopeMap: Record<
+      CloudPulseServiceType,
+      AlertDefinitionScope[]
+    > = {
+      linode: ['entity'],
+      dbaas: ['entity'],
+      nodebalancer: ['entity'],
+      firewall: ['entity', 'account'],
+      objectstorage: ['entity', 'account', 'region'],
+      blockstorage: ['entity', 'account', 'region'],
+      lke: ['entity'],
     };
     const response = serviceTypesFactory.build({
       service_type: `${serviceType}`,
@@ -3099,6 +3692,7 @@ export const handlers = [
       alert: serviceAlertFactory.build({
         evaluation_period_seconds: [300],
         polling_interval_seconds: [300],
+        scope: serviceTypeScopeMap[serviceType],
       }),
     });
 
@@ -3165,6 +3759,13 @@ export const handlers = [
           service_type: 'firewall',
         })
       );
+      response.data.push(
+        dashboardFactory.build({
+          id: 8,
+          label: 'Firewall Nodebalancer Dashboard',
+          service_type: 'firewall',
+        })
+      );
     }
 
     if (params.serviceType === 'objectstorage') {
@@ -3173,6 +3774,33 @@ export const handlers = [
           id: 6,
           label: 'Object Storage Dashboard',
           service_type: 'objectstorage',
+        })
+      );
+      response.data.push(
+        dashboardFactory.build({
+          id: 10,
+          label: 'Endpoint Dashboard',
+          service_type: 'objectstorage',
+        })
+      );
+    }
+
+    if (params.serviceType === 'blockstorage') {
+      response.data.push(
+        dashboardFactory.build({
+          id: 7,
+          label: 'Block Storage Dashboard',
+          service_type: 'blockstorage',
+        })
+      );
+    }
+
+    if (params.serviceType === 'lke') {
+      response.data.push(
+        dashboardFactory.build({
+          id: 9,
+          label: 'LKE Enterprise Dashboard',
+          service_type: 'lke',
         })
       );
     }
@@ -3294,6 +3922,27 @@ export const handlers = [
             metric_type: 'counter',
             scrape_interval: '30s',
             unit: 'ops_per_second',
+          },
+          {
+            label: 'Network Traffic',
+            metric: 'vm_network_bytes_total',
+            unit: 'Kbps',
+            metric_type: 'gauge',
+            scrape_interval: '300s',
+            is_alertable: true,
+            available_aggregate_functions: ['avg'],
+            dimensions: [
+              {
+                label: 'Traffic Pattern',
+                dimension_label: 'pattern',
+                values: ['publicin', 'publicout', 'privatein', 'privateout'],
+              },
+              {
+                label: 'Protocol',
+                dimension_label: 'protocol',
+                values: ['ipv4', 'ipv6'],
+              },
+            ],
           },
         ],
       };
@@ -3438,6 +4087,12 @@ export const handlers = [
       if (params.serviceType === 'nodebalancer') {
         return HttpResponse.json(nodebalancerMetricsResponse);
       }
+      if (params.serviceType === 'objectstorage') {
+        return HttpResponse.json({ data: objectStorageMetricRules });
+      }
+      if (params.serviceType === 'blockstorage') {
+        return HttpResponse.json({ data: blockStorageMetricRules });
+      }
       return HttpResponse.json(response);
     }
   ),
@@ -3451,24 +4106,175 @@ export const handlers = [
   http.get('*/monitor/dashboards/:id', ({ params }) => {
     let serviceType: string;
     let dashboardLabel: string;
+    let widgets;
 
     const id = params.id;
 
     if (id === '1') {
       serviceType = 'dbaas';
       dashboardLabel = 'DBaaS Service I/O Statistics';
+      widgets = [
+        {
+          metric: 'cpu_usage',
+          unit: '%',
+          label: 'CPU Usage',
+          color: 'default',
+          size: 12,
+          chart_type: 'area',
+          y_label: 'cpu_usage',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+        },
+        {
+          metric: 'memory_usage',
+          unit: '%',
+          label: 'Memory Usage',
+          color: 'default',
+          size: 6,
+          chart_type: 'area',
+          y_label: 'memory_usage',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+        },
+      ];
     } else if (id === '3') {
       serviceType = 'nodebalancer';
       dashboardLabel = 'NodeBalancer Service I/O Statistics';
+      widgets = [
+        {
+          metric: 'nb_ingress_traffic_rate',
+          unit: 'Bps',
+          label: 'Ingress Traffic Rate',
+          color: 'default',
+          size: 12,
+          chart_type: 'line',
+          y_label: 'nb_ingress_traffic_rate',
+          group_by: ['entity_id'],
+          aggregate_function: 'sum',
+        },
+        {
+          metric: 'nb_egress_traffic_rate',
+          unit: 'Bps',
+          label: 'Egress Traffic Rate',
+          color: 'default',
+          size: 12,
+          chart_type: 'line',
+          y_label: 'nb_egress_traffic_rate',
+          group_by: ['entity_id'],
+          aggregate_function: 'sum',
+        },
+      ];
     } else if (id === '4') {
       serviceType = 'firewall';
       dashboardLabel = 'Firewall Service I/O Statistics';
+      widgets = [
+        {
+          metric: 'fw_active_connections',
+          unit: 'Count',
+          label: 'Current Connections',
+          color: 'default',
+          size: 12,
+          chart_type: 'line',
+          y_label: 'fw_active_connections',
+          group_by: ['entity_id', 'linode_id', 'interface_id'],
+          aggregate_function: 'avg',
+        },
+        {
+          metric: 'fw_available_connections',
+          unit: 'Count',
+          label: 'Available Connections',
+          color: 'default',
+          size: 12,
+          chart_type: 'line',
+          y_label: 'fw_available_connections',
+          group_by: ['entity_id', 'linode_id', 'interface_id'],
+          aggregate_function: 'avg',
+        },
+      ];
     } else if (id === '6') {
       serviceType = 'objectstorage';
       dashboardLabel = 'Object Storage Service I/O Statistics';
+    } else if (id === '7') {
+      serviceType = 'blockstorage';
+      dashboardLabel = 'Block Storage Dashboard';
+    } else if (id === '8') {
+      serviceType = 'firewall';
+      dashboardLabel = 'Firewall Nodebalancer Dashboard';
+      widgets = [
+        {
+          metric: 'nb_ingress_bytes_accepted',
+          unit: 'Count',
+          label: 'Current Connections',
+          color: 'default',
+          size: 12,
+          chart_type: 'line',
+          y_label: 'nb_ingress_bytes_accepted',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+        },
+        {
+          metric: 'nb_ingress_bytes_dropped',
+          unit: 'Count',
+          label: 'Available Connections',
+          color: 'default',
+          size: 12,
+          chart_type: 'line',
+          y_label: 'nb_ingress_bytes_dropped',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+        },
+      ];
+    } else if (id === '9') {
+      serviceType = 'lke';
+      dashboardLabel = 'Kubernetes Enterprise Dashboard';
+    } else if (id === '10') {
+      serviceType = 'objectstorage';
+      dashboardLabel = 'Endpoint Dashboard';
     } else {
       serviceType = 'linode';
       dashboardLabel = 'Linode Service I/O Statistics';
+      widgets = [
+        {
+          metric: 'vm_cpu_time_total',
+          unit: '%',
+          label: 'CPU Usage by Instance',
+          color: 'default',
+          size: 12,
+          chart_type: 'area',
+          y_label: 'vm_cpu_time_total',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+        },
+        {
+          metric: 'vm_local_disk_iops_total',
+          unit: 'IOPS',
+          label: 'Local Disk I/O by Instance',
+          color: 'default',
+          size: 12,
+          chart_type: 'area',
+          y_label: 'vm_local_disk_iops_total',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+        },
+        {
+          metric: 'vm_network_bytes_total',
+          unit: 'Kbps',
+          label: 'Network Traffic In by Instance',
+          color: 'default',
+          size: 12,
+          chart_type: 'area',
+          y_label: 'vm_network_bytes_total',
+          group_by: ['entity_id'],
+          aggregate_function: 'avg',
+          filters: [
+            {
+              dimension_label: 'pattern',
+              operator: 'in',
+              value: 'publicin',
+            },
+          ],
+        },
+      ];
     }
 
     const response = {
@@ -3478,7 +4284,7 @@ export const handlers = [
       service_type: serviceType,
       type: 'standard',
       updated: null,
-      widgets: [
+      widgets: widgets || [
         {
           aggregate_function: 'avg',
           chart_type: 'area',
@@ -3539,7 +4345,7 @@ export const handlers = [
         result: [
           {
             metric: {
-              entity_id: '123',
+              entity_id: '1',
               metric_name: 'average_cpu_usage',
               linode_id: '1',
               node_id: 'primary-1',
@@ -3583,9 +4389,9 @@ export const handlers = [
           // })),
           {
             metric: {
-              entity_id: '456',
+              entity_id: '7',
               metric_name: 'average_cpu_usage',
-              linode_id: '123',
+              linode_id: '7',
               node_id: 'primary-2',
             },
             values: [
@@ -3650,6 +4456,7 @@ export const handlers = [
   ...databases,
   ...vpc,
   ...entities,
+  ...netLoadBalancers,
   http.get('*/v4beta/maintenance/policies', () => {
     return HttpResponse.json(
       makeResourcePage(maintenancePolicyFactory.buildList(2))

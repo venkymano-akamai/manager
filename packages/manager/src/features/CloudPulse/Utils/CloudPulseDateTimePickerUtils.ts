@@ -2,6 +2,7 @@
  * Utility functions for handling date and time operations for CloudPulse.
  */
 
+import { DateTimeRangePicker } from '@linode/ui';
 import { DateTime } from 'luxon';
 
 import type { DateTimeWithPreset } from '@linode/api-v4';
@@ -9,8 +10,8 @@ import type { DateTimeWithPreset } from '@linode/api-v4';
 /**
  * Returns the default time duration, which is the last 30 minutes from the current time.
  *
- * @param {string} [timezone] - Optional timezone to use. If not provided, the local timezone is used.
- * @returns {DateTimeWithPreset} An object containing start time, end time, preset, and timezone.
+ * @param timezone Optional timezone to use. If not provided, the local timezone is used.
+ * @returns An object containing start time, end time, preset, and timezone.
  */
 export const defaultTimeDuration = (timezone?: string): DateTimeWithPreset => {
   const date = DateTime.now()
@@ -19,8 +20,8 @@ export const defaultTimeDuration = (timezone?: string): DateTimeWithPreset => {
 
   return {
     end: date.toISO() ?? '',
-    preset: 'last 30 minutes',
-    start: date.minus({ minutes: 30 }).toISO() ?? '',
+    preset: DateTimeRangePicker.PRESET_LABELS.LAST_HOUR,
+    start: date.minus({ hours: 1 }).toISO() ?? '',
     timeZone: timezone,
   };
 };
@@ -28,9 +29,9 @@ export const defaultTimeDuration = (timezone?: string): DateTimeWithPreset => {
 /**
  * Converts a date string to GMT timezone.
  *
- * @param {string} date - ISO date string to convert
- * @param {string} [timeZone] - Optional timezone of the input date. If not provided, the local timezone is used.
- * @returns {string} ISO date string in GMT timezone (with 'Z' suffix)
+ * @param date ISO date string to convert
+ * @param timeZone Optional timezone of the input date. If not provided, the local timezone is used.
+ * @returns ISO date string in GMT timezone (with 'Z' suffix)
  */
 export const convertToGmt = (date: string, timeZone?: string): string => {
   const dateObject = DateTime.fromISO(date).setZone(
@@ -44,9 +45,9 @@ export const convertToGmt = (date: string, timeZone?: string): string => {
 /**
  * Calculates the start and end times based on a preset time range.
  *
- * @param {DateTimeWithPreset} currentValue - The current date time range with preset
- * @param {string} timeZone - The timezone to use for calculations
- * @returns {DateTimeWithPreset} An object with updated start and end dates based on the preset
+ * @param currentValue The current date time range with preset
+ * @param timeZone The timezone to use for calculations
+ * @returns An object with updated start and end dates based on the preset
  */
 export function getTimeFromPreset(
   currentValue: DateTimeWithPreset,
@@ -58,36 +59,36 @@ export function getTimeFromPreset(
   let startDate: string;
   let endDate: string;
   switch (preset) {
-    case 'last 7 days':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_7_DAYS:
       startDate = today.minus({ days: 7 }).toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
 
-    case 'last 12 hours':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_12_HOURS:
       startDate = today.minus({ hours: 12 }).toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
-    case 'last 30 days':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_30_DAYS:
       startDate = today.minus({ days: 30 }).toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
-    case 'last 30 minutes':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_30_MINUTES:
       startDate = today.minus({ minutes: 30 }).toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
-    case 'last day':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_DAY:
       startDate = today.minus({ days: 1 }).toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
-    case 'last hour':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_HOUR:
       startDate = today.minus({ hours: 1 }).toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
-    case 'last month':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_MONTH:
       startDate = today.minus({ months: 1 }).startOf('month').toISO() ?? start;
       endDate = today.minus({ months: 1 }).endOf('month').toISO() ?? end;
       break;
-    case 'this month':
+    case DateTimeRangePicker.PRESET_LABELS.THIS_MONTH:
       startDate = today.startOf('month').toISO() ?? start;
       endDate = today.toISO() ?? end;
       break;
@@ -95,7 +96,7 @@ export function getTimeFromPreset(
       // Reset to provided values or empty strings if none provided
       startDate = start;
       endDate = end;
-      selectedPreset = 'reset';
+      selectedPreset = DateTimeRangePicker.PRESET_LABELS.RESET;
   }
 
   return {

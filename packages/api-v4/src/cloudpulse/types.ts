@@ -4,9 +4,11 @@ export type AlertSeverityType = 0 | 1 | 2 | 3;
 export type MetricAggregationType = 'avg' | 'count' | 'max' | 'min' | 'sum';
 export type MetricOperatorType = 'eq' | 'gt' | 'gte' | 'lt' | 'lte';
 export type CloudPulseServiceType =
+  | 'blockstorage'
   | 'dbaas'
   | 'firewall'
   | 'linode'
+  | 'lke'
   | 'nodebalancer'
   | 'objectstorage';
 export type AlertClass = 'dedicated' | 'shared';
@@ -18,7 +20,14 @@ export type DimensionFilterOperatorType =
   | 'startswith';
 export type AlertDefinitionType = 'system' | 'user';
 export type AlertDefinitionScope = 'account' | 'entity' | 'region';
-export type AlertStatusType = 'disabled' | 'enabled' | 'failed' | 'in progress';
+export type AlertStatusType =
+  | 'disabled'
+  | 'disabling'
+  | 'enabled'
+  | 'enabling'
+  | 'failed'
+  | 'in progress'
+  | 'provisioning';
 export type CriteriaConditionType = 'ALL';
 export type MetricUnitType =
   | 'bit_per_second'
@@ -32,7 +41,7 @@ export type MetricUnitType =
   | 'second';
 export type NotificationStatus = 'Disabled' | 'Enabled';
 export type ChannelType = 'email' | 'pagerduty' | 'slack' | 'webhook';
-export type AlertNotificationType = 'custom' | 'default';
+export type AlertNotificationType = 'system' | 'user';
 type AlertNotificationEmail = 'email';
 type AlertNotificationSlack = 'slack';
 type AlertNotificationPagerDuty = 'pagerduty';
@@ -88,7 +97,7 @@ export interface Widgets {
 
 export interface Filters {
   dimension_label: string;
-  operator: string;
+  operator: DimensionFilterOperatorType;
   value: string;
 }
 
@@ -110,6 +119,8 @@ export interface AclpConfig {
 
 export interface AclpWidget {
   aggregateFunction: string;
+  filters: Filters[];
+  groupBy?: string[];
   label: string;
   size: number;
   timeGranularity: TimeGranularity;
@@ -148,7 +159,7 @@ export interface Metric {
 export interface CloudPulseMetricsRequest {
   absolute_time_duration: DateTimeWithPreset | undefined;
   associated_entity_region?: string;
-  entity_ids: number[] | string[];
+  entity_ids: number[] | string[] | undefined;
   entity_region?: string;
   filters?: Filters[];
   group_by?: string[];
@@ -275,13 +286,13 @@ interface NotificationChannelAlerts {
 interface NotificationChannelBase {
   alerts: NotificationChannelAlerts[];
   channel_type: ChannelType;
-  created_at: string;
+  created: string;
   created_by: string;
   id: number;
   label: string;
   status: NotificationStatus;
   type: AlertNotificationType;
-  updated_at: string;
+  updated: string;
   updated_by: string;
 }
 
@@ -378,6 +389,8 @@ export const capabilityServiceTypeMapping: Record<
   nodebalancer: 'NodeBalancers',
   firewall: 'Cloud Firewall',
   objectstorage: 'Object Storage',
+  blockstorage: 'Block Storage',
+  lke: 'Kubernetes',
 };
 
 /**

@@ -91,7 +91,7 @@ const getFiltersForMetric = (metricName: string) => {
 
   return metric.filters.map((f) => ({
     dimension_label: f.dimension_label,
-    label: f.dimension_label, // or friendly name
+    label: f.dimension_label,
     values: f.value ? [f.value] : undefined,
   }));
 };
@@ -104,7 +104,7 @@ const dashboard = dashboardFactory.build({
   widgets: metrics.map(({ name, title, unit, yLabel }) =>
     widgetFactory.build({
       entity_ids: [String(id)],
-      filters: [...dimensions],
+      filters: [],
       label: title,
       metric: name,
       unit,
@@ -290,11 +290,12 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       .click();
 
     // Select a time duration from the autocomplete input.
-    cy.get('[aria-labelledby="start-date"]').as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get('@startDateInput').clear();
+    // Updated selector for MUI x-date-pickers v8 - click on the wrapper div
+    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
 
-    ui.button.findByTitle('last day').click();
+    cy.get('@startDateInput').click();
+
+    cy.get('[data-qa-preset="Last day"]').click();
 
     // Click the "Apply" button to confirm the end date and time
     cy.get('[data-qa-buttons="apply"]')
@@ -384,7 +385,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
             (filter: DimensionFilter) => filter.dimension_label === 'node_type'
           );
 
-          expect(nodeTypeFilter).to.have.length(2);
+          expect(nodeTypeFilter).to.have.length(1);
           expect(nodeTypeFilter[0].operator).to.equal('eq');
           expect(nodeTypeFilter[0].value).to.equal('secondary');
         });
@@ -479,7 +480,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
         const nodeTypeFilter = filters.filter(
           (filter: DimensionFilter) => filter.dimension_label === 'node_type'
         );
-        expect(nodeTypeFilter).to.have.length(2);
+        expect(nodeTypeFilter).to.have.length(1);
         expect(nodeTypeFilter[0].operator).to.equal('eq');
         expect(nodeTypeFilter[0].value).to.equal('secondary');
 
@@ -554,10 +555,13 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
         const nodeTypeFilter = filters.filter(
           (filter: DimensionFilter) => filter.dimension_label === 'node_type'
         );
-        expect(nodeTypeFilter).to.have.length(2);
+        expect(nodeTypeFilter).to.have.length(1);
         expect(nodeTypeFilter[0].operator).to.equal('eq');
         expect(nodeTypeFilter[0].value).to.equal('secondary');
       });
+
+    // Scroll to the top of the page to ensure consistent test behavior
+    cy.scrollTo('top');
   });
 
   it('should apply group by at widget level only  and verify the metrics API calls', () => {
@@ -836,9 +840,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     );
 
     // click the global refresh button
-    ui.button
-      .findByAttribute('aria-label', 'Refresh Dashboard Metrics')
+    cy.get('[data-testid="global-refresh"]')
       .should('be.visible')
+      .should('be.enabled')
       .click();
 
     // validate the API calls are going with intended payload

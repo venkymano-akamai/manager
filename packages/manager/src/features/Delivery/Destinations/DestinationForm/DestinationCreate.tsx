@@ -32,15 +32,15 @@ export const DestinationCreate = () => {
         },
       ],
     },
+    docsLink: 'https://techdocs.akamai.com/cloud-computing/docs/log-delivery',
     removeCrumbX: [1, 2],
     title: 'Create Destination',
   };
 
   const form = useForm<DestinationFormType>({
     defaultValues: {
-      type: destinationType.LinodeObjectStorage,
+      type: destinationType.AkamaiObjectStorage,
       details: {
-        region: '',
         path: '',
       },
     },

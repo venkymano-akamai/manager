@@ -1,13 +1,21 @@
+/* eslint-disable perfectionist/sort-interfaces */
 import type {
+  AccountRoleType,
+  ChildAccount,
   CloudNAT,
   Config,
   Destination,
   Domain,
   DomainRecord,
   Entity,
+  EntityByPermission,
+  EntityRoleType,
   Event,
   Firewall,
   FirewallDevice,
+  IamAccountRoles,
+  IamUserRoles,
+  Image,
   Interface,
   IPAddress,
   KubeNodePoolResponse,
@@ -26,6 +34,7 @@ import type {
   Subnet,
   SupportReply,
   SupportTicket,
+  User,
   Volume,
   VPC,
   VPCIP,
@@ -121,34 +130,45 @@ export interface MockPresetExtra extends MockPresetBase {
  */
 export type MockPresetCrudGroup = {
   id:
+    | 'Child Accounts'
     | 'CloudNATs'
     | 'Delivery'
     | 'Domains'
     | 'Entities'
     | 'Firewalls'
+    | 'Images'
     | 'IP Addresses'
     | 'Kubernetes'
     | 'Linodes'
     | 'NodeBalancers'
+    | 'Permissions'
     | 'Placement Groups'
     | 'Quotas'
     | 'Support Tickets'
+    | 'Users'
     | 'Volumes'
     | 'VPCs';
 };
 export type MockPresetCrudId =
+  | 'child-accounts-for-user:crud'
+  | 'child-accounts:crud'
   | 'cloudnats:crud'
   | 'delivery:crud'
   | 'domains:crud'
   | 'entities:crud'
   | 'firewalls:crud'
+  | 'images:crud'
   | 'ip-addresses:crud'
   | 'kubernetes:crud'
   | 'linodes:crud'
   | 'nodebalancers:crud'
+  | 'permissions:crud'
   | 'placement-groups:crud'
   | 'quotas:crud'
   | 'support-tickets:crud'
+  | 'users(default):crud'
+  | 'users(parent):crud'
+  | 'users:crud'
   | 'volumes:crud'
   | 'vpcs:crud';
 export interface MockPresetCrud extends MockPresetBase {
@@ -159,12 +179,38 @@ export interface MockPresetCrud extends MockPresetBase {
 
 export type MockHandler = (mockState: MockState) => HttpHandler[];
 
+export interface Delegation {
+  childAccountEuuid: string;
+  id: number;
+  username: string;
+}
+
+export interface UserRolesEntry {
+  username: string;
+  roles: IamUserRoles;
+}
+
+export interface UserAccountPermissionsEntry {
+  username: string;
+  permissions: AccountRoleType[];
+}
+
+export interface UserEntityPermissionsEntry {
+  username: string;
+  entityType: string;
+  entityId: number | string;
+  permissions: EntityRoleType[];
+}
+
 /**
  * Stateful data shared among mocks.
  */
 export interface MockState {
+  userEntitiesByPermission: EntityByPermission[];
+  childAccounts: ChildAccount[];
   cloudnats: CloudNAT[];
   configInterfaces: [number, Interface][]; // number is Config ID
+  delegations: Delegation[];
   destinations: Destination[];
   domainRecords: DomainRecord[];
   domains: Domain[];
@@ -172,6 +218,7 @@ export interface MockState {
   eventQueue: Event[];
   firewallDevices: [number, FirewallDevice][]; // number is Firewall ID
   firewalls: Firewall[];
+  images: Image[];
   ipAddresses: IPAddress[];
   kubernetesClusters: KubernetesCluster[];
   kubernetesNodePools: KubeNodePoolResponse[];
@@ -190,9 +237,16 @@ export interface MockState {
   subnets: [number, Subnet][]; // number is VPC ID
   supportReplies: SupportReply[];
   supportTickets: SupportTicket[];
+  users: User[];
   volumes: Volume[];
   vpcs: VPC[];
   vpcsIps: VPCIP[];
+
+  // IAM Permission-related fields
+  accountRoles: IamAccountRoles[];
+  userRoles: UserRolesEntry[];
+  userAccountPermissions: UserAccountPermissionsEntry[];
+  userEntityPermissions: UserEntityPermissionsEntry[];
 }
 
 export interface MockSeeder extends Omit<MockPresetCrud, 'handlers'> {

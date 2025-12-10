@@ -50,7 +50,6 @@ export const BucketDetailLanding = React.memo(() => {
       title: 'Access',
       to: `/object-storage/buckets/$clusterId/$bucketName/access`,
     },
-
     {
       hide: !bucketsData || isGen2Endpoint,
       title: 'SSL/TLS',
@@ -97,15 +96,17 @@ export const BucketDetailLanding = React.memo(() => {
                 endpointType={endpoint_type}
               />
             </SafeTabPanel>
-            <SafeTabPanel index={tabs.length - 1}>
-              <BucketSSL bucketName={bucketName} clusterId={clusterId} />
-            </SafeTabPanel>
-            <SafeTabPanel index={tabs.length - 1}>
+            {!isGen2Endpoint && (
+              <SafeTabPanel index={2}>
+                <BucketSSL bucketName={bucketName} clusterId={clusterId} />
+              </SafeTabPanel>
+            )}
+            <SafeTabPanel index={isGen2Endpoint ? 2 : 3}>
               <CloudPulseDashboardWithFilters
-                dashboardId={6}
                 region={bucket?.region}
                 // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
                 resource={bucket?.hostname!}
+                serviceType="objectstorage"
               />
             </SafeTabPanel>
           </TabPanels>
@@ -116,3 +117,5 @@ export const BucketDetailLanding = React.memo(() => {
 });
 
 export default BucketDetailLanding;
+
+BucketDetailLanding.displayName = 'BucketDetailLanding';

@@ -9,24 +9,20 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { RESTRICTED_FIELD_TOOLTIP } from 'src/features/Account/constants';
 
-import { usePermissions } from '../../hooks/usePermissions';
-
 import type { User } from '@linode/api-v4';
 
 interface Props {
+  activeUser: User;
   canUpdateUser: boolean;
-  user: User;
 }
 
-export const UsernamePanel = ({ user, canUpdateUser }: Props) => {
+export const UsernamePanel = ({ activeUser, canUpdateUser }: Props) => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
-  const isProxyUserProfile = user?.user_type === 'proxy';
+  const isProxyUser = activeUser?.user_type === 'proxy';
 
-  const { mutateAsync } = useUpdateUserMutation(user.username);
-
-  const { data: permissions } = usePermissions('account', ['update_user']);
+  const { mutateAsync } = useUpdateUserMutation(activeUser.username);
 
   const {
     control,
@@ -35,8 +31,8 @@ export const UsernamePanel = ({ user, canUpdateUser }: Props) => {
     setError,
   } = useForm({
     resolver: yupResolver(UpdateUserNameSchema),
-    defaultValues: { username: user.username },
-    values: { username: user.username },
+    defaultValues: { username: activeUser.username },
+    values: { username: activeUser.username },
   });
 
   const onSubmit = async (values: Partial<User>) => {
@@ -55,9 +51,9 @@ export const UsernamePanel = ({ user, canUpdateUser }: Props) => {
     }
   };
 
-  const tooltipForDisabledUsernameField = !permissions.update_user
+  const tooltipForDisabledUsernameField = !canUpdateUser
     ? 'Restricted users cannot update their username. Please contact an account administrator.'
-    : isProxyUserProfile
+    : isProxyUser
       ? RESTRICTED_FIELD_TOOLTIP
       : undefined;
 

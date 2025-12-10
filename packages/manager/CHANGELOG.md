@@ -4,6 +4,353 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2025-12-09] - v1.156.0
+
+
+### Added:
+
+- IAM Parent/Child: permissions switch account ([#13075](https://github.com/linode/manager/pull/13075))
+- Region select to Database Backups tab ([#13097](https://github.com/linode/manager/pull/13097))
+- IAM "New" and "Limited Availability" badges ([#13175](https://github.com/linode/manager/pull/13175))
+
+### Changed:
+
+- Update icon svg files to match with Akamai design system ([#13032](https://github.com/linode/manager/pull/13032))
+- IAM: fix permission check for detaching volumes ([#13099](https://github.com/linode/manager/pull/13099))
+- Move Action column to the 2nd position in the Firewall Rules Table ([#13122](https://github.com/linode/manager/pull/13122))
+- Await permissions before rendering Linode Detail Header ([#13124](https://github.com/linode/manager/pull/13124))
+- Legal sign off in Logs Streams Create Checkout bar ([#13131](https://github.com/linode/manager/pull/13131))
+- Add Chip Support to Drawer Component Title ([#13135](https://github.com/linode/manager/pull/13135))
+- Logs Delivery UI changes after review ([#13140](https://github.com/linode/manager/pull/13140))
+- Logs: Many minor UI fixes and improvements ([#13166](https://github.com/linode/manager/pull/13166))
+
+### Fixed:
+
+- Fix incorrect maintenance time display in the Upcoming maintenance table ([#13059](https://github.com/linode/manager/pull/13059))
+- IAM: the aria-label for the Users table action menu displays an incorrect username ([#13082](https://github.com/linode/manager/pull/13082))
+- Alignment with Linode row backup cell icon ([#13098](https://github.com/linode/manager/pull/13098))
+- Plans panel pagination bug fix ([#13100](https://github.com/linode/manager/pull/13100))
+- The `firewall_id` error on LKE pool update ([#13109](https://github.com/linode/manager/pull/13109))
+- Disabled Tab + Tooltip styles & accessibility ([#13113](https://github.com/linode/manager/pull/13113))
+- IAM: The StackScript/Linode selector is enabled in the Create Linode flow when the user doesn’t have the create_linode permission ([#13118](https://github.com/linode/manager/pull/13118))
+- DBaaS - Manage Networking VPC fields not handling error response ([#13121](https://github.com/linode/manager/pull/13121))
+- IAM: filtering by entity type at the Roles table ([#13129](https://github.com/linode/manager/pull/13129))
+- CloudPulse metrics volumes contextual view `not showing dimension values` and CloudPulse metrics `group by default selection retention` ([#13139](https://github.com/linode/manager/pull/13139))
+- IAM: disable/enable fields based on create_linode permission ([#13142](https://github.com/linode/manager/pull/13142))
+- IAM Permissions performance improvements: Create from Backup & Clone ([#13143](https://github.com/linode/manager/pull/13143))
+- IAM Permissions performance improvements: Firewall entity assignment ([#13153](https://github.com/linode/manager/pull/13153))
+- EntitiesSelect performance on large accounts ([#13168](https://github.com/linode/manager/pull/13168))
+- Optimize rendering of entities in AssignedRolesTable ([#13173](https://github.com/linode/manager/pull/13173))
+- Forking a Database Cluster with VPC into another region ([#13174](https://github.com/linode/manager/pull/13174))
+
+### Tech Stories:
+
+- DBaaS: Replace the dropdowns in Database cluster settings page with CDS select web component ([#13057](https://github.com/linode/manager/pull/13057))
+- Replace Formik with React Hook Form in MaintenanceWindow ([#13060](https://github.com/linode/manager/pull/13060))
+- Update Vite from `7.1.11` to `7.2.2` ([#13119](https://github.com/linode/manager/pull/13119))
+- Fix circular imports in CloudPulse ([#13119](https://github.com/linode/manager/pull/13119))
+- Update vitest from `v3` to `v4` ([#13119](https://github.com/linode/manager/pull/13119))
+
+### Tests:
+
+- Fix flakey vm-host test ([#13083](https://github.com/linode/manager/pull/13083))
+- Fixed various test failures when running tests against Prod environment ([#13107](https://github.com/linode/manager/pull/13107))
+
+### Upcoming Features:
+
+- Implement feature flag and routing for NLB ([#13068](https://github.com/linode/manager/pull/13068))
+- Add new Firewall RuleSet row layout ([#13079](https://github.com/linode/manager/pull/13079))
+- Disable premium plan tab if corresponding g7 dedicated plans are available ([#13081](https://github.com/linode/manager/pull/13081))
+- Object storage summary page migrated to use table view ([#13087](https://github.com/linode/manager/pull/13087))
+- Scaffolding setup for widget level dimension filters in cloudpulse metrics and group by issue fix in cloudpulse metrics ([#13088](https://github.com/linode/manager/pull/13088))
+- Integrate Firewall-nodebalancer support for ACLP-Alerting ([#13089](https://github.com/linode/manager/pull/13089))
+- Add tooltip for Rules column header in Firewall Rules table ([#13090](https://github.com/linode/manager/pull/13090))
+- CloudPulse-Metrics: Enhance `CloudPulseWidgetUtils.ts` to handle id to label conversion of linode associated with volume in volumes service ([#13092](https://github.com/linode/manager/pull/13092))
+- Implement Filtering for Plans table ([#13093](https://github.com/linode/manager/pull/13093))
+- Update Firewall Rule Drawer to support referencing Rule Set ([#13094](https://github.com/linode/manager/pull/13094))
+- Edit Stream form: remove cluster IDs from the edited stream that no longer exist or have log generation disabled ([#13095](https://github.com/linode/manager/pull/13095))
+- Implement mocks and factories for Network LoadBalancer ([#13104](https://github.com/linode/manager/pull/13104))
+- New Rule Set Details drawer with Marked for Deletion status ([#13108](https://github.com/linode/manager/pull/13108))
+- ACLP-Alerting: Filtering entities for firewall system alerts, add tooltip text to Entity Type component ([#13110](https://github.com/linode/manager/pull/13110))
+- CloudPulse-Metrics: Remove filtering of firewalls and region filter dependency on firewall-select in Firewalls ([#13111](https://github.com/linode/manager/pull/13111))
+- Add NetworkLoadBalancersLanding component to render NLB list with pagination, loading/error and table columns ([#13112](https://github.com/linode/manager/pull/13112))
+- Implement filter for GPU plans in plans panel ([#13115](https://github.com/linode/manager/pull/13115))
+- Add integration changes with `CloudPulseWidget` for widget level dimension support in CloudPulse metrics ([#13116](https://github.com/linode/manager/pull/13116))
+- Destination Form: fixes and improvements for Sample Destination Object Name ([#13117](https://github.com/linode/manager/pull/13117))
+- Add `generateAddressesLabelV2` utility to support PrefixLists ([#13122](https://github.com/linode/manager/pull/13122))
+- Implement Listeners Table in Network LoadBalancer Detail page ([#13123](https://github.com/linode/manager/pull/13123))
+- Use new JSON-based fwRulesetsPrefixLists feature flag for Firewall RuleSets and Prefix Lists feature ([#13125](https://github.com/linode/manager/pull/13125))
+- Add support for additional status types and handle action menu accordingly in CloudPulse alerts ([#13127](https://github.com/linode/manager/pull/13127))
+- Add a Network Load Balancer Listener detail page (EntityDetail paper) with breadcrumbs ([#13130](https://github.com/linode/manager/pull/13130))
+- Implement Empty Landing State for Network Load Balancers ([#13132](https://github.com/linode/manager/pull/13132))
+- CloudPulse-Metrics: Update `FilterConfig.ts` to handle integration of endpoints dashboard for object-storage service in metrics page([#13133](https://github.com/linode/manager/pull/13133))
+- Add feature flag support for PgBouncer in DBaaS ([#13134](https://github.com/linode/manager/pull/13134))
+- ACLP-Alerting: Update aclpAlerting flag to have beta marker control ([#13137](https://github.com/linode/manager/pull/13137))
+- Update Firewall Rules Edit & Add Drawer to Support Prefix List Selection ([#13138](https://github.com/linode/manager/pull/13138))
+- CloudPulse-Metrics: Add tooltip for clusters filter in lke and fix preferences bug for nodebalancers filter in firewall-nodebalancer dashboard ([#13141](https://github.com/linode/manager/pull/13141))
+- Add and Integrate Prefix List Details Drawer ([#13146](https://github.com/linode/manager/pull/13146))
+- Implement Nodes table in Network LoadBalancer Listener detail page ([#13147](https://github.com/linode/manager/pull/13147))
+- Update useIsFirewallRulesetsPrefixlistsEnabled() to factor in account capability ([#13156](https://github.com/linode/manager/pull/13156))
+- CloudPulse-Metrics: Update tooltip msg for `Clusters` filter in LKE service dashboard ([#13157](https://github.com/linode/manager/pull/13157))
+- Integrate Prefix List details drawer with Edit and Add Rule drawer ([#13158](https://github.com/linode/manager/pull/13158))
+- Add Beta/New feature Chip support for RuleSets and Prefix Lists ([#13164](https://github.com/linode/manager/pull/13164))
+- UX/UI enhancements for RuleSets and Prefix Lists ([#13165](https://github.com/linode/manager/pull/13165))
+- Ensure a firewall can only reference a RuleSet once ([#13169](https://github.com/linode/manager/pull/13169))
+- Handle special PLs in PrefixList drawer ([#13172](https://github.com/linode/manager/pull/13172))
+
+## [2025-11-18] - v1.155.0
+
+
+### Added:
+
+- IAM Parent/Child: delegate permissions for child account ([#13033](https://github.com/linode/manager/pull/13033))
+- IAM: add a permission check for delete nodebalancer drawer ([#13043](https://github.com/linode/manager/pull/13043))
+- Implement pagination for Plans table ([#13055](https://github.com/linode/manager/pull/13055))
+- A notice banner to inform the customers about the upcoming maintenance activity in longview and to download and use the new GPG key ([#13080](https://github.com/linode/manager/pull/13080))
+
+### Changed:
+
+- IAM: clean up in mapping for nodebalancer permissions ([#13017](https://github.com/linode/manager/pull/13017))
+- IAM: fix permissiom's check for vpc for assigning/unassigning linodes ([#13050](https://github.com/linode/manager/pull/13050))
+- ACLP Alert: control `edit & delete button` based on status using flag ([#13052](https://github.com/linode/manager/pull/13052))
+
+### Fixed:
+
+- Typo + expose search filters on /iam/roles route ([#13034](https://github.com/linode/manager/pull/13034))
+- Address oAuth issue with IAM OAuthCallback  ([#13037](https://github.com/linode/manager/pull/13037))
+- IAM: tags editing was enabled for restricted users ([#13046](https://github.com/linode/manager/pull/13046))
+- IAM Child Account - user not found error handling ([#13047](https://github.com/linode/manager/pull/13047))
+- IAM: restricted  users could access delete and detach popups without permissions ([#13049](https://github.com/linode/manager/pull/13049))
+- Race condition with Preferences overrides in PrimaryNav ([#13056](https://github.com/linode/manager/pull/13056))
+- IAM: add tooltips for disabled buttons for nodebalancers, remove notification banner ([#13058](https://github.com/linode/manager/pull/13058))
+- IAM: incorrect permission check disabled Clone Volume for volume_admin role ([#13065](https://github.com/linode/manager/pull/13065))
+- ACLP Metric: update preference logic to clear children filters ([#13066](https://github.com/linode/manager/pull/13066))
+- Permissions fixes for admin users on users pages ([#13074](https://github.com/linode/manager/pull/13074))
+
+### Tech Stories:
+
+- Replace Formik with React Hook Form in DatabaseManageNetworkingDrawer ([#13002](https://github.com/linode/manager/pull/13002))
+- Replace Formik with React Hook Form in ManageAccessControlDrawer  ([#13044](https://github.com/linode/manager/pull/13044))
+- Add MSW crud support for types API ([#13067](https://github.com/linode/manager/pull/13067))
+
+### Tests:
+
+- Fix flakey timerange test ([#12967](https://github.com/linode/manager/pull/12967))
+- Add Streams Landing, Create Stream and Edit Stream tests ([#13008](https://github.com/linode/manager/pull/13008))
+- Fix flakey stackscript tests ([#13072](https://github.com/linode/manager/pull/13072))
+- Fix flakey create-database test ([#13076](https://github.com/linode/manager/pull/13076))
+
+### Upcoming Features:
+
+- Logs Delivery Stream/Destination Pendo tags ([#13022](https://github.com/linode/manager/pull/13022))
+- Update Delivery Stream factory ([#13038](https://github.com/linode/manager/pull/13038))
+- IAM: Empty state for the Default Roles and Default Entities Access tabs ([#13042](https://github.com/linode/manager/pull/13042))
+- ACLP-Alerting: Onboarding Blockstorage service for ACLP Alerts ([#13048](https://github.com/linode/manager/pull/13048))
+- Feature flag for Firewall Rulesets & Prefixlists ([#13051](https://github.com/linode/manager/pull/13051))
+- Feature flag for new Generational Compute Plans ([#13054](https://github.com/linode/manager/pull/13054))
+- Limit Logs feature based on `Akamai Cloud Pulse Logs` Account Capability ([#13062](https://github.com/linode/manager/pull/13062))
+- IAM Parent/Child: delegate permissions for parent account ([#13063](https://github.com/linode/manager/pull/13063))
+- CloudPulse-Metrics: Update `FilterConfig.ts`, add lke service and the associated filters ([#13064](https://github.com/linode/manager/pull/13064))
+- Update data-pendo-id tags placemanet within Logs Delivery ([#13069](https://github.com/linode/manager/pull/13069))
+- New IAM getUserEntitiesByPermission (types, queries, hooks, mocks) ([#13070](https://github.com/linode/manager/pull/13070))
+- CloudPulse-Metrics: Enhance `CloudPulseDashboardWithFilters.tsx` and `CloudPulseDashboardSelect.tsx` to handle switching between dashboards in contextual view ([#13073](https://github.com/linode/manager/pull/13073))
+
+## [2025-11-04] - v1.154.0
+
+### Added:
+
+- IAM Parent/Child: hide User details tab for delegate user and add a badge ([#12982](https://github.com/linode/manager/pull/12982))
+
+### Changed:
+
+- IAM Parent/Child: redirect route /delegations for non-parent users ([#13007](https://github.com/linode/manager/pull/13007))
+- Prevent database queries from sending legacy filter and remove unused banner components ([#13015](https://github.com/linode/manager/pull/13015))
+- Replace table and paginator in DBaaS with CDS web components ([#12989](https://github.com/linode/manager/pull/12989))
+
+### Fixed:
+
+- NodeBalancer Configuration form unresponsiveness for larger VPC deployments ([#12991](https://github.com/linode/manager/pull/12991))
+- IAM Roles Table styles and responsive enhancements ([#12997](https://github.com/linode/manager/pull/12997))
+- IAM Account Delegation Tables sorting & filtering ([#13003](https://github.com/linode/manager/pull/13003))
+- IAM - Ensure useEntitiesPermissions does not run for admin users ([#13012](https://github.com/linode/manager/pull/13012))
+- IAM Parent/Child: fix spacing and add notification ([#13013](https://github.com/linode/manager/pull/13013))
+- Upcoming maintenance "When" shows time until start using start_time or policy‑derived start; shows "X days Y hours" when ≥ 1 day ([#13020](https://github.com/linode/manager/pull/13020), [#13045](https://github.com/linode/manager/pull/13045))
+- Add self-service maintenance action in LinodeMaintenanceBanner for power_off_on and include all maintenance types in dev tools preset ([#13024](https://github.com/linode/manager/pull/13024))
+- IAM: Linodes without required permissions visible and selectable in Assign/Unassign Linodes selector ([#13030](https://github.com/linode/manager/pull/13030))
+- Enhance `enabled` checks for queries ran within `useQueryWithPermissions` ([#13039](https://github.com/linode/manager/pull/13039))
+- Add new `mtc` feature flag, extend it to support valid regions for MTC Linode Migration, and replace the invalid region ID `no-east` ([#13026](https://github.com/linode/manager/pull/13026))
+
+### Tech Stories:
+
+- Update Vite to v7 ([#12792](https://github.com/linode/manager/pull/12792))
+- Upgrade Cypress to v15.4.0 ([#12824](https://github.com/linode/manager/pull/12824))
+
+### Tests:
+
+- Add Linode Interface related tests: deleting an interface, editing interfaces, and updating interface settings ([#12876](https://github.com/linode/manager/pull/12876))
+- Fix "lke-update.spec.ts" LKE-E node pool drawer test that's broken in DevCloud ([#12884](https://github.com/linode/manager/pull/12884))
+- Add Logs Destination Landing, Create and Edit e2e tests ([#12936](https://github.com/linode/manager/pull/12936))
+
+### Upcoming Features:
+
+- IAM: Account Delegations Drawer ([#12970](https://github.com/linode/manager/pull/12970))
+- IAM: Default Roles Table ([#12990](https://github.com/linode/manager/pull/12990))
+- Add support for `privateImageSharing` feature flag for Private Image Sharing feature ([#12992](https://github.com/linode/manager/pull/12992))
+- Logs Delivery Destinations/Stream Delete confirmation modal error state reset fix ([#12996](https://github.com/linode/manager/pull/12996))
+- Stream form bug fixes ([#12999](https://github.com/linode/manager/pull/12999))
+- Add type, utility and mock setup for supporting widget level dimension filters ([#13006](https://github.com/linode/manager/pull/13006))
+- IAM Delegation: Parent Account UI fix ([#13011](https://github.com/linode/manager/pull/13011))
+- CloudPulse-Metrics: Update `FilterConfig.ts` to make firewall a single-select filter and to filter firewalls based on dashboard ([#13014](https://github.com/linode/manager/pull/13014))
+- ACLP-Alerting: Add hook to cleanup stale value from Alerting form ([#13018](https://github.com/linode/manager/pull/13018))
+- CloudPulse-Metrics: Hide scroll bar for filters in all browsers, introduce shared prop in `styles.ts`. ([#13028](https://github.com/linode/manager/pull/13028))
+- CloudPulse-Metrics: Add optional-filter component at `CloudPulseFirewallNodebalancersSelect.tsx` and integrate it with existing firewall-nodebalancer filters ([#13029](https://github.com/linode/manager/pull/13029))
+
+## [2025-10-28] - v1.153.2
+
+### Changed:
+
+- Linode invoice US address ([#13019](https://github.com/linode/manager/pull/13019))
+
+## [2025-10-22] - v1.153.1
+
+### Fixed:
+
+- VPC IP range errors not being surfaced on the Linode Create page ([#13004](https://github.com/linode/manager/pull/13004))
+- Unexpected VPC IPv4 auto-assign checkbox behavior on the Linode Create page ([#13004](https://github.com/linode/manager/pull/13004))
+- VPC Dual Stack error on the Linode Create page ([#13004](https://github.com/linode/manager/pull/13004))
+
+## [2025-10-21] - v1.153.0
+
+### Added:
+
+- Volume attached to state ([#12903](https://github.com/linode/manager/pull/12903))
+- Profile Update client side validation ([#12963](https://github.com/linode/manager/pull/12963))
+- IAM DX: useDelegationRole hook ([#12979](https://github.com/linode/manager/pull/12979))
+
+### Changed:
+
+- DBaaS Connection details table Read-only Host field renders based on VPC configuration ([#12976](https://github.com/linode/manager/pull/12976))
+- ACLP: update `group-by` icon svg file ([#12986](https://github.com/linode/manager/pull/12986))
+
+### Fixed:
+
+- IAM - isIAMEnabled LA access check ([#12946](https://github.com/linode/manager/pull/12946))
+- Update placeholder text color for light/dark mode ([#12947](https://github.com/linode/manager/pull/12947))
+- IAM RBAC: refetch entities endpoint ([#12958](https://github.com/linode/manager/pull/12958))
+- IAM RBAC: permission check for menu and drawer ([#12964](https://github.com/linode/manager/pull/12964))
+- ACLP: update `CloudPulseDateTimeRangePickerUtils` to use preset constants ([#12971](https://github.com/linode/manager/pull/12971))
+- Rechart tooltips no longer are clipped due to large datasets ([#12973](https://github.com/linode/manager/pull/12973))
+
+### Tech Stories:
+
+- Update to @mui/x-date-pickers v8 ([#12864](https://github.com/linode/manager/pull/12864))
+- VPC IPv4 and IPv6 address code clean up ([#12940](https://github.com/linode/manager/pull/12940))
+- IAM / RBAC MSW CRUD Users, Delegation and Parent /Child Updates ([#12957](https://github.com/linode/manager/pull/12957))
+
+### Tests:
+
+- Add tests for DBaaS widget group-by feature ([#12897](https://github.com/linode/manager/pull/12897))
+- Nvidia Blackwell GPU Linode creation ([#12929](https://github.com/linode/manager/pull/12929))
+- Fix failing LKE create test involving plan availability in DevCloud ([#12950](https://github.com/linode/manager/pull/12950))
+- Fix failing "alerts-create.spec.ts" ts in DevCloud ([#12952](https://github.com/linode/manager/pull/12952))
+- Fix failing maintenance policy test in DevCloud related to hardcoded region ID ([#12954](https://github.com/linode/manager/pull/12954))
+- Add LKE-E node pool configuration update tests ([#12961](https://github.com/linode/manager/pull/12961))
+
+### Upcoming Features:
+
+- Support APL installation on LKE-E ([#12878](https://github.com/linode/manager/pull/12878))
+- IAM - User Delegations Tab ([#12920](https://github.com/linode/manager/pull/12920))
+- IAM: Account Delegations Tab ([#12927](https://github.com/linode/manager/pull/12927))
+- CloudPulse-Metrics: Update `FilterConfig.ts` to handle block storage integration, update `queries.ts`, update mocks ([#12931](https://github.com/linode/manager/pull/12931))
+- Fix Destination Name autocomplete in Create Stream form not filtering correctly ([#12944](https://github.com/linode/manager/pull/12944))
+- Add dialog modal for Delete action for Logs Stream and Destination ([#12956](https://github.com/linode/manager/pull/12956))
+- ACLP-Alerting: Dimension Filter customization for Object Storage service ([#12959](https://github.com/linode/manager/pull/12959))
+- Add info about stream provisioning time and update stream status labels ([#12960](https://github.com/linode/manager/pull/12960))
+- ACLP-Alerting: Resetting Errors when dependent fields are being reset ([#12968](https://github.com/linode/manager/pull/12968))
+- ACLP: add `group by preference` support for group-by feature ([#12969](https://github.com/linode/manager/pull/12969))
+- CloudPulse-Metrics: Update `filterConfig.ts`, `useFirewallFetchOptions.tsx` for firewall-nodebalancer dashboard integration ([#12980](https://github.com/linode/manager/pull/12980))
+- IAM Parent/Child - Default roles & Entity access routes ([#12981](https://github.com/linode/manager/pull/12981))
+- Add pendo ids for VM Host Maintenance analytics ([#12983](https://github.com/linode/manager/pull/12983))
+
+## [2025-10-07] - v1.152.0
+
+### Added:
+
+- IAM RBAC: disable fields in the drawer ([#12892](https://github.com/linode/manager/pull/12892))
+- IAM delegation feature flag ([#12906](https://github.com/linode/manager/pull/12906))
+- Split WireGuard into separate server and client apps; add Jaeger and Cribl Marketplace apps ([#12907](https://github.com/linode/manager/pull/12907))
+- IAM RBAC: disable fields in the drawer for deleting and managing images ([#12909](https://github.com/linode/manager/pull/12909))
+- IAM Delegation: replace query with the new delegation ones ([#12913](https://github.com/linode/manager/pull/12913))
+- IAM delegation mock data ([#12914](https://github.com/linode/manager/pull/12914))
+- ConnectionDetailsRow and ConnectionDetailsHostRows components to manage connection details table content ([#12939](https://github.com/linode/manager/pull/12939))
+
+### Changed:
+
+- UIE/RBAC LA gating for useQueryWithPermissions ([#12880](https://github.com/linode/manager/pull/12880))
+- Improve role selection UX in change role drawer ([#12901](https://github.com/linode/manager/pull/12901))
+- IAM RBAC: replace grants with usePermission hook for Firewalls ([#12902](https://github.com/linode/manager/pull/12902))
+- Getting started link on the volume details page ([#12904](https://github.com/linode/manager/pull/12904))
+- ACLP: update default `ACLP Time Range Picker Preset` to `1 hour` ([#12915](https://github.com/linode/manager/pull/12915))
+- Check Region VPC availability for IPv6 prefix lengths instead of hardcoded prefix lengths ([#12919](https://github.com/linode/manager/pull/12919))
+- IAM Delegation: remove ProxyUserTable ([#12921](https://github.com/linode/manager/pull/12921))
+- Add padding inside the ManagedDashboardCard component ([#12923](https://github.com/linode/manager/pull/12923))
+- Assorted VPC IPv4 and VPC IPv6 copy ([#12924](https://github.com/linode/manager/pull/12924))
+- IAM RBAC: replace grants with usePermission hook in Linodes ([#12932](https://github.com/linode/manager/pull/12932))
+- DBaaS - Host field in connection details table renders based on VPC configuration and host fields are synced between Details and Networking tabs ([#12939](https://github.com/linode/manager/pull/12939))
+
+### Fixed:
+
+- IAM RBAC: fix tooltips in volumes ([#12881](https://github.com/linode/manager/pull/12881))
+- Disable `Add Metric and Add Dimension Filter` without serviceType; skip `useResources` if no supported regions in CloudPulse Alerting ([#12891](https://github.com/linode/manager/pull/12891))
+- Navigation after successful volume deletion ([#12894](https://github.com/linode/manager/pull/12894))
+- LKE create request for standard cluster can contain LKE-E-specific payload data ([#12916](https://github.com/linode/manager/pull/12916))
+- Inaccurate Upgrade Version modal copy for LKE-E clusters and overly verbose modal title ([#12922](https://github.com/linode/manager/pull/12922))
+- Use abs value for Assign User Autocomplete next fetch ([#12925](https://github.com/linode/manager/pull/12925))
+- CloudPulse-Metrics: Update `CloudPulseDashboardFilterBuilder.tsx` and `CloudPulseRegionSelect.tsx` to handle saved preference clearance for linode region filter ([#12926](https://github.com/linode/manager/pull/12926))
+- IAM: Hide IAM Beta badge in User Menu for LA ([#12933](https://github.com/linode/manager/pull/12933))
+- Always show tax id's when available irrespective of date filtering ([#12942](https://github.com/linode/manager/pull/12942))
+
+### Tech Stories:
+
+- Refactor IAM permission/entities truncation utilities ([#12825](https://github.com/linode/manager/pull/12825))
+- Update Node.js from `20.17` to `22.19` ([#12838](https://github.com/linode/manager/pull/12838))
+- Clean up logic for toggling between kubernetes `/v4` and `/v4beta` endpoints ([#12867](https://github.com/linode/manager/pull/12867))
+- Add dependency resolution for `brace-expansion` ([#12869](https://github.com/linode/manager/pull/12869))
+- IAM - Improve type safety in `usePermissions` ([#12893](https://github.com/linode/manager/pull/12893))
+- Remove deprecated `lkeEnterprise` flag from Flags interface ([#12911](https://github.com/linode/manager/pull/12911))
+
+### Tests:
+
+- Add tests for Linode Interface Networking table - details drawer and adding a VLAN interface ([#12842](https://github.com/linode/manager/pull/12842))
+- Fix flaky Object Storage Multicluster object upload test ([#12847](https://github.com/linode/manager/pull/12847))
+- Add LKE-E Post-LA feature flag smoke tests ([#12886](https://github.com/linode/manager/pull/12886))
+- Smoke tests for nvidia blackwell gpu plan selection ([#12917](https://github.com/linode/manager/pull/12917))
+- Update vpcCreateDrawer.setSubnetIpRange page utility for Cypress tests ([#12924](https://github.com/linode/manager/pull/12924))
+
+### Upcoming Features:
+
+- Fix Datastream Stream/Destinations table search input focus, and empty search results layout ([#12802](https://github.com/linode/manager/pull/12802))
+- IAM RBAC: Implements IAM RBAC permissions for VPC Details page ([#12810](https://github.com/linode/manager/pull/12810))
+- Generate Destination's sample Path based on Stream Type or custom value ([#12851](https://github.com/linode/manager/pull/12851))
+- CloudPulse-Alerts: Add `useAlertsMutation.ts`, update `AlertInformationActionTable.tsx` to handle api integration for mutliple services ([#12870](https://github.com/linode/manager/pull/12870))
+- ACLP: add `Group By` option on `Global Filters` and `Widget Filters` ([#12887](https://github.com/linode/manager/pull/12887))
+- Logs Delivery fixes after devcloud release ([#12898](https://github.com/linode/manager/pull/12898))
+- CloudPulse-Metrics: Add new component at `CloudPulseEndpointsSelect.tsx` ([#12905](https://github.com/linode/manager/pull/12905))
+- ACLP-Alerting: Object Storage service onboarding for Alerts UI ([#12910](https://github.com/linode/manager/pull/12910))
+- CloudPulse-Metrics: Handle special conditions for `objectstorage` service addition, add related filters at `FilterConfig.ts`, integrate related component `CloudPulseEndpointsSelect.tsx` ([#12912](https://github.com/linode/manager/pull/12912))
+
+## [2025-10-02] - v1.151.2
+
+### Fixed:
+
+- DBaaS - Database Create Subnet field should display backend error messages
+
+## [2025-09-25] - v1.151.1
+
+### Added:
+
+- DBaaS - Display Beta chip for VPC fields and update related documentation link
+
 ## [2025-09-23] - v1.151.0
 
 ### Added:

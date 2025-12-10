@@ -1,3 +1,37 @@
+## [2025-12-09] - v0.79.0
+
+
+### Changed:
+
+- Validate Bucket name in Destination Form for forbidden characters ([#13166](https://github.com/linode/manager/pull/13166))
+
+### Upcoming Features:
+
+- Update FirewallRuleTypeSchema to support ruleset ([#13079](https://github.com/linode/manager/pull/13079))
+- Added Database Connection Pool schemas ([#13148](https://github.com/linode/manager/pull/13148))
+
+## [2025-11-04] - v0.78.0
+
+### Upcoming Features:
+
+- Add validation schemas for creating and updating Sharegroup Members and Tokens ([#12984](https://github.com/linode/manager/pull/12984))
+- Add validation schemas for creating and updating Sharegroups and Sharegroup Images ([#12985](https://github.com/linode/manager/pull/12985))
+
+## [2025-10-21] - v0.77.0
+
+### Changed:
+
+- Rename "Linode Object Storage" to "Akamai Object Storage" in various schema names ([#12977](https://github.com/linode/manager/pull/12977))
+
+
+## [2025-10-07] - v0.76.0
+
+
+### Upcoming Features:
+
+- Update validation schema for Destination - Details - Path ([#12851](https://github.com/linode/manager/pull/12851))
+- Logs Delivery Stream and Destination details validation change for Update schemas ([#12898](https://github.com/linode/manager/pull/12898))
+
 ## [2025-09-23] - v0.75.0
 
 ### Changed:

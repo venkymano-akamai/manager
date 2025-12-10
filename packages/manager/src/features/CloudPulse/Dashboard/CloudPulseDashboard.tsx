@@ -10,6 +10,10 @@ import {
 } from 'src/queries/cloudpulse/services';
 
 import { RESOURCE_FILTER_MAP } from '../Utils/constants';
+import {
+  getAssociatedEntityType,
+  getResourcesFilterConfig,
+} from '../Utils/FilterConfig';
 import { useAclpPreference } from '../Utils/UserPreference';
 import {
   renderPlaceHolder,
@@ -111,6 +115,12 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
     isLoading: isDashboardLoading,
   } = useCloudPulseDashboardByIdQuery(dashboardId);
 
+  // Get the resources filter configuration for the dashboard
+  const resourcesFilterConfig = getResourcesFilterConfig(dashboardId);
+  const filterFn = resourcesFilterConfig?.filterFn;
+  // Get the associated entity type for the dashboard
+  const associatedEntityType = getAssociatedEntityType(dashboardId);
+
   const {
     data: resourceList,
     isError: isResourcesApiError,
@@ -119,7 +129,9 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
     Boolean(dashboard?.service_type),
     dashboard?.service_type,
     {},
-    RESOURCE_FILTER_MAP[dashboard?.service_type ?? ''] ?? {}
+    RESOURCE_FILTER_MAP[dashboard?.service_type ?? ''] ?? {},
+    associatedEntityType,
+    filterFn
   );
 
   const {
@@ -138,7 +150,7 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
   } = useCloudPulseJWEtokenQuery(
     dashboard?.service_type,
     getJweTokenPayload(),
-    Boolean(resources) && !isDashboardLoading && !isDashboardApiError
+    !isDashboardLoading && !isDashboardApiError
   );
 
   if (isDashboardApiError) {

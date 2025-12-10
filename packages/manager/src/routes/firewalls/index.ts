@@ -95,6 +95,15 @@ const firewallDetailRulesEditOutboundRuleRoute = createRoute({
   )
 );
 
+const firewallDetailRulesViewRuleSetRoute = createRoute({
+  getParentRoute: () => firewallDetailRulesRoute,
+  path: 'view/$category/ruleset/$ruleId',
+}).lazy(() =>
+  import('src/features/Firewalls/FirewallDetail/firewallDetailLazyRoute').then(
+    (m) => m.firewallDetailLazyRoute
+  )
+);
+
 const firewallDetailRulesAddInboundRuleRoute = createRoute({
   getParentRoute: () => firewallDetailRulesAddRuleRoute,
   path: 'inbound',
@@ -167,6 +176,15 @@ const firewallDetailNodebalancersRemoveNodebalancerRoute = createRoute({
   )
 );
 
+const firewallDetailMetricsRoute = createRoute({
+  getParentRoute: () => firewallsRoute,
+  path: '$id/metrics',
+}).lazy(() =>
+  import('src/features/Firewalls/FirewallDetail/firewallDetailLazyRoute').then(
+    (m) => m.firewallDetailLazyRoute
+  )
+);
+
 export const firewallsRouteTree = firewallsRoute.addChildren([
   firewallsIndexRoute,
   firewallDetailRoute.addChildren([
@@ -180,11 +198,13 @@ export const firewallsRouteTree = firewallsRoute.addChildren([
       firewallDetailRulesEditOutboundRuleRoute,
       firewallDetailRulesAddInboundRuleRoute,
       firewallDetailRulesAddOutboundRuleRoute,
+      firewallDetailRulesViewRuleSetRoute,
     ]),
     firewallDetailNodebalancersRoute.addChildren([
       firewallDetailNodebalancersAddNodebalancerRoute,
       firewallDetailNodebalancersRemoveNodebalancerRoute,
     ]),
+    firewallDetailMetricsRoute,
   ]),
   firewallCreateRoute,
 ]);

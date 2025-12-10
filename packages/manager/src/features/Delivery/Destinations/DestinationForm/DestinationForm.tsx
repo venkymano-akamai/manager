@@ -1,5 +1,6 @@
 import { destinationType } from '@linode/api-v4';
 import { Autocomplete, Paper, TextField } from '@linode/ui';
+import { capitalize, scrollErrorIntoViewV2 } from '@linode/utilities';
 import Grid from '@mui/material/Grid';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -8,7 +9,7 @@ import { useFormContext } from 'react-hook-form';
 import { Controller, useWatch } from 'react-hook-form';
 
 import { getDestinationTypeOption } from 'src/features/Delivery/deliveryUtils';
-import { DestinationLinodeObjectStorageDetailsForm } from 'src/features/Delivery/Shared/DestinationLinodeObjectStorageDetailsForm';
+import { DestinationAkamaiObjectStorageDetailsForm } from 'src/features/Delivery/Shared/DestinationAkamaiObjectStorageDetailsForm';
 import { FormSubmitBar } from 'src/features/Delivery/Shared/FormSubmitBar/FormSubmitBar';
 import { destinationTypeOptions } from 'src/features/Delivery/Shared/types';
 import { useVerifyDestination } from 'src/features/Delivery/Shared/useVerifyDestination';
@@ -34,6 +35,7 @@ export const DestinationForm = (props: DestinationFormProps) => {
     setDestinationVerified,
   } = useVerifyDestination();
 
+  const formRef = React.useRef<HTMLFormElement>(null);
   const { control, handleSubmit } = useFormContext<DestinationFormType>();
   const destination = useWatch({
     control,
@@ -44,7 +46,7 @@ export const DestinationForm = (props: DestinationFormProps) => {
   }, [destination, setDestinationVerified]);
 
   return (
-    <form id="destinationForm">
+    <form id="destinationForm" ref={formRef}>
       <Grid container spacing={2}>
         <Grid size={{ lg: 9, md: 12, sm: 12, xs: 12 }}>
           <Paper>
@@ -61,6 +63,11 @@ export const DestinationForm = (props: DestinationFormProps) => {
                     field.onChange(value);
                   }}
                   options={destinationTypeOptions}
+                  textFieldProps={{
+                    inputProps: {
+                      'data-pendo-id': `Logs Delivery Destinations ${capitalize(mode)}-Destination Type`,
+                    },
+                  }}
                   value={getDestinationTypeOption(field.value)}
                 />
               )}
@@ -72,6 +79,9 @@ export const DestinationForm = (props: DestinationFormProps) => {
                 <TextField
                   aria-required
                   errorText={fieldState.error?.message}
+                  inputProps={{
+                    'data-pendo-id': `Logs Delivery Destinations ${capitalize(mode)}-Destination Name`,
+                  }}
                   label="Destination Name"
                   onBlur={field.onBlur}
                   onChange={(value) => {
@@ -82,8 +92,11 @@ export const DestinationForm = (props: DestinationFormProps) => {
                 />
               )}
             />
-            {destination.type === destinationType.LinodeObjectStorage && (
-              <DestinationLinodeObjectStorageDetailsForm />
+            {destination.type === destinationType.AkamaiObjectStorage && (
+              <DestinationAkamaiObjectStorageDetailsForm
+                entity="destination"
+                mode={mode}
+              />
             )}
           </Paper>
         </Grid>
@@ -95,9 +108,12 @@ export const DestinationForm = (props: DestinationFormProps) => {
             isSubmitting={isSubmitting}
             isTesting={isVerifyingDestination}
             mode={mode}
-            onSubmit={handleSubmit(onSubmit)}
-            onTestConnection={handleSubmit(() =>
-              verifyDestination(destination)
+            onSubmit={handleSubmit(onSubmit, () =>
+              scrollErrorIntoViewV2(formRef)
+            )}
+            onTestConnection={handleSubmit(
+              () => verifyDestination(destination),
+              () => scrollErrorIntoViewV2(formRef)
             )}
           />
         </Grid>

@@ -143,11 +143,14 @@ export const AssignSelectedRolesDrawer = ({
 
   const handleScroll = (event: React.SyntheticEvent) => {
     const listboxNode = event.currentTarget;
-    if (
-      listboxNode.scrollTop + listboxNode.clientHeight >=
-        listboxNode.scrollHeight &&
-      hasNextPage
-    ) {
+    const isAtBottom =
+      Math.abs(
+        listboxNode.scrollHeight -
+          listboxNode.clientHeight -
+          listboxNode.scrollTop
+      ) < 1;
+
+    if (isAtBottom && hasNextPage) {
       fetchNextPage();
     }
   };
@@ -176,7 +179,7 @@ export const AssignSelectedRolesDrawer = ({
             })}
           >
             <Typography mb={theme.spacingFunction(8)} variant="h3">
-              Users
+              User
             </Typography>
 
             <Controller

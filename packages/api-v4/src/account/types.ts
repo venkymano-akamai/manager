@@ -1,7 +1,7 @@
 import type { Capabilities, Region } from '../regions';
 import type { APIWarning, RequestOptions } from '../types';
 
-export type UserType = 'child' | 'default' | 'parent' | 'proxy';
+export type UserType = 'child' | 'default' | 'delegate' | 'parent' | 'proxy';
 
 export interface User {
   email: string;
@@ -62,9 +62,11 @@ export type BillingSource = 'akamai' | 'linode';
 export const accountCapabilities = [
   'Akamai Cloud Load Balancer',
   'Akamai Cloud Pulse',
+  'Akamai Cloud Pulse Logs',
   'Block Storage',
   'Block Storage Encryption',
   'Cloud Firewall',
+  'Cloud Firewall Rule Set',
   'CloudPulse',
   'Disk Encryption',
   'Kubernetes',
@@ -79,6 +81,7 @@ export const accountCapabilities = [
   'Managed Databases',
   'Managed Databases Beta',
   'NETINT Quadra T1U',
+  'Network LoadBalancer',
   'NodeBalancers',
   'Object Storage Access Key Regions',
   'Object Storage Endpoint Types',

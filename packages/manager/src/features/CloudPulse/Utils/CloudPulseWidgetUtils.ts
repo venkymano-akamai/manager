@@ -1,4 +1,5 @@
 import { Alias } from '@linode/design-language-system';
+import { DateTimeRangePicker } from '@linode/ui';
 import { getMetrics } from '@linode/utilities';
 
 import { DIMENSION_TRANSFORM_CONFIG } from '../shared/DimensionTransform';
@@ -353,7 +354,9 @@ export const getCloudPulseMetricRequest = (
       presetDuration === undefined
         ? { end: duration.end, start: duration.start }
         : undefined,
-    entity_ids: getEntityIds(resources, entityIds, widget, serviceType),
+    entity_ids: !entityIds.length
+      ? undefined
+      : getEntityIds(resources, entityIds, widget, serviceType),
     filters: undefined,
     group_by: !groupBy?.length ? undefined : groupBy,
     relative_time_duration: presetDuration,
@@ -455,14 +458,35 @@ export const getDimensionName = (props: DimensionNameProperties): string => {
     }
 
     if (key === 'linode_id') {
-      const linodeLabel =
-        resources.find((resource) => resource.entities?.[value] !== undefined)
-          ?.entities?.[value] ?? value;
+      let linodeLabel = value;
+      if (serviceType === 'firewall') {
+        linodeLabel =
+          resources.find((resource) => resource.entities?.[value] !== undefined)
+            ?.entities?.[value] ?? linodeLabel;
+      }
+      if (serviceType === 'blockstorage') {
+        linodeLabel =
+          resources.find((resource) => resource.volumeLinodeId === value)
+            ?.volumeLinodeLabel ?? linodeLabel;
+      }
       const index = groupBy.indexOf('linode_id');
       if (index !== -1) {
         labels[index] = linodeLabel;
       } else {
         labels.push(linodeLabel);
+      }
+      return;
+    }
+
+    if (key === 'nodebalancer_id') {
+      const nodebalancerLabel =
+        resources.find((resource) => resource.entities?.[value] !== undefined)
+          ?.entities?.[value] ?? value;
+      const index = groupBy.indexOf('nodebalancer_id');
+      if (index !== -1) {
+        labels[index] = nodebalancerLabel;
+      } else {
+        labels.push(nodebalancerLabel);
       }
       return;
     }
@@ -524,19 +548,23 @@ export const getTimeDurationFromPreset = (
   preset?: string
 ): TimeDuration | undefined => {
   switch (preset) {
-    case 'last 7 days':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_7_DAYS:
       return { unit: 'days', value: 7 };
-    case 'last 12 hours':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_12_HOURS:
       return { unit: 'hr', value: 12 };
-    case 'last 30 days':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_30_DAYS:
       return { unit: 'days', value: 30 };
-    case 'last 30 minutes':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_30_MINUTES:
       return { unit: 'min', value: 30 };
-    case 'last day':
+    case DateTimeRangePicker.PRESET_LABELS.LAST_DAY:
       return { unit: 'days', value: 1 };
-    case 'last hour': {
+    case DateTimeRangePicker.PRESET_LABELS.LAST_HOUR:
       return { unit: 'hr', value: 1 };
-    }
+    case DateTimeRangePicker.PRESET_LABELS.LAST_MONTH:
+    case DateTimeRangePicker.PRESET_LABELS.RESET:
+    case DateTimeRangePicker.PRESET_LABELS.THIS_MONTH:
+      // These presets use absolute_time_duration instead of relative_time_duration
+      return undefined;
     default:
       return undefined;
   }

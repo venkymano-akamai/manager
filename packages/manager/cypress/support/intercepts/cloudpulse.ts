@@ -125,7 +125,6 @@ export const mockGetCloudPulseDashboards = (
  *
  * This function allows you to specify a mock response for POST requests
  *
- * @param {any} mockResponse - The mock response to return for the intercepted request.
  * @returns {Cypress.Chainable<null>} The chainable Cypress object.
  */
 export const mockCreateCloudPulseMetrics = (
@@ -154,7 +153,7 @@ export const mockCreateCloudPulseMetrics = (
         },
       };
 
-      req.reply({ statusCode: 200, body: response });
+      req.reply({ body: response });
     }
   );
 };
@@ -392,6 +391,23 @@ export const mockGetAlertChannels = (
     'GET',
     apiMatcher('/monitor/alert-channels*'),
     paginateResponse(channel)
+  );
+};
+
+/**
+ * Mocks an error response for the GET request to retrieve alert channels in CloudPulse.
+ *
+ * Intercepts the GET request to CloudPulse alert channels and simulates a 404 error.
+ *
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable object indicating the interception.
+ */
+export const mockGetAlertChannelsTypeError = (
+  errorMessage: string
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('/monitor/alert-channels*'),
+    makeErrorResponse(errorMessage, 400)
   );
 };
 /**

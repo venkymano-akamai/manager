@@ -18,12 +18,23 @@ export const productInformationBannerFactory =
 
 export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
   aclp: { beta: true, enabled: true },
+  objMultiCluster: false,
+  objectStorageGen2: { enabled: false },
   aclpAlerting: {
     accountAlertLimit: 10,
     accountMetricLimit: 10,
     alertDefinitions: true,
+    beta: true,
     recentActivity: false,
-    notificationChannels: false,
+    notificationChannels: true,
+    editDisabledStatuses: [
+      'in progress',
+      'failed',
+      'provisioning',
+      'enabling',
+      'disabling',
+    ],
+    systemChannelSupportedServices: ['dbaas'],
   },
   aclpServices: {
     linode: {
@@ -39,6 +50,18 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       metrics: { beta: true, enabled: true },
     },
     nodebalancer: {
+      alerts: { beta: true, enabled: true },
+      metrics: { beta: true, enabled: true },
+    },
+    objectstorage: {
+      alerts: { beta: true, enabled: true },
+      metrics: { beta: true, enabled: true },
+    },
+    blockstorage: {
+      alerts: { beta: true, enabled: true },
+      metrics: { beta: true, enabled: true },
+    },
+    lke: {
       alerts: { beta: true, enabled: true },
       metrics: { beta: true, enabled: true },
     },
@@ -63,6 +86,21 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       dimensionKey: 'firewall',
       maxResourceSelections: 10,
       serviceType: 'firewall',
+    },
+    {
+      dimensionKey: 'objectstorage',
+      maxResourceSelections: 10,
+      serviceType: 'objectstorage',
+    },
+    {
+      dimensionKey: 'blockstorage',
+      maxResourceSelections: 10,
+      serviceType: 'blockstorage',
+    },
+    {
+      dimensionKey: 'lke',
+      maxResourceSelections: 10,
+      serviceType: 'lke',
     },
   ],
 });

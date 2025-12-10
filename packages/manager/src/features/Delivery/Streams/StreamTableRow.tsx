@@ -2,7 +2,6 @@ import { Hidden } from '@linode/ui';
 import * as React from 'react';
 
 import { DateTimeDisplay } from 'src/components/DateTimeDisplay';
-import { Link } from 'src/components/Link';
 import { StatusIcon } from 'src/components/StatusIcon/StatusIcon';
 import { TableCell } from 'src/components/TableCell';
 import { TableRow } from 'src/components/TableRow';
@@ -10,10 +9,11 @@ import {
   getDestinationTypeOption,
   getStreamTypeOption,
 } from 'src/features/Delivery/deliveryUtils';
+import { LinkWithTooltipAndEllipsis } from 'src/features/Delivery/Shared/LinkWithTooltipAndEllipsis';
 import { StreamActionMenu } from 'src/features/Delivery/Streams/StreamActionMenu';
 
-import type { Handlers as StreamHandlers } from './StreamActionMenu';
 import type { Stream, StreamStatus } from '@linode/api-v4';
+import type { StreamHandlers } from 'src/features/Delivery/Streams/StreamActionMenu';
 
 interface StreamTableRowProps extends StreamHandlers {
   stream: Stream;
@@ -26,7 +26,12 @@ export const StreamTableRow = React.memo((props: StreamTableRowProps) => {
   return (
     <TableRow key={id}>
       <TableCell>
-        <Link to={`/logs/delivery/streams/${id}/edit`}>{stream.label}</Link>
+        <LinkWithTooltipAndEllipsis
+          pendoId="Logs Delivery Streams-Name"
+          to={`/logs/delivery/streams/${id}/edit`}
+        >
+          {stream.label}
+        </LinkWithTooltipAndEllipsis>
       </TableCell>
       <TableCell>{getStreamTypeOption(stream.type)?.label}</TableCell>
       <TableCell statusCell>
@@ -34,15 +39,18 @@ export const StreamTableRow = React.memo((props: StreamTableRowProps) => {
         {humanizeStreamStatus(status)}
       </TableCell>
       <TableCell>{id}</TableCell>
-      <Hidden smDown>
+      <Hidden mdDown>
         <TableCell>
           {getDestinationTypeOption(stream.destinations[0]?.type)?.label}
         </TableCell>
       </Hidden>
       <Hidden lgDown>
         <TableCell>
-          <DateTimeDisplay value={stream.created} />
+          <DateTimeDisplay value={stream.updated} />
         </TableCell>
+      </Hidden>
+      <Hidden lgDown>
+        <TableCell>{stream.updated_by}</TableCell>
       </Hidden>
       <TableCell actionCell>
         <StreamActionMenu
@@ -59,9 +67,9 @@ export const StreamTableRow = React.memo((props: StreamTableRowProps) => {
 const humanizeStreamStatus = (status: StreamStatus) => {
   switch (status) {
     case 'active':
-      return 'Enabled';
+      return 'Active';
     case 'inactive':
-      return 'Disabled';
+      return 'Inactive';
     default:
       return 'Unknown';
   }
