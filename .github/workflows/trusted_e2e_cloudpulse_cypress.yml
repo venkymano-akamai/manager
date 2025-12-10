@@ -28,6 +28,14 @@ jobs:
       REACT_APP_LKE_HIGH_AVAILABILITY_PRICE: "60"
 
     steps:
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+           python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
       - name: Get PR info
         id: pr
         uses: actions/github-script@v7
@@ -87,7 +95,7 @@ jobs:
       - name: Run Cloudpulse Cypress tests
         run: |
           cd packages/manager
-          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/cloudpulse-region-support.spec.ts'
+          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/!(cloudpulse-navigation.spec.ts)'
       
       - name: Set Cloudpulse E2E final status
         if: always()
@@ -106,6 +114,24 @@ jobs:
               description: `Cloudpulse E2E ${state}`,
               target_url: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
             });
+      - name: Fetch PR details
+        id: pr_details
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = parseInt('${{ github.event.inputs.pr_number }}', 10);
+      
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+      
+            core.setOutput('url', pr.html_url);
+            core.setOutput('title', pr.title);
+            core.setOutput('author', pr.user.login);
+            
       - name: Notify Webex (Cloudpulse E2E result)
         env:
           status: ${{ job.status }}
@@ -113,10 +139,10 @@ jobs:
           REPO: ${{ github.repository }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ROOM_ID: ${{ secrets.CYPRESS_ROOM_ID }}
-          url: ${{ github.event.pull_request.html_url }}
-          title: ${{ github.event.pull_request.title }}
-          author: ${{ github.event.pull_request.user.login }}
+          url: ${{ steps.pr_details.outputs.url }}
+          title: ${{ steps.pr_details.outputs.title }}
+          author: ${{ steps.pr_details.outputs.author }}
         if: always()
         run: |
                 cd scripts
-                cypress_status_notifier.py
+                python3 cypress_status_notifier.py
