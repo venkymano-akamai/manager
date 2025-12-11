@@ -62,8 +62,7 @@ import type {
   ObjectStorageEndpoint,
 } from '@linode/api-v4';
 
-/** normalize serviceType → so firewall_linode + firewall_nodebalancer = firewall */
-const normalize = (svc: string) =>
+const normalizeServiceType = (svc: string) =>
   svc
     .replace(/[_-]/g, '')
     .replace(/linode|nodebalancer|endpoint/g, '')
@@ -292,7 +291,7 @@ describe('Dashboard Filter Reset on Switch', () => {
     serviceKeys.forEach((key) => {
       const svc = widgetDetails[key];
       const raw = svc.serviceType;
-      const norm = normalize(raw);
+      const norm = normalizeServiceType(raw);
 
       // Get main dashboard
       const main = dashboardFor(key);
