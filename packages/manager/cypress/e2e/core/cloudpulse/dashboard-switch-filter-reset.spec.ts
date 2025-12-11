@@ -175,7 +175,6 @@ const mockRegion = regionFactory.build({
       'Object Storage',
       'Block Storage',
       'Cloud Firewall',
-      'Object Storage',
     ],
   },
 });
