@@ -30,7 +30,6 @@ import {
   mockGetBuckets,
   mockGetObjectStorageEndpoints,
 } from 'support/intercepts/object-storage';
-import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
@@ -340,7 +339,7 @@ describe('Dashboard Filter Reset on Switch', () => {
       serviceType: 'objectstorage',
     },
     { name: 'Object Storage Dashboard-6', serviceType: 'objectstorage' },
-   /* { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
+    /* { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
     { name: 'Firewall NodeBalancer Dashboard-8', serviceType: 'firewall' },
     { name: 'Linode Dashboard-2', serviceType: 'linode' },
     { name: 'LKE Cluster Status Dashboard-9', serviceType: 'kubernetes' },
@@ -354,135 +353,125 @@ describe('Dashboard Filter Reset on Switch', () => {
       .findByLabel('Dashboard')
       .should('be.visible')
       .as('dashboardField');
-  
+
     cy.get('@dashboardField').clear();
     cy.get('@dashboardField').type(dashboardName);
-  
+
     ui.autocompletePopper
       .findByTitle(dashboardName)
       .should('be.visible')
       .click();
-  
+
     cy.get('@dashboardField')
       .should('have.value', dashboardName, { timeout: 20000 })
       .should('be.visible');
-  
+
     switch (serviceType) {
-      case 'dbaas': {
-        ui.autocomplete
-          .findByLabel('Database Engine')
-          .should('be.visible')
-          .type('MySQL');
-  
-        ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
-  
-        ui.regionSelect.find().click();
-        ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
-  
-        ui.autocomplete
-          .findByLabel('Database Clusters')
-          .should('be.visible')
-          .type('mysql-cluster');
-  
-        ui.autocompletePopper
-          .findByTitle('mysql-cluster')
-          .should('be.visible')
-          .click();
-  
-        ui.button
-          .findByAttribute('aria-label', 'Close')
-          .should('be.visible')
-          .click();
-  
-        ui.autocomplete
-          .findByLabel('Node Type')
-          .should('be.visible')
-          .type('primary{enter}');
-  
-        break;
-      }
-  
-      case 'firewall':
-        // no extra filters today
-        break;
-  
       case 'blockstorage': {
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
-  
+
         ui.autocomplete.findByLabel('Volumes').type('Test_Volume');
         ui.autocompletePopper.findByTitle('Test_Volume').click();
         ui.autocomplete.findByLabel('Volumes').type('{esc}');
         break;
       }
-  
+
+      case 'dbaas': {
+        ui.autocomplete
+          .findByLabel('Database Engine')
+          .should('be.visible')
+          .type('MySQL');
+
+        ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
+
+        ui.regionSelect.find().click();
+        ui.regionSelect.find().clear();
+        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+        ui.autocomplete
+          .findByLabel('Database Clusters')
+          .should('be.visible')
+          .type('mysql-cluster');
+
+        ui.autocompletePopper
+          .findByTitle('mysql-cluster')
+          .should('be.visible')
+          .click();
+
+        ui.button
+          .findByAttribute('aria-label', 'Close')
+          .should('be.visible')
+          .click();
+
+        ui.autocomplete
+          .findByLabel('Node Type')
+          .should('be.visible')
+          .type('primary{enter}');
+
+        break;
+      }
+
+      case 'firewall':
+        // no extra filters today
+        break;
+
       case 'objectstorage': {
         switch (dashboardName) {
-          case 'Object Storage Dashboard-6': {
-            ui.regionSelect.find().click();
-            ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
-  
-            ui.autocomplete
-              .findByLabel('Endpoints')
-              .should('be.visible')
-              .type('endpoint_type-E2-us-sea-2.linodeobjects.com{enter}');
-  
-            ui.autocomplete.findByLabel('Endpoints').click();
-  
-            ui.autocomplete
-              .findByLabel('Buckets')
-              .should('be.visible')
-              .type('bucket-2.us-ord-2.linodeobjects.com{enter}');
-  
-            ui.autocomplete.findByLabel('Buckets').click();
-            break;
-          }
-  
           case 'Object Storage By Endpoint Dashboard-10': {
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
-  
+
             ui.autocomplete
-            .findByLabel('Endpoints')
-            .should('be.visible')
-            .type('endpoint_type-E2-us-sea-2.linodeobjects.com{enter}');
-      
-          ui.autocomplete.findByLabel('Endpoints').click();
-  
+              .findByLabel('Endpoints')
+              .should('be.visible')
+              .type('endpoint_type-E2-us-sea-2.linodeobjects.com{enter}');
+
+            ui.autocomplete.findByLabel('Endpoints').click();
+
             break;
           }
-  
+
+          case 'Object Storage Dashboard-6': {
+            ui.regionSelect.find().click();
+            ui.regionSelect.find().clear();
+            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+            ui.autocomplete
+              .findByLabel('Endpoints')
+              .should('be.visible')
+              .type('endpoint_type-E2-us-sea-2.linodeobjects.com{enter}');
+
+            ui.autocomplete.findByLabel('Endpoints').click();
+
+            ui.autocomplete
+              .findByLabel('Buckets')
+              .should('be.visible')
+              .type('bucket-2.us-ord-2.linodeobjects.com{enter}');
+
+            ui.autocomplete.findByLabel('Buckets').click();
+            break;
+          }
+
           default:
             break;
         }
-  
+
         break;
       }
-  
+
       default:
         break;
     }
-  
+
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
     );
   };
-  
-  it('should load dashboard list and show additional dashboards', () => {
-    mockGetUserPreferences({
-      aclpPreference: {
-        dashboardId: 1,
-        engine: 'mysql',
-        region: 'us-ord',
-        resources: ['1'],
-        node_type: 'primary',
-      },
-    }).as('fetchPreferences');
 
+  it('should load dashboard list and show additional dashboards', () => {
     mockCreateCloudPulseMetrics(dbaas.serviceType, metricsAPIResponsePayload);
     mockCreateCloudPulseMetrics(
       dbaas.serviceType,
@@ -490,7 +479,7 @@ describe('Dashboard Filter Reset on Switch', () => {
     ).as('getMetrics');
 
     cy.visitWithLogin('/metrics');
-    cy.wait('@fetchPreferences');
+    selectDashboard('Dbaas Dashboard-1', 'dbaas');
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
     ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
       selectDashboard(name, serviceType);
