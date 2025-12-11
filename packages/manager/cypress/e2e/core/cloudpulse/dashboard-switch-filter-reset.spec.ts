@@ -118,7 +118,6 @@ const dashboardFor = (key: keyof typeof widgetDetails) => {
   });
 };
 
-/** Extra dashboards (fixed mapping using normalized keys) */
 const extraDashboards: {
   [key: string]: Array<{
     dashboardName: string;
@@ -570,18 +569,25 @@ describe('Dashboard Filter Reset on Switch', () => {
     );
   };
 
-  it('should load dbass dashboard list and show additional dashboards', () => {
-    mockCreateCloudPulseMetrics(dbaas.serviceType, metricsAPIResponsePayload);
-    mockCreateCloudPulseMetrics(
-      dbaas.serviceType,
-      metricsAPIResponsePayload
-    ).as('getMetrics');
+  it('loads the DBaaS dashboard, opens the All Dashboards view, and verifies no errors occurred', () => {
+    mockCreateCloudPulseMetrics('dbaas', metricsAPIResponsePayload);
+    mockCreateCloudPulseMetrics('dbaas', metricsAPIResponsePayload).as(
+      'getMetrics'
+    );
 
     cy.visitWithLogin('/metrics');
     selectDashboard('Dbaas Dashboard-1', 'dbaas');
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+
     ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
       selectDashboard(name, serviceType);
+      cy.get(
+        `[data-qa-widget="${
+          widgetDetails[serviceType as keyof typeof widgetDetails].metrics[0]
+            .title
+        }"]`
+      ).should('be.visible');
+
       cy.get('body').within(() => {
         cy.contains('Something went wrong').should('not.exist');
         cy.contains('TypeError: p.current[z]?.map is not a function').should(
