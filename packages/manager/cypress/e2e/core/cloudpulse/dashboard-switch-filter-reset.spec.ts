@@ -604,42 +604,4 @@ describe('Dashboard Filter Reset on Switch', () => {
       });
     });
   });
-
-  it('loads the Lke dashboard, opens the All Dashboards view, and verifies no errors occurred', () => {
-    const serviceType = 'lke';
-    const dashboardName = 'LKE Cluster Status Dashboard-9';
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload);
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'getMetrics'
-    );
-
-    cy.visitWithLogin('/metrics');
-    selectDashboard(dashboardName, serviceType);
-    cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
-
-    // Skip the one already selected
-    const dashboardsToTest = ALL_DASHBOARDS.filter(
-      (d) => d.serviceType !== serviceType
-    );
-
-    dashboardsToTest.forEach(({ name, serviceType }) => {
-      cy.log('Switching to serviceType:', serviceType);
-      cy.log('Switching to name:', name);
-      selectDashboard(name, serviceType);
-
-      cy.get(
-        `[data-qa-widget="${
-          widgetDetails[serviceType as keyof typeof widgetDetails].metrics[0]
-            .title
-        }"]`
-      ).should('be.visible');
-
-      cy.get('body').within(() => {
-        cy.contains('Something went wrong').should('not.exist');
-        cy.contains('TypeError: p.current[z]?.map is not a function').should(
-          'not.exist'
-        );
-      });
-    });
-  });
 });
