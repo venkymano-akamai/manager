@@ -36,6 +36,7 @@ import {
   mockGetBuckets,
   mockGetObjectStorageEndpoints,
 } from 'support/intercepts/object-storage';
+import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
@@ -282,6 +283,7 @@ describe('Dashboard Filter Reset on Switch', () => {
     mockGetObjectStorageEndpoints(mockEndpoints).as(
       'getObjectStorageEndpoints'
     );
+    mockGetUserPreferences({});
 
     // Step 1: Build master deduped dashboard list and map serviceType to dashboards
     const masterDashboardsByServiceType: Record<string, Dashboard[]> = {};
@@ -341,6 +343,10 @@ describe('Dashboard Filter Reset on Switch', () => {
           );
           dashboards.forEach((db) => mockGetCloudPulseDashboard(db.id, db));
           mockCreateCloudPulseJWEToken(serviceType);
+          mockCreateCloudPulseMetrics(
+            serviceType,
+            metricsAPIResponsePayload
+          ).as('getMetrics');
         }
       }
     );
@@ -364,18 +370,17 @@ describe('Dashboard Filter Reset on Switch', () => {
   ];
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
+    ui.button.findByAttribute('aria-label', 'Open').first().click();
+
+    cy.contains(
+      '[role="option"][data-qa-option="true"]',
+      dashboardName
+    ).click();
+
     ui.autocomplete
       .findByLabel('Dashboard')
       .should('be.visible')
       .as('dashboardField');
-
-    cy.get('@dashboardField').clear();
-    cy.get('@dashboardField').type(dashboardName);
-
-    ui.autocompletePopper
-      .findByTitle(dashboardName)
-      .should('be.visible')
-      .click();
 
     cy.get('@dashboardField')
       .should('have.value', dashboardName, { timeout: 20000 })
@@ -434,8 +439,6 @@ describe('Dashboard Filter Reset on Switch', () => {
             cy.findByPlaceholderText('Select Firewalls').type(
               'Firewall-0{enter}'
             );
-
-            ui.autocomplete.findByLabel('Firewalls').click();
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -461,9 +464,6 @@ describe('Dashboard Filter Reset on Switch', () => {
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
-
-            cy.get('body').click(0, 0); // click empty area to close
-
             break;
         }
         break;
