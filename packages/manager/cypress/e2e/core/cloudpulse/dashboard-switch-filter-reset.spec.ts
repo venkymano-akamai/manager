@@ -193,7 +193,7 @@ const mockedEnterpriseClusters = [
 const mockFirewalls = [
   firewallFactory.build({
     id: 1,
-    label: 'fireall-1',
+    label: 'Firewall-0',
     status: 'enabled',
     entities: [
       {
@@ -205,10 +205,25 @@ const mockFirewalls = [
       },
     ],
   }),
+  firewallFactory.build({
+    id: 2,
+    label: 'Firewall-1',
+    status: 'enabled',
+    entities: [
+      {
+        id: 1,
+        label: 'nodebalancer-1',
+        type: 'nodebalancer',
+        url: '/test',
+        parent_entity: null,
+      },
+    ],
+  }),
 ];
 const mockNodeBalancers = nodeBalancerFactory.build({
   label: 'mockNodeBalancer-resource-1',
   region: 'us-ord',
+  id: 2,
 });
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
@@ -339,13 +354,11 @@ describe('Dashboard Filter Reset on Switch', () => {
       serviceType: 'objectstorage',
     },
     { name: 'Object Storage Dashboard-6', serviceType: 'objectstorage' },
-    /* { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
+    { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
     { name: 'Firewall NodeBalancer Dashboard-8', serviceType: 'firewall' },
     { name: 'Linode Dashboard-2', serviceType: 'linode' },
-    { name: 'LKE Cluster Status Dashboard-9', serviceType: 'kubernetes' },
+    { name: 'LKE Cluster Status Dashboard-9', serviceType: 'lke' },
     { name: 'NodeBalancer Dashboard-3', serviceType: 'nodebalancer' },
-    
-   ,*/
   ];
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
@@ -413,10 +426,96 @@ describe('Dashboard Filter Reset on Switch', () => {
         break;
       }
 
-      case 'firewall':
-        // no extra filters today
-        break;
+      case 'firewall': {
+        switch (dashboardName) {
+          case 'Firewall Dashboard-4':
+            cy.findByPlaceholderText('Select Firewalls').type(
+              'Firewall-0{enter}'
+            );
 
+            ui.autocomplete.findByLabel('Firewalls').click();
+            ui.regionSelect.find().click();
+            ui.regionSelect.find().clear();
+            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.autocomplete.findByLabel('Linode Region').click();
+            ui.autocomplete
+              .findByLabel('Interface Types')
+              .should('be.visible')
+              .type('VPC{enter}');
+
+            ui.autocomplete.findByLabel('Interface Types').click();
+
+            cy.findByPlaceholderText('e.g., 1234,5678')
+              .should('be.visible')
+              .type('1234{enter}');
+            break;
+
+          case 'Firewall NodeBalancer Dashboard-8':
+            cy.findByPlaceholderText('Select a Firewall').type(
+              'Firewall-1{enter}'
+            );
+
+            ui.autocomplete.findByLabel('Firewall').click();
+            ui.regionSelect.find().click();
+            ui.regionSelect.find().clear();
+            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+            cy.get('body').click(0, 0); // click empty area to close
+
+            break;
+        }
+        break;
+      }
+
+      case 'linode': {
+        ui.regionSelect.find().click();
+        ui.regionSelect.find().clear();
+        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+        ui.autocomplete
+          .findByLabel('Linode Label(s)')
+          .should('be.visible')
+          .type('mysql-cluster{enter}');
+        ui.autocomplete.findByLabel('Linode Label(s)').click();
+
+        break;
+      }
+      case 'lke': {
+        ui.regionSelect.find().click();
+        ui.regionSelect.find().clear();
+        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+        ui.autocomplete
+          .findByLabel('Clusters')
+          .should('be.visible')
+          .as('clusterDropdown');
+
+        cy.get('@clusterDropdown').click();
+        cy.get('@clusterDropdown').type('enterprise-cluster-us-east1{enter}');
+
+        cy.get('@clusterDropdown').click();
+
+        cy.findByText('enterprise-cluster-us-east1').should('be.visible');
+
+        break;
+      }
+
+      case 'nodebalancer': {
+        ui.regionSelect.find().click();
+        ui.regionSelect.find().clear();
+        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+        ui.autocomplete
+          .findByLabel('Nodebalancers')
+          .should('be.visible')
+          .type('mockNodeBalancer-resource-1{enter}');
+
+        cy.findByPlaceholderText('e.g., 80,443,3000')
+          .should('be.visible')
+          .type('80{enter}');
+
+        break;
+      }
       case 'objectstorage': {
         switch (dashboardName) {
           case 'Object Storage By Endpoint Dashboard-10': {
@@ -471,7 +570,7 @@ describe('Dashboard Filter Reset on Switch', () => {
     );
   };
 
-  it('should load dashboard list and show additional dashboards', () => {
+  it('should load dbass dashboard list and show additional dashboards', () => {
     mockCreateCloudPulseMetrics(dbaas.serviceType, metricsAPIResponsePayload);
     mockCreateCloudPulseMetrics(
       dbaas.serviceType,
@@ -483,6 +582,12 @@ describe('Dashboard Filter Reset on Switch', () => {
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
     ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
       selectDashboard(name, serviceType);
+      cy.get('body').within(() => {
+        cy.contains('Something went wrong').should('not.exist');
+        cy.contains('TypeError: p.current[z]?.map is not a function').should(
+          'not.exist'
+        );
+      });
     });
   });
 });
