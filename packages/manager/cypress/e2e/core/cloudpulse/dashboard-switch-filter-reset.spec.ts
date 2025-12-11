@@ -1,8 +1,14 @@
 /**
- * FIXED CloudPulse Dashboard Setup
- * - No duplicate "firewall" dashboards across its variants
- * - Extra dashboards (8, 10) load correctly
- * - Handles mixed serviceType strings (firewall_linode, object-storage, etc.) as intended
+ * @file dashboard-switch-filter-reset.spec.ts
+ * @description
+ * Cypress end-to-end tests for verifying that dependent filters are correctly reset
+ * when switching dashboards in the CloudPulseDashboardFilterBuilder component.
+ * Also ensures type safety when handling filter references.
+ *
+ * Test Scenarios:
+ * - Switching dashboards clears/reset dependent filter references.
+ * - Filter selections are type-safe and consistent after dashboard switches.
+ * - UI reflects reset state as expected.
  */
 
 import {
@@ -346,18 +352,17 @@ describe('Dashboard Filter Reset on Switch', () => {
   });
   const ALL_DASHBOARDS = [
     { name: 'Dbaas Dashboard-1', serviceType: 'dbaas' },
-
+    { name: 'Linode Dashboard-2', serviceType: 'linode' },
+    { name: 'NodeBalancer Dashboard-3', serviceType: 'nodebalancer' },
+    { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
+    { name: 'Object Storage Dashboard-6', serviceType: 'objectstorage' },
     { name: 'Block Storage Dashboard-7', serviceType: 'blockstorage' },
+    { name: 'Firewall NodeBalancer Dashboard-8', serviceType: 'firewall' },
+    { name: 'LKE Cluster Status Dashboard-9', serviceType: 'lke' },
     {
       name: 'Object Storage By Endpoint Dashboard-10',
       serviceType: 'objectstorage',
     },
-    { name: 'Object Storage Dashboard-6', serviceType: 'objectstorage' },
-    { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
-    { name: 'Firewall NodeBalancer Dashboard-8', serviceType: 'firewall' },
-    { name: 'Linode Dashboard-2', serviceType: 'linode' },
-    { name: 'LKE Cluster Status Dashboard-9', serviceType: 'lke' },
-    { name: 'NodeBalancer Dashboard-3', serviceType: 'nodebalancer' },
   ];
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
@@ -569,18 +574,61 @@ describe('Dashboard Filter Reset on Switch', () => {
     );
   };
 
-  it('loads the DBaaS dashboard, opens the All Dashboards view, and verifies no errors occurred', () => {
-    mockCreateCloudPulseMetrics('dbaas', metricsAPIResponsePayload);
-    mockCreateCloudPulseMetrics('dbaas', metricsAPIResponsePayload).as(
+  ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
+    it(`loads the ${serviceType} dashboard and ${name} name of the dashboard, opens All Dashboards view, and verifies no errors occurred`, () => {
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload);
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+        'getMetrics'
+      );
+
+      cy.visitWithLogin('/metrics');
+      selectDashboard(name, serviceType);
+      cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+
+      // Skip the one already selected
+      const dashboardsToTest = ALL_DASHBOARDS.filter((d) => d.name !== name);
+
+      dashboardsToTest.forEach(({ name, serviceType }) => {
+        selectDashboard(name, serviceType);
+        cy.get(
+          `[data-qa-widget="${
+            widgetDetails[serviceType as keyof typeof widgetDetails].metrics[0]
+              .title
+          }"]`
+        ).should('be.visible');
+
+        cy.get('body').within(() => {
+          cy.contains('Something went wrong').should('not.exist');
+          cy.contains('TypeError: p.current[z]?.map is not a function').should(
+            'not.exist'
+          );
+        });
+      });
+    });
+  });
+
+  it('loads the Lke dashboard, opens the All Dashboards view, and verifies no errors occurred', () => {
+    const serviceType = 'lke';
+    const dashboardName = 'LKE Cluster Status Dashboard-9';
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload);
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
     );
 
     cy.visitWithLogin('/metrics');
-    selectDashboard('Dbaas Dashboard-1', 'dbaas');
+    selectDashboard(dashboardName, serviceType);
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
 
-    ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
+    // Skip the one already selected
+    const dashboardsToTest = ALL_DASHBOARDS.filter(
+      (d) => d.serviceType !== serviceType
+    );
+
+    dashboardsToTest.forEach(({ name, serviceType }) => {
+      cy.log('Switching to serviceType:', serviceType);
+      cy.log('Switching to name:', name);
       selectDashboard(name, serviceType);
+
       cy.get(
         `[data-qa-widget="${
           widgetDetails[serviceType as keyof typeof widgetDetails].metrics[0]
