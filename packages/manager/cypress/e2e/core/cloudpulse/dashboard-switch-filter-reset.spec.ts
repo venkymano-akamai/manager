@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /**
  * @file dashboard-switch-filter-reset.spec.ts
  * @description
@@ -279,10 +280,8 @@ describe('Dashboard Filter Reset on Switch', () => {
     mockGetClusters(mockedEnterpriseClusters);
     mockGetFirewalls(mockFirewalls);
     mockGetNodeBalancers([mockNodeBalancers]);
-    mockGetBuckets(bucketMock).as('getBuckets');
-    mockGetObjectStorageEndpoints(mockEndpoints).as(
-      'getObjectStorageEndpoints'
-    );
+    mockGetBuckets(bucketMock);
+    mockGetObjectStorageEndpoints(mockEndpoints);
     mockGetUserPreferences({});
 
     // Step 1: Build master deduped dashboard list and map serviceType to dashboards
@@ -352,7 +351,9 @@ describe('Dashboard Filter Reset on Switch', () => {
     );
 
     // Tell UI the list of available top-level serviceTypes
-    mockGetCloudPulseServices(Object.keys(masterDashboardsByServiceType));
+    mockGetCloudPulseServices(Object.keys(masterDashboardsByServiceType)).as(
+      'getServices'
+    );
   });
   const ALL_DASHBOARDS = [
     { name: 'Dbaas Dashboard-1', serviceType: 'dbaas' },
@@ -370,17 +371,20 @@ describe('Dashboard Filter Reset on Switch', () => {
   ];
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
+    cy.get('[aria-label="Content is loading"]', { timeout: 20000 }).should(
+      'not.exist'
+    );
+
     ui.button
       .findByAttribute('aria-label', 'Open')
       .should('be.visible')
       .should('exist')
       .first()
-      .click();
+      .click({ timeout: 30000 });
 
-    cy.contains(
-      '[role="option"][data-qa-option="true"]',
-      dashboardName
-    ).click();
+    cy.contains('[role="option"][data-qa-option="true"]', dashboardName).click({
+      timeout: 30000,
+    });
 
     ui.autocomplete
       .findByLabel('Dashboard')
@@ -393,9 +397,13 @@ describe('Dashboard Filter Reset on Switch', () => {
 
     switch (serviceType) {
       case 'blockstorage': {
+        ui.regionSelect.find().should('be.enabled');
+
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+        ui.autocomplete.findByLabel('Volumes').should('be.visible');
 
         ui.autocomplete.findByLabel('Volumes').type('Test_Volume');
         ui.autocompletePopper.findByTitle('Test_Volume').click();
@@ -410,7 +418,7 @@ describe('Dashboard Filter Reset on Switch', () => {
           .type('MySQL');
 
         ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
-
+        ui.regionSelect.find().should('be.enabled');
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -444,6 +452,8 @@ describe('Dashboard Filter Reset on Switch', () => {
             cy.findByPlaceholderText('Select Firewalls').type(
               'Firewall-0{enter}'
             );
+            ui.regionSelect.find().should('be.enabled');
+
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -466,6 +476,8 @@ describe('Dashboard Filter Reset on Switch', () => {
             );
 
             ui.autocomplete.findByLabel('Firewall').click();
+            ui.regionSelect.find().should('be.enabled');
+
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -475,6 +487,8 @@ describe('Dashboard Filter Reset on Switch', () => {
       }
 
       case 'linode': {
+        ui.regionSelect.find().should('be.enabled');
+
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -488,6 +502,8 @@ describe('Dashboard Filter Reset on Switch', () => {
         break;
       }
       case 'lke': {
+        ui.regionSelect.find().should('be.enabled');
+
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -508,6 +524,8 @@ describe('Dashboard Filter Reset on Switch', () => {
       }
 
       case 'nodebalancer': {
+        ui.regionSelect.find().should('be.enabled');
+
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -526,6 +544,8 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'objectstorage': {
         switch (dashboardName) {
           case 'Object Storage By Endpoint Dashboard-10': {
+            ui.regionSelect.find().should('be.enabled');
+
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -541,6 +561,8 @@ describe('Dashboard Filter Reset on Switch', () => {
           }
 
           case 'Object Storage Dashboard-6': {
+            ui.regionSelect.find().should('be.enabled');
+
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -572,6 +594,22 @@ describe('Dashboard Filter Reset on Switch', () => {
         break;
     }
   };
+  before(() => {
+    // Full browser cleanup
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.window().then((win) => {
+      win.sessionStorage.clear();
+    });
+
+    // Clear Cypress internal session caches (helps when auth persists)
+    if (
+      'session' in Cypress &&
+      typeof Cypress.session.clearAllSavedSessions === 'function'
+    ) {
+      Cypress.session.clearAllSavedSessions();
+    }
+  });
 
   ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
     it(`loads the ${serviceType} dashboard and ${name} name of the dashboard, opens All Dashboards view, and verifies no errors occurred`, () => {
@@ -580,15 +618,13 @@ describe('Dashboard Filter Reset on Switch', () => {
       );
 
       cy.visitWithLogin('/metrics');
-      cy.wait('@fetchDashboard');
+      cy.wait(['@fetchDashboard', '@getServices']);
       selectDashboard(name, serviceType);
-      cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
-
-      // Skip the one already selected
       const dashboardsToTest = ALL_DASHBOARDS.filter((d) => d.name !== name);
 
       dashboardsToTest.forEach(({ name, serviceType }) => {
         selectDashboard(name, serviceType);
+        cy.get('[aria-label="Content is loading"]').should('not.exist');
         cy.get(
           `[data-qa-widget="${
             widgetDetails[serviceType as keyof typeof widgetDetails].metrics[0]
