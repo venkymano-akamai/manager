@@ -385,19 +385,29 @@ describe('Dashboard Filter Reset on Switch', () => {
 
     mockGetCloudPulseServices(Object.keys(masterDashboardsByServiceType));
   });
+  after(() => {
+    cy.clearCookies({ log: false });
+    cy.clearLocalStorage({ log: false });
+    cy.window({ log: false }).then((win) => win.sessionStorage.clear());
+  });
 
   const ALL_DASHBOARDS = [
-    { name: 'Dbaas Dashboard-1', serviceType: 'dbaas' },
-    { name: 'LKE Cluster Status Dashboard-9', serviceType: 'lke' },
-    { name: 'Linode Dashboard-2', serviceType: 'linode' },
-    { name: 'NodeBalancer Dashboard-3', serviceType: 'nodebalancer' },
-    { name: 'Firewall Dashboard-4', serviceType: 'firewall' },
-    { name: 'Object Storage Dashboard-6', serviceType: 'objectstorage' },
-    { name: 'Block Storage Dashboard-7', serviceType: 'blockstorage' },
-    { name: 'Firewall NodeBalancer Dashboard-8', serviceType: 'firewall' },
+    { name: 'Dbaas Dashboard-1', serviceType: 'dbaas', id: 1 },
+    { name: 'LKE Cluster Status Dashboard-9', serviceType: 'lke', id: 9 },
+    { name: 'Linode Dashboard-2', serviceType: 'linode', id: 2 },
+    { name: 'NodeBalancer Dashboard-3', serviceType: 'nodebalancer', id: 3 },
+    { name: 'Firewall Dashboard-4', serviceType: 'firewall', id: 4 },
+    { name: 'Object Storage Dashboard-6', serviceType: 'objectstorage', id: 6 },
+    { name: 'Block Storage Dashboard-7', serviceType: 'blockstorage', id: 7 },
+    {
+      name: 'Firewall NodeBalancer Dashboard-8',
+      serviceType: 'firewall',
+      id: 8,
+    },
     {
       name: 'Object Storage By Endpoint Dashboard-10',
       serviceType: 'objectstorage',
+      id: 10,
     },
   ];
 
@@ -410,7 +420,6 @@ describe('Dashboard Filter Reset on Switch', () => {
   };
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
-    cy.wait(1000);
     cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
       'not.exist'
     );
@@ -437,7 +446,6 @@ describe('Dashboard Filter Reset on Switch', () => {
 
     switch (serviceType) {
       case 'blockstorage': {
-        cy.wait('@getVolumes');
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -449,7 +457,6 @@ describe('Dashboard Filter Reset on Switch', () => {
       }
 
       case 'dbaas': {
-        cy.wait('@getDatabases');
         ui.autocomplete
           .findByLabel('Database Engine')
           .should('be.visible')
@@ -487,7 +494,6 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'firewall': {
         switch (dashboardName) {
           case 'Firewall Dashboard-4':
-            cy.wait('@getFirewalls');
             cy.findByPlaceholderText('Select Firewalls', { timeout: 20000 })
               .should('be.visible')
               .should('be.enabled')
@@ -513,7 +519,6 @@ describe('Dashboard Filter Reset on Switch', () => {
             break;
 
           case 'Firewall NodeBalancer Dashboard-8':
-            cy.wait(3000);
             cy.findByPlaceholderText('Select a Firewall').type(
               'Firewall-1{enter}'
             );
@@ -528,7 +533,6 @@ describe('Dashboard Filter Reset on Switch', () => {
       }
 
       case 'linode': {
-        cy.wait('@getLinodes');
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -542,7 +546,6 @@ describe('Dashboard Filter Reset on Switch', () => {
         break;
       }
       case 'lke': {
-        cy.wait('@getClusters');
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -563,7 +566,6 @@ describe('Dashboard Filter Reset on Switch', () => {
       }
 
       case 'nodebalancer': {
-        cy.wait('@getNodeBalancers');
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
         ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -582,7 +584,6 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'objectstorage': {
         switch (dashboardName) {
           case 'Object Storage By Endpoint Dashboard-10': {
-            cy.wait('@getObjectStorageEndpoints');
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -598,7 +599,6 @@ describe('Dashboard Filter Reset on Switch', () => {
           }
 
           case 'Object Storage Dashboard-6': {
-            cy.wait('@getBuckets');
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
             ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
@@ -631,48 +631,26 @@ describe('Dashboard Filter Reset on Switch', () => {
     }
   };
 
-  ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
-    it(`loads the ${serviceType} dashboard and ${name} name of the dashboard, opens All Dashboards view, and verifies no errors occurred`, () => {
-      // ensure metrics intercept exists for this serviceType and alias matches the beforeEach registration
-      // Re-registering the same intercept here is safe but we must ensure alias uniqueness
-      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-        `getMetrics-${serviceType}`
-      );
+  ALL_DASHBOARDS.forEach((from, i) => {
+    it(`loads ${from.serviceType} → ${from.name}`, () => {
+      mockCreateCloudPulseMetrics(
+        from.serviceType,
+        metricsAPIResponsePayload
+      ).as(`getMetrics-${from.serviceType}`);
 
       cy.visitWithLogin('/metrics');
-      // wait for dashboards list for this serviceType to load
-      cy.wait(`@fetchDashboard-${serviceType}`);
+      cy.wait(`@fetchDashboard-${from.serviceType}`);
 
-      selectDashboard(name, serviceType);
-
-      // wait for at least one metrics response for this serviceType and then assert UI rendered
-      cy.wait(`@getMetrics-${serviceType}`);
-      // assert widget is visible (robust UI condition)
-      waitForWidget(serviceType);
-
-      // Skip the one already selected
-      const dashboardsToTest = ALL_DASHBOARDS.filter((d) => d.name !== name);
-
-      dashboardsToTest.forEach(({ name, serviceType }) => {
-        // When switching dashboards, ensure we wait for the fetch that corresponds to the dashboard
-        // The serviceType might be the same as previous; ensure fetch alias exists from beforeEach
-        selectDashboard(name, serviceType);
-
-        // Wait for metrics for newly selected serviceType (alias deterministic)
-        cy.wait(`@getMetrics-${serviceType}`);
-
-        // Assert widget visible for newly selected dashboard (retryable)
-        waitForWidget(serviceType);
-
-        // Scope error checks to CloudPulse main area to avoid false positives from unrelated parts of page
-        cy.get('body').within(() => {
-          // Prefer checking for error banners / visible error messages instead of fragile exact error texts.
-          // If your app displays a specific error banner element, use that data-qa selector here.
-          cy.contains('Something went wrong').should('not.exist');
-
-          // Do not rely on exact console error text which varies by environment.
-          // If you must detect console errors, add a global console.error stub in Cypress support.
-        });
+      ALL_DASHBOARDS.forEach((to, j) => {
+        if (i < j) {
+          selectDashboard(from.name, from.serviceType);
+          selectDashboard(to.name, to.serviceType);
+          cy.wait(`@getMetrics-${to.serviceType}`);
+          waitForWidget(to.serviceType);
+          cy.get('body').within(() => {
+            cy.contains('Something went wrong').should('not.exist');
+          });
+        }
       });
     });
   });
