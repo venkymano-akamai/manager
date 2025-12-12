@@ -1,57 +1,54 @@
 import { Autocomplete } from '@linode/ui';
 import React from 'react';
-import type { FieldPathByValue } from 'react-hook-form';
-import { Controller, useFormContext } from 'react-hook-form';
 
-import { channelTypeOptions, type Item } from '../../constants';
-
-import type { CreateNotificationChannelForm } from './types';
+import type { Item } from '../../constants';
 import type { ChannelType } from '@linode/api-v4';
 
-interface NotificationChannelTypeSelectProps {
+export interface NotificationChannelTypeSelectProps {
   /**
-   * Function to handle the channel type change
+   * Error text to display when the field has a validation error
    */
-  handleChannelTypeChange: () => void;
+  error?: string;
   /**
-   * Name of the field in the form for the channel type
+   * Function to handle the change of the channel type
    */
-  name: FieldPathByValue<CreateNotificationChannelForm, ChannelType | null>;
+  handleChannelTypeChange: (value: ChannelType | null) => void;
+  /**
+   * Function to handle the blur event
+   */
+  onBlur?: () => void;
+  /**
+   * Options for the channel type select
+   */
+  options: Item<string, ChannelType>[];
+  /**
+   * Value of the channel type in the form
+   */
+  value: ChannelType | null;
 }
 
-export const NotificationChannelTypeSelect = (
-  props: NotificationChannelTypeSelectProps
-) => {
-  const { name, handleChannelTypeChange } = props;
-  const { control } = useFormContext<CreateNotificationChannelForm>();
+export const NotificationChannelTypeSelect = React.memo(
+  (props: NotificationChannelTypeSelectProps) => {
+    const { error, handleChannelTypeChange, value, options, onBlur } = props;
 
-  return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field, fieldState }) => (
-        <Autocomplete
-          data-testid="channel-type-select"
-          errorText={fieldState.error?.message}
-          label="Type"
-          onBlur={field.onBlur}
-          onChange={(_, selected: Item<string, ChannelType>, reason) => {
-            if (selected) {
-              field.onChange(selected.value);
-            }
-            if (reason === 'clear') {
-              field.onChange(null);
-            }
-            handleChannelTypeChange();
-          }}
-          options={channelTypeOptions}
-          placeholder="Select a Channel Type"
-          value={
-            channelTypeOptions.find((option) => option.value === field.value) ??
-            null
+    return (
+      <Autocomplete
+        data-testid="channel-type-select"
+        errorText={error}
+        label="Type"
+        onBlur={onBlur}
+        onChange={(_, selected: Item<string, ChannelType>, reason) => {
+          if (selected) {
+            handleChannelTypeChange(selected.value);
           }
-        />
-      )}
-    />
-  );
-};
+          if (reason === 'clear') {
+            handleChannelTypeChange(null);
+          }
+        }}
+        options={options}
+        placeholder="Select a Channel Type"
+        value={options.find((option) => option.value === value) ?? null}
+      />
+    );
+  }
+);
