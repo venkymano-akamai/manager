@@ -397,31 +397,44 @@ describe('Dashboard Filter Reset on Switch', () => {
 
     switch (serviceType) {
       case 'blockstorage': {
-        ui.regionSelect.find().should('be.enabled');
+        ui.regionSelect.find().as('regionSelect');
+        cy.get('@regionSelect').should('be.enabled').focus();
+        cy.get('@regionSelect').click();
+        cy.get('@regionSelect').clear();
+        cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
 
-        ui.regionSelect.find().click();
-        ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
-
-        ui.autocomplete.findByLabel('Volumes').should('be.visible');
-
-        ui.autocomplete.findByLabel('Volumes').type('Test_Volume');
+        ui.autocomplete.findByLabel('Volumes').as('volumes');
+        cy.get('@volumes').should('be.visible');
+        cy.get('@volumes').type('Test_Volume');
         ui.autocompletePopper.findByTitle('Test_Volume').click();
-        ui.autocomplete.findByLabel('Volumes').type('{esc}');
+        cy.get('@volumes').type('{esc}');
+
         break;
       }
 
       case 'dbaas': {
+        cy.get('[aria-label="Content is loading"]', { timeout: 20000 }).should(
+          'not.exist'
+        );
+
         ui.autocomplete
           .findByLabel('Database Engine')
           .should('be.visible')
           .type('MySQL');
 
         ui.autocompletePopper.findByTitle('MySQL').should('be.visible').click();
-        ui.regionSelect.find().should('be.enabled');
-        ui.regionSelect.find().click();
-        ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+
+        ui.regionSelect.find().as('regionSelect');
+        cy.get('@regionSelect').should('be.enabled').focus();
+        cy.get('@regionSelect').click();
+        cy.get('@regionSelect').clear();
+        cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
+
+        ui.autocomplete
+          .findByLabel('Database Clusters')
+          .should('be.visible')
+          .focus()
+          .click();
 
         ui.autocomplete
           .findByLabel('Database Clusters')
@@ -449,14 +462,21 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'firewall': {
         switch (dashboardName) {
           case 'Firewall Dashboard-4':
-            cy.findByPlaceholderText('Select Firewalls').type(
-              'Firewall-0{enter}'
-            );
-            ui.regionSelect.find().should('be.enabled');
+            cy.get('[aria-label="Content is loading"]', {
+              timeout: 20000,
+            }).should('not.exist');
+            cy.findByPlaceholderText('Select Firewalls')
+              .should('be.visible')
+              .as('firewallSelect');
+            cy.get('@firewallSelect').focus();
+            cy.get('@firewallSelect').type('Firewall-0{enter}');
 
-            ui.regionSelect.find().click();
-            ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.regionSelect.find().as('regionSelect');
+            cy.get('@regionSelect').should('be.enabled').focus();
+            cy.get('@regionSelect').click();
+            cy.get('@regionSelect').clear();
+            cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
+
             ui.autocomplete.findByLabel('Linode Region').click();
             ui.autocomplete
               .findByLabel('Interface Types')
@@ -478,20 +498,25 @@ describe('Dashboard Filter Reset on Switch', () => {
             ui.autocomplete.findByLabel('Firewall').click();
             ui.regionSelect.find().should('be.enabled');
 
-            ui.regionSelect.find().click();
-            ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.regionSelect.find().as('regionSelect');
+            cy.get('@regionSelect').should('be.enabled').focus();
+            cy.get('@regionSelect').click();
+            cy.get('@regionSelect').clear();
+            cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
             break;
         }
         break;
       }
 
       case 'linode': {
-        ui.regionSelect.find().should('be.enabled');
-
-        ui.regionSelect.find().click();
-        ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        cy.get('[aria-label="Content is loading"]', { timeout: 20000 }).should(
+          'not.exist'
+        );
+        ui.regionSelect.find().as('regionSelect');
+        cy.get('@regionSelect').should('be.enabled').focus();
+        cy.get('@regionSelect').click();
+        cy.get('@regionSelect').clear();
+        cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
 
         ui.autocomplete
           .findByLabel('Linode Label(s)')
@@ -502,11 +527,14 @@ describe('Dashboard Filter Reset on Switch', () => {
         break;
       }
       case 'lke': {
-        ui.regionSelect.find().should('be.enabled');
-
-        ui.regionSelect.find().click();
-        ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        cy.get('[aria-label="Content is loading"]', { timeout: 20000 }).should(
+          'not.exist'
+        );
+        ui.regionSelect.find().as('regionSelect');
+        cy.get('@regionSelect').should('be.enabled').focus();
+        cy.get('@regionSelect').click();
+        cy.get('@regionSelect').clear();
+        cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
 
         ui.autocomplete
           .findByLabel('Clusters')
@@ -524,11 +552,14 @@ describe('Dashboard Filter Reset on Switch', () => {
       }
 
       case 'nodebalancer': {
-        ui.regionSelect.find().should('be.enabled');
-
-        ui.regionSelect.find().click();
-        ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        cy.get('[aria-label="Content is loading"]', { timeout: 20000 }).should(
+          'not.exist'
+        );
+        ui.regionSelect.find().as('regionSelect');
+        cy.get('@regionSelect').should('be.enabled').focus();
+        cy.get('@regionSelect').click();
+        cy.get('@regionSelect').clear();
+        cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
 
         ui.autocomplete
           .findByLabel('Nodebalancers')
@@ -544,11 +575,14 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'objectstorage': {
         switch (dashboardName) {
           case 'Object Storage By Endpoint Dashboard-10': {
-            ui.regionSelect.find().should('be.enabled');
-
-            ui.regionSelect.find().click();
-            ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            cy.get('[aria-label="Content is loading"]', {
+              timeout: 20000,
+            }).should('not.exist');
+            ui.regionSelect.find().as('regionSelect');
+            cy.get('@regionSelect').should('be.enabled').focus();
+            cy.get('@regionSelect').click();
+            cy.get('@regionSelect').clear();
+            cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
 
             ui.autocomplete
               .findByLabel('Endpoints')
@@ -561,11 +595,14 @@ describe('Dashboard Filter Reset on Switch', () => {
           }
 
           case 'Object Storage Dashboard-6': {
-            ui.regionSelect.find().should('be.enabled');
-
-            ui.regionSelect.find().click();
-            ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            cy.get('[aria-label="Content is loading"]', {
+              timeout: 20000,
+            }).should('not.exist');
+            ui.regionSelect.find().as('regionSelect');
+            cy.get('@regionSelect').should('be.enabled').focus();
+            cy.get('@regionSelect').click();
+            cy.get('@regionSelect').clear();
+            cy.get('@regionSelect').type('US, Chicago, IL (us-ord){enter}');
 
             ui.autocomplete
               .findByLabel('Endpoints')
@@ -601,14 +638,6 @@ describe('Dashboard Filter Reset on Switch', () => {
     cy.window().then((win) => {
       win.sessionStorage.clear();
     });
-
-    // Clear Cypress internal session caches (helps when auth persists)
-    if (
-      'session' in Cypress &&
-      typeof Cypress.session.clearAllSavedSessions === 'function'
-    ) {
-      Cypress.session.clearAllSavedSessions();
-    }
   });
 
   ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
