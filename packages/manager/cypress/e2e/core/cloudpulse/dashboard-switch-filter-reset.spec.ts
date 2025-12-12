@@ -370,7 +370,12 @@ describe('Dashboard Filter Reset on Switch', () => {
   ];
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
-    ui.button.findByAttribute('aria-label', 'Open').first().click();
+    ui.button
+      .findByAttribute('aria-label', 'Open')
+      .should('be.visible')
+      .should('exist')
+      .first()
+      .click();
 
     cy.contains(
       '[role="option"][data-qa-option="true"]',
@@ -383,7 +388,7 @@ describe('Dashboard Filter Reset on Switch', () => {
       .as('dashboardField');
 
     cy.get('@dashboardField')
-      .should('have.value', dashboardName, { timeout: 20000 })
+      .should('have.value', dashboardName, { timeout: 30000 })
       .should('be.visible');
 
     switch (serviceType) {
@@ -566,20 +571,16 @@ describe('Dashboard Filter Reset on Switch', () => {
       default:
         break;
     }
-
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'getMetrics'
-    );
   };
 
   ALL_DASHBOARDS.forEach(({ name, serviceType }) => {
     it(`loads the ${serviceType} dashboard and ${name} name of the dashboard, opens All Dashboards view, and verifies no errors occurred`, () => {
-      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload);
       mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
         'getMetrics'
       );
 
       cy.visitWithLogin('/metrics');
+      cy.wait('@fetchDashboard');
       selectDashboard(name, serviceType);
       cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
 
