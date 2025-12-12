@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file dashboard-switch-filter-reset.spec.ts
  * @description
@@ -63,12 +64,6 @@ import type {
 } from '@linode/api-v4';
 
 const REGION_SELECTION = 'US, Chicago, IL (us-ord)';
-
-const normalizeServiceType = (svc: string) =>
-  svc
-    .replace(/[_-]/g, '')
-    .replace(/linode|nodebalancer|endpoint/g, '')
-    .trim();
 
 const metricDefinitionsFor = (key: keyof typeof widgetDetails) =>
   widgetDetails[key].metrics.map((m) =>
@@ -150,8 +145,6 @@ const extraDashboards: {
     },
   ],
 };
-
-/* ----------------------------- test data -------------------------------- */
 
 const dbaas = widgetDetails.dbaas;
 
@@ -278,8 +271,6 @@ const mockVolumesEncrypted = [
   }),
 ];
 
-/* ------------------------------- tests ---------------------------------- */
-
 describe('Dashboard Filter Reset on Switch', () => {
   // deterministic order helps avoid nondeterministic dedupe differences
   const serviceKeys = Object.keys(widgetDetails).sort() as Array<
@@ -307,9 +298,8 @@ describe('Dashboard Filter Reset on Switch', () => {
     serviceKeys.forEach((key) => {
       const svc = widgetDetails[key];
       const raw = svc.serviceType;
-      const norm = normalizeServiceType(raw);
       const main = dashboardFor(key);
-      const extras = extraDashboards[raw] ?? extraDashboards[norm] ?? [];
+      const extras = extraDashboards[raw] ?? [];
       const extraBuilt = extras.map((d) =>
         buildDashboard({
           dashboardName: d.dashboardName,
@@ -398,6 +388,7 @@ describe('Dashboard Filter Reset on Switch', () => {
   };
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
+    cy.wait(1000);
     cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
       'not.exist'
     );
