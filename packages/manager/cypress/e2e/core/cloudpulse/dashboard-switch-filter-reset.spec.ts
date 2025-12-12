@@ -1,10 +1,6 @@
-/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file dashboard-switch-filter-reset.spec.ts
  * @description
- * Cypress end-to-end tests for verifying that dependent filters are correctly reset
- * when switching dashboards in the CloudPulseDashboardFilterBuilder component.
- * Also ensures type safety when handling filter references.
  *
  * Test Scenarios:
  * - Switching dashboards clears/reset dependent filter references.
@@ -66,14 +62,7 @@ import type {
   ObjectStorageEndpoint,
 } from '@linode/api-v4';
 
-/**
- * NOTE: this file is a structurally-cleaned version of your original spec.
- * - All original imports & logic retained.
- * - Deterministic ordering, safer waits, scoped selectors, unique aliases,
- *   and other flakiness fixes applied.
- */
-
-/* ----------------------------- helpers ---------------------------------- */
+const REGION_SELECTION = 'US, Chicago, IL (us-ord)';
 
 const normalizeServiceType = (svc: string) =>
   svc
@@ -312,21 +301,14 @@ describe('Dashboard Filter Reset on Switch', () => {
     );
     mockGetUserPreferences({});
     mockGetVolumes(mockVolumesEncrypted).as('getVolumes');
-
-    // Step 1: Build master deduped dashboard list and map serviceType to dashboards
     const masterDashboardsByServiceType: Record<string, Dashboard[]> = {};
     const seenDashboardIds = new Set<number>();
 
     serviceKeys.forEach((key) => {
       const svc = widgetDetails[key];
       const raw = svc.serviceType;
-      // keep normalization optional, but use raw as canonical key
       const norm = normalizeServiceType(raw);
-
-      // Get main dashboard
       const main = dashboardFor(key);
-
-      // Use canonical extras map keyed by the canonical serviceType string
       const extras = extraDashboards[raw] ?? extraDashboards[norm] ?? [];
       const extraBuilt = extras.map((d) =>
         buildDashboard({
@@ -342,7 +324,6 @@ describe('Dashboard Filter Reset on Switch', () => {
         })
       );
 
-      // Compose the list for this type, but dedupe by id deterministically
       const dashboardsForThisType: Dashboard[] = [];
       [main, ...extraBuilt].forEach((db) => {
         if (!seenDashboardIds.has(db.id)) {
@@ -351,13 +332,11 @@ describe('Dashboard Filter Reset on Switch', () => {
         }
       });
 
-      // Assign to the serviceType if not already done
       if (!masterDashboardsByServiceType[raw]) {
         masterDashboardsByServiceType[raw] = dashboardsForThisType;
       }
     });
 
-    // Step 2: Register intercepts once per serviceType with stable unique aliasing.
     Object.entries(masterDashboardsByServiceType).forEach(
       ([serviceType, dashboards]) => {
         const key = serviceKeys.find(
@@ -374,7 +353,6 @@ describe('Dashboard Filter Reset on Switch', () => {
           );
           dashboards.forEach((db) => mockGetCloudPulseDashboard(db.id, db));
           mockCreateCloudPulseJWEToken(serviceType);
-          // register metrics with a unique alias per serviceType
           mockCreateCloudPulseMetrics(
             serviceType,
             metricsAPIResponsePayload
@@ -448,7 +426,7 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'blockstorage': {
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
         ui.autocomplete.findByLabel('Volumes').type('Test_Volume');
         ui.autocompletePopper.findByTitle('Test_Volume').click();
@@ -466,7 +444,7 @@ describe('Dashboard Filter Reset on Switch', () => {
 
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
         ui.autocomplete
           .findByLabel('Database Clusters')
@@ -504,7 +482,7 @@ describe('Dashboard Filter Reset on Switch', () => {
 
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
             ui.autocomplete.findByLabel('Linode Region').click();
             ui.autocomplete
               .findByLabel('Interface Types')
@@ -526,7 +504,8 @@ describe('Dashboard Filter Reset on Switch', () => {
             ui.autocomplete.findByLabel('Firewall').click();
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
+
             break;
         }
         break;
@@ -535,7 +514,7 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'linode': {
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
         ui.autocomplete
           .findByLabel('Linode Label(s)')
@@ -548,7 +527,7 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'lke': {
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
         ui.autocomplete
           .findByLabel('Clusters')
@@ -568,7 +547,7 @@ describe('Dashboard Filter Reset on Switch', () => {
       case 'nodebalancer': {
         ui.regionSelect.find().click();
         ui.regionSelect.find().clear();
-        ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+        ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
         ui.autocomplete
           .findByLabel('Nodebalancers')
@@ -586,7 +565,7 @@ describe('Dashboard Filter Reset on Switch', () => {
           case 'Object Storage By Endpoint Dashboard-10': {
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
             ui.autocomplete
               .findByLabel('Endpoints')
@@ -601,7 +580,7 @@ describe('Dashboard Filter Reset on Switch', () => {
           case 'Object Storage Dashboard-6': {
             ui.regionSelect.find().click();
             ui.regionSelect.find().clear();
-            ui.regionSelect.find().type('US, Chicago, IL (us-ord){enter}');
+            ui.regionSelect.find().type(`${REGION_SELECTION}{enter}`);
 
             ui.autocomplete
               .findByLabel('Endpoints')
@@ -632,7 +611,7 @@ describe('Dashboard Filter Reset on Switch', () => {
   };
 
   ALL_DASHBOARDS.forEach((from, i) => {
-    it(`loads ${from.serviceType} → ${from.name}`, () => {
+    it(`switches from ${from.name} to all later dashboards without errors`, () => {
       mockCreateCloudPulseMetrics(
         from.serviceType,
         metricsAPIResponsePayload
