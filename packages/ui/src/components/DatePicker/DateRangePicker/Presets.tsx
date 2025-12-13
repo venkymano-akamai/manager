@@ -121,6 +121,7 @@ export const Presets = ({
           <StyledPresetButton
             $isSelected={isSelected}
             data-qa-preset={`${preset.label}`}
+            aria-selected={isSelected}
             key={preset.label}
             onClick={() => {
               onPresetSelect(startDate, endDate, preset.label);
