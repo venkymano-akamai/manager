@@ -1,4 +1,3 @@
-/* eslint-disable no-debugger */
 /* eslint-disable cypress/no-unnecessary-waiting */
 
 /**
@@ -39,7 +38,6 @@ import { formatDate } from 'src/utilities/formatDate';
 
 import type { Database, DateTimeWithPreset } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
-
 
 const formatter = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
@@ -233,7 +231,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     mockGetDatabases([databaseMock]).as('fetchDatabases');
 
     cy.visitWithLogin('/metrics');
-    debugger;
     cy.wait([
       '@fetchServices',
       '@fetchDashboard',
@@ -253,7 +250,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       year: startYear,
       previousMonth,
       previousYear,
-      daysInMonth
+      daysInMonth,
     } = getDateRangeInGMT(12, 15, true);
 
     const {
@@ -282,14 +279,11 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .as('timePickerButton');
     cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-    cy.get('@timePickerButton', { timeout: 15000 })
-      .wait(300) // ⛔ doesn't work like this! (cy.wait isn't chainable on element)
-      .click();
+    cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
     // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
 
-      cy.get(`[aria-label="${startHour} hours"]`).click();
-
+    cy.get(`[aria-label="${startHour} hours"]`).click();
 
     cy.wait(1000);
     ui.button
@@ -300,9 +294,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-    cy.get('@timePickerButton', { timeout: 15000 })
-      .wait(300) // ⛔ doesn't work like this! (cy.wait isn't chainable on element)
-      .click();
+    cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
     cy.get(`[aria-label="${startMinute} minutes"]`).click();
 
@@ -314,9 +306,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-    cy.get('@timePickerButton', { timeout: 15000 })
-      .wait(300) // ⛔ doesn't work like this! (cy.wait isn't chainable on element)
-      .click();
+    cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
     cy.findByLabelText('Select meridiem')
       .as('startMeridiemSelect')
@@ -337,17 +327,14 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       duration: 500,
       easing: 'linear',
     });
-      cy.get(`[aria-label="${endHour} hours"]`).click();
-    
+    cy.get(`[aria-label="${endHour} hours"]`).click();
 
     cy.get('[aria-label^="Choose time"]')
       .last()
       .should('be.visible')
       .as('timePickerButton');
 
-    cy.get('@timePickerButton', { timeout: 15000 })
-      .wait(300) // ⛔ doesn't work like this! (cy.wait isn't chainable on element)
-      .click();
+    cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
     cy.get(`[aria-label="${endMinute} minutes"]`).click();
 
@@ -356,9 +343,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .should('be.visible', { timeout: 10000 })
       .as('timePickerButton');
 
-    cy.get('@timePickerButton', { timeout: 15000 })
-      .wait(300) // ⛔ doesn't work like this! (cy.wait isn't chainable on element)
-      .click();
+    cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
     cy.findByLabelText('Select meridiem')
       .as('endMeridiemSelect')
@@ -375,8 +360,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .and('be.enabled')
       .click();
 
-
-      ui.button.findByTitle('Reset').should('be.visible').click();
+    ui.button.findByTitle('Reset').should('be.visible').click();
 
     // --- Re-validate after apply ---
     cy.get('[aria-labelledby="start-date"]').should(
@@ -417,45 +401,62 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     ui.button.findByTitle('Last 30 days').should('be.visible').click();
 
-    cy.get('[data-qa-preset="Last 30 days"]')
-     .should('have.attr', 'aria-selected', 'true');
+    cy.get('[data-qa-preset="Last 30 days"]').should(
+      'have.attr',
+      'aria-selected',
+      'true'
+    );
 
-   cy.contains(`${previousMonth} ${previousYear}`)
-    .closest('div')
-    .next()
-    .find('[aria-selected="true"]')
-    .then(($els) => {
-      const selectedDays = Array.from($els).map(el =>
-        Number(el.textContent?.trim())
-      );
-  
-      expect(daysInMonth, 'daysInMonth should be defined').to.be.a('number');
+    cy.contains(`${previousMonth} ${previousYear}`)
+      .closest('div')
+      .next()
+      .find('[aria-selected="true"]')
+      .then(($els) => {
+        const selectedDays = Array.from($els).map((el) =>
+          Number(el.textContent?.trim())
+        );
 
-      const totalDays = daysInMonth as number;
-      const expectedCount = totalDays - endDay;
-      
-      expect(selectedDays.length, 'number of selected days from the previous month for the last-30-days range').to.eq(expectedCount);
-      expect( totalDays-selectedDays.length, 'start day of Last 30 days').to.eq(endDay);
-    });
+        expect(daysInMonth, 'daysInMonth should be defined').to.be.a('number');
+
+        const totalDays = daysInMonth as number;
+        const expectedCount = totalDays - endDay;
+
+        expect(
+          selectedDays.length,
+          'number of selected days from the previous month for the last-30-days range'
+        ).to.eq(expectedCount);
+        expect(
+          totalDays - selectedDays.length,
+          'start day of Last 30 days'
+        ).to.eq(endDay);
+      });
 
     cy.contains(`${startMonth} ${startYear}`)
-    .closest('div')
-    .next()
-    .find('[aria-selected="true"]')
-    .then(($els) => {
-      const selectedDays = Array.from($els).map(el =>
-        Number(el.textContent?.trim())
-      );
-  
-      expect(selectedDays.length, 'number of selected days in the current month for the last-30-days range').to.eq(endDay);
-      expect(Math.max(...selectedDays), 'end day of  Last 30 days').to.eq(endDay);
-    });
+      .closest('div')
+      .next()
+      .find('[aria-selected="true"]')
+      .then(($els) => {
+        const selectedDays = Array.from($els).map((el) =>
+          Number(el.textContent?.trim())
+        );
+
+        expect(
+          selectedDays.length,
+          'number of selected days in the current month for the last-30-days range'
+        ).to.eq(endDay);
+        expect(Math.max(...selectedDays), 'end day of  Last 30 days').to.eq(
+          endDay
+        );
+      });
     cy.get('[data-qa-buttons="apply"]')
-    .should('be.visible')
-    .should('be.enabled')
-    .click();
-  
-    ui.button.findByTitle('Last 30 days').should('be.visible').should('be.enabled');
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
+
+    ui.button
+      .findByTitle('Last 30 days')
+      .should('be.visible')
+      .should('be.enabled');
 
     cy.get('@getPresets.all')
       .should('have.length', 4)
@@ -483,10 +484,13 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
       ui.button.findByTitle(range.label).click();
 
-      cy.get(`[data-qa-preset="${range.label}"]`)
-      .should('have.attr', 'aria-selected', 'true');
-    
-    cy.get('[data-qa-buttons="apply"]')
+      cy.get(`[data-qa-preset="${range.label}"]`).should(
+        'have.attr',
+        'aria-selected',
+        'true'
+      );
+
+      cy.get('[data-qa-buttons="apply"]')
         .should('be.visible')
         .should('be.enabled')
         .click();
@@ -521,11 +525,11 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('@startDateInput').click();
 
-     ui.button.findByTitle('Last month').click();
+    ui.button.findByTitle('Last month').click();
 
     cy.get('[data-qa-preset="Last month"]')
-     .should('exist')
-     .and('have.attr', 'aria-selected', 'true');
+      .should('exist')
+      .and('have.attr', 'aria-selected', 'true');
 
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
@@ -560,8 +564,8 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     ui.button.findByTitle('This month').click();
 
     cy.get('[data-qa-preset="This month"]')
-     .should('exist')
-     .and('have.attr', 'aria-selected', 'true');
+      .should('exist')
+      .and('have.attr', 'aria-selected', 'true');
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
@@ -586,5 +590,32 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
           })
         ).to.equal(formatDate(end, { format: 'yyyy-MM-dd hh:mm' }));
       });
+  });
+
+  it('should not change the selected preset when a new preset selection is cancelled', () => {
+    // open the time range picker
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
+
+    // verify initial preset
+    cy.get('[data-qa-preset="Last hour"]').should(
+      'have.attr',
+      'aria-selected',
+      'true'
+    );
+
+    // select a different preset but cancel
+    ui.button.findByTitle('Last month').click();
+    ui.button.findByTitle('Cancel').should('be.visible').click();
+
+    // reopen picker
+    cy.get('@timeRangeTrigger').click();
+
+    // original preset should remain selected
+    cy.get('[data-qa-preset="Last hour"]').should(
+      'have.attr',
+      'aria-selected',
+      'true'
+    );
   });
 });
