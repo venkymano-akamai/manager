@@ -203,16 +203,19 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
 
     cy.visitWithLogin('/volumes/1/metrics');
 
-    // select date range
-    ui.button.findByTitle('Last hour').as('startDateInput');
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-    cy.get('@startDateInput').scrollIntoView();
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
 
-    cy.get('@startDateInput').click();
+    cy.get('[data-qa-buttons="apply"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
 
-    cy.get('[data-qa-buttons="apply"]').should('be.visible').click();
-
-    ui.button
+   ui.button
       .findByAttribute('aria-label', 'Group By Dashboard Metrics')
       .should('be.visible')
       .first()

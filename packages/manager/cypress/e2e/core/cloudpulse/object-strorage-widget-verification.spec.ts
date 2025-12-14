@@ -299,18 +299,19 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
       .should('be.visible')
       .click();
 
-    ui.button.findByTitle('Last hour').as('startDateInput');
+   // Select a time duration from the autocomplete input.
+   ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+   cy.get('@timeRangeTrigger').click();
 
-    cy.get('@startDateInput').scrollIntoView();
+   // select a different preset but cancel
+   ui.button.findByTitle('Last day').click();
 
-    cy.get('@startDateInput').click();
-    cy.get('[data-qa-buttons="apply"]')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
+   cy.get('[data-qa-buttons="apply"]')
+     .should('be.visible')
+     .should('be.enabled')
+     .click();
 
     //  Select a region from the dropdown.
-
     ui.regionSelect.find().clear();
     ui.regionSelect.find().click();
     cy.focused().type(`${mockRegion.label}{enter}`);

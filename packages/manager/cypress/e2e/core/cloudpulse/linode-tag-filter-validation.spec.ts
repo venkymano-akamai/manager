@@ -130,18 +130,16 @@ describe.skip('Integration Tests for Linode Dashboard with Dynamic Mocking', () 
       .click();
 
     // Select a time duration from the autocomplete input.
-    ui.button.findByTitle('Last hour').as('startDateInput');
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-    cy.get('@startDateInput').scrollIntoView();
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
 
-    cy.get('@startDateInput').click();
-
-    // Click the "Apply" button to confirm the end date and time
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
-
     // Expand the applied filters section
     ui.button.findByTitle('Filters').should('be.visible').click();
 

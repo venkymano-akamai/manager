@@ -230,11 +230,12 @@ describe('Integration Tests for firewall Dashboard ', () => {
       .should('be.visible')
       .click();
 
-    ui.button.findByTitle('Last hour').as('startDateInput');
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-    cy.get('@startDateInput').scrollIntoView();
-
-    cy.get('@startDateInput').click();
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
 
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')

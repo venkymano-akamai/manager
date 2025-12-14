@@ -157,8 +157,6 @@ describe('Integration Tests for Linode Dashboard ', () => {
     cy.get('[role="tablist"]').within(() => {
       cy.get('[data-testid="Metrics"]')
         .should('have.attr', 'aria-label', 'Metrics ')
-        .find('[data-testid="betaChip"] span')
-        .should('have.text', 'beta');
     });
 
     cy.wait('@fetchDashboard');

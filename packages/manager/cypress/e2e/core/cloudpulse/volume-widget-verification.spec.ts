@@ -265,11 +265,11 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       .click();
 
     // Select a time duration from the autocomplete input.
-    ui.button.findByTitle('Last hour').as('startDateInput');
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-    cy.get('@startDateInput').scrollIntoView();
-
-    cy.get('@startDateInput').click();
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
 
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
@@ -277,7 +277,6 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       .click();
 
     //  Select a region from the dropdown.
-
     ui.regionSelect.find().clear();
     ui.regionSelect.find().click();
     ui.regionSelect.find().click().type(`${mockRegions[0].label}{enter}`);

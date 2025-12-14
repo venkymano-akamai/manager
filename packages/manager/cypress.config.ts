@@ -51,8 +51,8 @@ export default defineConfig({
 
   // Recording and test troubleshooting.
   projectId: '5rhsif',
-  screenshotOnRunFailure: true,
-  video: true,
+  screenshotOnRunFailure: false,
+  video: false,
 
   // Only retry test when running via CI.
   retries: 0,
