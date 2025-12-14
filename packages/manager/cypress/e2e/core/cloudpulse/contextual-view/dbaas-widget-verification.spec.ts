@@ -185,16 +185,17 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       .and('have.value', 'Dbaas Dashboard'); // Ensure value is set
 
     // Select a time duration from the autocomplete input.
-    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
-    cy.get('@timeRangeTrigger').click();
+ // Select a time duration from the autocomplete input.
+ ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+ cy.get('@timeRangeTrigger').click();
 
-    // select a different preset but cancel
-    ui.button.findByTitle('Last day').click();
+ // select a different preset but cancel
+ ui.button.findByTitle('Last day').click();
 
-    cy.get('[data-qa-buttons="apply"]')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
+ cy.get('[data-qa-buttons="apply"]')
+   .should('be.visible')
+   .should('be.enabled')
+   .click();
 
 
     // Select a Node from the autocomplete input.

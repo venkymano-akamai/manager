@@ -170,6 +170,7 @@ describe('Integration Tests for Firewall Dashboard', () => {
     cy.visitWithLogin(`/firewalls/${mockFirewalls[0].id}/metrics`);
     cy.wait(['@fetchDashboard', '@fetchMetricDefinitions']);
 
+
     // Select a time duration from the autocomplete input.
     ui.button.findByTitle('Last hour').as('timeRangeTrigger');
     cy.get('@timeRangeTrigger').click();

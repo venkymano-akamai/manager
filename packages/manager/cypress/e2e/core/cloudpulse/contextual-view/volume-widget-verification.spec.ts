@@ -184,7 +184,8 @@ const clearGroupBy = () => {
     .click();
 };
 
-describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
+// skip the spec as volume metrics are not yet supported in CloudPulse GA
+describe.skip('CloudPulse Blockstorage Dashboard – Refactored', () => {
   beforeEach(() => {
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(accountFactory.build());
