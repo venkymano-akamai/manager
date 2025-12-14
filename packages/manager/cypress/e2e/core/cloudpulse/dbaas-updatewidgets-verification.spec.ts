@@ -202,9 +202,10 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     cy.wait('@fetchPreferences');
     cy.wait(5000);
     // validate the API calls are going with intended payload
-    cy.get('[aria-labelledby="start-date"]', { timeout: 50000 })
-      .parent()
-      .as('startDateInput');
+    ui.button.findByTitle('Last hour').as('startDateInput');
+
+    cy.get('@startDateInput').scrollIntoView();
+
     cy.get('@startDateInput').click();
     cy.get('[data-qa-preset="Last 7 days"]', { timeout: 50000 }).click();
     cy.get('[data-qa-buttons="apply"]')

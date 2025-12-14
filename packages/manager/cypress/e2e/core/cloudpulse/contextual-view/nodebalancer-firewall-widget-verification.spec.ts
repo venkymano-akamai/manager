@@ -172,10 +172,11 @@ describe('Integration Tests for Firewall Dashboard', () => {
 
     // Wait for the services and dashboard API calls to complete before proceeding
 
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
+    ui.button.findByTitle('Last hour').as('startDateInput');
 
-    cy.get('[data-qa-preset="Last day"]').click();
+    cy.get('@startDateInput').scrollIntoView();
+
+    cy.get('@startDateInput').click();
 
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')

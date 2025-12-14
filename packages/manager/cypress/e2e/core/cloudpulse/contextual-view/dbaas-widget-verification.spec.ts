@@ -106,7 +106,6 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
 });
 
-
 const getWidgetLegendRowValuesFromResponse = (
   responsePayload: CloudPulseMetricsResponse,
   label: string,
@@ -186,9 +185,11 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       .and('have.value', 'Dbaas Dashboard'); // Ensure value is set
 
     // Select a time duration
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
+    ui.button.findByTitle('Last hour').as('startDateInput');
+
+    cy.get('@startDateInput').scrollIntoView();
+
     cy.get('@startDateInput').click();
-    cy.get('[data-qa-preset="Last day"]').click();
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')

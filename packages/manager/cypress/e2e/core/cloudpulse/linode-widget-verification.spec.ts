@@ -180,11 +180,11 @@ describe('Integration Tests for Linode Dashboard ', () => {
       .click();
     // Select a time duration from the autocomplete input.
     // Updated selector for MUI x-date-pickers v8 - click on the wrapper div
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
+    ui.button.findByTitle('Last hour').as('startDateInput');
+
+    cy.get('@startDateInput').scrollIntoView();
 
     cy.get('@startDateInput').click();
-
-    cy.get('[data-qa-preset="Last day"]').click();
 
     // Click the "Apply" button to confirm the end date and time
     cy.get('[data-qa-buttons="apply"]')

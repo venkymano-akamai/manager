@@ -299,13 +299,15 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
       .should('be.visible')
       .click();
 
-      cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-      cy.get('@startDateInput').click();
-      cy.get(`[data-qa-preset="Last day"]`).click();
-      cy.get('[data-qa-buttons="apply"]')
-        .should('be.visible')
-        .should('be.enabled')
-        .click();
+    ui.button.findByTitle('Last hour').as('startDateInput');
+
+    cy.get('@startDateInput').scrollIntoView();
+
+    cy.get('@startDateInput').click();
+    cy.get('[data-qa-buttons="apply"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
 
     //  Select a region from the dropdown.
 
