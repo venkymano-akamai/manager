@@ -95,6 +95,7 @@ const databaseMock: Database = databaseFactory.build({
   region: mockRegion.id,
   type: engine,
 });
+// Profile timezone is set to 'UTC'
 const mockProfile = profileFactory.build({
   timezone: 'UTC',
 });
