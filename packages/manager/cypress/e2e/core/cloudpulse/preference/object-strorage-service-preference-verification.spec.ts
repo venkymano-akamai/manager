@@ -298,7 +298,6 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
     });
 
     // Select a time duration from the autocomplete input.
-    // Select a time duration from the autocomplete input.
     ui.button.findByTitle('Last hour').as('timeRangeTrigger');
     cy.get('@timeRangeTrigger').click();
  
