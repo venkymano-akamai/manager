@@ -29,7 +29,6 @@ describe('CloudPulse API - Dashboards and Metric Definitions', () => {
     'pages',
     'results',
     'is_alertable',
-    'group_by',
   ];
   const UNORDERED_ARRAY_PATHS = [
     'available_aggregate_functions',
