@@ -205,7 +205,6 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
      .should('be.visible')
      .and('be.enabled')
      .click();
-
   });
 
   it('clears the Dashboard filters and verifies updated user preferences', () => {
