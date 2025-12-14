@@ -110,7 +110,7 @@ const mockProfile = profileFactory.build({
  * @param {number} [minute=0] - The minute to set for the resulting date (0-59). Defaults to 0.
  *
  * @returns {Object} - Returns an object containing:
- *   - `actualDate`: The formatted date and time in IST (YYYY-MM-DD HH:mm).
+ *   - `actualDate`: The formatted date and time in GMT (YYYY-MM-DD HH:mm).
  *   - `day`: The day of the month as a number.
  *   - `hour`: The hour in the 24-hour format as a number.
  *   - `minute`: The minute of the hour as a number.
