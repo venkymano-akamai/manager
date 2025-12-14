@@ -245,15 +245,15 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
         'true'
       );
     });
- // Select a time duration from the autocomplete input.
- ui.button.findByTitle('Last hour').as('timeRangeTrigger');
- cy.get('@timeRangeTrigger').click();
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-  ui.buttonGroup
-    .findButtonByTitle('Cancel')
-    .should('be.visible')
-    .and('be.enabled')
-    .click();
+    ui.buttonGroup
+      .findButtonByTitle('Cancel')
+      .should('be.visible')
+      .and('be.enabled')
+      .click();
   });
   it('clears the Dashboard filters and verifies updated user preferences', () => {
     cy.intercept('PUT', apiMatcher('profile/preferences')).as(
