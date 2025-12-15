@@ -127,13 +127,7 @@ describe('Widget level dimension filter ', () => {
   beforeEach(() => {
     mockGetFeatureFlagClientstream();
     const flags = flagsFactory.build();
-    const mergedFlags = {
-      ...flags,
-      aclp: {
-        ...flags.aclp,
-      },
-    };
-    mockAppendFeatureFlags(mergedFlags).as('featureFlags');
+    mockAppendFeatureFlags(flags).as('featureFlags');
     mockGetAccount(accountFactory.build());
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
     mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
