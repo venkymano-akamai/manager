@@ -511,6 +511,11 @@ export const widgetDetails = {
           { dimension_label: 'linode_id', operator: 'eq', value: null },
           { dimension_label: 'entity_id', operator: 'eq', value: null },
           { dimension_label: 'response_type', operator: 'eq', value: null },
+          {
+            dimension_label: 'Protocol',
+            operator: 'eq',
+            value: ['TCP', 'UDP'],
+          },
         ],
       },
       {
@@ -525,6 +530,11 @@ export const widgetDetails = {
           { dimension_label: 'linode_id', operator: 'eq', value: null },
           { dimension_label: 'entity_id', operator: 'eq', value: null },
           { dimension_label: 'response_type', operator: 'eq', value: null },
+          {
+            dimension_label: 'Protocol',
+            operator: 'eq',
+            value: ['TCP', 'UDP'],
+          },
         ],
       },
       {
@@ -539,6 +549,11 @@ export const widgetDetails = {
           { dimension_label: 'linode_id', operator: 'eq', value: null },
           { dimension_label: 'entity_id', operator: 'eq', value: null },
           { dimension_label: 'response_type', operator: 'eq', value: null },
+          {
+            dimension_label: 'Protocol',
+            operator: 'eq',
+            value: ['TCP', 'UDP'],
+          },
         ],
       },
       {
@@ -553,6 +568,11 @@ export const widgetDetails = {
           { dimension_label: 'linode_id', operator: 'eq', value: null },
           { dimension_label: 'entity_id', operator: 'eq', value: null },
           { dimension_label: 'response_type', operator: 'eq', value: null },
+          {
+            dimension_label: 'Protocol',
+            operator: 'eq',
+            value: ['TCP', 'UDP'],
+          },
         ],
       },
       {
@@ -566,6 +586,12 @@ export const widgetDetails = {
         filters: [
           { dimension_label: 'linode_id', operator: 'eq', value: null },
           { dimension_label: 'percentile', operator: 'eq', value: null },
+          { dimension_label: 'entity_id', operator: 'eq', value: null },
+          {
+            dimension_label: 'Protocol',
+            operator: 'eq',
+            value: ['TCP', 'UDP'],
+          },
         ],
       },
       {
@@ -577,7 +603,14 @@ export const widgetDetails = {
         unit: 'ms',
         yLabel: 'volume_write_latency',
         filters: [
+          { dimension_label: 'linode_id', operator: 'eq', value: null },
           { dimension_label: 'percentile', operator: 'eq', value: null },
+          { dimension_label: 'entity_id', operator: 'eq', value: null },
+          {
+            dimension_label: 'Protocol',
+            operator: 'eq',
+            value: ['TCP', 'UDP'],
+          },
         ],
       },
     ],
