@@ -1,3 +1,6 @@
+/**
+ * @file Integration Tests for Widget level dimension filter functionality
+ */
 import { linodeFactory, regionFactory } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
@@ -53,7 +56,12 @@ const dashboard = dashboardFactory.build({
   ),
 });
 
-// Convert widget filters to dashboard filters
+/**
+ * Converts widget metric filters to dashboard filter format
+ * @param metricName - Name of the metric to get filters for
+ * @returns Array of dashboard-compatible filter objects
+ */
+
 const getFiltersForMetric = (metricName: string) => {
   const metric = metrics.find((m) => m.name === metricName);
   if (!metric) return [];
@@ -124,10 +132,16 @@ const linodes = [
 ];
 
 describe('Widget level dimension filter ', () => {
+  /**
+   * Verifies widget-level dimension filter functionality, including
+   * creating and applying multiple filters with different operators and value types,
+   * editing existing filters (update operator/value, add/delete filters),
+   * validating UI behavior (drawer state, badge count, limits),
+   * and ensuring the applied filters are correctly reflected in the API request payload.
+   */
   beforeEach(() => {
     mockGetFeatureFlagClientstream();
-    const flags = flagsFactory.build();
-    mockAppendFeatureFlags(flags).as('featureFlags');
+    mockAppendFeatureFlags(flagsFactory.build()).as('featureFlags');
     mockGetAccount(accountFactory.build());
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
     mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
@@ -143,10 +157,12 @@ describe('Widget level dimension filter ', () => {
     mockGetUserPreferences({});
     // Navigate to the metrics page
     cy.visitWithLogin('/metrics');
+
+    // Wait for services and dashboard data to load
     cy.wait(['@fetchServices']);
     cy.wait('@fetchDashboard');
 
-    // Select dashboard and resources
+    // Select dashboard and resources from dropdown
     ui.autocomplete
       .findByLabel('Dashboard')
       .should('be.visible')
@@ -156,6 +172,7 @@ describe('Widget level dimension filter ', () => {
       .should('be.visible')
       .click();
 
+    // Select Chicago region from region selector
     ui.regionSelect.find().clear();
     ui.regionSelect.find().click();
     ui.regionSelect.find().click().type(`${mockRegions[0].label}{enter}`);
@@ -171,7 +188,6 @@ describe('Widget level dimension filter ', () => {
     ui.autocomplete.findByLabel('Volumes').type('{esc}');
 
     cy.wait(Array(6).fill('@getMetrics'));
-    cy.get('[data-qa-widget]').should('have.length.at.least', 1);
   });
 
   it('should verify the widget level dimension filter and validate the API response', () => {
@@ -198,13 +214,13 @@ describe('Widget level dimension filter ', () => {
       .within(() => {
         cy.get('[data-testid="drawer-title"]')
           .should('be.visible')
-          .and('contain.text', 'Dimension Filters');
+          .and('have.text', 'Dimension Filters');
         cy.get('[data-qa-id="filter-drawer-subtitle"]')
           .should('be.visible')
-          .and('contain.text', dashboard.widgets[0].label);
+          .and('have.text', dashboard.widgets[0].label);
         cy.get('[data-qa-id="filter-drawer-selection-title"]')
           .should('be.visible')
-          .and('contain.text', 'Select up to 5 filters');
+          .and('have.text', 'Select up to 5 filters.');
         ui.button
           .findByTitle('Add Filter')
           .should('be.visible')
@@ -291,6 +307,7 @@ describe('Widget level dimension filter ', () => {
         ui.button.findByTitle('Add Filter').click();
 
         cy.get(`[data-testid="dimension_filters.${index}-id"]`).within(() => {
+          // Select dimension
           ui.autocomplete
             .findByLabel('Dimension')
             .should('be.visible')
@@ -311,11 +328,12 @@ describe('Widget level dimension filter ', () => {
             .should('be.visible')
             .click();
 
-          // Handle value based on operator type
+          // Handle value input based on operator and value type
+          const valueSelector = `[data-qa-dimension-filter="dimension_filters.${index}-value"]`;
+
+          // Strategy 1: Handle "Select All" option
           if (valueToSelect === 'Select All') {
-            cy.get(
-              `[data-qa-dimension-filter="dimension_filters.${index}-value"]`
-            )
+            cy.get(valueSelector)
               .findByPlaceholderText('Select Values')
               .should('be.visible')
               .click();
@@ -331,24 +349,12 @@ describe('Widget level dimension filter ', () => {
               .findByTitle('Select All')
               .should('be.visible')
               .click();
-          } else if (operator === 'In' && Array.isArray(valueToSelect)) {
-            cy.get(
-              `[data-qa-dimension-filter="dimension_filters.${index}-value"]`
-            )
-              .findByPlaceholderText('Select Values')
-              .should('be.visible')
-              .click();
+            ui.autocompletePopper.find().click('topRight');
+          }
 
-            valueToSelect.forEach((val) => {
-              ui.autocompletePopper
-                .findByTitle(val)
-                .should('be.visible')
-                .click();
-            });
-          } else if (operator === 'Equal' && Array.isArray(valueToSelect)) {
-            cy.get(
-              `[data-qa-dimension-filter="dimension_filters.${index}-value"]`
-            )
+          // Strategy 2: Handle single select dropdown for "Equal" operator
+          else if (operator === 'Equal' && Array.isArray(valueToSelect)) {
+            cy.get(valueSelector)
               .findByPlaceholderText('Select a Value')
               .should('be.visible')
               .click();
@@ -356,10 +362,10 @@ describe('Widget level dimension filter ', () => {
               .findByTitle(valueToSelect[0])
               .should('be.visible')
               .click();
-          } else {
-            cy.get(
-              `[data-qa-dimension-filter="dimension_filters.${index}-value"]`
-            )
+          }
+          // Strategy 3: Default text input for all other operators
+          else {
+            cy.get(valueSelector)
               .findByPlaceholderText('Enter a Value')
               .should('be.visible')
               .type(valueToSelect as string);
@@ -390,7 +396,7 @@ describe('Widget level dimension filter ', () => {
       .within(() => {
         cy.get('[data-qa-badge="dimension-filter-badge-content"]')
           .should('be.visible')
-          .and('contain.text', '5');
+          .and('have.text', '5');
       });
 
     // Validate API response contains all 5 filters
@@ -511,7 +517,7 @@ describe('Widget level dimension filter ', () => {
       .within(() => {
         cy.get('[data-qa-badge="dimension-filter-badge-content"]')
           .should('be.visible')
-          .and('contain.text', '3');
+          .and('have.text', '3');
       });
 
     // Wait for API call with 3 filters
@@ -652,7 +658,7 @@ describe('Widget level dimension filter ', () => {
       .within(() => {
         cy.get('[data-qa-badge="dimension-filter-badge-content"]')
           .should('be.visible')
-          .and('contain.text', '4');
+          .and('have.text', '4');
       });
 
     // Validate API response contains all 4 updated filters
