@@ -20,6 +20,8 @@ import type { SxProps } from '@mui/material/styles';
 export interface DateTimeRangePickerProps {
   /** Properties for the end date field */
   endDateProps?: {
+    /** Initial default value for the end date-time */
+    defaultValue?: DateTime | null;
     /** Custom error message for invalid end date */
     errorMessage?: string;
     /** Label for the end date field */
@@ -28,7 +30,7 @@ export interface DateTimeRangePickerProps {
     placeholder?: string;
     /** Whether to show the timezone selector for the end date */
     showTimeZone?: boolean;
-    /** Initial or controlled value for the end date-time */
+    /** Controlled current value of the end date-time */
     value?: DateTime | null;
   };
 
@@ -62,10 +64,14 @@ export interface DateTimeRangePickerProps {
     defaultValue?: string;
     /** If true, shows the date presets field instead of the date pickers */
     enablePresets?: boolean;
+    /** Controlled current value of the presets field */
+    value?: string;
   };
 
   /** Properties for the start date field */
   startDateProps?: {
+    /** Initial default value for the start date-time */
+    defaultValue?: DateTime | null;
     /** Custom error message for invalid start date */
     errorMessage?: string;
     /** Label for the start date field */
@@ -76,7 +82,7 @@ export interface DateTimeRangePickerProps {
     showTimeZone?: boolean;
     /** Initial or controlled value for the start timezone */
     timeZoneValue?: null | string;
-    /** Initial or controlled value for the start date-time */
+    /** Controlled current value of the start date-time */
     value?: DateTime | null;
   };
 
@@ -89,6 +95,8 @@ export interface DateTimeRangePickerProps {
     defaultValue?: string;
     /** If true, disables the timezone selector */
     disabled?: boolean;
+    /** Controlled current value of the timezone */
+    value?: string;
   };
 }
 
@@ -110,25 +118,25 @@ export const DateTimeRangePicker = ({
   onApply,
   presetsProps,
   startDateProps,
-  sx,
   timeZoneProps,
+  sx,
   openCalender,
   onClose,
 }: DateTimeRangePickerProps) => {
   const [startDate, setStartDate] = useState<DateTime | null>(
-    startDateProps?.value ?? null,
+    startDateProps?.defaultValue ?? null,
   );
   const [selectedPreset, setSelectedPreset] = useState<null | string>(
     presetsProps?.defaultValue ?? PRESET_LABELS.RESET,
   );
   const [endDate, setEndDate] = useState<DateTime | null>(
-    endDateProps?.value ?? null,
+    endDateProps?.defaultValue ?? null,
   );
   const [startDateError, setStartDateError] = useState(
     startDateProps?.errorMessage,
   );
   const [endDateError, setEndDateError] = useState(endDateProps?.errorMessage);
-  const [open, setOpen] = useState(openCalender ?? false);
+  const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [currentMonth, setCurrentMonth] = useState(DateTime.now());
   const [focusedField, setFocusedField] = useState<'end' | 'start'>('start'); // Tracks focused input field
@@ -146,8 +154,8 @@ export const DateTimeRangePicker = ({
     startDate: DateTime | null;
     timeZone: string;
   }>({
-    endDate: endDateProps?.value ?? null,
-    startDate: startDateProps?.value ?? null,
+    endDate: endDateProps?.defaultValue ?? null,
+    startDate: startDateProps?.defaultValue ?? null,
     selectedPreset: presetsProps?.defaultValue ?? null,
     timeZone: timeZoneProps?.defaultValue ?? 'UTC', // fallback to a string
   });
@@ -155,14 +163,32 @@ export const DateTimeRangePicker = ({
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleOpen = (field: 'end' | 'start') => {
+  const validateDates = React.useCallback(
+    (newStartDate: DateTime | null, newEndDate: DateTime | null) => {
+      if (newStartDate && newEndDate && newStartDate > newEndDate) {
+        setStartDateError(
+          startDateProps?.errorMessage ??
+            'Start date must be earlier than or equal to end date.',
+        );
+        setEndDateError(
+          endDateProps?.errorMessage ??
+            'End date must be later than or equal to start date.',
+        );
+      } else {
+        setStartDateError('');
+        setEndDateError('');
+      }
+    },
+    [endDateProps?.errorMessage, startDateProps?.errorMessage],
+  );
+
+  const handleOpen = React.useCallback((field: 'end' | 'start') => {
     setAnchorEl(
       startDateInputRef.current?.parentElement || startDateInputRef.current,
     );
     setOpen(true);
     setFocusedField(field);
-    validateDates(startDate, endDate);
-  };
+  }, []);
 
   const handleClose = () => {
     // Revert values
@@ -176,8 +202,37 @@ export const DateTimeRangePicker = ({
     setEndDateError('');
     setOpen(false);
     setAnchorEl(null);
+
     onClose?.(previousValues.current.selectedPreset ?? '');
   };
+
+  React.useEffect(() => {
+    if (startDateProps?.value) {
+      setStartDate(startDateProps.value);
+      setCurrentMonth(startDateProps.value);
+      previousValues.current.startDate = startDateProps.value;
+    }
+
+    if (endDateProps?.value) {
+      setEndDate(endDateProps.value);
+      previousValues.current.endDate = endDateProps.value;
+    }
+
+    if (timeZoneProps?.value) {
+      setTimeZone(timeZoneProps.value);
+      previousValues.current.timeZone = timeZoneProps.value;
+    }
+    if (selectedPreset !== 'Reset' && openCalender === true) {
+      handleOpen('start');
+    }
+  }, [
+    startDateProps?.value,
+    endDateProps?.value,
+    timeZoneProps?.value,
+    openCalender,
+    selectedPreset,
+    handleOpen,
+  ]);
 
   const handleApply = () => {
     if (startDateError || endDateError) {
@@ -223,25 +278,6 @@ export const DateTimeRangePicker = ({
     );
   };
 
-  const validateDates = (
-    newStartDate: DateTime | null,
-    newEndDate: DateTime | null,
-  ) => {
-    if (newStartDate && newEndDate && newStartDate > newEndDate) {
-      setStartDateError(
-        startDateProps?.errorMessage ??
-          'Start date must be earlier than or equal to end date.',
-      );
-      setEndDateError(
-        endDateProps?.errorMessage ??
-          'End date must be later than or equal to start date.',
-      );
-    } else {
-      setStartDateError('');
-      setEndDateError('');
-    }
-  };
-
   const handleDateSelection = (date: DateTime) => {
     setSelectedPreset(PRESET_LABELS.RESET); // Reset preset selection on manual date selection
 
@@ -281,15 +317,6 @@ export const DateTimeRangePicker = ({
     setStartDateError('');
     setEndDateError('');
   };
-
-  React.useEffect(() => {
-    if (!anchorEl && startDateInputRef.current) {
-      setAnchorEl(
-        startDateInputRef.current?.parentElement || startDateInputRef.current,
-      );
-    }
-  }, [anchorEl]);
-
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
       <Box>
