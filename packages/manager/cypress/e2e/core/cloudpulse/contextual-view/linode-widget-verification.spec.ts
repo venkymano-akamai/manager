@@ -18,6 +18,7 @@ import {
   mockGetLinodes,
   mockGetLinodeStats,
 } from 'support/intercepts/linodes';
+import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import {
@@ -134,6 +135,7 @@ describe('Integration Tests for Linode Dashboard ', () => {
     mockGetCloudPulseDashboard(id, dashboard);
     mockCreateCloudPulseJWEToken(serviceType);
     mockGetRegions([mockRegion]);
+    mockGetUserPreferences({ isAclpMetricsBeta: true }).as('fetchPreferences');
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
     );
@@ -143,6 +145,7 @@ describe('Integration Tests for Linode Dashboard ', () => {
 
     // navigate to the metrics page
     cy.visitWithLogin(`/linodes/${mockLinode.id}/metrics`);
+    cy.wait('@fetchPreferences');
 
     cy.get('button[data-testid="button"]').then(($btns) => {
       const match = $btns
@@ -155,8 +158,11 @@ describe('Integration Tests for Linode Dashboard ', () => {
       }
     });
     cy.get('[role="tablist"]').within(() => {
-      cy.get('[data-testid="Metrics"]')
-        .should('have.attr', 'aria-label', 'Metrics ')
+      cy.get('[data-testid="Metrics"]').should(
+        'have.attr',
+        'aria-label',
+        'Metrics '
+      );
     });
 
     cy.wait('@fetchDashboard');
