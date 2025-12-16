@@ -110,7 +110,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
             }}
             sx={{
               marginTop: 3.5,
-              bottom: '2px',
+              bottom: (theme) => theme.spacingFunction(2),
               '&:hover': {
                 '& .MuiButton-endIcon svg': {
                   color: 'inherit',
