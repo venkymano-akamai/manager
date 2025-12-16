@@ -54,7 +54,7 @@ export interface DateTimeRangePickerProps {
 
   onClose?: (selectedPreset: string) => void;
 
-  openCalender?: boolean;
+  openCalendar?: boolean;
 
   /** Additional settings for the presets dropdown */
   presetsProps?: {
@@ -112,7 +112,7 @@ export const DateTimeRangePicker = ({
   startDateProps,
   sx,
   timeZoneProps,
-  openCalender,
+  openCalendar,
   onClose,
 }: DateTimeRangePickerProps) => {
   const [startDate, setStartDate] = useState<DateTime | null>(
@@ -128,7 +128,7 @@ export const DateTimeRangePicker = ({
     startDateProps?.errorMessage,
   );
   const [endDateError, setEndDateError] = useState(endDateProps?.errorMessage);
-  const [open, setOpen] = useState(openCalender ?? false);
+  const [open, setOpen] = useState(openCalendar ?? false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [currentMonth, setCurrentMonth] = useState(DateTime.now());
   const [focusedField, setFocusedField] = useState<'end' | 'start'>('start'); // Tracks focused input field
