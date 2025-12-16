@@ -68,13 +68,8 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       if (!endDate || !startDate || !selectedPreset || !timeZone) {
         return;
       }
-      if (selectedPreset !== RESET) {
-        setOpenCalendar(false);
-        setSelectedPreset(selectedPreset);
-      } else {
-        setOpenCalendar(true);
-        setSelectedPreset(selectedPreset);
-      }
+      setOpenCalendar(selectedPreset !== RESET ? false : true);
+      setSelectedPreset(selectedPreset);
       handleStatsChange(
         {
           end: endDate,
