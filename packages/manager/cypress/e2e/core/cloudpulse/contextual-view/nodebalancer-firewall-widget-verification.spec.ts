@@ -170,17 +170,19 @@ describe('Integration Tests for Firewall Dashboard', () => {
     cy.visitWithLogin(`/firewalls/${mockFirewalls[0].id}/metrics`);
     cy.wait(['@fetchDashboard', '@fetchMetricDefinitions']);
 
-    // Wait for the services and dashboard API calls to complete before proceeding
 
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-    cy.get('[data-qa-preset="Last day"]').click();
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
 
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
+
 
     ui.regionSelect.find().click();
     ui.regionSelect.find().clear();
