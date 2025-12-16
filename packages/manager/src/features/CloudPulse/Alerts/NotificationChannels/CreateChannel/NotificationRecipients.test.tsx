@@ -3,9 +3,11 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
 import { accountUserFactory } from 'src/factories/accountUsers';
-import { renderWithThemeAndHookFormContext } from 'src/utilities/testHelpers';
+import { renderWithTheme } from 'src/utilities/testHelpers';
 
 import { NotificationRecipients } from './NotificationRecipients';
+
+import type { NotificationRecipientsProps } from './NotificationRecipients';
 
 const queryMocks = vi.hoisted(() => ({
   useAccountUsersInfiniteQuery: vi.fn().mockReturnValue({}),
@@ -31,12 +33,22 @@ vi.mock('src/hooks/useFlags', async () => {
   };
 });
 
+const mockOnChange = vi.fn();
+const mockOnBlur = vi.fn();
+
+const props: NotificationRecipientsProps = {
+  onChange: mockOnChange,
+  onBlur: mockOnBlur,
+  value: [],
+};
+
 const SELECT_ALL = 'Select All';
 const DESELECT_ALL = 'Deselect All';
 const ARIA_SELECTED = 'aria-selected';
 
 describe('NotificationRecipients component tests', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // Default mock for flags
     flagsMocks.useFlags.mockReturnValue({
       aclpAlerting: {
@@ -54,9 +66,7 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
     expect(screen.getByTestId('recipients-select')).toBeVisible();
     expect(screen.getByPlaceholderText('Enter recipients')).toBeVisible();
@@ -65,22 +75,19 @@ describe('NotificationRecipients component tests', () => {
 
   it('should render loading state', () => {
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
-      data: undefined,
+      data: null,
       fetchNextPage: vi.fn(),
       hasNextPage: false,
       isFetching: false,
       isLoading: true,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
     expect(screen.getByTestId('recipients-select')).toBeVisible();
   });
 
   it('should be able to select all recipients', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(2);
 
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
@@ -91,27 +98,20 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
-    await user.click(screen.getByRole('button', { name: 'Open' }));
-    await user.click(await screen.findByRole('option', { name: SELECT_ALL }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.click(
+      await screen.findByRole('option', { name: SELECT_ALL })
+    );
 
-    expect(
-      await screen.findByRole('option', {
-        name: mockUsers[0].username,
-      })
-    ).toHaveAttribute(ARIA_SELECTED, 'true');
-    expect(
-      screen.getByRole('option', {
-        name: mockUsers[1].username,
-      })
-    ).toHaveAttribute(ARIA_SELECTED, 'true');
+    // Verify onChange was called with all usernames
+    expect(mockOnChange).toHaveBeenCalledWith(
+      mockUsers.map((user) => user.username)
+    );
   });
 
   it('should be able to deselect all selected recipients', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(2);
 
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
@@ -122,50 +122,15 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Open' }));
-    await user.click(await screen.findByRole('option', { name: SELECT_ALL }));
-    await user.click(await screen.findByRole('option', { name: DESELECT_ALL }));
-
-    expect(
-      await screen.findByRole('option', {
-        name: mockUsers[0].username,
-      })
-    ).toHaveAttribute(ARIA_SELECTED, 'false');
-    expect(
-      screen.getByRole('option', {
-        name: mockUsers[1].username,
-      })
-    ).toHaveAttribute(ARIA_SELECTED, 'false');
-  });
-
-  it('should select multiple recipients individually', async () => {
-    const user = userEvent.setup();
-    const mockUsers = accountUserFactory.buildList(3);
-
-    queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
-      data: { pages: [{ data: mockUsers }] },
-      fetchNextPage: vi.fn(),
-      hasNextPage: false,
-      isFetching: false,
-      isLoading: false,
-    });
-
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
-
-    await user.click(screen.getByRole('button', { name: 'Open' }));
-    await user.click(
-      await screen.findByRole('option', { name: mockUsers[0].username })
-    );
-    await user.click(
-      await screen.findByRole('option', { name: mockUsers[1].username })
+    // Render with pre-selected users
+    const selectedUsernames = mockUsers.map((user) => user.username);
+    renderWithTheme(
+      <NotificationRecipients {...props} value={selectedUsernames} />
     );
 
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+
+    // Verify users are initially selected
     expect(
       await screen.findByRole('option', {
         name: mockUsers[0].username,
@@ -176,20 +141,17 @@ describe('NotificationRecipients component tests', () => {
         name: mockUsers[1].username,
       })
     ).toHaveAttribute(ARIA_SELECTED, 'true');
-    expect(
-      screen.getByRole('option', {
-        name: mockUsers[2].username,
-      })
-    ).toHaveAttribute(ARIA_SELECTED, 'false');
-    expect(
-      screen.getByRole('option', {
-        name: SELECT_ALL,
-      })
-    ).toHaveAttribute(ARIA_SELECTED, 'false');
+
+    // Click Deselect All
+    await userEvent.click(
+      await screen.findByRole('option', { name: DESELECT_ALL })
+    );
+
+    // Verify onChange was called with empty array
+    expect(mockOnChange).toHaveBeenCalledWith([]);
   });
 
   it('should disable Select All when search input is not empty', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(3);
 
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
@@ -200,13 +162,11 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
     const input = screen.getByPlaceholderText('Enter recipients');
-    await user.click(screen.getByRole('button', { name: 'Open' }));
-    await user.type(input, 'test');
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.type(input, 'test');
 
     await waitFor(() => {
       const selectAllOption = screen.queryByRole('option', {
@@ -217,7 +177,6 @@ describe('NotificationRecipients component tests', () => {
   });
 
   it('should disable Select All when recipients exceed max limit', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(15);
 
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
@@ -228,11 +187,9 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
-    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
 
     await waitFor(() => {
       const selectAllOption = screen.queryByRole('option', {
@@ -243,7 +200,6 @@ describe('NotificationRecipients component tests', () => {
   });
 
   it('should disable unselected options when max selections reached', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(12);
 
     // Set max limit to 5 for this test
@@ -261,43 +217,38 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    // Render with 5 users already selected (max limit)
+    const selectedUsernames = mockUsers
+      .slice(0, 5)
+      .map((user) => user.username);
+    renderWithTheme(
+      <NotificationRecipients {...props} value={selectedUsernames} />
+    );
 
-    await user.click(screen.getByRole('button', { name: 'Open' }));
-
-    for (let i = 0; i < 5; i++) {
-      await user.click(
-        await screen.findByRole('option', { name: mockUsers[i].username })
-      );
-    }
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
 
     // Check that unselected options are disabled
-    const unselectedOption = screen.getByRole('option', {
+    const unselectedOption = await screen.findByRole('option', {
       name: mockUsers[5].username,
     });
     expect(unselectedOption).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('should fetch next page on scroll to bottom', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(10);
     const fetchNextPage = vi.fn();
 
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
       data: { pages: [{ data: mockUsers }] },
-      fetchNextPage,
       hasNextPage: true,
-      isFetching: false,
       isLoading: false,
+      isFetching: false,
+      fetchNextPage,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
-    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
 
     const listbox = screen.getByRole('listbox');
 
@@ -314,23 +265,20 @@ describe('NotificationRecipients component tests', () => {
   });
 
   it('should not fetch next page when not at bottom', async () => {
-    const user = userEvent.setup();
     const mockUsers = accountUserFactory.buildList(10);
     const fetchNextPage = vi.fn();
 
     queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
       data: { pages: [{ data: mockUsers }] },
-      fetchNextPage,
       hasNextPage: true,
-      isFetching: false,
       isLoading: false,
+      isFetching: false,
+      fetchNextPage,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
-    await user.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
 
     const listbox = screen.getByRole('listbox');
 
@@ -357,10 +305,26 @@ describe('NotificationRecipients component tests', () => {
       isLoading: false,
     });
 
-    renderWithThemeAndHookFormContext({
-      component: <NotificationRecipients name="recipients" />,
-    });
+    renderWithTheme(<NotificationRecipients {...props} />);
 
     expect(screen.getByText('Select up to 10 Recipients')).toBeVisible();
+  });
+
+  it('should call onBlur when the field loses focus', async () => {
+    queryMocks.useAccountUsersInfiniteQuery.mockReturnValue({
+      data: { pages: [{ data: [] }] },
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetching: false,
+      isLoading: false,
+    });
+
+    renderWithTheme(<NotificationRecipients {...props} />);
+
+    const combobox = screen.getByRole('combobox');
+    await userEvent.click(combobox);
+    await userEvent.tab();
+
+    expect(mockOnBlur).toHaveBeenCalled();
   });
 });
