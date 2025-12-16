@@ -46,9 +46,9 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       defaultSelected = getTimeFromPreset(defaultSelected, timezone);
     }
     // Show button with preset value only if selected or default preset is not 'reset'
-    const [showPreset, setPreset] = React.useState<string | undefined>(
-      defaultSelected.preset
-    );
+    const [selectedPreset, setSelectedPreset] = React.useState<
+      string | undefined
+    >(defaultSelected.preset);
 
     // Show calendar only if selected or default preset is 'reset' or button is clicked
     const [openCalendar, setOpenCalendar] = React.useState<boolean>(false);
@@ -60,7 +60,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
 
     const handleClose = (selectedPreset: string) => {
       setOpenCalendar(false);
-      setPreset(selectedPreset);
+      setSelectedPreset(selectedPreset);
     };
 
     const handleDateChange = (params: DateChangeProps) => {
@@ -68,12 +68,12 @@ export const CloudPulseDateTimeRangePicker = React.memo(
       if (!endDate || !startDate || !selectedPreset || !timeZone) {
         return;
       }
-      if (selectedPreset !== 'reset') {
+      if (selectedPreset !== RESET) {
         setOpenCalendar(false);
-        setPreset(selectedPreset);
+        setSelectedPreset(selectedPreset);
       } else {
         setOpenCalendar(true);
-        setPreset(selectedPreset);
+        setSelectedPreset(selectedPreset);
       }
       handleStatsChange(
         {
@@ -95,7 +95,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
 
     return (
       <Box alignItems={'center'} display={'flex'}>
-        {showPreset !== RESET && !openCalendar && (
+        {selectedPreset !== RESET && !openCalendar && (
           <Button
             buttonType="secondary"
             data-testid="preset-button"
@@ -122,7 +122,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
             {defaultSelected.preset}
           </Button>
         )}
-        {(showPreset === RESET || openCalendar) && (
+        {(selectedPreset === RESET || openCalendar) && (
           <DateTimeRangePicker
             endDateProps={{
               label: 'End Date',
