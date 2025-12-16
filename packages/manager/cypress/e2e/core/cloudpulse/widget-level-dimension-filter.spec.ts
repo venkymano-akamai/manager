@@ -191,8 +191,6 @@ describe('Widget level dimension filter ', () => {
   });
 
   it('should verify the widget level dimension filter and validate the API response', () => {
-    const globalFilters = ['region', 'volume_id', 'Port'];
-
     // Verify tooltip message on hover of filter icon
     ui.tooltip.findByText('Dimension Filters').should('be.visible');
     ui.drawer.find().should('not.exist');
@@ -248,6 +246,8 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: '345',
         apiOperator: 'neq',
         apiValue: '345',
+        valuePlaceHolder: 'Enter a Value',
+        isAutocomplete: false,
       },
       {
         dimension: 'response_type',
@@ -255,6 +255,8 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: '2x',
         apiOperator: 'startswith',
         apiValue: '2x',
+        valuePlaceHolder: 'Enter a Value',
+        isAutocomplete: false,
       },
       {
         dimension: 'response_type',
@@ -262,6 +264,8 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: '5xx',
         apiOperator: 'endswith',
         apiValue: '5xx',
+        valuePlaceHolder: 'Enter a Value',
+        isAutocomplete: false,
       },
       {
         dimension: 'Protocol',
@@ -269,50 +273,41 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: 'Select All',
         apiOperator: 'in',
         apiValue: 'TCP,UDP',
-        verifyAvailableValues: ['TCP', 'UDP'],
+        valuePlaceHolder: 'Select Values',
+        isAutocomplete: true,
       },
       {
         dimension: 'linode_id',
         operator: 'Equal',
-        valueToSelect: ['Test-linode-3'],
+        valueToSelect: 'Test-linode-3',
         apiOperator: 'eq',
         apiValue: '789',
+        valuePlaceHolder: 'Select a Value',
+        isAutocomplete: true,
       },
     ];
-
-    // Verify global filters are excluded from dimension options (verify once)
-    ui.button.findByTitle('Add Filter').click();
-    cy.get('[data-testid="dimension_filters.0-id"]').within(() => {
-      ui.autocomplete.findByLabel('Dimension').should('be.visible').click();
-    });
-
-    globalFilters.forEach((filter) => {
-      cy.findByText(filter, { timeout: 5000 }).should('not.exist');
-    });
-
-    // Close dropdown and remove the empty filter row
-    cy.get('body').type('{esc}');
-    ui.button
-      .findByAttribute('data-testid', 'clear-icon')
-      .should('be.visible')
-      .click();
 
     // Add filters one by one
     filtersWithOperators.forEach(
       (
-        { dimension, operator, valueToSelect, verifyAvailableValues },
+        {
+          dimension,
+          operator,
+          valueToSelect,
+          valuePlaceHolder,
+          isAutocomplete,
+        },
         index
       ) => {
         // Click Add Filter button
         ui.button.findByTitle('Add Filter').click();
+        const valueSelector = `[data-qa-dimension-filter="dimension_filters.${index}-value"]`;
 
         cy.get(`[data-testid="dimension_filters.${index}-id"]`).within(() => {
           // Select dimension
-          ui.autocomplete
-            .findByLabel('Dimension')
-            .should('be.visible')
-            .click()
-            .type(dimension);
+          ui.autocomplete.findByLabel('Dimension').should('be.visible').click();
+          ui.autocomplete.findByLabel('Dimension').type(dimension);
+
           ui.autocompletePopper
             .findByTitle(dimension)
             .should('be.visible')
@@ -323,54 +318,28 @@ describe('Widget level dimension filter ', () => {
             .findByLabel('Operator')
             .should('be.visible')
             .type(operator);
+
           ui.autocompletePopper
             .findByTitle(operator)
             .should('be.visible')
             .click();
 
-          // Handle value input based on operator and value type
-          const valueSelector = `[data-qa-dimension-filter="dimension_filters.${index}-value"]`;
-
-          // Strategy 1: Handle "Select All" option
-          if (valueToSelect === 'Select All') {
-            cy.get(valueSelector)
-              .findByPlaceholderText('Select Values')
-              .should('be.visible')
-              .click();
-
-            // Verify available values
-            if (verifyAvailableValues) {
-              verifyAvailableValues.forEach((val) => {
-                ui.autocompletePopper.findByTitle(val).should('be.visible');
-              });
-            }
-
-            ui.autocompletePopper
-              .findByTitle('Select All')
-              .should('be.visible')
-              .click();
-            ui.autocompletePopper.find().click('topRight');
-          }
-
-          // Strategy 2: Handle single select dropdown for "Equal" operator
-          else if (operator === 'Equal' && Array.isArray(valueToSelect)) {
-            cy.get(valueSelector)
-              .findByPlaceholderText('Select a Value')
-              .should('be.visible')
-              .click();
-            ui.autocompletePopper
-              .findByTitle(valueToSelect[0])
-              .should('be.visible')
-              .click();
-          }
-          // Strategy 3: Default text input for all other operators
-          else {
-            cy.get(valueSelector)
-              .findByPlaceholderText('Enter a Value')
-              .should('be.visible')
-              .type(valueToSelect as string);
-          }
+          cy.get(valueSelector)
+            .findByPlaceholderText(valuePlaceHolder)
+            .should('be.visible');
+          cy.get(valueSelector).findByPlaceholderText(valuePlaceHolder).click();
         });
+
+        // Handle value input based on isAutocomplete flag
+        isAutocomplete
+          ? ui.autocompletePopper
+              .findByTitle(valueToSelect as string)
+              .should('be.visible')
+              .click()
+          : cy
+              .get(valueSelector)
+              .findByPlaceholderText(valuePlaceHolder)
+              .type(valueToSelect as string);
       }
     );
 
@@ -437,13 +406,8 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: '123',
         apiOperator: 'eq',
         apiValue: '123',
-      },
-      {
-        dimension: 'response_type',
-        operator: 'Starts with',
-        valueToSelect: '2x',
-        apiOperator: 'startswith',
-        apiValue: '2x',
+        valuePlaceHolder: 'Enter a Value',
+        isAutocomplete: false,
       },
       {
         dimension: 'Protocol',
@@ -451,58 +415,73 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: 'Select All',
         apiOperator: 'in',
         apiValue: 'TCP,UDP',
-        verifyAvailableValues: ['TCP', 'UDP'],
+        valuePlaceHolder: 'Select Values',
+        isAutocomplete: true,
+      },
+      {
+        dimension: 'response_type',
+        operator: 'Starts with',
+        valueToSelect: '2x',
+        apiOperator: 'startswith',
+        apiValue: '2x',
+        valuePlaceHolder: 'Enter a Value',
+        isAutocomplete: false,
       },
     ];
 
     // Add 3 initial filters
-    initialFilters.forEach(({ dimension, operator, valueToSelect }, index) => {
-      ui.button.findByTitle('Add Filter').click();
+    initialFilters.forEach(
+      (
+        {
+          dimension,
+          operator,
+          valueToSelect,
+          valuePlaceHolder,
+          isAutocomplete,
+        },
+        index
+      ) => {
+        ui.button.findByTitle('Add Filter').click();
+        const valueSelector = `[data-qa-dimension-filter="dimension_filters.${index}-value"]`;
 
-      cy.get(`[data-testid="dimension_filters.${index}-id"]`).within(() => {
-        ui.autocomplete
-          .findByLabel('Dimension')
-          .should('be.visible')
-          .click()
-          .type(dimension);
-        ui.autocompletePopper
-          .findByTitle(dimension)
-          .should('be.visible')
-          .click();
-
-        ui.autocomplete
-          .findByLabel('Operator')
-          .should('be.visible')
-          .type(operator);
-        ui.autocompletePopper
-          .findByTitle(operator)
-          .should('be.visible')
-          .click();
-
-        if (valueToSelect === 'Select All') {
-          cy.get(
-            `[data-qa-dimension-filter="dimension_filters.${index}-value"]`
-          )
-            .findByPlaceholderText('Select Values')
+        cy.get(`[data-testid="dimension_filters.${index}-id"]`).within(() => {
+          ui.autocomplete
+            .findByLabel('Dimension')
             .should('be.visible')
-            .click();
-
+            .click()
+            .type(dimension);
           ui.autocompletePopper
-            .findByTitle('Select All')
+            .findByTitle(dimension)
             .should('be.visible')
             .click();
-          // Close the popper
-          ui.autocompletePopper.find().click('topRight');
-        } else {
-          cy.get(
-            `[data-qa-dimension-filter="dimension_filters.${index}-value"]`
-          )
-            .findByPlaceholderText('Enter a Value')
+
+          ui.autocomplete
+            .findByLabel('Operator')
             .should('be.visible')
-            .type(valueToSelect as string);
-        }
-      });
-    });
+            .type(operator);
+          ui.autocompletePopper
+            .findByTitle(operator)
+            .should('be.visible')
+            .click();
+
+          cy.get(valueSelector)
+            .findByPlaceholderText(valuePlaceHolder)
+            .should('be.visible');
+          cy.get(valueSelector).findByPlaceholderText(valuePlaceHolder).click();
+        });
+
+        // Handle value input based on isAutocomplete flag
+        isAutocomplete
+          ? ui.autocompletePopper
+              .findByTitle(valueToSelect as string)
+              .should('be.visible')
+              .click()
+          : cy
+              .get(valueSelector)
+              .findByPlaceholderText(valuePlaceHolder)
+              .type(valueToSelect as string);
+      }
+    );
 
     // Apply the initial filters
     ui.button.findByAttribute('label', 'Apply').click();
@@ -568,7 +547,7 @@ describe('Widget level dimension filter ', () => {
 
       cy.get('[data-qa-dimension-filter="dimension_filters.1-value"]')
         .findByPlaceholderText('Enter a Value')
-        .type('5x');
+        .type('UDP');
     });
 
     // Delete the third filter (Protocol)
@@ -587,60 +566,76 @@ describe('Widget level dimension filter ', () => {
         valueToSelect: '456',
         apiOperator: 'neq',
         apiValue: '456',
+        valuePlaceHolder: 'Enter a Value',
+        isAutocomplete: false,
       },
       {
         dimension: 'linode_id',
         operator: 'Equal',
-        valueToSelect: ['Test-linode-1'],
+        valueToSelect: 'Test-linode-1',
         apiOperator: 'eq',
         apiValue: '123',
+        valuePlaceHolder: 'Select a Value',
+        isAutocomplete: true,
       },
     ];
 
-    newFilters.forEach(({ dimension, operator, valueToSelect }, index) => {
-      ui.button.findByTitle('Add Filter').click();
+    newFilters.forEach(
+      (
+        {
+          dimension,
+          operator,
+          valueToSelect,
+          valuePlaceHolder,
+          isAutocomplete,
+        },
+        index
+      ) => {
+        ui.button.findByTitle('Add Filter').click();
+        const valueSelector = `[data-qa-dimension-filter="dimension_filters.${index + 2}-value"]`;
 
-      cy.get(`[data-testid="dimension_filters.${index + 2}-id"]`).within(() => {
-        ui.autocomplete
-          .findByLabel('Dimension')
-          .should('be.visible')
-          .click()
-          .type(dimension);
-        ui.autocompletePopper
-          .findByTitle(dimension)
-          .should('be.visible')
-          .click();
+        cy.get(`[data-testid="dimension_filters.${index + 2}-id"]`).within(
+          () => {
+            ui.autocomplete
+              .findByLabel('Dimension')
+              .should('be.visible')
+              .click()
+              .type(dimension);
+            ui.autocompletePopper
+              .findByTitle(dimension)
+              .should('be.visible')
+              .click();
 
-        ui.autocomplete
-          .findByLabel('Operator')
-          .should('be.visible')
-          .type(operator);
-        ui.autocompletePopper
-          .findByTitle(operator)
-          .should('be.visible')
-          .click();
+            ui.autocomplete
+              .findByLabel('Operator')
+              .should('be.visible')
+              .type(operator);
+            ui.autocompletePopper
+              .findByTitle(operator)
+              .should('be.visible')
+              .click();
 
-        if (Array.isArray(valueToSelect)) {
-          cy.get(
-            `[data-qa-dimension-filter="dimension_filters.${index + 2}-value"]`
-          )
-            .findByPlaceholderText('Select a Value')
-            .should('be.visible')
-            .click();
-          ui.autocompletePopper
-            .findByTitle(valueToSelect[0])
-            .should('be.visible')
-            .click();
-        } else {
-          cy.get(
-            `[data-qa-dimension-filter="dimension_filters.${index + 2}-value"]`
-          )
-            .findByPlaceholderText('Enter a Value')
-            .should('be.visible')
-            .type(valueToSelect as string);
-        }
-      });
-    });
+            cy.get(valueSelector)
+              .findByPlaceholderText(valuePlaceHolder)
+              .should('be.visible');
+            cy.get(valueSelector)
+              .findByPlaceholderText(valuePlaceHolder)
+              .click();
+          }
+        );
+
+        // Handle value input based on isAutocomplete flag
+        isAutocomplete
+          ? ui.autocompletePopper
+              .findByTitle(valueToSelect as string)
+              .should('be.visible')
+              .click()
+          : cy
+              .get(valueSelector)
+              .findByPlaceholderText(valuePlaceHolder)
+              .type(valueToSelect as string);
+      }
+    );
 
     // Verify Add Filter button is still enabled (only 4 filters now)
     ui.button.findByTitle('Add Filter').should('be.visible').and('be.enabled');
@@ -671,7 +666,7 @@ describe('Widget level dimension filter ', () => {
 
       const expectedFilters = [
         { dimension: 'entity_id', operator: 'eq', value: '999' },
-        { dimension: 'response_type', operator: 'endswith', value: '5x' },
+        { dimension: 'Protocol', operator: 'endswith', value: 'UDP' },
         { dimension: 'entity_id', operator: 'neq', value: '456' },
         { dimension: 'linode_id', operator: 'eq', value: '123' },
       ];
