@@ -50,9 +50,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     );
 
     // Show calendar only if selected or default preset is 'reset' or button is clicked
-    const [openCalender, setOpenCalendar] = React.useState<boolean>(
-      defaultSelected.preset === 'Reset'
-    );
+    const [openCalender, setOpenCalendar] = React.useState<boolean>(false);
     React.useEffect(() => {
       if (defaultSelected) {
         handleStatsChange(defaultSelected);
