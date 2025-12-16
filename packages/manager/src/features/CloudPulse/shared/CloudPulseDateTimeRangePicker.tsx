@@ -33,6 +33,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
     const { defaultValue, handleStatsChange, savePreferences } = props;
     const { data: profile } = useProfile();
     let defaultSelected = defaultValue as DateTimeWithPreset;
+    const RESET = 'Reset';
     const theme = useTheme();
     const timezone =
       defaultSelected?.timeZone ??
@@ -94,7 +95,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
 
     return (
       <Box alignItems={'center'} display={'flex'}>
-        {showPreset !== 'Reset' && !openCalendar && (
+        {showPreset !== RESET && !openCalendar && (
           <Button
             buttonType="secondary"
             data-testid="preset-button"
@@ -121,7 +122,7 @@ export const CloudPulseDateTimeRangePicker = React.memo(
             {defaultSelected.preset}
           </Button>
         )}
-        {(showPreset === 'Reset' || openCalendar) && (
+        {(showPreset === RESET || openCalendar) && (
           <DateTimeRangePicker
             endDateProps={{
               label: 'End Date',

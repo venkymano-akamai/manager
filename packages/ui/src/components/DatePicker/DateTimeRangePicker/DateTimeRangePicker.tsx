@@ -288,7 +288,7 @@ export const DateTimeRangePicker = ({
         startDateInputRef.current?.parentElement || startDateInputRef.current,
       );
     }
-  }, [anchorEl]);
+  }, []);
 
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
