@@ -151,7 +151,7 @@ interface AclpAlerting {
   alertDefinitions: boolean;
   beta: boolean;
   editDisabledStatuses?: AlertStatusType[];
-  maxEmailRecipients?: number;
+  maxEmailNotificationChannelRecipients?: number;
   notificationChannels: boolean;
   recentActivity: boolean;
   systemChannelSupportedServices?: CloudPulseServiceType[]; //linode, dbaas, etc. 

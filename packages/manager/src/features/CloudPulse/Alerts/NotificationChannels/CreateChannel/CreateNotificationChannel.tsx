@@ -59,7 +59,7 @@ export const CreateNotificationChannel = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   // submit the form and create the notification channel on success and show snackbar message on success or failure
-  const onSubmit = handleSubmit(async (values) => {
+  const onSubmit = handleSubmit((values) => {
     createChannel(filterCreateChannelFormValues(values))
       .then(() => {
         enqueueSnackbar(CREATE_CHANNEL_SUCCESS_MESSAGE, {
