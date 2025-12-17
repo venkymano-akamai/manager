@@ -40,9 +40,9 @@ import {
 import type { ObjectStorageEndpoint } from '@linode/api-v4';
 
 const timeDurationToSelect = 'Last 24 Hours';
-const {metrics, serviceType } = widgetDetails.objectstorage;
-const id=10;
-const dashboardName='object storageby endpoint dashboard';
+const { metrics, serviceType } = widgetDetails.objectstorage;
+const id = 10;
+const dashboardName = 'object storageby endpoint dashboard';
 // Build a shared dimension object
 const dimensions = [
   {
@@ -287,11 +287,9 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
       );
     });
 
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get('button[data-qa-preset="Last day"]')
-      .should('be.visible')
-      .and('have.text', 'Last day');
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
     ui.buttonGroup
       .findButtonByTitle('Cancel')
