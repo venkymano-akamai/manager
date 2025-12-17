@@ -515,6 +515,7 @@ describe('Widget level dimension filter ', () => {
     cy.get('[data-testid="drawer"]').should('be.visible');
 
     cy.get('[data-testid="dimension_filters.0-id"]').within(() => {
+      // Update first filter value to '999'
       cy.get('[data-qa-dimension-filter="dimension_filters.0-value"]')
         .findByPlaceholderText('Enter a Value')
         .should('be.visible')
@@ -525,7 +526,7 @@ describe('Widget level dimension filter ', () => {
         .type('999');
     });
 
-    // Update second filter operator from 'Starts with' to 'Ends with'
+    // Update Protocol filter operator from 'Starts with' to 'Ends with'
     cy.get('[data-testid="dimension_filters.1-id"]').within(() => {
       ui.autocomplete
         .findByLabel('Operator')
@@ -538,7 +539,7 @@ describe('Widget level dimension filter ', () => {
         .click();
     });
 
-    // Update second filter value from '2x' to '5x'
+    // Update second filter value to 'UDP'
     cy.get('[data-testid="dimension_filters.1-id"]').within(() => {
       cy.get('[data-qa-dimension-filter="dimension_filters.1-value"]')
         .findByPlaceholderText('Enter a Value')
