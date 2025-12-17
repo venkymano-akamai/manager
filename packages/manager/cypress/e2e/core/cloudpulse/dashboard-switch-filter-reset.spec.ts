@@ -614,6 +614,8 @@ describe('Dashboard Filter Reset on Switch', () => {
       ALL_DASHBOARDS.forEach((to, j) => {
         if (i < j) {
           selectDashboard(from.name, from.serviceType);
+          cy.wait(`@getMetrics-${from.serviceType}`);
+          waitForWidget(from.serviceType);
           selectDashboard(to.name, to.serviceType);
           cy.wait(`@getMetrics-${to.serviceType}`);
           waitForWidget(to.serviceType);
