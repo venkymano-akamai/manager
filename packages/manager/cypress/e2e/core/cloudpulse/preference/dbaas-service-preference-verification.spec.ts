@@ -280,8 +280,8 @@ describe('Integration Tests for DBaaS Dashboard Preferences', () => {
       ).should('have.value', 'Primary');
     });
     // Select a time duration from the autocomplete input.
-   ui.button.findByTitle('Last hour').as('timeRangeTrigger');
-   cy.get('@timeRangeTrigger').click();
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
     ui.buttonGroup
       .findButtonByTitle('Cancel')
