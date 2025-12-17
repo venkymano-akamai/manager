@@ -90,19 +90,14 @@ export const NotificationRecipients = React.memo(
     };
 
     // Maximum recipients selection limit is fetched from launchdarkly
-    const maxRecipientsSelectionLimit = React.useMemo(() => {
-      return flags.aclpAlerting?.maxEmailNotificationChannelRecipients || 10;
-    }, [flags.aclpAlerting]);
+    const maxRecipientsSelectionLimit =
+      flags.aclpAlerting?.maxEmailChannelRecipients || 10;
 
     // Check if total number of options and selected options are greater than the limit, if yes then disable the Select All option
-    const recipientsLimitReached = React.useMemo(() => {
-      return options.length > maxRecipientsSelectionLimit;
-    }, [options.length, maxRecipientsSelectionLimit]);
+    const recipientsLimitReached = options.length > maxRecipientsSelectionLimit;
 
-    // Check if the number of selected recipients are greater than or equal to the limit
-    const maxSelectionsReached = React.useMemo(() => {
-      return selectedOptions.length >= maxRecipientsSelectionLimit;
-    }, [selectedOptions.length, maxRecipientsSelectionLimit]);
+    const maxSelectionsReached =
+      selectedOptions.length >= maxRecipientsSelectionLimit;
 
     return (
       <Autocomplete

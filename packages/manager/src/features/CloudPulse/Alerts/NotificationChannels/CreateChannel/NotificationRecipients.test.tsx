@@ -52,7 +52,7 @@ describe('NotificationRecipients component tests', () => {
     // Default mock for flags
     flagsMocks.useFlags.mockReturnValue({
       aclpAlerting: {
-        maxEmailNotificationChannelRecipients: 10,
+        maxEmailChannelRecipients: 10,
       },
     });
   });
@@ -205,7 +205,7 @@ describe('NotificationRecipients component tests', () => {
     // Set max limit to 5 for this test
     flagsMocks.useFlags.mockReturnValue({
       aclpAlerting: {
-        maxEmailNotificationChannelRecipients: 5,
+        maxEmailChannelRecipients: 5,
       },
     });
 
