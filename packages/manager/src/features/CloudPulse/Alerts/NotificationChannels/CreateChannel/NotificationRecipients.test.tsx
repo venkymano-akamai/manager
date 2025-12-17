@@ -69,7 +69,7 @@ describe('NotificationRecipients component tests', () => {
     renderWithTheme(<NotificationRecipients {...props} />);
 
     expect(screen.getByTestId('recipients-select')).toBeVisible();
-    expect(screen.getByPlaceholderText('Enter recipients')).toBeVisible();
+    expect(screen.getByPlaceholderText('Select recipients')).toBeVisible();
     expect(screen.getByText('Select up to 10 Recipients')).toBeVisible();
   });
 
@@ -164,7 +164,7 @@ describe('NotificationRecipients component tests', () => {
 
     renderWithTheme(<NotificationRecipients {...props} />);
 
-    const input = screen.getByPlaceholderText('Enter recipients');
+    const input = screen.getByPlaceholderText('Select recipients');
     await userEvent.click(screen.getByRole('button', { name: 'Open' }));
     await userEvent.type(input, 'test');
 

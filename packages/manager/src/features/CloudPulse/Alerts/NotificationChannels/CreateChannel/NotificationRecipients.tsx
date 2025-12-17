@@ -133,7 +133,7 @@ export const NotificationRecipients = React.memo(
           }
         }}
         options={options}
-        placeholder="Enter recipients"
+        placeholder="Select recipients"
         renderOption={(props, option) => {
           // After selecting resources up to the max resource selection limit, rest of the unselected options will be disabled if there are any
           const { key, ...rest } = props;
