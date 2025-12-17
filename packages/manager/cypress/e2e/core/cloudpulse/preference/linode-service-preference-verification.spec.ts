@@ -179,11 +179,9 @@ describe('Integration Tests for Linode Dashboard Preferences', () => {
         'true'
       );
     });
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get('button[data-qa-preset="Last day"]')
-      .should('be.visible')
-      .and('have.text', 'Last day');
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
     ui.buttonGroup
       .findButtonByTitle('Cancel')

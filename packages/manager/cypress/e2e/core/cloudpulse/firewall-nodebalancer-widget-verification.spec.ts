@@ -271,17 +271,19 @@ describe('Integration Tests for firewall Dashboard ', () => {
       .should('be.visible')
       .click();
 
-    // // Select a time duration from the autocomplete input.
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get('[data-qa-preset="Last day"]').click();
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
+
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
+
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
 
     // Select a resource from the autocomplete input.
-
     cy.findByPlaceholderText('Select a Firewall').should('be.visible').click();
 
     // Verify the firewall with type 'nodebalancer' exists

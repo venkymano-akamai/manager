@@ -52,6 +52,9 @@ describe('Alerts Listing Page - Error Handling', () => {
     ).as('getSecondAlertDefinitions');
     cy.visitWithLogin('/alerts/definitions');
     cy.wait('@getAlertDefinitionsList');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('should display correct error messages when disabling or enabling alerts fails', () => {
