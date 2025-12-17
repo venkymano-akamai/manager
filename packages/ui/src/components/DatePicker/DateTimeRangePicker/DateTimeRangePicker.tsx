@@ -52,8 +52,10 @@ export interface DateTimeRangePickerProps {
     timeZone: null | string;
   }) => void;
 
+  /** Callback when the popover is closed */
   onClose?: (selectedPreset: string) => void;
 
+  /** Property to control whether the calendar popover is open */
   openCalendar?: boolean;
 
   /** Additional settings for the presets dropdown */
@@ -337,7 +339,7 @@ export const DateTimeRangePicker = ({
           anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
           disableAutoFocus
           onClose={(event, reason) => {
-            // ✅ Block close only if clickaway
+            // Block close only if clickaway
             if (reason === 'backdropClick') return;
 
             handleClose();
