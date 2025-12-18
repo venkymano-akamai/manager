@@ -258,3 +258,9 @@ export const useServiceAlertsMutation = (
     },
   });
 };
+
+export const useNotificationChannelQuery = (channelId: number) => {
+  return useQuery<NotificationChannel, APIError[]>({
+    ...queryFactory.notificationChannel(channelId),
+  });
+};

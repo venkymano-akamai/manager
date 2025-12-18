@@ -243,7 +243,7 @@ export const getChipLabels = (
   if (value.channel_type === 'email') {
     return {
       label: 'To',
-      values: value.content.email.email_addresses,
+      values: value.content?.email.email_addresses ?? [],
     };
   } else if (value.channel_type === 'slack') {
     return {

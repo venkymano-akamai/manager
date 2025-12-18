@@ -46,6 +46,11 @@ type AlertNotificationEmail = 'email';
 type AlertNotificationSlack = 'slack';
 type AlertNotificationPagerDuty = 'pagerduty';
 type AlertNotificationWebHook = 'webhook';
+type EmailRecipientType =
+  | 'admin_users'
+  | 'read_users'
+  | 'read_write_users'
+  | 'user';
 export interface Dashboard {
   created: string;
   group_by?: string[];
@@ -277,14 +282,13 @@ export interface Alert {
   updated_by: string;
 }
 
-interface NotificationChannelAlerts {
-  id: number;
-  label: string;
+interface NotificationChannelAlertInfo {
+  alert_count: number;
   type: 'alerts-definitions';
   url: string;
 }
 interface NotificationChannelBase {
-  alerts: NotificationChannelAlerts[];
+  alerts: NotificationChannelAlertInfo[];
   channel_type: ChannelType;
   created: string;
   created_by: string;
@@ -296,13 +300,21 @@ interface NotificationChannelBase {
   updated_by: string;
 }
 
-interface NotificationChannelEmail extends NotificationChannelBase {
+export interface NotificationChannelEmail extends NotificationChannelBase {
   channel_type: AlertNotificationEmail;
-  content: {
+  // Optional content for ensuring backward compatibility with the existing API
+  content?: {
     email: {
       email_addresses: string[];
       message: string;
       subject: string;
+    };
+  };
+  // The new field as per the latest API specification
+  details?: {
+    email: {
+      recipient_type: EmailRecipientType;
+      usernames: string[];
     };
   };
 }
@@ -411,4 +423,10 @@ export interface CloudPulseAlertsPayload {
    * Only included in Beta mode.
    */
   user_alerts?: number[];
+}
+export interface NotificationChannelAlerts {
+  id: number;
+  label: string;
+  type: 'alerts-definitions';
+  url: string;
 }

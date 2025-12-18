@@ -140,3 +140,11 @@ export const updateServiceAlerts = (
     setMethod('PUT'),
     setData(payload),
   );
+
+export const getNotificationChannelById = (channelId: number) =>
+  Request<NotificationChannel>(
+    setURL(
+      `${API_ROOT}/monitor/alert-channels/${encodeURIComponent(channelId)}`,
+    ),
+    setMethod('GET'),
+  );

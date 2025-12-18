@@ -6,6 +6,7 @@ import {
   getDashboards,
   getJWEToken,
   getMetricDefinitionsByServiceType,
+  getNotificationChannelById,
 } from '@linode/api-v4';
 import {
   databaseQueries,
@@ -102,6 +103,10 @@ export const queryFactory = createQueryKeys(key, {
     queryFn: () =>
       getMetricDefinitionsByServiceType(serviceType!, params, filter),
     queryKey: [serviceType],
+  }),
+  notificationChannel: (channelId: number) => ({
+    queryFn: () => getNotificationChannelById(channelId),
+    queryKey: [channelId],
   }),
   notificationChannels: {
     contextQueries: {
