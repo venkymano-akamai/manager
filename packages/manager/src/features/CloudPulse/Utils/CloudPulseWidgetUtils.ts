@@ -281,7 +281,7 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
           data: getMetrics(data as number[][]),
           format:
             unit === 'Count'
-              ? (value: number) => `${humanizeLargeData(value)} ${unit}`
+              ? (value: number) => `${humanizeLargeData(value)} ${unit}` // we need to humanize count values in legend
               : (value: number) => formatToolTip(value, unit),
           legendColor: color,
           legendTitle: labelName,
