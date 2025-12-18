@@ -281,7 +281,7 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
           data: getMetrics(data as number[][]),
           format:
             unit === 'Count'
-              ? (value: number) => `${humanizeDataWithUnits(value)} ${unit}`
+              ? (value: number) => `${humanizeLargeData(value)} ${unit}`
               : (value: number) => formatToolTip(value, unit),
           legendColor: color,
           legendTitle: labelName,
@@ -573,36 +573,4 @@ export const getTimeDurationFromPreset = (
     default:
       return undefined;
   }
-};
-
-export const humanizeData = (value: number) => {
-  if (value >= 1_000_000_000_000) {
-    return (value / 1_000_000_000_000).toFixed(2);
-  }
-  if (value >= 1_000_000_000) {
-    return (value / 1_000_000_000).toFixed(2);
-  }
-  if (value >= 1_000_000) {
-    return (value / 1_000_000).toFixed(2);
-  }
-  if (value >= 1_000) {
-    return (value / 1_000).toFixed(2);
-  }
-  return value;
-};
-
-export const humanizeDataWithUnits = (value: number) => {
-  if (value >= 1_000_000_000_000) {
-    return `${(value / 1_000_000_000_000).toFixed(2)}T`;
-  }
-  if (value >= 1_000_000_000) {
-    return `${(value / 1_000_000_000).toFixed(2)}B`;
-  }
-  if (value >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(2)}M`;
-  }
-  if (value >= 1_000) {
-    return `${(value / 1_000).toFixed(2)}K`;
-  }
-  return `${value}`;
 };

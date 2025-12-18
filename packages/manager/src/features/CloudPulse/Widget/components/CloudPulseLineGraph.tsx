@@ -4,10 +4,8 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
-import { humanizeLargeData } from 'src/components/AreaChart/utils';
 
 import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
-import { humanizeData, humanizeDataWithUnits } from '../../Utils/CloudPulseWidgetUtils';
 
 export interface CloudPulseLineGraph extends AreaChartProps {
   error?: string;
@@ -48,7 +46,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           legendHeight="165px"
           margin={{
             bottom: 0,
-            left: unit === 'Count'? -15 : -15,
+            left: -15,
             right: 30,
             top: 2,
           }}
@@ -58,9 +56,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           }
           yAxisProps={
             unit === 'Count'
-              ? {
-                  tickFormat: (value: number) => `${humanizeDataWithUnits(value)}`,
-                }
+              ? undefined
               : {
                   tickFormat: (value: number) => `${roundTo(value, 3)}`,
                 }
