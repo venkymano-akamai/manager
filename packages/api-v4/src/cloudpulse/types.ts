@@ -288,7 +288,7 @@ interface NotificationChannelAlertInfo {
   url: string;
 }
 interface NotificationChannelBase {
-  alerts: NotificationChannelAlertInfo[];
+  alerts: NotificationChannelAlertInfo;
   channel_type: ChannelType;
   created: string;
   created_by: string;

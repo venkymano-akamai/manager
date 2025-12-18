@@ -3602,7 +3602,7 @@ export const handlers = [
     notificationChannels.push(...notificationChannelFactory.buildList(75));
     return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
-    http.get('*/monitor/alert-channels/:id', ({ params }) => {
+  http.get('*/monitor/alert-channels/:id', ({ params }) => {
     if (params.id === '5') {
       return HttpResponse.json(
         notificationChannelFactory.build({
