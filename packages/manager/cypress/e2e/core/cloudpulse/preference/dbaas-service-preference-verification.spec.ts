@@ -234,6 +234,7 @@ describe('Integration Tests for DBaaS Dashboard Preferences', () => {
     cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
       'not.exist'
     );
+    cy.wait('@getMetrics');
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {

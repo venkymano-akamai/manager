@@ -247,7 +247,6 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
     ui.button.findByTitle('Filters').click();
     // Wait for all metrics query requests to resolve.
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
-
     cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
       'not.exist'
     );

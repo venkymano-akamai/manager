@@ -212,6 +212,9 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+
+    cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+
     cy.scrollTo('top');
   });
 

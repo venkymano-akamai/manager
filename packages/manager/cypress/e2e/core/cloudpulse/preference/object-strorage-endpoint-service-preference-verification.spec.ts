@@ -299,6 +299,7 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
     cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
       'not.exist'
     );
+    cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
   });
   it('clears the Dashboard filters and verifies updated user preferences', () => {
     cy.intercept('PUT', apiMatcher('profile/preferences')).as(

@@ -207,6 +207,7 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
     cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
       'not.exist'
     );
+    cy.wait('@getMetrics');
   });
 
   it('clears the Dashboard filters and verifies updated user preferences', () => {

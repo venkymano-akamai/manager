@@ -239,7 +239,7 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
       .invoke('attr', 'data-qa-selected')
       .should('eq', 'true');
 
-    cy.wait('@initialMetrics').its('response.statusCode').should('eq', 200);
+    cy.wait(['@getDashboard', '@getServiceType', '@getDatabase']);
   });
 
   it('applies Group By at dashboard level and validates API', () => {
