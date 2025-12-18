@@ -1,9 +1,9 @@
 import { Factory } from '@linode/utilities';
 
-import type { NotificationChannelEmail } from '@linode/api-v4';
+import type { NotificationChannel } from '@linode/api-v4';
 
 export const notificationChannelFactory =
-  Factory.Sync.makeFactory<NotificationChannelEmail>({
+  Factory.Sync.makeFactory<NotificationChannel>({
     alerts: {
       type: 'alerts-definitions',
       alert_count: 1,

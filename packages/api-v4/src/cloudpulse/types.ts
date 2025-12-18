@@ -303,7 +303,7 @@ interface NotificationChannelBase {
 export interface NotificationChannelEmail extends NotificationChannelBase {
   channel_type: AlertNotificationEmail;
   // Optional content for ensuring backward compatibility with the existing API
-  content?: {
+  content: {
     email: {
       email_addresses: string[];
       message: string;

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import React from 'react';
 
 import { notificationChannelFactory } from 'src/factories/cloudpulse/channels';
@@ -166,6 +166,5 @@ describe('NotificationChannelDetail component tests', () => {
     expect(screen.getByText(/Recipients/)).toBeVisible();
     expect(screen.getByText('admin')).toBeVisible();
     expect(screen.getByText('ops_team')).toBeVisible();
-
   });
 });
