@@ -105,7 +105,6 @@ export const cloudPulseAlertsRouteTree = cloudPulseAlertsRoute.addChildren([
   cloudPulseAlertsDefinitionsCatchAllRoute,
   cloudPulseNotificationChannelsRoute.addChildren([
     cloudPulseNotificationChannelDetailRoute,
-  ]).addChildren([
     cloudPulseNotificationChannelsCreateRoute,
   ]),
 ]);
