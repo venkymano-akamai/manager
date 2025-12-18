@@ -4,8 +4,10 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
+import { humanizeLargeData } from 'src/components/AreaChart/utils';
 
 import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
+import { humanizeData, humanizeDataWithUnits } from '../../Utils/CloudPulseWidgetUtils';
 
 export interface CloudPulseLineGraph extends AreaChartProps {
   error?: string;
@@ -13,8 +15,7 @@ export interface CloudPulseLineGraph extends AreaChartProps {
 }
 
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
-  const { error, loading, ...rest } = props;
-
+  const { error, loading, unit, ...rest } = props;
   const theme = useTheme();
 
   // to reduce the x-axis tick count for small screen
@@ -47,16 +48,23 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           legendHeight="165px"
           margin={{
             bottom: 0,
-            left: -15,
+            left: unit === 'Count'? -15 : -15,
             right: 30,
             top: 2,
           }}
+          unit={unit}
           xAxisTickCount={
             isSmallScreen ? undefined : Math.min(rest.data.length, 7)
           }
-          yAxisProps={{
-            tickFormat: (value: number) => `${roundTo(value, 3)}`,
-          }}
+          yAxisProps={
+            unit === 'Count'
+              ? {
+                  tickFormat: (value: number) => `${humanizeDataWithUnits(value)}`,
+                }
+              : {
+                  tickFormat: (value: number) => `${roundTo(value, 3)}`,
+                }
+          }
         />
       )}
       {rest.data.length === 0 && (

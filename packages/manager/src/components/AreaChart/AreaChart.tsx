@@ -227,7 +227,9 @@ export const AreaChart = (props: AreaChartProps) => {
                 {item.dataKey}
               </Typography>
               <Typography marginLeft={2} sx={{ font: theme.font.bold }}>
-                {tooltipValueFormatter(item.value, unit)}
+                {unit === 'Count'
+                  ? `${humanizeLargeData(item.value)} ${unit}` // TODO: Discuss and put a function as prop and consume here, if not passed then use this default behavior
+                  : tooltipValueFormatter(item.value, unit)}
               </Typography>
             </Box>
           ))}

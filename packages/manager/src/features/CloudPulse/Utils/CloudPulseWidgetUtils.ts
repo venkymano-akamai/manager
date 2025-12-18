@@ -2,6 +2,8 @@ import { Alias } from '@linode/design-language-system';
 import { DateTimeRangePicker } from '@linode/ui';
 import { getMetrics } from '@linode/utilities';
 
+import { humanizeLargeData } from 'src/components/AreaChart/utils';
+
 import { DIMENSION_TRANSFORM_CONFIG } from '../shared/DimensionTransform';
 import {
   convertValueToUnit,
@@ -277,7 +279,10 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
         // construct a legend row with the dimension
         const legendRow: MetricsDisplayRow = {
           data: getMetrics(data as number[][]),
-          format: (value: number) => formatToolTip(value, unit),
+          format:
+            unit === 'Count'
+              ? (value: number) => `${humanizeDataWithUnits(value)} ${unit}`
+              : (value: number) => formatToolTip(value, unit),
           legendColor: color,
           legendTitle: labelName,
         };
@@ -568,4 +573,36 @@ export const getTimeDurationFromPreset = (
     default:
       return undefined;
   }
+};
+
+export const humanizeData = (value: number) => {
+  if (value >= 1_000_000_000_000) {
+    return (value / 1_000_000_000_000).toFixed(2);
+  }
+  if (value >= 1_000_000_000) {
+    return (value / 1_000_000_000).toFixed(2);
+  }
+  if (value >= 1_000_000) {
+    return (value / 1_000_000).toFixed(2);
+  }
+  if (value >= 1_000) {
+    return (value / 1_000).toFixed(2);
+  }
+  return value;
+};
+
+export const humanizeDataWithUnits = (value: number) => {
+  if (value >= 1_000_000_000_000) {
+    return `${(value / 1_000_000_000_000).toFixed(2)}T`;
+  }
+  if (value >= 1_000_000_000) {
+    return `${(value / 1_000_000_000).toFixed(2)}B`;
+  }
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(2)}M`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(2)}K`;
+  }
+  return `${value}`;
 };
