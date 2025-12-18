@@ -283,6 +283,9 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       comparePreferences(responseBody?.aclpPreference, expectedAclpPreference);
       comparePreferences(request.body.aclpPreference, expectedAclpPreference);
     });
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('clears the Region filter and verifies updated user preferences', () => {

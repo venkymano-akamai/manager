@@ -238,7 +238,6 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
         )
           .should('be.visible')
           .should('have.text', 'endpoint_type-E2-us-sea-2.linodeobjects.com');
-
       });
 
     ui.button.findByTitle('Filters').click();
@@ -296,6 +295,10 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
       .should('be.visible')
       .and('be.enabled')
       .click();
+
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
   it('clears the Dashboard filters and verifies updated user preferences', () => {
     cy.intercept('PUT', apiMatcher('profile/preferences')).as(
@@ -342,7 +345,6 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
         cy.get(
           '[data-qa-value="Endpoints endpoint_type-E2-us-sea-2.linodeobjects.com"]'
         ).should('not.exist');
-
       });
 
     cy.wait('@updatePreference').then(({ request, response }) => {
@@ -431,5 +433,4 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
       comparePreferences(expectedAclpPreference, request.body.aclpPreference);
     });
   });
-
 });

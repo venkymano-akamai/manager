@@ -150,7 +150,9 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       });
 
     ui.button.findByTitle('Filters').click();
-    cy.scrollTo('top');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
@@ -297,7 +299,6 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       cy.get('[data-qa-value="Interface Types VPC"]').should('be.visible');
       cy.get('[data-qa-value="Interface IDs 12"]').should('be.visible');
     });
-
     cy.wait('@updateDBClustersPreference').then(({ request, response }) => {
       const responseBody =
         response?.body &&
@@ -308,9 +309,10 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       const expectedAclpPreference = {
         dashboardId: 4,
         groupBy: ['entity_id', 'state'],
-        interface_type: ['vpc'],
         interface_id: '12',
         region: 'us-east',
+        associated_entity_region: 'us-east',
+        interface_type: ['vpc'],
         resources: ['1'],
         widgets: {
           'CPU Utilization': {
@@ -319,6 +321,10 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
               unit: 'hr',
               value: 1,
             },
+          },
+          'Disk I/O': {
+            label: 'Disk I/O',
+            filters: [],
           },
         },
       };
@@ -347,6 +353,7 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       cy.get('[data-qa-value="Interface Types VPC"]').should('not.exist');
       cy.get('[data-qa-value="Interface IDs 12"]').should('be.visible');
     });
+
     cy.wait('@updateDBClustersPreference').then(({ request, response }) => {
       const responseBody =
         response?.body &&
@@ -357,20 +364,11 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       const expectedAclpPreference = {
         dashboardId: 4,
         groupBy: ['entity_id', 'state'],
+        region: 'us-east',
+        resources: ['1'],
         interface_type: [],
         interface_id: '12',
         associated_entity_region: 'us-east',
-        region: 'us-east',
-        resources: ['1'],
-        widgets: {
-          'CPU Utilization': {
-            label: 'CPU Utilization',
-            timeGranularity: {
-              unit: 'hr',
-              value: 1,
-            },
-          },
-        },
       };
 
       comparePreferences(expectedAclpPreference, responseBody?.aclpPreference);
@@ -394,6 +392,7 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       cy.get('[data-qa-value="Interface Types VPC"]').should('be.visible');
       cy.get('[data-qa-value="Interface IDs 12"]').should('not.exist');
     });
+    cy.wait('@updateDBClustersPreference');
     cy.wait('@updateDBClustersPreference').then(({ request, response }) => {
       const responseBody =
         response?.body &&
@@ -404,20 +403,11 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       const expectedAclpPreference = {
         dashboardId: 4,
         groupBy: ['entity_id', 'state'],
+        region: 'us-east',
+        resources: ['1'],
         interface_type: ['vpc'],
         interface_id: '',
         associated_entity_region: 'us-east',
-        region: 'us-east',
-        resources: ['1'],
-        widgets: {
-          'CPU Utilization': {
-            label: 'CPU Utilization',
-            timeGranularity: {
-              unit: 'hr',
-              value: 1,
-            },
-          },
-        },
       };
 
       comparePreferences(expectedAclpPreference, responseBody?.aclpPreference);

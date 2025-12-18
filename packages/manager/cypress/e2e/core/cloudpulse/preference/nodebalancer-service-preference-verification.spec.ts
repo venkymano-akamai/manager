@@ -204,7 +204,9 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       .and('be.enabled')
       .click();
 
-    cy.scrollTo('top');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('clears the Dashboard filters and verifies updated user preferences', () => {

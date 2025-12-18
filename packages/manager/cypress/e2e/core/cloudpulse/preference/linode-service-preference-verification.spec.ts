@@ -139,6 +139,9 @@ describe('Integration Tests for Linode Dashboard Preferences', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
