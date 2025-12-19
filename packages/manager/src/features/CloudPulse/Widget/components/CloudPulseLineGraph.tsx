@@ -31,6 +31,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   }
 
   const noDataMessage = 'No data to display';
+  const isHumanizableUnit = flags.aclp?.humanizableUnits?.includes(unit);
   return (
     <Box
       sx={{
@@ -54,7 +55,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             top: 2,
           }}
           tooltipCustomValueFormatter={
-            flags.aclp?.humanizableUnits?.includes(unit)
+            isHumanizableUnit
               ? (value, unit) => `${humanizeLargeData(value)} ${unit}`
               : undefined
           }
@@ -63,7 +64,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             isSmallScreen ? undefined : Math.min(rest.data.length, 7)
           }
           yAxisProps={
-            flags.aclp?.humanizableUnits?.includes(unit)
+            isHumanizableUnit
               ? undefined
               : {
                   tickFormat: (value: number) => `${roundTo(value, 3)}`,
