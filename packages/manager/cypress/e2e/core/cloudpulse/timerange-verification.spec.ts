@@ -268,9 +268,10 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     cy.get('@startDateInput').scrollIntoView();
 
     cy.get('@startDateInput').click();
+
     cy.get('[role="dialog"]').within(() => {
       cy.findAllByText(startDay).first().click();
-      //cy.findAllByText(endDay).first().click();
+      cy.findAllByText(endDay).first().click();
     });
 
     ui.button
