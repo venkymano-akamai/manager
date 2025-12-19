@@ -80,7 +80,7 @@ interface GraphDataOptionsProps {
   /**
    * The units for which to apply humanization
    */
-  humanizableUnits: string[];
+  humanizableUnits?: string[];
 
   /**
    * label for the graph title
@@ -285,7 +285,7 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
         // construct a legend row with the dimension
         const legendRow: MetricsDisplayRow = {
           data: getMetrics(data as number[][]),
-          format: humanizedUnits.includes(unit)
+          format: humanizedUnits?.includes(unit)
             ? (value: number) => `${humanizeLargeData(value)} ${unit}` // we need to humanize count values in legend
             : (value: number) => formatToolTip(value, unit),
           legendColor: color,
