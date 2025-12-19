@@ -285,10 +285,12 @@ export const DateTimeRangePicker = ({
   };
 
   React.useEffect(() => {
-    if (selectedPreset !== 'reset' && openCalendar === true) {
-      handleOpen('start');
+    if (!anchorEl && startDateInputRef.current) {
+      setAnchorEl(
+        startDateInputRef.current?.parentElement || startDateInputRef.current,
+      );
     }
-  }, [openCalendar, selectedPreset]);
+  }, []);
 
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
