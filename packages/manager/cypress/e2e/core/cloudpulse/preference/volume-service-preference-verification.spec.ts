@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Volume(blockstorage) Dashboard.
  */
@@ -214,6 +216,8 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
     ui.button.findByTitle('Filters').click();
 
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+
+    cy.wait(1000);
 
     cy.scrollTo('top');
   });

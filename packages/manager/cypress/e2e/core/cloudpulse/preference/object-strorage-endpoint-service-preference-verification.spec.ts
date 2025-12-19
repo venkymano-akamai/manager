@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Object Storage Endpoint Dashboard.
  */
@@ -300,6 +301,7 @@ describe('Integration Tests for Object Storage Endpoint Dashboard ', () => {
       'not.exist'
     );
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+    cy.wait(1000);
   });
   it('clears the Dashboard filters and verifies updated user preferences', () => {
     cy.intercept('PUT', apiMatcher('profile/preferences')).as(

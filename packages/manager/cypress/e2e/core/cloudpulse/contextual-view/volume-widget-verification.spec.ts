@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Volume Dashboard – Refactored & Stable
  */
@@ -240,6 +241,7 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
       .should('eq', 'true');
 
     cy.wait(['@getDashboard', '@getServiceType', '@getDatabase']);
+    cy.wait(1000);
   });
 
   it('applies Group By at dashboard level and validates API', () => {

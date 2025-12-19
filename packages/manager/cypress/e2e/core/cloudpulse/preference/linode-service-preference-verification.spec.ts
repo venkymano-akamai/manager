@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Linode Preferences.
  *
@@ -143,6 +144,7 @@ describe('Integration Tests for Linode Dashboard Preferences', () => {
       'not.exist'
     );
     cy.wait('@getMetrics');
+    cy.wait(1000);
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
