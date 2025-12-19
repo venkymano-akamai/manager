@@ -100,6 +100,11 @@ interface AclpFlag {
   enabled: boolean;
 
   /**
+   * This property indicates for which unit, we need to humanize the values e.g., count, iops etc.,
+   */
+  humanizableUnits: string[];
+
+  /**
    * This property indicates whether to show widget dimension filters or not
    */
   showWidgetDimensionFilters?: boolean;
@@ -153,7 +158,7 @@ interface AclpAlerting {
   editDisabledStatuses?: AlertStatusType[];
   notificationChannels: boolean;
   recentActivity: boolean;
-  systemChannelSupportedServices?: CloudPulseServiceType[]; //linode, dbaas, etc. 
+  systemChannelSupportedServices?: CloudPulseServiceType[]; // linode, dbaas, etc.
 }
 
 interface LimitsEvolution {

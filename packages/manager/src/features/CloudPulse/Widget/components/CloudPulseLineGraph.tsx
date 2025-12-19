@@ -1,6 +1,7 @@
 import { CircleProgress, ErrorState, Typography } from '@linode/ui';
 import { roundTo } from '@linode/utilities';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { useFlags } from 'launchdarkly-react-client-sdk';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
@@ -15,6 +16,7 @@ export interface CloudPulseLineGraph extends AreaChartProps {
 
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   const { error, loading, unit, ...rest } = props;
+  const flags = useFlags();
   const theme = useTheme();
 
   // to reduce the x-axis tick count for small screen
@@ -52,7 +54,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             top: 2,
           }}
           tooltipCustomValueFormatter={
-            unit === 'Count'
+            flags.aclp?.humanizableUnits?.includes(unit)
               ? (value, unit) => `${humanizeLargeData(value)} ${unit}`
               : undefined
           }
@@ -61,7 +63,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             isSmallScreen ? undefined : Math.min(rest.data.length, 7)
           }
           yAxisProps={
-            unit === 'Count'
+            flags.aclp?.humanizableUnits?.includes(unit)
               ? undefined
               : {
                   tickFormat: (value: number) => `${roundTo(value, 3)}`,
