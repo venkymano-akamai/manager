@@ -12,7 +12,7 @@ describe('NotificationChannelRecipients', () => {
       channel_type: 'email',
       details: {
         email: {
-          usernames: ['alex_martinez', 'samantha_cho', 'mike_anderson_dev'],
+          usernames: ['test_1', 'test_2', 'test_3'],
         },
       },
     });
@@ -24,9 +24,9 @@ describe('NotificationChannelRecipients', () => {
     expect(screen.getByText(/Recipients/)).toBeVisible();
 
     // Verify all recipients are visible
-    expect(screen.getByText('alex_martinez')).toBeVisible();
-    expect(screen.getByText('samantha_cho')).toBeVisible();
-    expect(screen.getByText('mike_anderson_dev')).toBeVisible();
+    expect(screen.getByText('test_1')).toBeVisible();
+    expect(screen.getByText('test_2')).toBeVisible();
+    expect(screen.getByText('test_3')).toBeVisible();
   });
 
   it('should render with scrollable container for many recipients', () => {
