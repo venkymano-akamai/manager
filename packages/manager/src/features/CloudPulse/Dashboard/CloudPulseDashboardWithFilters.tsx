@@ -197,7 +197,6 @@ export const CloudPulseDashboardWithFilters = React.memo(
                   gap={2}
                 >
                   <CloudPulseDateTimeRangePicker
-                    defaultValue={timeDuration}
                     handleStatsChange={handleTimeRangeChange}
                     savePreferences
                   />
