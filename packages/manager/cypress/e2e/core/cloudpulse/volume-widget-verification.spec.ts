@@ -66,7 +66,11 @@ const getFiltersForMetric = (metricName: string) => {
   return metric.filters.map((filter) => ({
     dimension_label: filter.dimension_label,
     label: filter.dimension_label,
-    values: filter.value ? [filter.value] : undefined,
+    values: filter.value
+      ? Array.isArray(filter.value)
+        ? filter.value
+        : [filter.value]
+      : undefined,
   }));
 };
 
@@ -265,16 +269,18 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       .click();
 
     // Select a time duration from the autocomplete input.
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get(`[data-qa-preset="Last day"]`).click();
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
+
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
+
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
 
     //  Select a region from the dropdown.
-
     ui.regionSelect.find().clear();
     ui.regionSelect.find().click();
     ui.regionSelect.find().click().type(`${mockRegions[0].label}{enter}`);

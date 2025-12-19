@@ -49,10 +49,15 @@ const dimensions = [
 const getFiltersForMetric = (metricName: string) => {
   const metric = metrics.find((m) => m.name === metricName);
   if (!metric) return [];
+
   return metric.filters.map((filter) => ({
     dimension_label: filter.dimension_label,
     label: filter.dimension_label,
-    values: filter.value ? [filter.value] : undefined,
+    values: filter.value
+      ? Array.isArray(filter.value)
+        ? filter.value
+        : [filter.value]
+      : undefined,
   }));
 };
 
@@ -135,7 +140,11 @@ const assertLegendValues = (testData: {
   expectedAggregation?: string;
   expectedAggregationArray?: string[];
   expectedGranularity?: string;
-  filters?: { dimension_label: string; operator: string; value: null }[];
+  filters?: {
+    dimension_label: string;
+    operator: string;
+    value: null | string[];
+  }[];
   name?: string;
   title: string;
   unit: string;
@@ -184,6 +193,7 @@ const clearGroupBy = () => {
     .click();
 };
 
+// skip the spec as volume metrics are not yet supported in CloudPulse GA
 describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
   beforeEach(() => {
     mockAppendFeatureFlags(flagsFactory.build());
@@ -203,19 +213,26 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
 
     cy.visitWithLogin('/volumes/1/metrics');
 
-    // select date range
-    cy.get('[aria-labelledby="start-date"]').parent().click();
-    cy.get('[data-qa-preset="Last day"]').click();
-    cy.get('[data-qa-buttons="apply"]').should('be.visible').click();
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
+
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
+
+    cy.get('[data-qa-buttons="apply"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
 
     ui.button
-    .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-    .should('be.visible')
-    .first()
-    .as('dashboardGroupByBtn');
+      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+      .should('be.visible')
+      .first()
+      .as('dashboardGroupByBtn');
 
-  // Ensure the button is scrolled into view
-  cy.get('@dashboardGroupByBtn').scrollIntoView();
+    // Ensure the button is scrolled into view
+    cy.get('@dashboardGroupByBtn').scrollIntoView();
 
     ui.tooltip.findByText('Group By');
     cy.get('@dashboardGroupByBtn')
