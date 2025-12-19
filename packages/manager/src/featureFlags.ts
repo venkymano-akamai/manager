@@ -102,7 +102,7 @@ interface AclpFlag {
   /**
    * This property indicates for which unit, we need to humanize the values e.g., count, iops etc.,
    */
-  humanizableUnits: string[];
+  humanizableUnits?: string[];
 
   /**
    * This property indicates whether to show widget dimension filters or not
