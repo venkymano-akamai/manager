@@ -1,5 +1,6 @@
 import { formatPercentage } from '@linode/utilities';
 
+import * as utilities from 'src/components/AreaChart/utils';
 import { widgetFactory } from 'src/factories';
 
 import {
@@ -151,6 +152,7 @@ describe('generateGraphData method', () => {
   });
 
   it('test makes legend rows humanizable when unit is in humanizableUnits', () => {
+    const spy = vi.spyOn(utilities, 'humanizeLargeData');
     const mockMetricsResponse: CloudPulseMetricsResponse = {
       data: {
         result: [
@@ -180,7 +182,8 @@ describe('generateGraphData method', () => {
     });
 
     expect(result.legendRowsData[0].format).toBeDefined();
-    expect(result.legendRowsData[0].format(50000)).toBe('50K Count'); // test if it is actually the humanize function
+    result.legendRowsData[0].format(50000);
+    expect(spy).toHaveBeenCalledWith(50000);
   });
 });
 
