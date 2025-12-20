@@ -84,9 +84,9 @@ export const AddNotificationChannelDrawer = (
   const channelLabelWatcher = useWatch({ control, name: 'label' });
   const selectedChannelTypeTemplate =
     channelTypeWatcher && templateData
-      ? templateData.filter(
-          (template) => template.channel_type === channelTypeWatcher
-        )
+      ? templateData
+          .filter((template) => template.channel_type === channelTypeWatcher)
+          .sort((a, b) => a.type.localeCompare(b.type)) // sorting needed to group by type in Autocomplete
       : null;
 
   const selectedTemplate = selectedChannelTypeTemplate?.find(
@@ -168,12 +168,15 @@ export const AddNotificationChannelDrawer = (
                         ? 'Error in fetching the data.'
                         : '')
                     }
+                    groupBy={(options) => options.type}
                     key={channelTypeWatcher}
                     label="Channel"
                     onBlur={field.onBlur}
-                    onChange={(_, selected: { label: string }, reason) => {
+                    onChange={(_, selected, reason) => {
                       field.onChange(
-                        reason === 'selectOption' ? selected.label : null
+                        reason === 'selectOption' && selected
+                          ? selected.label
+                          : null
                       );
                     }}
                     options={selectedChannelTypeTemplate ?? []}

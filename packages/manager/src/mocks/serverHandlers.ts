@@ -3599,7 +3599,16 @@ export const handlers = [
         created_by: 'admin',
       })
     );
-    notificationChannels.push(...notificationChannelFactory.buildList(75));
+    notificationChannels.push(
+      notificationChannelFactory.build({
+        label: 'System channel',
+        updated: '2023-11-05T04:00:00',
+        updated_by: 'user5',
+        created_by: 'admin',
+        type: 'system',
+      })
+    );
+    notificationChannels.push(...notificationChannelFactory.buildList(3));
     return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
   http.delete('*/monitor/services/:serviceType/alert-definitions/:id', () => {
