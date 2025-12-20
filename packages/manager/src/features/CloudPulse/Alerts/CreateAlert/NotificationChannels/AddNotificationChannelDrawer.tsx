@@ -170,7 +170,7 @@ export const AddNotificationChannelDrawer = (
                         ? 'Error in fetching the data.'
                         : '')
                     }
-                    // groupBy={(options) => options.type}
+                    groupBy={({ type }) => type}
                     key={channelTypeWatcher}
                     label="Channel"
                     onBlur={field.onBlur}
