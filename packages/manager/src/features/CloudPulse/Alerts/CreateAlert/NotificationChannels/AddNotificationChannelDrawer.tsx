@@ -86,7 +86,9 @@ export const AddNotificationChannelDrawer = (
     channelTypeWatcher && templateData
       ? templateData
           .filter((template) => template.channel_type === channelTypeWatcher)
-          .sort((a, b) => a.type.localeCompare(b.type)) // sorting needed to group by type in Autocomplete
+          .sort((channelA, channelB) =>
+            channelA.type.localeCompare(channelB.type)
+          ) // sorting needed to group by type in Autocomplete
       : null;
 
   const selectedTemplate = selectedChannelTypeTemplate?.find(
@@ -168,7 +170,7 @@ export const AddNotificationChannelDrawer = (
                         ? 'Error in fetching the data.'
                         : '')
                     }
-                    groupBy={(options) => options.type}
+                    // groupBy={(options) => options.type}
                     key={channelTypeWatcher}
                     label="Channel"
                     onBlur={field.onBlur}
