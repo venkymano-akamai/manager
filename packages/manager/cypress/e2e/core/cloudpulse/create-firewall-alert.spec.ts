@@ -434,7 +434,7 @@ describe('Firewall alert configured successfully', () => {
           );
           // After selecting service, metric fields should be enabled
           ui.autocomplete.findByLabel('Data Field').should('be.enabled');
-          // Check action buttons are disabled
+          // Check action buttons are enabled
           [
             'Add dimension filter',
             'Add metric',
