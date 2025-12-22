@@ -206,11 +206,7 @@ export const AddChannelListing = (props: AddChannelListingProps) => {
                   ? '215px'
                   : '190px',
             }}
-            tooltipText={
-              !serviceType
-                ? 'Select service type to add notification channel'
-                : 'You can add up to 5 notification channels.'
-            }
+            tooltipText="You can add up to 5 notification channels."
           >
             Add notification channel
           </Button>
