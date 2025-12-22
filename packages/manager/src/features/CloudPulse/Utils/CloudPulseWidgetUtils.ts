@@ -228,9 +228,12 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
   const dimension: { [timestamp: number]: { [label: string]: number } } = {};
   const areas: AreaProps[] = [];
   const colors = Object.values(Alias.Chart.Categorical);
-  const isUnitPresent = humanizedUnits?.some(
-    (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
-  );
+  const normalizedUnit = unit?.toLowerCase();
+  const isUnitPresent =
+    normalizedUnit != null &&
+    humanizedUnits?.some(
+      (unitElement) => unitElement.toLowerCase() === normalizedUnit
+    );
 
   // check whether to hide metric name or not based on the number of unique metric names
   const hideMetricName =
