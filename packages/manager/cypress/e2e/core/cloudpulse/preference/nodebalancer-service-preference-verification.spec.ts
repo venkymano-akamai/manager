@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse NodeBalancer Preferences.
  *
@@ -204,7 +205,11 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       .and('be.enabled')
       .click();
 
-    cy.scrollTo('top');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
+    cy.wait('@getMetrics');
+    cy.wait(1000);
   });
 
   it('clears the Dashboard filters and verifies updated user preferences', () => {

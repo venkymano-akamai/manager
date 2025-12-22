@@ -16,7 +16,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -29,17 +29,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -59,7 +59,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -72,17 +72,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -100,7 +100,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -113,17 +113,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -141,7 +141,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -154,17 +154,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -182,7 +182,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -195,22 +195,22 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
         {
-            "label": "Egress Bytes Accepted  (Linode)",
+            "label": "Egress Bytes Accepted (Linode)",
             "metric": "fw_egress_bytes_accepted",
             "unit": "Bps",
             "metric_type": "gauge",
@@ -223,7 +223,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -236,17 +236,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -264,7 +264,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -277,17 +277,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -305,7 +305,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -318,17 +318,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -346,7 +346,7 @@
                 {
                     "label": "VPC-Subnet",
                     "dimension_label": "vpc_subnet_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Interface Type",
@@ -359,17 +359,17 @@
                 {
                     "label": "Interface",
                     "dimension_label": "interface_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode",
                     "dimension_label": "linode_id",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Linode Region",
                     "dimension_label": "region_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -403,12 +403,12 @@
                 {
                     "label": "NodeBalancer",
                     "dimension_label": "nodebalancer_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
         {
-            "label": "Ingress Bytes Dropped  (Node Balancer)",
+            "label": "Ingress Bytes Dropped (Node Balancer)",
             "metric": "nb_ingress_bytes_dropped",
             "unit": "Bps",
             "metric_type": "gauge",
@@ -437,12 +437,12 @@
                 {
                     "label": "NodeBalancer",
                     "dimension_label": "nodebalancer_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
         {
-            "label": "Ingress Packets Accepted  (Node Balancer)",
+            "label": "Ingress Packets Accepted (Node Balancer)",
             "metric": "nb_ingress_packets_accepted",
             "unit": "packets/s",
             "metric_type": "gauge",
@@ -471,12 +471,12 @@
                 {
                     "label": "NodeBalancer",
                     "dimension_label": "nodebalancer_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
         {
-            "label": "Ingress Packets Dropped  (Node Balancer)",
+            "label": "Ingress Packets Dropped (Node Balancer)",
             "metric": "nb_ingress_packets_dropped",
             "unit": "packets/s",
             "metric_type": "gauge",
@@ -485,7 +485,29 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Protocol",
+                    "dimension_label": "protocol",
+                    "values": [
+                        "tcp",
+                        "udp"
+                    ]
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v4",
+                        "v6"
+                    ]
+                },
+                {
+                    "label": "NodeBalancer",
+                    "dimension_label": "nodebalancer_id",
+                    "values": []
+                }
+            ]
         }
     ],
     "page": 1,

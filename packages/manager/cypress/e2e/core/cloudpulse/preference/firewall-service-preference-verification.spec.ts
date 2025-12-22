@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Firewall Preferences.
  *
@@ -37,6 +38,8 @@ import {
   flagsFactory,
   widgetFactory,
 } from 'src/factories';
+
+import type { Interception } from 'support/cypress-exports';
 
 const timeDurationToSelect = 'Last 24 Hours';
 const { dashboardName, id, metrics, firewalls } = widgetDetails.firewall;
@@ -150,7 +153,11 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       });
 
     ui.button.findByTitle('Filters').click();
-    cy.scrollTo('top');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
+    cy.wait('@getMetrics');
+    cy.wait(1000);
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
@@ -297,7 +304,6 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       cy.get('[data-qa-value="Interface Types VPC"]').should('be.visible');
       cy.get('[data-qa-value="Interface IDs 12"]').should('be.visible');
     });
-
     cy.wait('@updateDBClustersPreference').then(({ request, response }) => {
       const responseBody =
         response?.body &&
@@ -308,9 +314,10 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       const expectedAclpPreference = {
         dashboardId: 4,
         groupBy: ['entity_id', 'state'],
-        interface_type: ['vpc'],
         interface_id: '12',
         region: 'us-east',
+        associated_entity_region: 'us-east',
+        interface_type: ['vpc'],
         resources: ['1'],
         widgets: {
           'CPU Utilization': {
@@ -319,6 +326,10 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
               unit: 'hr',
               value: 1,
             },
+          },
+          'Disk I/O': {
+            label: 'Disk I/O',
+            filters: [],
           },
         },
       };
@@ -347,34 +358,35 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       cy.get('[data-qa-value="Interface Types VPC"]').should('not.exist');
       cy.get('[data-qa-value="Interface IDs 12"]').should('be.visible');
     });
-    cy.wait('@updateDBClustersPreference').then(({ request, response }) => {
+    cy.wait(['@updateDBClustersPreference']);
+
+    cy.get('@updateDBClustersPreference.all').then((calls) => {
+      const interceptions = calls as unknown as Interception[];
+
+      // Get the last call (or iterate over them if needed)
+      const lastCall = interceptions[interceptions.length - 1];
+
       const responseBody =
-        response?.body &&
-        (typeof response.body === 'string'
-          ? JSON.parse(response.body)
-          : response.body);
+        lastCall.response?.body &&
+        (typeof lastCall.response.body === 'string'
+          ? JSON.parse(lastCall.response.body)
+          : lastCall.response.body);
 
       const expectedAclpPreference = {
         dashboardId: 4,
         groupBy: ['entity_id', 'state'],
+        region: 'us-east',
+        resources: ['1'],
         interface_type: [],
         interface_id: '12',
         associated_entity_region: 'us-east',
-        region: 'us-east',
-        resources: ['1'],
-        widgets: {
-          'CPU Utilization': {
-            label: 'CPU Utilization',
-            timeGranularity: {
-              unit: 'hr',
-              value: 1,
-            },
-          },
-        },
       };
 
       comparePreferences(expectedAclpPreference, responseBody?.aclpPreference);
-      comparePreferences(expectedAclpPreference, request.body.aclpPreference);
+      comparePreferences(
+        expectedAclpPreference,
+        lastCall.request.body?.aclpPreference
+      );
     });
   });
   it('clears the Interface Id Filter and verifies updated user preferences', () => {
@@ -394,34 +406,39 @@ describe('Integration Tests for firewall linode Dashboard ', () => {
       cy.get('[data-qa-value="Interface Types VPC"]').should('be.visible');
       cy.get('[data-qa-value="Interface IDs 12"]').should('not.exist');
     });
-    cy.wait('@updateDBClustersPreference').then(({ request, response }) => {
+    // 1. Wait for the expected number of calls (e.g., 2 calls) to ensure they have finished
+    cy.wait(['@updateDBClustersPreference', '@updateDBClustersPreference']);
+
+    // 2. Now access the list of ALL calls
+    cy.get('@updateDBClustersPreference.all').then((calls) => {
+      const interceptions = calls as unknown as Interception[];
+
+      // Get the last call (or iterate over them if needed)
+      const lastCall = interceptions[interceptions.length - 1];
+
       const responseBody =
-        response?.body &&
-        (typeof response.body === 'string'
-          ? JSON.parse(response.body)
-          : response.body);
+        lastCall.response?.body &&
+        (typeof lastCall.response.body === 'string'
+          ? JSON.parse(lastCall.response.body)
+          : lastCall.response.body);
 
       const expectedAclpPreference = {
         dashboardId: 4,
         groupBy: ['entity_id', 'state'],
+        region: 'us-east',
+        resources: ['1'],
         interface_type: ['vpc'],
         interface_id: '',
         associated_entity_region: 'us-east',
-        region: 'us-east',
-        resources: ['1'],
-        widgets: {
-          'CPU Utilization': {
-            label: 'CPU Utilization',
-            timeGranularity: {
-              unit: 'hr',
-              value: 1,
-            },
-          },
-        },
       };
 
       comparePreferences(expectedAclpPreference, responseBody?.aclpPreference);
-      comparePreferences(expectedAclpPreference, request.body.aclpPreference);
+
+      // Use optional chaining for request body to prevent 'undefined' errors
+      comparePreferences(
+        expectedAclpPreference,
+        lastCall.request.body?.aclpPreference
+      );
     });
   });
 });

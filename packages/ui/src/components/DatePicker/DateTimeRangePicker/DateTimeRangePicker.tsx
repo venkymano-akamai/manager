@@ -338,12 +338,7 @@ export const DateTimeRangePicker = ({
           anchorEl={anchorEl}
           anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
           disableAutoFocus
-          onClose={(event, reason) => {
-            // Block close only if clickaway
-            if (reason === 'backdropClick') return;
-
-            handleClose();
-          }}
+          onClose={handleClose}
           open={open}
           role="dialog"
           slotProps={{

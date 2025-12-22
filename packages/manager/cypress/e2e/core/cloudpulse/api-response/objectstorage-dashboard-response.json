@@ -5,8 +5,11 @@
             "type": "standard",
             "service_type": "objectstorage",
             "label": "Object Storage usage",
+            "group_by": [
+                "entity_id"
+            ],
             "created": "2025-09-08T06:54:54",
-            "updated": "2025-09-08T06:54:54",
+            "updated": "2025-11-07T07:31:09",
             "widgets": [
                 {
                     "metric": "obj_bucket_size",
@@ -16,34 +19,27 @@
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_bucket_size",
-                    "group_by": [
-                        "entity_id"
-                    ],
                     "aggregate_function": "sum"
                 },
                 {
                     "metric": "obj_bucket_num_objects",
                     "unit": "Count",
-                    "label": "Total number of objects",
+                    "label": "Number of Objects",
                     "color": "default",
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_bucket_num_objects",
-                    "group_by": [
-                        "entity_id"
-                    ],
                     "aggregate_function": "sum"
                 },
                 {
                     "metric": "obj_requests_num",
                     "unit": "Count",
-                    "label": "Total number of requests",
+                    "label": "Total Requests",
                     "color": "default",
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_requests_num",
                     "group_by": [
-                        "entity_id",
                         "request_type"
                     ],
                     "aggregate_function": "sum"
@@ -51,13 +47,12 @@
                 {
                     "metric": "obj_responses_num",
                     "unit": "Count",
-                    "label": "Total number of responses",
+                    "label": "Total Responses",
                     "color": "default",
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_responses_num",
                     "group_by": [
-                        "entity_id",
                         "response_type"
                     ],
                     "aggregate_function": "sum"
@@ -70,9 +65,6 @@
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_bytes_downloaded",
-                    "group_by": [
-                        "entity_id"
-                    ],
                     "aggregate_function": "sum"
                 },
                 {
@@ -83,9 +75,6 @@
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_bytes_uploaded",
-                    "group_by": [
-                        "entity_id"
-                    ],
                     "aggregate_function": "sum"
                 },
                 {
@@ -96,9 +85,6 @@
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_egress_throughput",
-                    "group_by": [
-                        "entity_id"
-                    ],
                     "aggregate_function": "sum"
                 },
                 {
@@ -109,9 +95,6 @@
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_ingress_throughput",
-                    "group_by": [
-                        "entity_id"
-                    ],
                     "aggregate_function": "sum"
                 },
                 {
@@ -122,9 +105,115 @@
                     "size": 6,
                     "chart_type": "line",
                     "y_label": "obj_ttfb_average",
+                    "aggregate_function": "avg"
+                }
+            ]
+        },
+        {
+            "id": 10,
+            "type": "standard",
+            "service_type": "objectstorage",
+            "label": "Object Storage usage per endpoint",
+            "group_by": [
+                "endpoint"
+            ],
+            "created": "2025-11-19T06:15:28",
+            "updated": "2025-11-19T06:15:28",
+            "widgets": [
+                {
+                    "metric": "obj_bucket_size",
+                    "unit": "Bytes",
+                    "label": "Content Stored Per Endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_bucket_size",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_bucket_num_objects",
+                    "unit": "Count",
+                    "label": "Total number of objects per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_bucket_num_objects",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_requests_num",
+                    "unit": "Count",
+                    "label": "Total number of requests per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_requests_num",
                     "group_by": [
-                        "entity_id"
+                        "request_type"
                     ],
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_responses_num",
+                    "unit": "Count",
+                    "label": "Total number of responses per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_responses_num",
+                    "group_by": [
+                        "response_type"
+                    ],
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_bytes_uploaded",
+                    "unit": "Bytes",
+                    "label": "Bytes uploaded per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_bytes_uploaded",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_bytes_downloaded",
+                    "unit": "Bytes",
+                    "label": "Bytes downloaded per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_bytes_downloaded",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_egress_throughput",
+                    "unit": "Bps",
+                    "label": "Egress Throughput per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_egress_throughput",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_ingress_throughput",
+                    "unit": "Bps",
+                    "label": "Ingress Throughput per endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_ingress_throughput",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "obj_ttfb_average",
+                    "unit": "ms",
+                    "label": "Average TTFB latency over the endpoint",
+                    "color": "default",
+                    "size": 6,
+                    "chart_type": "line",
+                    "y_label": "obj_ttfb_average",
                     "aggregate_function": "avg"
                 }
             ]
@@ -132,5 +221,5 @@
     ],
     "page": 1,
     "pages": 1,
-    "results": 1
+    "results": 2
 }
