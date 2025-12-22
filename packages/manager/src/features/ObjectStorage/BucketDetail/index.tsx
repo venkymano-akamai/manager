@@ -1,3 +1,4 @@
+import { BetaChip, CircleProgress, ErrorState } from '@linode/ui';
 import { useParams } from '@tanstack/react-router';
 import * as React from 'react';
 
@@ -8,32 +9,51 @@ import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
 import { TabPanels } from 'src/components/Tabs/TabPanels';
 import { Tabs } from 'src/components/Tabs/Tabs';
 import { TanStackTabLinkList } from 'src/components/Tabs/TanStackTabLinkList';
-import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 import { useIsObjectStorageGen2Enabled } from 'src/features/ObjectStorage/hooks/useIsObjectStorageGen2Enabled';
+import { useFlags } from 'src/hooks/useFlags';
 import { useTabs } from 'src/hooks/useTabs';
 import { useObjectStorageBuckets } from 'src/queries/object-storage/queries';
 
-import { BucketAccess } from './BucketAccess';
-
 const ObjectList = React.lazy(() =>
-  import('./BucketDetail').then((module) => ({ default: module.BucketDetail }))
+  import('./ObjectsTab/BucketDetail').then((module) => ({
+    default: module.BucketDetail,
+  }))
 );
+
+const BucketAccess = React.lazy(() =>
+  import('./AccessTab/BucketAccess').then((module) => ({
+    default: module.BucketAccess,
+  }))
+);
+
 const BucketSSL = React.lazy(() =>
-  import('./BucketSSL').then((module) => ({
+  import('./CertificatesTab/BucketSSL').then((module) => ({
     default: module.BucketSSL,
   }))
 );
 
+const BucketMetrics = React.lazy(() =>
+  import('./MetricsTab/MetricsTab').then((module) => ({
+    default: module.MetricsTab,
+  }))
+);
+
+const BUCKET_DETAILS_URL = '/object-storage/buckets/$clusterId/$bucketName';
+
 export const BucketDetailLanding = React.memo(() => {
   const { bucketName, clusterId } = useParams({
-    from: '/object-storage/buckets/$clusterId/$bucketName',
+    from: BUCKET_DETAILS_URL,
   });
 
+  const { aclpServices } = useFlags();
   const { isObjectStorageGen2Enabled } = useIsObjectStorageGen2Enabled();
 
-  const { data: bucketsData } = useObjectStorageBuckets(
-    isObjectStorageGen2Enabled
-  );
+  const {
+    data: bucketsData,
+    isLoading,
+    error,
+    isPending,
+  } = useObjectStorageBuckets(isObjectStorageGen2Enabled);
 
   const bucket = bucketsData?.buckets.find(({ label }) => label === bucketName);
 
@@ -41,25 +61,38 @@ export const BucketDetailLanding = React.memo(() => {
 
   const isGen2Endpoint = endpoint_type === 'E2' || endpoint_type === 'E3';
 
-  const { handleTabChange, tabIndex, tabs } = useTabs([
+  const { handleTabChange, tabIndex, tabs, getTabIndex } = useTabs([
     {
       title: 'Objects',
-      to: `/object-storage/buckets/$clusterId/$bucketName/objects`,
+      to: `${BUCKET_DETAILS_URL}/objects`,
     },
     {
       title: 'Access',
-      to: `/object-storage/buckets/$clusterId/$bucketName/access`,
+      to: `${BUCKET_DETAILS_URL}/access`,
     },
     {
-      hide: !bucketsData || isGen2Endpoint,
       title: 'SSL/TLS',
-      to: `/object-storage/buckets/$clusterId/$bucketName/ssl`,
+      to: `${BUCKET_DETAILS_URL}/ssl`,
+      hide: isGen2Endpoint,
     },
     {
       title: 'Metrics',
-      to: `/object-storage/buckets/$clusterId/$bucketName/metrics`,
+      to: `${BUCKET_DETAILS_URL}/metrics`,
+      hide: !aclpServices?.objectstorage?.metrics?.enabled,
+      chip: aclpServices?.objectstorage?.metrics?.beta ? <BetaChip /> : null,
     },
   ]);
+
+  if (isPending || isLoading) {
+    return <CircleProgress />;
+  }
+
+  if (!bucket || error) {
+    return <ErrorState errorText={error?.message ?? 'Not found'} />;
+  }
+
+  const sslTabIndex = getTabIndex(`${BUCKET_DETAILS_URL}/ssl`);
+  const metricsTabIndex = getTabIndex(`${BUCKET_DETAILS_URL}/metrics`);
 
   return (
     <>
@@ -89,6 +122,7 @@ export const BucketDetailLanding = React.memo(() => {
             <SafeTabPanel index={0}>
               <ObjectList />
             </SafeTabPanel>
+
             <SafeTabPanel index={1}>
               <BucketAccess
                 bucketName={bucketName}
@@ -96,19 +130,18 @@ export const BucketDetailLanding = React.memo(() => {
                 endpointType={endpoint_type}
               />
             </SafeTabPanel>
-            {!isGen2Endpoint && (
-              <SafeTabPanel index={2}>
+
+            {!!sslTabIndex && (
+              <SafeTabPanel index={sslTabIndex}>
                 <BucketSSL bucketName={bucketName} clusterId={clusterId} />
               </SafeTabPanel>
             )}
-            <SafeTabPanel index={isGen2Endpoint ? 2 : 3}>
-              <CloudPulseDashboardWithFilters
-                region={bucket?.region}
-                // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-                resource={bucket?.hostname!}
-                serviceType="objectstorage"
-              />
-            </SafeTabPanel>
+
+            {!!metricsTabIndex && (
+              <SafeTabPanel index={metricsTabIndex}>
+                <BucketMetrics bucketName={bucketName} clusterId={clusterId} />
+              </SafeTabPanel>
+            )}
           </TabPanels>
         </React.Suspense>
       </Tabs>
