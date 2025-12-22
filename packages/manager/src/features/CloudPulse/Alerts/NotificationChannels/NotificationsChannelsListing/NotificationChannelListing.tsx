@@ -8,12 +8,6 @@ import { useAllAlertNotificationChannelsQuery } from 'src/queries/cloudpulse/ale
 import { scrollToElement } from '../../Utils/AlertResourceUtils';
 import { NotificationChannelListTable } from './NotificationChannelListTable';
 
-import { DebouncedSearchTextField } from 'src/components/DebouncedSearchTextField';
-import { useAllAlertNotificationChannelsQuery } from 'src/queries/cloudpulse/alerts';
-
-import { scrollToElement } from '../../Utils/AlertResourceUtils';
-import { NotificationChannelListTable } from './NotificationChannelListTable';
-
 export const NotificationChannelListing = () => {
   const {
     data: notificationChannels,
