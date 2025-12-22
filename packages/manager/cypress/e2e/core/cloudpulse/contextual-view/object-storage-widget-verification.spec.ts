@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Object Storage Dashboard.
  */
@@ -238,6 +239,7 @@ describe('Integration Tests for Object Storage Dashboard - Group By and Widget V
 
     // Wait for all metrics query requests to resolve.
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+    cy.wait(1000);
   });
   it('should apply Group By at the dashboard level and verify the metrics API calls', () => {
     // Stub metrics API calls for dashboard group by changes
