@@ -127,9 +127,9 @@ const mockRegion = regionFactory.build({
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: {
     result: generateRandomMetricsData(timeDurationToSelect, '5 min').result.map(
-      (result) => ({
-        ...result,
-        values: result.values.map(([ts]) => [ts, '1000000.00']),
+      (metricResult) => ({
+        ...metricResult,
+        values: metricResult.values.map(([ts]) => [ts, '1000000.00']),
       })
     ),
   },
