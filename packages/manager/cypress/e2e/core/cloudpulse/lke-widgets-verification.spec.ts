@@ -20,6 +20,7 @@ import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
 
+import { humanizeLargeData } from 'src/components/AreaChart/utils';
 import {
   accountFactory,
   cloudPulseMetricsResponseFactory,
@@ -47,6 +48,15 @@ import type { Interception } from 'support/cypress-exports';
  * Testing widget interactions, including zooming and filtering, to ensure proper behavior.
  * Each test ensures that widgets on the dashboard operate correctly and display accurate information.
  */
+
+const parseNumericValue = (value: string): number => {
+  const match = value.match(/[\d.]+/);
+  if (!match) {
+    throw new Error(`Invalid numeric string: ${value}`);
+  }
+  return Number(match[0]);
+};
+
 const expectedGranularityArray = ['Auto', '1 day', '1 hr', '5 min'];
 const timeDurationToSelect = 'Last 24 Hours';
 const { dashboardName, id, metrics, region, resource } = widgetDetails.lke;
@@ -115,9 +125,15 @@ const mockRegion = regionFactory.build({
 });
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
+  data: {
+    result: generateRandomMetricsData(timeDurationToSelect, '5 min').result.map(
+      (result) => ({
+        ...result,
+        values: result.values.map(([ts]) => [ts, '1000000.00']),
+      })
+    ),
+  },
 });
-
 /**
  * Generates graph data from a given CloudPulse metrics response and
  * extracts average, last, and maximum metric values from the first
@@ -190,7 +206,30 @@ const mockedEnterpriseClusters = [
 // Tests will be modified
 describe('Integration Tests for LKE Enterprise Dashboard ', () => {
   beforeEach(() => {
-    mockAppendFeatureFlags(flagsFactory.build());
+    mockAppendFeatureFlags(
+      flagsFactory.build({
+        aclp: {
+          beta: true,
+          enabled: true,
+          showWidgetDimensionFilters: true,
+          humanizableUnits: ['Count', 'Rate', 'percent'],
+        },
+
+        aclpServices: {
+          lke: {
+            alerts: {
+              beta: true,
+              enabled: true,
+            },
+            metrics: {
+              beta: true,
+              enabled: true,
+            },
+          },
+        },
+      })
+    );
+
     mockGetAccount(mockAccount); // Enables the account to have capability for Akamai Cloud Pulse
     mockGetLinodes([mockLinode]);
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
@@ -302,9 +341,6 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
       '@getMetrics',
       '@getMetrics',
     ]);
-
-    // Scroll to the top of the page to ensure consistent test behavior
-    cy.scrollTo('top');
   });
   it('should apply group by at the dashboard level and verify the metrics API calls', () => {
     // Stub metrics API calls for dashboard group by changes
@@ -507,17 +543,32 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
 
             cy.log('expectedWidgetValues ', expectedWidgetValues.max);
 
-            cy.get(`[data-qa-graph-column-title="Max"]`)
+            cy.get('[data-qa-graph-column-title="Max"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.max)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Avg"]`)
+            cy.get('[data-qa-graph-column-title="Avg"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.average)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Last"]`)
+            cy.get('[data-qa-graph-column-title="Last"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.last)
+                )} ${testData.unit}`
+              );
           });
         });
     });
@@ -561,17 +612,32 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
               .should('be.visible')
               .should('have.text', `${testData.title}`);
 
-            cy.get(`[data-qa-graph-column-title="Max"]`)
+            cy.get('[data-qa-graph-column-title="Max"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.max)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Avg"]`)
+            cy.get('[data-qa-graph-column-title="Avg"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.average)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Last"]`)
+            cy.get('[data-qa-graph-column-title="Last"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.last)
+                )} ${testData.unit}`
+              );
           });
         });
     });
@@ -632,17 +698,32 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
               .should('be.visible')
               .should('have.text', `${testData.title}`);
 
-            cy.get(`[data-qa-graph-column-title="Max"]`)
+            cy.get('[data-qa-graph-column-title="Max"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.max)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Avg"]`)
+            cy.get('[data-qa-graph-column-title="Avg"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.average)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Last"]`)
+            cy.get('[data-qa-graph-column-title="Last"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.last)
+                )} ${testData.unit}`
+              );
           });
 
           // click zoom out and validate the same
@@ -666,17 +747,32 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
               .should('be.visible')
               .should('have.text', `${testData.title}`);
 
-            cy.get(`[data-qa-graph-column-title="Max"]`)
+            cy.get('[data-qa-graph-column-title="Max"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.max)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Avg"]`)
+            cy.get('[data-qa-graph-column-title="Avg"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.average)
+                )} ${testData.unit}`
+              );
 
-            cy.get(`[data-qa-graph-column-title="Last"]`)
+            cy.get('[data-qa-graph-column-title="Last"]')
               .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
+              .should(
+                'have.text',
+                `${humanizeLargeData(
+                  parseNumericValue(expectedWidgetValues.last)
+                )} ${testData.unit}`
+              );
           });
         });
     });

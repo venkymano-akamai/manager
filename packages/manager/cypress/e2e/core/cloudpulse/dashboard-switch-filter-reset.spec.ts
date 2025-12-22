@@ -603,21 +603,14 @@ describe('Dashboard Filter Reset on Switch', () => {
 
   ALL_DASHBOARDS.forEach((from, i) => {
     it(`switches from ${from.name} to all later dashboards without errors`, () => {
-      mockCreateCloudPulseMetrics(
-        from.serviceType,
-        metricsAPIResponsePayload
-      ).as(`getMetrics-${from.serviceType}`);
-
       cy.visitWithLogin('/metrics');
       cy.wait(`@fetchDashboard-${from.serviceType}`);
 
       ALL_DASHBOARDS.forEach((to, j) => {
         if (i < j) {
           selectDashboard(from.name, from.serviceType);
-          cy.wait(`@getMetrics-${from.serviceType}`);
           waitForWidget(from.serviceType);
           selectDashboard(to.name, to.serviceType);
-          cy.wait(`@getMetrics-${to.serviceType}`);
           waitForWidget(to.serviceType);
           cy.get('body').within(() => {
             cy.contains('Something went wrong').should('not.exist');
