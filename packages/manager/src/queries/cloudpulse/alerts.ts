@@ -285,3 +285,9 @@ export const useCreateNotificationChannel = () => {
     },
   });
 };
+
+export const useNotificationChannelQuery = (channelId: number) => {
+  return useQuery<NotificationChannel, APIError[]>({
+    ...queryFactory.notificationChannel(channelId),
+  });
+};

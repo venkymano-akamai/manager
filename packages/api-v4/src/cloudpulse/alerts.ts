@@ -151,3 +151,11 @@ export const createNotificationChannel = (
     setMethod('POST'),
     setData(data, createNotificationChannelPayloadSchema),
   );
+
+export const getNotificationChannelById = (channelId: number) =>
+  Request<NotificationChannel>(
+    setURL(
+      `${API_ROOT}/monitor/alert-channels/${encodeURIComponent(channelId)}`,
+    ),
+    setMethod('GET'),
+  );

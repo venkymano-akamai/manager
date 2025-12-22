@@ -3602,6 +3602,44 @@ export const handlers = [
     notificationChannels.push(...notificationChannelFactory.buildList(75));
     return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
+  http.get('*/monitor/alert-channels/:id', ({ params }) => {
+    if (params.id === '5') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({
+          id: 5,
+          label: 'Email test channel',
+          updated: '2023-11-05T04:00:00',
+          updated_by: 'user3',
+          created_by: 'admin',
+          type: 'user',
+          channel_type: 'email',
+          details: {
+            email: {
+              recipient_type: 'user',
+              usernames: [
+                'user1',
+                'user2',
+                'user3',
+                'user4',
+                'user5',
+                'user6',
+                'user7',
+                'user8',
+                'user9',
+                'user10',
+              ],
+            },
+          },
+        })
+      );
+    }
+    if (params.id !== 'undefined') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({ id: Number(params.id) })
+      );
+    }
+    return HttpResponse.json({}, { status: 404 });
+  }),
   http.delete('*/monitor/services/:serviceType/alert-definitions/:id', () => {
     return HttpResponse.json({});
   }),
