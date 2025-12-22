@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Firewall NodeBalancer Preferences.
  *
@@ -219,7 +220,11 @@ describe('Integration Tests for firewall nodebalancer Dashboard ', () => {
       });
 
     ui.button.findByTitle('Filters').click();
-    cy.scrollTo('top');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
+    cy.wait('@getMetrics');
+    cy.wait(1000);
   });
   it('reloads the page and verifies preferences are restored from API', () => {
     cy.intercept('GET', apiMatcher('profile/preferences')).as(

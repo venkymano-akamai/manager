@@ -4500,4 +4500,7 @@ export const handlers = [
       makeResourcePage(maintenancePolicyFactory.buildList(2))
     );
   }),
+  http.post('*/v4beta/monitor/alert-channels', () => {
+    return HttpResponse.json(notificationChannelFactory.build());
+  }),
 ];
