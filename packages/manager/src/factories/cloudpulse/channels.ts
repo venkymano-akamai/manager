@@ -1,6 +1,6 @@
 import { Factory } from '@linode/utilities';
 
-import type { NotificationChannel } from '@linode/api-v4';
+import type { NotificationChannel, NotificationChannelAlerts } from '@linode/api-v4';
 
 export const notificationChannelFactory =
   Factory.Sync.makeFactory<NotificationChannel>({
@@ -34,3 +34,12 @@ export const notificationChannelFactory =
   } as any);
 /* 'as any' is used here to bypass strict type checking for the factory definition to ensure backward compatibility with content
  */
+
+export const notificationChannelAlertsFactory =
+  Factory.Sync.makeFactory<NotificationChannelAlerts>({
+    type: 'alerts-definitions',
+    id: Factory.each((i) => i),
+    service_type: 'linode',
+    label: Factory.each((id) => `Alert-${id}`),
+    url: Factory.each((i) => `monitor/alert-definitions/${i}`),
+  });
