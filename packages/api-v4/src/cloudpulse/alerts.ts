@@ -1,5 +1,6 @@
 import {
   createAlertDefinitionSchema,
+  createNotificationChannelPayloadSchema,
   editAlertDefinitionSchema,
 } from '@linode/validation';
 
@@ -17,6 +18,7 @@ import type {
   Alert,
   CloudPulseAlertsPayload,
   CreateAlertDefinitionPayload,
+  CreateNotificationChannelPayload,
   EditAlertDefinitionPayload,
   NotificationChannel,
 } from './types';
@@ -139,4 +141,13 @@ export const updateServiceAlerts = (
     ),
     setMethod('PUT'),
     setData(payload),
+  );
+
+export const createNotificationChannel = (
+  data: CreateNotificationChannelPayload,
+) =>
+  Request<NotificationChannel>(
+    setURL(`${API_ROOT}/monitor/alert-channels`),
+    setMethod('POST'),
+    setData(data, createNotificationChannelPayloadSchema),
   );
