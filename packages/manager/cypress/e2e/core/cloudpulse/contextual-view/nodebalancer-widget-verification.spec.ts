@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse nodebalancer Dashboard.
  */
@@ -171,7 +172,7 @@ describe('Integration Tests for Nodebalancer Dashboard ', () => {
     // Wait for all metrics query requests to resolve.
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
 
-    // Scroll to the top of the page to ensure consistent test behavior
+    cy.wait(1000);
     cy.scrollTo('top');
   });
   it('should apply optional filter (port) and verify API request payloads', () => {

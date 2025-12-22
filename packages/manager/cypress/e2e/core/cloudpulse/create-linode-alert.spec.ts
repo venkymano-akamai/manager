@@ -18,7 +18,6 @@ import {
   mockGetCloudPulseServiceByType,
   mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
-import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetLinodes } from 'support/intercepts/linodes';
 import { mockGetProfile } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
@@ -246,26 +245,31 @@ describe('Create Alert', () => {
         regions: 'us-ord,us-east',
       });
       mockGetCloudPulseServiceByType(serviceType, services);
-      mockAppendFeatureFlags({
-        aclpAlerting: {
-          value: {
-            accountAlertLimit: 10,
-            accountMetricLimit: 10,
-            alertDefinitions: true,
-            beta: true,
-            systemChannelSupportedServices: ['dbaas'],
-          },
-        },
+      cy.intercept(
+        'GET',
+        'https://app.launchdarkly.com/sdk/evalx/*/contexts/*',
+        (req) => {
+          req.continue((res) => {
+            const { aclpAlerting, aclp, aclpServices } = res.body || {};
 
-        aclpServices: {
-          value: {
-            linode: {
-              alerts: { beta: true, enabled: true },
-            },
-          },
-        },
-      });
+            if (aclpAlerting?.value) {
+              aclpAlerting.value.systemChannelSupportedServices = ['dbaas'];
+            }
 
+            if (aclp?.value) {
+              Object.assign(aclp.value, {
+                beta: true,
+                enabled: true,
+                showWidgetDimensionFilters: true,
+              });
+            }
+
+            if (aclpServices?.value?.linode) {
+              aclpServices.value.linode.alerts = { beta: true, enabled: true };
+            }
+          });
+        }
+      );
       mockGetAccount(mockAccount);
       mockGetProfile(mockProfile);
       mockGetCloudPulseServices([serviceType]);
