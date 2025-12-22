@@ -1,11 +1,11 @@
 import { CircleProgress, ErrorState, Typography } from '@linode/ui';
 import { roundTo } from '@linode/utilities';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
-import { useFlags } from 'launchdarkly-react-client-sdk';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
 import { humanizeLargeData } from 'src/components/AreaChart/utils';
+import { useFlags } from 'src/hooks/useFlags';
 
 import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
 
@@ -31,7 +31,10 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   }
 
   const noDataMessage = 'No data to display';
-  const isHumanizableUnit = flags.aclp?.humanizableUnits?.includes(unit);
+  const isHumanizableUnit =
+    flags.aclp?.humanizableUnits?.some(
+      (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
+    ) ?? false;
   return (
     <Box
       sx={{
