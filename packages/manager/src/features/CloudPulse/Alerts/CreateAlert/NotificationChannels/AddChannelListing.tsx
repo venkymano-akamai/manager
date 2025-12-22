@@ -197,12 +197,14 @@ export const AddChannelListing = (props: AddChannelListingProps) => {
           <Button
             buttonType="outlined"
             data-qa-buttons="true"
-            disabled={notificationChannelWatcher.length === 5}
+            disabled={notificationChannelWatcher.length === 5 || !serviceType}
             onClick={handleOpenDrawer}
             size="medium"
             sx={{
               width:
-                notificationChannelWatcher.length === 5 ? '215px' : '190px',
+                notificationChannelWatcher.length === 5 || !serviceType
+                  ? '215px'
+                  : '190px',
             }}
             tooltipText="You can add up to 5 notification channels."
           >
