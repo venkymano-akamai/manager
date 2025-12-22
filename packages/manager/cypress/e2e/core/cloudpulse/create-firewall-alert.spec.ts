@@ -412,12 +412,36 @@ describe('Firewall alert configured successfully', () => {
             alerts.description || ''
           );
 
+          ['data-field', 'aggregation-type', 'operator', 'threshold'].forEach(
+            (testId) => {
+              cy.get(`[data-testid="${testId}"] input`).should('be.disabled');
+            }
+          );
+          // Check action buttons are disabled
+          [
+            'Add dimension filter',
+            'Add metric',
+            'Add notification channel',
+          ].forEach((buttonText) => {
+            ui.button.findByTitle(buttonText).should('be.disabled');
+          });
+
           // Fill in Service and Severity
           ui.autocomplete.findByLabel('Service').type('Firewall');
           ui.autocompletePopper.findByTitle('Firewall').click();
           ui.tooltip.findByText(
             'Define a severity level associated with the alert to help you prioritize and manage alerts in the Recent activity tab.'
           );
+          // After selecting service, metric fields should be enabled
+          ui.autocomplete.findByLabel('Data Field').should('be.enabled');
+          // Check action buttons are enabled
+          [
+            'Add dimension filter',
+            'Add metric',
+            'Add notification channel',
+          ].forEach((buttonText) => {
+            ui.button.findByTitle(buttonText).should('be.enabled');
+          });
 
           ui.autocomplete.findByLabel('Severity').type('Severe');
           ui.autocompletePopper.findByTitle('Severe').click();

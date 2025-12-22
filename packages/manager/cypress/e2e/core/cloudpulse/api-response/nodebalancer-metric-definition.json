@@ -14,7 +14,7 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Protocol",
@@ -27,7 +27,7 @@
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -45,7 +45,7 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Protocol",
@@ -58,7 +58,7 @@
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -76,12 +76,12 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -99,12 +99,12 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -122,12 +122,12 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -145,12 +145,12 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -162,16 +162,16 @@
             "scrape_interval": "300s",
             "is_alertable": true,
             "available_aggregate_functions": [
-                "avg",
                 "max",
-                "sum",
-                "min"
+                "min",
+                "avg",
+                "sum"
             ],
             "dimensions": [
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Protocol",
@@ -184,7 +184,7 @@
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -196,21 +196,21 @@
             "scrape_interval": "300s",
             "is_alertable": false,
             "available_aggregate_functions": [
-                "avg",
                 "max",
-                "sum",
-                "min"
+                "min",
+                "avg",
+                "sum"
             ],
             "dimensions": [
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -222,21 +222,21 @@
             "scrape_interval": "300s",
             "is_alertable": false,
             "available_aggregate_functions": [
-                "avg",
                 "max",
-                "sum",
-                "min"
+                "min",
+                "avg",
+                "sum"
             ],
             "dimensions": [
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -254,7 +254,7 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Protocol",
@@ -267,7 +267,7 @@
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -285,12 +285,12 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -308,12 +308,12 @@
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -325,16 +325,16 @@
             "scrape_interval": "300s",
             "is_alertable": true,
             "available_aggregate_functions": [
-                "avg",
                 "max",
-                "sum",
-                "min"
+                "min",
+                "avg",
+                "sum"
             ],
             "dimensions": [
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Protocol",
@@ -347,7 +347,7 @@
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -359,21 +359,21 @@
             "scrape_interval": "300s",
             "is_alertable": false,
             "available_aggregate_functions": [
-                "avg",
                 "max",
-                "sum",
-                "min"
+                "min",
+                "avg",
+                "sum"
             ],
             "dimensions": [
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -385,21 +385,21 @@
             "scrape_interval": "300s",
             "is_alertable": false,
             "available_aggregate_functions": [
-                "avg",
                 "max",
-                "sum",
-                "min"
+                "min",
+                "avg",
+                "sum"
             ],
             "dimensions": [
                 {
                     "label": "Port",
                     "dimension_label": "port",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Configuration",
                     "dimension_label": "config_id",
-                    "values": null
+                    "values": []
                 }
             ]
         }

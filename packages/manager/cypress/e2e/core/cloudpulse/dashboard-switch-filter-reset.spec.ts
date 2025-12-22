@@ -378,13 +378,26 @@ describe('Dashboard Filter Reset on Switch', () => {
       id: 10,
     },
   ];
+  const interceptMetrics = (serviceType: string) => {
+    return cy
+      .intercept({
+        method: 'POST',
+        url: `**/monitor/services/${serviceType}/metrics`,
+        times: 1,
+      })
+      .as(`metrics-${serviceType}`);
+  };
 
   const waitForWidget = (serviceType: string) => {
-    const title =
-      widgetDetails[serviceType as keyof typeof widgetDetails].metrics[0].title;
-    cy.get(`[data-qa-widget="${title}"]`, { timeout: 30000 }).should(
-      'be.visible'
-    );
+    const widget = widgetDetails[serviceType as keyof typeof widgetDetails];
+
+    expect(widget, `Widget config for ${serviceType}`).to.exist;
+
+    const title = widget.metrics[0].title;
+
+    cy.get(`[data-qa-widget="${title}"]`, { timeout: 30000 })
+      .should('exist')
+      .and('be.visible');
   };
 
   const selectDashboard = (dashboardName: string, serviceType: string) => {
@@ -604,10 +617,9 @@ describe('Dashboard Filter Reset on Switch', () => {
   ALL_DASHBOARDS.forEach((from, i) => {
     it(`switches from ${from.name} to all later dashboards without errors`, () => {
       cy.visitWithLogin('/metrics');
-      cy.wait(`@fetchDashboard-${from.serviceType}`);
-
       ALL_DASHBOARDS.forEach((to, j) => {
         if (i < j) {
+          mockGetUserPreferences({});
           selectDashboard(from.name, from.serviceType);
           waitForWidget(from.serviceType);
           selectDashboard(to.name, to.serviceType);
