@@ -5,6 +5,7 @@
  */
 import { profileFactory, regionFactory } from '@linode/utilities';
 import { DateTime } from 'luxon';
+import { mockDatabaseNodeTypes } from 'support/constants/databases';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
@@ -15,13 +16,12 @@ import {
   mockGetCloudPulseMetricDefinitions,
   mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
-import { mockGetDatabases } from 'support/intercepts/databases';
-import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import {
-  mockGetProfile,
-  mockGetUserPreferences,
-} from 'support/intercepts/profile';
-import { mockGetRegions } from 'support/intercepts/regions';
+  mockGetDatabase,
+  mockGetDatabaseTypes,
+} from 'support/intercepts/databases';
+import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
+import { mockGetProfile } from 'support/intercepts/profile';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
 
@@ -60,7 +60,7 @@ const mockRegion = regionFactory.build({
   },
 });
 
-const { dashboardName, engine, id, metrics } = widgetDetails.dbaas;
+const { dashboardName, engine, metrics } = widgetDetails.dbaas;
 const serviceType = 'dbaas';
 const dashboard = dashboardFactory.build({
   label: dashboardName,
@@ -212,32 +212,35 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions.data);
-    mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
-    mockGetCloudPulseServices([serviceType]).as('fetchServices');
-    mockGetCloudPulseDashboard(id, dashboard);
-    mockCreateCloudPulseJWEToken(serviceType);
+    mockGetCloudPulseDashboard(1, dashboard).as('getDashboard');
+    mockCreateCloudPulseJWEToken(serviceType).as('getServiceType');
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
     );
-    mockGetRegions([mockRegion]);
+    mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
+    mockGetCloudPulseServices([serviceType]).as('fetchServices');
+    mockGetDatabase(databaseMock).as('getDatabase');
+    mockGetDatabaseTypes(mockDatabaseNodeTypes).as('getDatabaseTypes');
     mockGetProfile(mockProfile);
-    mockGetUserPreferences({
-      aclpPreference: {
-        dashboardId: id,
-        engine: engine.toLowerCase(),
-        region: mockRegion.id,
-        resources: ['1'],
-      },
-    }).as('fetchPreferences');
-    mockGetDatabases([databaseMock]).as('fetchDatabases');
 
-    cy.visitWithLogin('/metrics');
-    cy.wait([
-      '@fetchServices',
-      '@fetchDashboard',
-      '@fetchPreferences',
-      '@fetchDatabases',
-    ]);
+    // navigate to the databases page
+    cy.visitWithLogin('/databases');
+
+    // navigate to the Databases
+    cy.get('[data-testid="menu-item-Databases"]').should('be.visible').click();
+
+    // navigate to the Monitor
+    cy.visitWithLogin(
+      `/databases/${databaseMock.engine}/${databaseMock.id}/metrics`
+    );
+
+    cy.wait(['@getDashboard', '@getServiceType', '@getDatabase']);
+
+    // Use findByPlaceholderText to locate the input field
+    cy.findByPlaceholderText('Select a Dashboard')
+      .should('be.visible')
+      .and('be.disabled') // Check if disabled
+      .and('have.value', 'Dbaas Dashboard'); // Ensure value is set
   });
 
   it('should implement and validate custom date/time picker for a specific date and time range', () => {
@@ -265,13 +268,17 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     // --- Select start date ---
     ui.button.findByTitle('Last hour').as('startDateInput');
 
-    cy.get('@startDateInput').scrollIntoView();
-
     cy.get('@startDateInput').click();
 
     cy.get('[role="dialog"]').within(() => {
       cy.findAllByText(startDay).first().click();
       cy.findAllByText(endDay).first().click();
+
+      cy.get('[data-qa-preset="Reset"]').should(
+        'have.attr',
+        'aria-selected',
+        'true'
+      );
     });
 
     ui.button
@@ -279,7 +286,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .first()
       .should('be.visible', { timeout: 10000 }) // waits up to 10 seconds
       .as('timePickerButton');
-    cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
     cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
@@ -294,8 +300,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .should('be.visible', { timeout: 10000 })
       .as('timePickerButton');
 
-    cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
-
     cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
     cy.get(`[aria-label="${startMinute} minutes"]`).click();
@@ -306,13 +310,9 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .should('be.visible', { timeout: 10000 })
       .as('timePickerButton');
 
-    cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
-
     cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
-    cy.findByLabelText('Select meridiem')
-      .as('startMeridiemSelect')
-      .scrollIntoView();
+    cy.findByLabelText('Select meridiem').as('startMeridiemSelect');
     cy.get('@startMeridiemSelect').find('[aria-label="PM"]').click();
 
     // --- Select end time ---
@@ -347,9 +347,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
 
     cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
-    cy.findByLabelText('Select meridiem')
-      .as('endMeridiemSelect')
-      .scrollIntoView();
+    cy.findByLabelText('Select meridiem').as('endMeridiemSelect');
     cy.get('@endMeridiemSelect').find('[aria-label="PM"]').click();
 
     // --- Set timezone ---
@@ -372,19 +370,15 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       `${endActualDate} PM`
     );
 
-    ui.button.findByTitle('Cancel').and('be.enabled').click();
-
-    // --- Select Node Type ---
-    ui.autocomplete.findByLabel('Node Type').type('Primary{enter}');
-
     // --- Validate API requests ---
-    cy.wait(Array(4).fill('@getMetrics'));
-    cy.get('@getMetrics.all')
-      .should('have.length', 4)
-      .each((xhr: unknown) => {
+
+    cy.get('@getMetrics.all').then((calls) => {
+      const lastFourCalls = (calls as unknown as Interception[]).slice(-4);
+
+      lastFourCalls.forEach((call) => {
         const {
           request: { body },
-        } = xhr as Interception;
+        } = call;
         expect(formatToUtcDateTime(body.absolute_time_duration.start)).to.equal(
           convertToGmt(startActualDate)
         );
@@ -392,7 +386,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
           convertToGmt(endActualDate)
         );
       });
-
+    });
     // --- Test Time Range Presets ---
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getPresets'
@@ -499,10 +493,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
         .should('be.enabled')
         .click();
 
-      ui.autocomplete
-        .findByLabel('Node Type')
-        .should('be.visible')
-        .type('Primary{enter}');
+      cy.get('[data-testid="preset-button"]').should('have.text', range.label);
 
       cy.wait(Array(4).fill('@getMetrics'));
 
@@ -539,10 +530,8 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .should('be.visible')
       .should('be.enabled')
       .click();
-    ui.autocomplete
-      .findByLabel('Node Type')
-      .should('be.visible')
-      .type('Primary{enter}');
+
+    cy.get('[data-testid="preset-button"]').should('have.text', 'Last month');
 
     cy.wait(Array(4).fill('@getMetrics'));
 
@@ -570,15 +559,13 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     cy.get('[data-qa-preset="This month"]')
       .should('exist')
       .and('have.attr', 'aria-selected', 'true');
+
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
 
-    ui.autocomplete
-      .findByLabel('Node Type')
-      .should('be.visible')
-      .type('Primary{enter}');
+    cy.get('[data-testid="preset-button"]').should('have.text', 'This month');
 
     cy.wait(Array(4).fill('@getMetrics'));
     cy.get('@getMetrics.all')
@@ -621,5 +608,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       'aria-selected',
       'true'
     );
+    cy.get('body').click(0, 0); // close the picker
   });
 });

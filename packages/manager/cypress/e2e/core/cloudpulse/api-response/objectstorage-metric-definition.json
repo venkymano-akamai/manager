@@ -9,11 +9,17 @@
             "is_alertable": false,
             "available_aggregate_functions": [
                 "avg",
-                "sum",
                 "min",
-                "max"
+                "max",
+                "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Total number of objects",
@@ -24,11 +30,17 @@
             "is_alertable": false,
             "available_aggregate_functions": [
                 "avg",
-                "sum",
                 "min",
-                "max"
+                "max",
+                "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "All requests",
@@ -36,16 +48,11 @@
             "unit": "Count",
             "metric_type": "gauge",
             "scrape_interval": "60s",
-            "is_alertable": true,
+            "is_alertable": false,
             "available_aggregate_functions": [
                 "sum"
             ],
             "dimensions": [
-                {
-                    "label": "Endpoint",
-                    "dimension_label": "endpoint",
-                    "values": null
-                },
                 {
                     "label": "Request type",
                     "dimension_label": "request_type",
@@ -57,6 +64,11 @@
                         "list",
                         "other"
                     ]
+                },
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
                 }
             ]
         },
@@ -72,11 +84,6 @@
             ],
             "dimensions": [
                 {
-                    "label": "Endpoint",
-                    "dimension_label": "endpoint",
-                    "values": null
-                },
-                {
                     "label": "Response type",
                     "dimension_label": "response_type",
                     "values": [
@@ -86,6 +93,11 @@
                         "4xx",
                         "5xx"
                     ]
+                },
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
                 }
             ]
         },
@@ -99,7 +111,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Bytes uploaded",
@@ -111,7 +129,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Egress Throughput ",
@@ -127,7 +151,7 @@
                 {
                     "label": "Endpoint",
                     "dimension_label": "endpoint",
-                    "values": null
+                    "values": []
                 }
             ]
         },
@@ -141,7 +165,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "First Byte Latency",
@@ -153,10 +183,16 @@
             "available_aggregate_functions": [
                 "avg"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
-            "label": "Head reqeusts",
+            "label": "Head requests",
             "metric": "obj_requests_head",
             "unit": "Count",
             "metric_type": "gauge",
@@ -165,7 +201,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Get requests",
@@ -177,7 +219,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Put requests",
@@ -189,7 +237,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Delete requests",
@@ -201,7 +255,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "List requests",
@@ -213,7 +273,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Other requests",
@@ -225,7 +291,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "2xx successful responses",
@@ -237,7 +309,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "4xx errors",
@@ -249,7 +327,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "5xx errors",
@@ -261,7 +345,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Rate Limited responses",
@@ -273,7 +363,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         },
         {
             "label": "Quota Exceeded responses",
@@ -285,7 +381,13 @@
             "available_aggregate_functions": [
                 "sum"
             ],
-            "dimensions": []
+            "dimensions": [
+                {
+                    "label": "Endpoint",
+                    "dimension_label": "endpoint",
+                    "values": []
+                }
+            ]
         }
     ],
     "page": 1,

@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Volume(blockstorage) Dashboard.
  */
@@ -212,6 +214,11 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+
+    cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+
+    cy.wait(1000);
+
     cy.scrollTo('top');
   });
 
@@ -283,6 +290,9 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       comparePreferences(responseBody?.aclpPreference, expectedAclpPreference);
       comparePreferences(request.body.aclpPreference, expectedAclpPreference);
     });
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('clears the Region filter and verifies updated user preferences', () => {
