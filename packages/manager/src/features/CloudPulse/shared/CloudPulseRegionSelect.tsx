@@ -20,6 +20,7 @@ import { CLOUD_PULSE_TEXT_FIELD_PROPS } from './styles';
 
 import type { CloudPulseMetricsFilter } from '../Dashboard/CloudPulseDashboardLanding';
 import type { Dashboard, FilterValue, Region } from '@linode/api-v4';
+import type { Theme } from '@linode/ui';
 
 export interface CloudPulseRegionSelectProps {
   defaultValue?: FilterValue;
@@ -197,16 +198,16 @@ export const CloudPulseRegionSelect = React.memo(
         }}
         placeholder={placeholder ?? 'Select a Region'}
         regions={supportedRegionsFromResources}
-        sx={
-          shouldAddSpacing
-            ? {
-                '& .MuiInputLabel-root': {
-                  marginBottom: '4px',
-                },
-              }
-            : undefined
-        }
-        textFieldProps={{ ...CLOUD_PULSE_TEXT_FIELD_PROPS }}
+        textFieldProps={{
+          ...CLOUD_PULSE_TEXT_FIELD_PROPS,
+          ...(shouldAddSpacing && {
+            InputLabelProps: {
+              sx: (theme: Theme) => ({
+                marginBottom: theme.spacingFunction(4),
+              }),
+            },
+          }),
+        }}
         value={
           supportedRegionsFromResources?.length
             ? (selectedRegion ?? null)

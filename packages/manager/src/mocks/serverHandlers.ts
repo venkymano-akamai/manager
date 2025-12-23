@@ -52,6 +52,7 @@ import {
   creditPaymentResponseFactory,
   dashboardFactory,
   databaseBackupFactory,
+  databaseConnectionPoolFactory,
   databaseEngineFactory,
   databaseFactory,
   databaseInstanceFactory,
@@ -368,6 +369,11 @@ const databases = [
     const combinedList = [...engine1, ...engine2];
 
     return HttpResponse.json(makeResourcePage(combinedList));
+  }),
+
+  http.get('*/databases/postgresql/instances/:id/connection-pools', () => {
+    const connectionPools = databaseConnectionPoolFactory.buildList(5);
+    return HttpResponse.json(makeResourcePage(connectionPools));
   }),
 
   http.get('*/databases/:engine/instances/:id', ({ params }) => {
@@ -3599,11 +3605,17 @@ export const handlers = [
         created_by: 'admin',
       })
     );
-    notificationChannels.push(...notificationChannelFactory.buildList(75));
+    notificationChannels.push(
+      notificationChannelFactory.build({
+        label: 'System channel',
+        updated: '2023-11-05T04:00:00',
+        updated_by: 'user5',
+        created_by: 'admin',
+        type: 'system',
+      })
+    );
+    notificationChannels.push(...notificationChannelFactory.buildList(3));
     return HttpResponse.json(makeResourcePage(notificationChannels));
-  }),
-  http.delete('*/monitor/services/:serviceType/alert-definitions/:id', () => {
-    return HttpResponse.json({});
   }),
   http.get('*/monitor/services', () => {
     const response: ServiceTypesList = {
@@ -4461,5 +4473,8 @@ export const handlers = [
     return HttpResponse.json(
       makeResourcePage(maintenancePolicyFactory.buildList(2))
     );
+  }),
+  http.post('*/v4beta/monitor/alert-channels', () => {
+    return HttpResponse.json(notificationChannelFactory.build());
   }),
 ];

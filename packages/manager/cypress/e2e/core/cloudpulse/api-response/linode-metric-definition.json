@@ -26,7 +26,7 @@
                 {
                     "label": "Disk Device",
                     "dimension_label": "disk_device",
-                    "values": null
+                    "values": []
                 },
                 {
                     "label": "Disk Operation",
