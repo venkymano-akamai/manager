@@ -50,7 +50,6 @@ export const TimeZoneSelect = ({
     <Autocomplete
       autoHighlight
       data-qa-autocomplete="timezone-select"
-      disableClearable
       disabled={disabled}
       errorText={errorText}
       keepSearchEnabledOnMobile

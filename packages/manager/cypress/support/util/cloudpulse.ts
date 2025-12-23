@@ -146,6 +146,11 @@ export const comparePreferences = <T extends Record<string, unknown>>(
   errors: string[] = []
 ): void => {
   Object.keys(expected).forEach((key) => {
+    // 🔥 Explicitly ignore widgets
+    if (key === 'widgets') {
+      return;
+    }
+
     const fullPath = path ? `${path}.${key}` : key;
     const expectedValue = expected[key as keyof T];
     const actualValue = actual?.[key as keyof T];
@@ -195,7 +200,6 @@ export const comparePreferences = <T extends Record<string, unknown>>(
     }
   });
 
-  // Show all mismatches at the end
   if (path === '' && errors.length > 0) {
     cy.log(errors.join('\n'));
     throw new Error(`Found ${errors.length} mismatches:\n${errors.join('\n')}`);

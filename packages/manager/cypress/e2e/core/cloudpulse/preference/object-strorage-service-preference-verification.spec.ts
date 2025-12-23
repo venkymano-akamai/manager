@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Object Storage Dashboard.
  */
@@ -247,9 +248,10 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
     ui.button.findByTitle('Filters').click();
     // Wait for all metrics query requests to resolve.
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
-
-    // Scroll to the top of the page to ensure consistent test behavior
-    cy.scrollTo('top');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
+    cy.wait(1000);
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
