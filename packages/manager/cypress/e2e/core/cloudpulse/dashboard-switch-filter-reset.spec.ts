@@ -378,15 +378,6 @@ describe('Dashboard Filter Reset on Switch', () => {
       id: 10,
     },
   ];
-  const interceptMetrics = (serviceType: string) => {
-    return cy
-      .intercept({
-        method: 'POST',
-        url: `**/monitor/services/${serviceType}/metrics`,
-        times: 1,
-      })
-      .as(`metrics-${serviceType}`);
-  };
 
   const waitForWidget = (serviceType: string) => {
     const widget = widgetDetails[serviceType as keyof typeof widgetDetails];
@@ -621,10 +612,8 @@ describe('Dashboard Filter Reset on Switch', () => {
         if (i < j) {
           mockGetUserPreferences({});
           selectDashboard(from.name, from.serviceType);
-          interceptMetrics(from.name);
           waitForWidget(from.serviceType);
           selectDashboard(to.name, to.serviceType);
-          interceptMetrics(to.name);
           waitForWidget(to.serviceType);
           cy.get('body').within(() => {
             cy.contains('Something went wrong').should('not.exist');
