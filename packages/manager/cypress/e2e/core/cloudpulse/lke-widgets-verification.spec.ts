@@ -212,7 +212,7 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
           beta: true,
           enabled: true,
           showWidgetDimensionFilters: true,
-          humanizableUnits: ['Count', 'Rate', 'percent'],
+          humanizableUnits: ['Count', 'Rate', 'Percent'],
         },
 
         aclpServices: {
