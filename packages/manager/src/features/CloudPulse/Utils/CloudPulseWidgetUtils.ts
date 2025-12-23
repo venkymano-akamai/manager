@@ -11,6 +11,7 @@ import {
 } from './unitConversion';
 import {
   convertTimeDurationToStartAndEndTimeRange,
+  humanizeLargeData,
   seriesDataFormatter,
 } from './utils';
 
@@ -287,8 +288,7 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
         const legendRow: MetricsDisplayRow = {
           data: getMetrics(data as number[][]),
           format: isUnitPresent
-            ? (value: number) =>
-                `${value < 1000 ? formatToolTip(value, unit) : `${humanizeLargeData(value)} ${unit}`}` // we need to humanize count values in legend
+            ? (value: number) => `${humanizeLargeData(value)} ${unit}` // we need to humanize count values in legend
             : (value: number) => formatToolTip(value, unit),
           legendColor: color,
           legendTitle: labelName,
@@ -580,27 +580,4 @@ export const getTimeDurationFromPreset = (
     default:
       return undefined;
   }
-};
-
-/**
- * @param value The numeric value to humanize
- * @returns The humanized string representation of the value
- */
-export const humanizeLargeData = (value: number) => {
-  if (value >= 1000000000000) {
-    return +(value / 1000000000000).toFixed(1) + 'T';
-  }
-  if (value >= 1000000000) {
-    return +(value / 1000000000).toFixed(1) + 'B';
-  }
-  if (value >= 1000000) {
-    return +(value / 1000000).toFixed(1) + 'M';
-  }
-  if (value >= 100000) {
-    return +(value / 1000).toFixed(0) + 'K';
-  }
-  if (value >= 1000) {
-    return +(value / 1000).toFixed(1) + 'K';
-  }
-  return `${value.toFixed(3)}`;
 };

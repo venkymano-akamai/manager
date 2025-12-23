@@ -11,7 +11,7 @@ import {
   getTimeDurationFromPreset,
   mapResourceIdToName,
 } from './CloudPulseWidgetUtils';
-import * as utilities from './CloudPulseWidgetUtils';
+import * as utilities from './utils';
 
 import type {
   DimensionNameProperties,
