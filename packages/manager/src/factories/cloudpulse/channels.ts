@@ -1,6 +1,9 @@
 import { Factory } from '@linode/utilities';
 
-import type { NotificationChannel, NotificationChannelAlerts } from '@linode/api-v4';
+import type {
+  NotificationChannel,
+  NotificationChannelAlerts,
+} from '@linode/api-v4';
 
 export const notificationChannelFactory =
   Factory.Sync.makeFactory<NotificationChannel>({

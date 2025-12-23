@@ -234,6 +234,33 @@ export const getAlertChipBorderRadius = (
 };
 
 /**
+ * Determines whether to use details.email.usernames (newer API) or content.email.email_addresses (older API)
+ * for displaying email recipients in notification channels.
+ *
+ * @param channel The notification channel to check
+ * @returns true if we should use details.email.usernames, false if we should use content.email.email_addresses
+ */
+export const shouldUseDetailsForEmail = (
+  channel: NotificationChannel
+): boolean => {
+  if (channel.channel_type !== 'email') {
+    return false;
+  }
+
+  const contentEmail = channel.content?.email;
+
+  // Use details if: content is missing, content is empty, content.email is empty, or content.email.email_addresses is empty
+  return (
+    !channel.content ||
+    Object.keys(channel.content).length === 0 ||
+    !contentEmail ||
+    Object.keys(contentEmail).length === 0 ||
+    !contentEmail.email_addresses ||
+    contentEmail.email_addresses.length === 0
+  );
+};
+
+/**
  * @param value The notification channel object for which we need to display the chips
  * @returns The label and the values that needs to be displayed based on channel type
  */
@@ -241,9 +268,16 @@ export const getChipLabels = (
   value: NotificationChannel
 ): AlertDimensionsProp => {
   if (value.channel_type === 'email') {
+    const contentEmail = value.content?.email;
+    const useDetails = shouldUseDetailsForEmail(value);
+
+    const recipients = useDetails
+      ? (value.details?.email?.usernames ?? [])
+      : (contentEmail?.email_addresses ?? []);
+
     return {
       label: 'To',
-      values: value.content?.email.email_addresses ?? [],
+      values: recipients,
     };
   } else if (value.channel_type === 'slack') {
     return {
