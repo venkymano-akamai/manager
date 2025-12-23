@@ -1,4 +1,3 @@
-/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse LKE Enterprise Dashboard.
  */
@@ -446,7 +445,7 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
     });
   });
 
-  it.only('ensures graph tooltips reflect accurate metric data', () => {
+  it('ensures graph tooltips reflect accurate metric data', () => {
     metrics.forEach(({ title, unit }) => {
       const expectedList: string[] = [];
       const widgetSelector = `[data-qa-widget="${title}"]`;
@@ -473,15 +472,16 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
       const actualList: string[] = [];
       cy.get(widgetSelector).scrollIntoView();
       cy.get(widgetSelector).within(() => {
-        cy.get('circle.recharts-area-dot').each(($dot) => {
-          // Trigger hover on the dot and validate opacity using separate chains
+        cy.get('circle.recharts-area-dot').each(($dot, idx) => {
           cy.wrap($dot).trigger('mouseover', { force: true });
           cy.wrap($dot).should('have.css', 'opacity', '1');
-          cy.wait(500); // Wait for tooltip to appear
-
-          // Now start a NEW chain from cy.get (still inside .within())
           cy.get('.recharts-tooltip-wrapper', { timeout: 10000 })
             .should('be.visible')
+            .should(($el) => {
+              expect(normalizeString($el.text())).to.contain(
+                normalizeString(expectedList[idx])
+              );
+            })
             .invoke('text')
             .then((text) => actualList.push(text.trim()));
         });
