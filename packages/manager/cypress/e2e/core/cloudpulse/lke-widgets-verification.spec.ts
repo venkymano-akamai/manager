@@ -1,7 +1,13 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
+/* eslint-disable cypress/unsafe-to-chain-command */
 /**
  * @file Integration Tests for CloudPulse LKE Enterprise Dashboard.
  */
-import { linodeFactory, regionFactory } from '@linode/utilities';
+import {
+  linodeFactory,
+  profileFactory,
+  regionFactory,
+} from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
@@ -15,7 +21,10 @@ import {
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetLinodes } from 'support/intercepts/linodes';
 import { mockGetClusters } from 'support/intercepts/lke';
-import { mockGetUserPreferences } from 'support/intercepts/profile';
+import {
+  mockGetProfile,
+  mockGetUserPreferences,
+} from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
@@ -124,12 +133,26 @@ const mockRegion = regionFactory.build({
   },
 });
 
+const mockProfile = profileFactory.build({
+  timezone: 'gmt',
+});
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: {
     result: generateRandomMetricsData(timeDurationToSelect, '5 min').result.map(
       (metricResult) => ({
         ...metricResult,
-        values: metricResult.values.map(([ts]) => [ts, '1000000.00']),
+        values: [
+          [1766378789, '10000000.00'],
+          [1766378849, '200.00'],
+          [1766378909, '30000000.00'],
+          [1766378969, '0.00'],
+          [1766379029, '50000000.00'],
+          [1766379089, '600000.00'],
+          [1766379149, '70000000.00'],
+          [1766379209, '10.00'],
+          [1766379269, '900000.00'],
+          [1766379329, '400000000.00'],
+        ],
       })
     ),
   },
@@ -203,7 +226,25 @@ const mockedEnterpriseClusters = [
   }),
 ];
 
-// Tests will be modified
+const normalizeString = (str: string): string =>
+  str
+    .replace(/\s+/g, '')
+    .replace(/\b(\d+)\.00\b/g, '$1')
+    .replace(/\b(\d+\.\d)0\b/g, '$1');
+
+const formatEpochToReadable = (epoch: number): string =>
+  new Date(epoch * 1000)
+    .toLocaleString('en-US', {
+      timeZone: 'GMT',
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    .replace(/am|pm/gi, (m) => m.toUpperCase());
+
 describe('Integration Tests for LKE Enterprise Dashboard ', () => {
   beforeEach(() => {
     mockAppendFeatureFlags(
@@ -232,6 +273,7 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
 
     mockGetAccount(mockAccount); // Enables the account to have capability for Akamai Cloud Pulse
     mockGetLinodes([mockLinode]);
+    mockGetProfile(mockProfile);
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
     mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
     mockGetCloudPulseServices([serviceType]).as('fetchServices');
@@ -341,6 +383,119 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
       '@getMetrics',
       '@getMetrics',
     ]);
+  });
+  it('should check if y-axis ticks (values) are correct', () => {
+    metrics.forEach((testData) => {
+      const widgetSelector = `[data-qa-widget="${testData.title}"]`; // Use testData.title for dynamic widget selection
+
+      const expectedValues = ['0', '100M', '200M', '300M', '400M'];
+
+      cy.get(widgetSelector) // Find the widget by data-qa-widget attribute
+        .should('be.visible')
+        .within(() => {
+          // Step 1: Get the y-axis ticks and check the first 5 ticks (using manual slice inside .each)
+          cy.get('.recharts-layer.recharts-cartesian-axis.recharts-yAxis.yAxis') // Find the y-axis container
+            .find('.recharts-cartesian-axis-tick') // Find all the individual ticks
+            .each(($tick, index) => {
+              // Only check the first n ticks based on expectedValues length
+              if (index < expectedValues.length) {
+                cy.wrap($tick)
+                  .find('text') // Find the text inside each tick
+                  .invoke('text') // Get the text (which should be the value)
+                  .then((text) => {
+                    const actualValue = text.trim(); // Remove any extra spaces or characters
+                    expect(actualValue).to.equal(expectedValues[index]); // Assert the expected value
+                  });
+              }
+            });
+        });
+    });
+  });
+  it('should check if x-axis ticks (time values) are correct for each widget', () => {
+    metrics.forEach((testData) => {
+      const widgetSelector = `[data-qa-widget="${testData.title}"]`; // Use testData.title for dynamic widget selection
+
+      const expectedTimes = [
+        '04:46 AM',
+        '04:47 AM',
+        '04:49 AM',
+        '04:50 AM',
+        '04:52 AM',
+        '04:53 AM',
+        '04:55 AM',
+      ];
+
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .within(() => {
+          // Get the x-axis container and find the ticks within the widget
+          cy.get('.recharts-layer.recharts-cartesian-axis.recharts-xAxis.xAxis') // Find the x-axis container
+            .find('.recharts-cartesian-axis-tick') // Find all the individual ticks
+            .each(($tick, index) => {
+              // Check if the index of the tick is within the range of expected times
+              if (index < expectedTimes.length) {
+                cy.wrap($tick)
+                  .find('text') // Find the text element inside each tick
+                  .invoke('text') // Get the text (which should be the time value)
+                  .then((text) => {
+                    const actualTime = text.trim(); // Remove any extra spaces or characters
+                    expect(actualTime).to.equal(expectedTimes[index]); // Assert the expected time value
+                  });
+              }
+            });
+        });
+    });
+  });
+
+  it('ensures graph tooltips reflect accurate metric data', () => {
+    metrics.forEach(({ title, unit }) => {
+      const expectedList: string[] = [];
+      const widgetSelector = `[data-qa-widget="${title}"]`;
+
+      // Build expected values from API, humanizing values
+      cy.get('@getMetrics.all').each((xhr: unknown) => {
+        const interception = xhr as Interception;
+        const { metrics: metric } = interception.request.body;
+        const responseData = interception.response?.body;
+
+        const values = responseData.data.result[0].values;
+
+        // Match the metric data with the current widget title
+        const metricData = metrics.find(({ name }) => name === metric[0]?.name);
+        if (!metricData || metricData.title !== title) return;
+
+        values.forEach(([epoch, value]: [number, string]) => {
+          const formattedDate = formatEpochToReadable(epoch);
+          const humanValue = humanizeLargeData(parseNumericValue(value));
+          expectedList.push(`${formattedDate}${title}${humanValue} ${unit}`);
+        });
+      });
+
+      // Collect actual tooltip data from the DOM after all events triggered
+      const actualList: string[] = [];
+      cy.get(widgetSelector)
+        .scrollIntoView()
+        .within(() => {
+          cy.get('circle.recharts-area-dot').each(($dot) => {
+            cy.wrap($dot)
+              .trigger('mouseover', { force: true })
+              .should('have.css', 'opacity', '1')
+              .wait(500)
+              .get('.recharts-tooltip-wrapper', { timeout: 10000 })
+              .should('be.visible')
+              .invoke('text')
+              .then((text) => actualList.push(text.trim()));
+          });
+        })
+        .then(() => {
+          // Compare expected and actual data (order matters)
+          expect(actualList.length).to.equal(expectedList.length);
+          expectedList.forEach((expected, index) => {
+            const actual = actualList[index];
+            expect(normalizeString(actual)).to.eq(normalizeString(expected));
+          });
+        });
+    });
   });
   it('should apply group by at the dashboard level and verify the metrics API calls', () => {
     // Stub metrics API calls for dashboard group by changes
