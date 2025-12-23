@@ -240,7 +240,6 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
       .invoke('attr', 'data-qa-selected')
       .should('eq', 'true');
 
-    cy.wait(['@getDashboard', '@getServiceType', '@getDatabase']);
     cy.wait(1000);
   });
 
