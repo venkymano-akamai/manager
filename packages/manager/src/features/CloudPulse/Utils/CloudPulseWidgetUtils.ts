@@ -2,8 +2,6 @@ import { Alias } from '@linode/design-language-system';
 import { DateTimeRangePicker } from '@linode/ui';
 import { getMetrics } from '@linode/utilities';
 
-import { humanizeLargeData } from 'src/components/AreaChart/utils';
-
 import { DIMENSION_TRANSFORM_CONFIG } from '../shared/DimensionTransform';
 import {
   convertValueToUnit,
@@ -582,4 +580,27 @@ export const getTimeDurationFromPreset = (
     default:
       return undefined;
   }
+};
+
+/**
+ * @param value The numeric value to humanize
+ * @returns The humanized string representation of the value
+ */
+export const humanizeLargeData = (value: number) => {
+  if (value >= 1000000000000) {
+    return +(value / 1000000000000).toFixed(1) + 'T';
+  }
+  if (value >= 1000000000) {
+    return +(value / 1000000000).toFixed(1) + 'B';
+  }
+  if (value >= 1000000) {
+    return +(value / 1000000).toFixed(1) + 'M';
+  }
+  if (value >= 100000) {
+    return +(value / 1000).toFixed(0) + 'K';
+  }
+  if (value >= 1000) {
+    return +(value / 1000).toFixed(1) + 'K';
+  }
+  return `${value.toFixed(3)}`;
 };
