@@ -1,5 +1,4 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
-/* eslint-disable cypress/unsafe-to-chain-command */
 /**
  * @file Integration Tests for CloudPulse LKE Enterprise Dashboard.
  */
@@ -447,7 +446,7 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
     });
   });
 
-  it('ensures graph tooltips reflect accurate metric data', () => {
+  it.only('ensures graph tooltips reflect accurate metric data', () => {
     metrics.forEach(({ title, unit }) => {
       const expectedList: string[] = [];
       const widgetSelector = `[data-qa-widget="${title}"]`;
@@ -471,30 +470,30 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
         });
       });
 
-      // Collect actual tooltip data from the DOM after all events triggered
       const actualList: string[] = [];
-      cy.get(widgetSelector)
-        .scrollIntoView()
-        .within(() => {
-          cy.get('circle.recharts-area-dot').each(($dot) => {
-            cy.wrap($dot)
-              .trigger('mouseover', { force: true })
-              .should('have.css', 'opacity', '1')
-              .wait(500)
-              .get('.recharts-tooltip-wrapper', { timeout: 10000 })
-              .should('be.visible')
-              .invoke('text')
-              .then((text) => actualList.push(text.trim()));
-          });
-        })
-        .then(() => {
-          // Compare expected and actual data (order matters)
-          expect(actualList.length).to.equal(expectedList.length);
-          expectedList.forEach((expected, index) => {
-            const actual = actualList[index];
-            expect(normalizeString(actual)).to.eq(normalizeString(expected));
-          });
+      cy.get(widgetSelector).scrollIntoView();
+      cy.get(widgetSelector).within(() => {
+        cy.get('circle.recharts-area-dot').each(($dot) => {
+          // Trigger hover on the dot and validate opacity using separate chains
+          cy.wrap($dot).trigger('mouseover', { force: true });
+          cy.wrap($dot).should('have.css', 'opacity', '1');
+          cy.wait(500); // Wait for tooltip to appear
+
+          // Now start a NEW chain from cy.get (still inside .within())
+          cy.get('.recharts-tooltip-wrapper', { timeout: 10000 })
+            .should('be.visible')
+            .invoke('text')
+            .then((text) => actualList.push(text.trim()));
         });
+      });
+
+      cy.then(() => {
+        expect(actualList.length).to.equal(expectedList.length);
+        expectedList.forEach((expected, index) => {
+          const actual = actualList[index];
+          expect(normalizeString(actual)).to.eq(normalizeString(expected));
+        });
+      });
     });
   });
   it('should apply group by at the dashboard level and verify the metrics API calls', () => {
