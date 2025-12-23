@@ -2,6 +2,8 @@ import { Alias } from '@linode/design-language-system';
 import { DateTimeRangePicker } from '@linode/ui';
 import { getMetrics } from '@linode/utilities';
 
+import { humanizeLargeData } from 'src/components/AreaChart/utils';
+
 import { DIMENSION_TRANSFORM_CONFIG } from '../shared/DimensionTransform';
 import {
   convertValueToUnit,
@@ -75,6 +77,11 @@ interface GraphDataOptionsProps {
    * array of group by fields
    */
   groupBy?: string[];
+  /**
+   * The units for which to apply humanization
+   */
+  humanizableUnits?: string[];
+
   /**
    * label for the graph title
    */
@@ -215,11 +222,15 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
     unit,
     groupBy,
     metricLabel,
+    humanizableUnits: humanizedUnits,
   } = props;
   const legendRowsData: MetricsDisplayRow[] = [];
   const dimension: { [timestamp: number]: { [label: string]: number } } = {};
   const areas: AreaProps[] = [];
   const colors = Object.values(Alias.Chart.Categorical);
+  const isUnitPresent = humanizedUnits?.some(
+    (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
+  );
 
   // check whether to hide metric name or not based on the number of unique metric names
   const hideMetricName =
@@ -277,7 +288,9 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
         // construct a legend row with the dimension
         const legendRow: MetricsDisplayRow = {
           data: getMetrics(data as number[][]),
-          format: (value: number) => formatToolTip(value, unit),
+          format: isUnitPresent
+            ? (value: number) => `${humanizeLargeData(value)} ${unit}` // we need to humanize count values in legend
+            : (value: number) => formatToolTip(value, unit),
           legendColor: color,
           legendTitle: labelName,
         };
