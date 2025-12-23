@@ -289,7 +289,8 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
         const legendRow: MetricsDisplayRow = {
           data: getMetrics(data as number[][]),
           format: isUnitPresent
-            ? (value: number) => `${humanizeLargeData(value)} ${unit}` // we need to humanize count values in legend
+            ? (value: number) =>
+                `${value < 1000 ? formatToolTip(value, unit) : `${humanizeLargeData(value)} ${unit}`}` // we need to humanize count values in legend
             : (value: number) => formatToolTip(value, unit),
           legendColor: color,
           legendTitle: labelName,
