@@ -1,5 +1,5 @@
 import { useAccount, useRegionsQuery } from '@linode/queries';
-import { isFeatureEnabledV2 } from '@linode/utilities';
+import { isFeatureEnabledV2, roundTo } from '@linode/utilities';
 import React from 'react';
 
 import { convertData } from 'src/features/Longview/shared/formatters';
@@ -732,5 +732,5 @@ export const humanizeLargeData = (value: number) => {
   if (value >= 1000) {
     return +(value / 1000).toFixed(1) + 'K';
   }
-  return value === 0 ? `${value}` : `${value.toFixed(1)}`;
+  return `${roundTo(value)}`;
 };
