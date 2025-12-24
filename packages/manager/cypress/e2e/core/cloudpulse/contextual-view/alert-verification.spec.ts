@@ -1,8 +1,8 @@
-import { linodeFactory, regionFactory } from '@linode/utilities';
-import { authenticate } from 'support/api/authentication';
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
+import { linodeFactory, regionFactory } from '@linode/utilities';
+import { authenticate } from 'support/api/authentication';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
   mockAddEntityToAlert,
@@ -11,7 +11,7 @@ import {
   mockGetAllAlertDefinitions,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
-import { mockGetLinodes } from 'support/intercepts/linodes';
+import { mockGetLinodes, mockUpdateLinode } from 'support/intercepts/linodes';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
@@ -204,6 +204,7 @@ describe('update linode label', () => {
         'getDBaaSAlertDefinitions'
       );
       mockGetAllAlertDefinitions(alerts).as('getAlertDefinitionsList');
+      mockUpdateLinode(linode.id, mockLinodes[0]).as('updateLinode');
 
       mockAddEntityToAlert(serviceType, '100', { [ALERT_TYPE]: 100 }).as(
         'addEntityToAlert'
