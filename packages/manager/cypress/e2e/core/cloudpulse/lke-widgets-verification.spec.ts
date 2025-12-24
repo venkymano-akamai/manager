@@ -195,7 +195,7 @@ const getWidgetLegendRowValuesFromResponse = (
   const { average, last, max } = graphData.legendRowsData[0].data;
 
   const formatValue = (value: number) =>
-    unit === 'Cpruount'
+    unit === 'Count'
       ? `${humanizeLargeData(value)} ${unit}`
       : formatToolTip(value, unit);
 
