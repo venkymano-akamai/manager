@@ -195,7 +195,7 @@ const getWidgetLegendRowValuesFromResponse = (
   const { average, last, max } = graphData.legendRowsData[0].data;
 
   const formatValue = (value: number) =>
-    unit === 'Count'
+    unit === 'count'
       ? `${humanizeLargeData(value)} ${unit}`
       : formatToolTip(value, unit);
 
@@ -700,8 +700,6 @@ describe('Integration Tests for LKE Enterprise Dashboard ', () => {
             cy.get(graphRowTitle)
               .should('be.visible')
               .should('have.text', `${testData.title}`);
-
-            cy.log('expectedWidgetValues ', expectedWidgetValues.max);
 
             cy.get('[data-qa-graph-column-title="Max"]')
               .should('be.visible')
