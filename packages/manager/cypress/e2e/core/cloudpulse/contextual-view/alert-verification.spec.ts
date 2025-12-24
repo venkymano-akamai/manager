@@ -1,8 +1,8 @@
-import { linodeFactory, regionFactory } from '@linode/utilities';
-import { authenticate } from 'support/api/authentication';
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
+import { linodeFactory, regionFactory } from '@linode/utilities';
+import { authenticate } from 'support/api/authentication';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
   mockAddEntityToAlert,
