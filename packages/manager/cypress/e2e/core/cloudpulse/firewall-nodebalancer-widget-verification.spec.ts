@@ -139,7 +139,7 @@ const getWidgetLegendRowValuesFromResponse = (
 
   // Helper function to format value based on unit
   const formatValue = (value: number) =>
-    unit === 'count'
+    unit.toLowerCase() === 'count'
       ? `${humanizeLargeData(value)} ${unit}`
       : formatToolTip(value, unit);
 
