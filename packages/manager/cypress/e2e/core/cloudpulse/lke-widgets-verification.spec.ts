@@ -155,20 +155,20 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
     ),
   },
 });
+
 /**
  * Generates graph data from a given CloudPulse metrics response and
  * extracts average, last, and maximum metric values from the first
- * legend row. The values are rounded to two decimal places for
- * better readability.
+ * legend row. Values are formatted for readability:
+ * - If the unit is "count", values are humanized (e.g., 1000000 → 1M).
+ * - Otherwise, values are formatted using `formatToolTip`.
  *
- * @param responsePayload - The metrics response object containing
- *                          the necessary data for graph generation.
+ * @param responsePayload - The metrics response object containing the necessary data.
  * @param label - The label for the graph, used for display purposes.
+ * @param unit - The unit of the metric (e.g., 'count', 'B', 'ms').
  *
- * @returns An object containing rounded values for average, last,
- *
+ * @returns An object containing formatted values for average, last, and maximum metrics.
  */
-
 const getWidgetLegendRowValuesFromResponse = (
   responsePayload: CloudPulseMetricsResponse,
   label: string,
@@ -182,7 +182,7 @@ const getWidgetLegendRowValuesFromResponse = (
       {
         id: '1',
         label: resource,
-        region: 'us-ord',
+        region: 'us-east',
       },
     ],
     status: 'success',
@@ -191,16 +191,22 @@ const getWidgetLegendRowValuesFromResponse = (
     groupBy: ['entity_id'],
   });
 
-  // Destructure metrics data from the first legend row
+  // Extract metrics from the first legend row
   const { average, last, max } = graphData.legendRowsData[0].data;
 
-  // Round the metrics values to two decimal places
-  const roundedAverage = formatToolTip(average, unit);
-  const roundedLast = formatToolTip(last, unit);
-  const roundedMax = formatToolTip(max, unit);
-  // Return the rounded values in an object
-  return { average: roundedAverage, last: roundedLast, max: roundedMax };
+  const formatValue = (value: number) =>
+    unit.toLowerCase() === 'Count'
+      ? `${humanizeLargeData(value)} ${unit}`
+      : formatToolTip(value, unit);
+
+  // Return formatted metrics
+  return {
+    average: formatValue(average),
+    last: formatValue(last),
+    max: formatValue(max),
+  };
 };
+
 const mockedEnterpriseClusters = [
   kubernetesClusterFactory.build({
     label: resource,
