@@ -18,8 +18,6 @@ export const productInformationBannerFactory =
 
 export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
   aclp: { beta: true, enabled: true, showWidgetDimensionFilters: true },
-  objMultiCluster: false,
-  objectStorageGen2: { enabled: false },
   aclpAlerting: {
     accountAlertLimit: 10,
     accountMetricLimit: 10,

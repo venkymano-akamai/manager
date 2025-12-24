@@ -47,7 +47,7 @@ describe('Channel Listing component', () => {
     const { getByText } =
       renderWithThemeAndHookFormContext<CreateAlertDefinitionForm>({
         component: (
-          <AddChannelListing name="channel_ids" serviceType="linode" />
+          <AddChannelListing name="channel_ids" serviceType={'linode'} />
         ),
         useFormOptions: {
           defaultValues: {
@@ -83,7 +83,7 @@ describe('Channel Listing component', () => {
     const { getByTestId } =
       renderWithThemeAndHookFormContext<CreateAlertDefinitionForm>({
         component: (
-          <AddChannelListing name="channel_ids" serviceType="linode" />
+          <AddChannelListing name="channel_ids" serviceType={'linode'} />
         ),
         useFormOptions: {
           defaultValues: {
@@ -105,7 +105,7 @@ describe('Channel Listing component', () => {
     const { getByRole, findByText } =
       renderWithThemeAndHookFormContext<CreateAlertDefinitionForm>({
         component: (
-          <AddChannelListing name="channel_ids" serviceType="linode" />
+          <AddChannelListing name="channel_ids" serviceType={'linode'} />
         ),
         useFormOptions: {
           defaultValues: {
