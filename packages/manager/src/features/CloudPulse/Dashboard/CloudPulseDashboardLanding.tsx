@@ -5,6 +5,7 @@ import * as React from 'react';
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { SuspenseLoader } from 'src/components/SuspenseLoader';
+import { useFlags } from 'src/hooks/useFlags';
 
 import { GlobalFilters } from '../Overview/GlobalFilters';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
@@ -29,6 +30,8 @@ export interface DashboardProp {
 }
 
 export const CloudPulseDashboardLanding = () => {
+  const flags = useFlags();
+
   const [filterData, setFilterData] = React.useState<FilterData>({
     id: {},
     label: {},
@@ -92,7 +95,9 @@ export const CloudPulseDashboardLanding = () => {
           breadcrumbProps={{
             pathname: '/metrics',
             labelOptions: {
-              suffixComponent: <NewFeatureChip />,
+              suffixComponent: flags.aclp?.isNew ? (
+                <NewFeatureChip />
+              ) : undefined,
             },
           }}
           docsLabel="Docs"
