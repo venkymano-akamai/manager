@@ -1,4 +1,4 @@
-import { Box, Paper } from '@linode/ui';
+import { Box, LinkButton, NewFeatureChip, Paper } from '@linode/ui';
 import { GridLegacy } from '@mui/material';
 import * as React from 'react';
 
@@ -87,11 +87,19 @@ export const CloudPulseDashboardLanding = () => {
   return (
     <React.Suspense fallback={<SuspenseLoader />}>
       <DocumentTitleSegment segment="Dashboards" />
-      <LandingHeader
-        breadcrumbProps={{ pathname: '/metrics' }}
-        docsLabel="Docs"
-        docsLink="https://techdocs.akamai.com/cloud-computing/docs/akamai-cloud-pulse"
-      />
+      <Box>
+        <LandingHeader
+          breadcrumbProps={{
+            pathname: '/metrics',
+            labelOptions: {
+              suffixComponent: <NewFeatureChip />,
+            },
+          }}
+          docsLabel="Docs"
+          docsLink="https://techdocs.akamai.com/cloud-computing/docs/akamai-cloud-pulse"
+        />
+        <LinkButton>Docs</LinkButton>
+      </Box>
       <GridLegacy container spacing={3} sx={{ width: 'inherit !important' }}>
         <GridLegacy item xs={12}>
           <Paper sx={{ padding: 0 }}>

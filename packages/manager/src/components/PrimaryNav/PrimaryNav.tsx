@@ -243,6 +243,7 @@ export const PrimaryNav = (props: PrimaryNavProps) => {
                 hide: !isACLPEnabled,
                 to: '/metrics',
                 isBeta: flags.aclp?.beta,
+                isNew: true,
               },
               {
                 display: 'Alerts',
