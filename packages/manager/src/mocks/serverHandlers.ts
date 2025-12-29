@@ -4495,6 +4495,11 @@ export const handlers = [
         created_by: 'admin',
         type: 'user',
         channel_type: 'email',
+        details: {
+          email: {
+            usernames: ['ChildUser', 'NonAdminUser'],
+          },
+        },
       })
     );
   }),
