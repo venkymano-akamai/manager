@@ -31,6 +31,7 @@ import {
 } from 'src/factories';
 import { generateGraphData } from 'src/features/CloudPulse/Utils/CloudPulseWidgetUtils';
 import { formatToolTip } from 'src/features/CloudPulse/Utils/unitConversion';
+import { humanizeLargeData } from 'src/features/CloudPulse/Utils/utils';
 
 import type { CloudPulseMetricsResponse } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
@@ -127,12 +128,20 @@ const getExpectedLegendValues = (
     groupBy: ['entity_id'],
   });
 
+  // Extract metrics from the first legend row
   const { average, last, max } = graphData.legendRowsData[0].data;
 
+  // Helper function to format value based on unit
+  const formatValue = (value: number) =>
+    unit === 'Count'
+      ? `${humanizeLargeData(value)} ${unit}`
+      : formatToolTip(value, unit);
+
+  // Return formatted metrics
   return {
-    average: formatToolTip(average, unit),
-    last: formatToolTip(last, unit),
-    max: formatToolTip(max, unit),
+    average: formatValue(average),
+    last: formatValue(last),
+    max: formatValue(max),
   };
 };
 
