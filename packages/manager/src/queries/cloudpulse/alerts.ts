@@ -285,7 +285,8 @@ export const useCreateNotificationChannel = () => {
       }
 
       queryClient.setQueryData(
-        queryFactory.notificationChannel(newChannel.id).queryKey,
+        queryFactory.notificationChannels._ctx.channelById(newChannel.id)
+          .queryKey,
         newChannel
       );
     },
@@ -294,7 +295,7 @@ export const useCreateNotificationChannel = () => {
 
 export const useNotificationChannelQuery = (channelId: number) => {
   return useQuery<NotificationChannel, APIError[]>({
-    ...queryFactory.notificationChannel(channelId),
+    ...queryFactory.notificationChannels._ctx.channelById(channelId),
   });
 };
 
