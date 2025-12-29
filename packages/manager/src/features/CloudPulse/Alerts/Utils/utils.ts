@@ -248,17 +248,17 @@ export const getChipLabels = (
   } else if (value.channel_type === 'slack') {
     return {
       label: 'Slack Webhook URL',
-      values: [value.content.slack.slack_webhook_url],
+      values: [value.content?.slack.slack_webhook_url ?? ''],
     };
   } else if (value.channel_type === 'pagerduty') {
     return {
       label: 'Service API Key',
-      values: [value.content.pagerduty.service_api_key],
+      values: [value.content?.pagerduty.service_api_key ?? ''],
     };
   } else {
     return {
       label: 'Webhook URL',
-      values: [value.content.webhook.webhook_url],
+      values: [value.content?.webhook.webhook_url ?? ''],
     };
   }
 };

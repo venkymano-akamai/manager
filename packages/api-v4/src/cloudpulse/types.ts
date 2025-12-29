@@ -302,15 +302,13 @@ interface NotificationChannelBase {
 
 export interface NotificationChannelEmail extends NotificationChannelBase {
   channel_type: AlertNotificationEmail;
-  // Optional content for ensuring backward compatibility with the existing API
-  content: {
+  content?: {
     email: {
       email_addresses: string[];
       message: string;
       subject: string;
     };
   };
-  // The new field as per the latest API specification
   details?: {
     email: {
       recipient_type: EmailRecipientType;
@@ -321,9 +319,15 @@ export interface NotificationChannelEmail extends NotificationChannelBase {
 
 interface NotificationChannelSlack extends NotificationChannelBase {
   channel_type: AlertNotificationSlack;
-  content: {
+  content?: {
     slack: {
       message: string;
+      slack_channel: string;
+      slack_webhook_url: string;
+    };
+  };
+  details?: {
+    slack: {
       slack_channel: string;
       slack_webhook_url: string;
     };
@@ -332,7 +336,14 @@ interface NotificationChannelSlack extends NotificationChannelBase {
 
 interface NotificationChannelPagerDuty extends NotificationChannelBase {
   channel_type: AlertNotificationPagerDuty;
-  content: {
+  content?: {
+    pagerduty: {
+      attributes: string[];
+      description: string;
+      service_api_key: string;
+    };
+  };
+  details?: {
     pagerduty: {
       attributes: string[];
       description: string;
@@ -342,12 +353,27 @@ interface NotificationChannelPagerDuty extends NotificationChannelBase {
 }
 interface NotificationChannelWebHook extends NotificationChannelBase {
   channel_type: AlertNotificationWebHook;
-  content: {
+  content?: {
     webhook: {
       http_headers: {
         header_key: string;
         header_value: string;
       }[];
+      webhook_url: string;
+    };
+  };
+  details?: {
+    webhook: {
+      alert_body: {
+        body: string;
+        subject: string;
+      };
+      http_headers: {
+        header_key: string;
+        header_value: string;
+      }[];
+      method: 'GET' | 'POST' | 'PUT';
+      request_body: string;
       webhook_url: string;
     };
   };
