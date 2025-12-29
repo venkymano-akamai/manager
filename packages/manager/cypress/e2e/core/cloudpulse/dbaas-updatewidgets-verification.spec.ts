@@ -183,7 +183,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
         }
         expect(metric[0].name).to.equal(metricData.name);
         expect(metric[0].aggregate_function).to.equal('min');
-        expect(timeRange).to.have.property('unit', 'days');
+        expect(timeRange).to.have.property('unit', 'hr');
         expect(timeRange).to.have.property('value', 1);
         expect(entity_ids).to.deep.equal([1]);
         const filtersStr = JSON.stringify(filters);
@@ -208,7 +208,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .should('be.visible')
       .should('be.enabled')
       .click();
-    // Select a Database Engine from the autocomplete input.
+    // Select a Database Engine from the autocomplete input.days
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')

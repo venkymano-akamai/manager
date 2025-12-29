@@ -446,7 +446,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
       serviceType,
       groupBy: [...globalFilterGroupBy, ...(groupBy ?? [])],
       metricLabel: availableMetrics?.label,
-      humanizableUnits: flags.aclp?.humanizableUnits ?? [],
+      humanizableUnits: flags.aclp?.humanizableUnits ?? ['Count'],
     });
 
     data = generatedData.dimensions;
