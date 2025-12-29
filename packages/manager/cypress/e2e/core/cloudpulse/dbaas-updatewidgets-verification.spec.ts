@@ -208,7 +208,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       .should('be.visible')
       .should('be.enabled')
       .click();
-    // Select a Database Engine from the autocomplete input.days
+    // Select a Database Engine from the autocomplete input.
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
