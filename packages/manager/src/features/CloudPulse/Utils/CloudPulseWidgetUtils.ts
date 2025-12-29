@@ -2,8 +2,6 @@ import { Alias } from '@linode/design-language-system';
 import { DateTimeRangePicker } from '@linode/ui';
 import { getMetrics } from '@linode/utilities';
 
-import { humanizeLargeData } from 'src/components/AreaChart/utils';
-
 import { DIMENSION_TRANSFORM_CONFIG } from '../shared/DimensionTransform';
 import {
   convertValueToUnit,
@@ -13,6 +11,7 @@ import {
 } from './unitConversion';
 import {
   convertTimeDurationToStartAndEndTimeRange,
+  humanizeLargeData,
   seriesDataFormatter,
 } from './utils';
 
@@ -81,7 +80,6 @@ interface GraphDataOptionsProps {
    * The units for which to apply humanization
    */
   humanizableUnits?: string[];
-
   /**
    * label for the graph title
    */
@@ -228,7 +226,7 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
   const dimension: { [timestamp: number]: { [label: string]: number } } = {};
   const areas: AreaProps[] = [];
   const colors = Object.values(Alias.Chart.Categorical);
-  const isUnitPresent = humanizedUnits?.some(
+  const isHumanizableUnit = humanizedUnits?.some(
     (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
   );
 
@@ -288,7 +286,7 @@ export const generateGraphData = (props: GraphDataOptionsProps): GraphData => {
         // construct a legend row with the dimension
         const legendRow: MetricsDisplayRow = {
           data: getMetrics(data as number[][]),
-          format: isUnitPresent
+          format: isHumanizableUnit
             ? (value: number) => `${humanizeLargeData(value)} ${unit}` // we need to humanize count values in legend
             : (value: number) => formatToolTip(value, unit),
           legendColor: color,

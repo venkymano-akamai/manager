@@ -40,14 +40,14 @@ describe('Channel Listing component', () => {
   it('should render the notification channels ', () => {
     const emailAddresses =
       mockNotificationData[0].channel_type === 'email' &&
-      mockNotificationData[0].content.email
+      mockNotificationData[0].content?.email
         ? mockNotificationData[0].content.email.email_addresses
         : [];
 
     const { getByText } =
       renderWithThemeAndHookFormContext<CreateAlertDefinitionForm>({
         component: (
-          <AddChannelListing name="channel_ids" serviceType="linode" />
+          <AddChannelListing name="channel_ids" serviceType={'linode'} />
         ),
         useFormOptions: {
           defaultValues: {
@@ -83,7 +83,7 @@ describe('Channel Listing component', () => {
     const { getByTestId } =
       renderWithThemeAndHookFormContext<CreateAlertDefinitionForm>({
         component: (
-          <AddChannelListing name="channel_ids" serviceType="linode" />
+          <AddChannelListing name="channel_ids" serviceType={'linode'} />
         ),
         useFormOptions: {
           defaultValues: {
@@ -105,7 +105,7 @@ describe('Channel Listing component', () => {
     const { getByRole, findByText } =
       renderWithThemeAndHookFormContext<CreateAlertDefinitionForm>({
         component: (
-          <AddChannelListing name="channel_ids" serviceType="linode" />
+          <AddChannelListing name="channel_ids" serviceType={'linode'} />
         ),
         useFormOptions: {
           defaultValues: {

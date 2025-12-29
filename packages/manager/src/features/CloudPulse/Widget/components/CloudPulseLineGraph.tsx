@@ -4,8 +4,9 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
-import { humanizeLargeData } from 'src/components/AreaChart/utils';
 import { useFlags } from 'src/hooks/useFlags';
+
+import { humanizeLargeData } from '../../Utils/utils';
 
 import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
 
@@ -17,6 +18,7 @@ export interface CloudPulseLineGraph extends AreaChartProps {
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   const { error, loading, unit, ...rest } = props;
   const flags = useFlags();
+
   const theme = useTheme();
 
   // to reduce the x-axis tick count for small screen
@@ -32,9 +34,11 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
 
   const noDataMessage = 'No data to display';
   const isHumanizableUnit =
-    flags.aclp?.humanizableUnits?.some(
+    flags.aclp?.humanizableUnits ??
+    ['Count']?.some(
       (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
-    ) ?? false;
+    ) ??
+    false;
   return (
     <Box
       sx={{
@@ -68,7 +72,9 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           }
           yAxisProps={
             isHumanizableUnit
-              ? undefined
+              ? {
+                  tickFormat: (value: number) => `${humanizeLargeData(value)}`,
+                }
               : {
                   tickFormat: (value: number) => `${roundTo(value, 3)}`,
                 }
