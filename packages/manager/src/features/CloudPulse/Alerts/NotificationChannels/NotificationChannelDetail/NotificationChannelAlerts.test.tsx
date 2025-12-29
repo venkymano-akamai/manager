@@ -8,7 +8,7 @@ import { renderWithTheme } from 'src/utilities/testHelpers';
 import { NotificationChannelAlerts } from './NotificationChannelAlerts';
 
 const queryMocks = vi.hoisted(() => ({
-  useAlertsByNotificationChannelIdQuery: vi.fn(),
+  useAllAlertsByNotificationChannelIdQuery: vi.fn(),
   useCloudPulseServiceTypes: vi.fn(),
 }));
 
@@ -17,8 +17,8 @@ const hookMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('src/queries/cloudpulse/alerts', () => ({
-  useAlertsByNotificationChannelIdQuery:
-    queryMocks.useAlertsByNotificationChannelIdQuery,
+  useAllAlertsByNotificationChannelIdQuery:
+    queryMocks.useAllAlertsByNotificationChannelIdQuery,
 }));
 
 vi.mock('src/queries/cloudpulse/services', () => ({
@@ -56,7 +56,7 @@ describe('NotificationChannelAlerts', () => {
   });
 
   it('should render loading state while fetching alerts', () => {
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: null,
       isError: false,
       isLoading: true,
@@ -69,7 +69,7 @@ describe('NotificationChannelAlerts', () => {
   });
 
   it('should render loading state while fetching service types', () => {
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: [],
       isError: false,
       isLoading: false,
@@ -89,7 +89,7 @@ describe('NotificationChannelAlerts', () => {
   });
 
   it('should render error state when alerts query fails', () => {
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: null,
       isError: true,
       isLoading: false,
@@ -104,7 +104,7 @@ describe('NotificationChannelAlerts', () => {
   });
 
   it('should render notice when no alerts are associated', () => {
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: [],
       isError: false,
       isLoading: false,
@@ -130,7 +130,7 @@ describe('NotificationChannelAlerts', () => {
       service_type: 'linode',
     });
 
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: alerts,
       isError: false,
       isLoading: false,
@@ -164,7 +164,7 @@ describe('NotificationChannelAlerts', () => {
       }),
     ];
 
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: alerts,
       isError: false,
       isLoading: false,

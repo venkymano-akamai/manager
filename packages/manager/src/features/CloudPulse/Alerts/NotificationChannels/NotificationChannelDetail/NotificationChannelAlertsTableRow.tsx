@@ -11,10 +11,6 @@ interface NotificationChannelAlertsTableRowProps {
    */
   alert: NotificationChannelAlerts;
   /**
-   * Whether to display the service type column
-   */
-  hasServiceType: boolean;
-  /**
    * Label of the service type associated with the alert
    */
   serviceTypeLabel?: string;
@@ -22,7 +18,7 @@ interface NotificationChannelAlertsTableRowProps {
 
 export const NotificationChannelAlertsTableRow = React.memo(
   (props: NotificationChannelAlertsTableRowProps) => {
-    const { alert, hasServiceType, serviceTypeLabel } = props;
+    const { alert, serviceTypeLabel } = props;
     const { label, service_type, id } = alert;
 
     return (
@@ -32,18 +28,14 @@ export const NotificationChannelAlertsTableRow = React.memo(
         key={`alert-row-${id}`}
       >
         <TableCell>
-          {hasServiceType ? (
-            <Link
-              data-qa-alert-link
-              to={`/alerts/definitions/detail/${service_type}/${id}`}
-            >
-              {label}
-            </Link>
-          ) : (
-            label
-          )}
+          <Link
+            data-qa-alert-link
+            to={`/alerts/definitions/detail/${service_type}/${id}`}
+          >
+            {label}
+          </Link>
         </TableCell>
-        {hasServiceType && <TableCell>{serviceTypeLabel}</TableCell>}
+        <TableCell>{serviceTypeLabel}</TableCell>
       </TableRow>
     );
   }

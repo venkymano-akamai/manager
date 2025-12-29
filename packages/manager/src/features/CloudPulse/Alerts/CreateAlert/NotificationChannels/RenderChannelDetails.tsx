@@ -1,7 +1,7 @@
 import { Chip } from '@mui/material';
 import * as React from 'react';
 
-import { shouldUseDetailsForEmail } from '../../Utils/utils';
+import { shouldUseContentsForEmail } from '../../Utils/utils';
 
 import type { NotificationChannel } from '@linode/api-v4';
 
@@ -15,10 +15,11 @@ export const RenderChannelDetails = (props: RenderChannelDetailProps) => {
   const { template } = props;
   if (template.channel_type === 'email') {
     const contentEmail = template.content?.email;
-    const useDetails = shouldUseDetailsForEmail(template);
+    const detailEmail = template.details?.email;
+    const useDetails = shouldUseContentsForEmail(template);
 
     const recipients = useDetails
-      ? (template.details?.email?.usernames ?? [])
+      ? (detailEmail?.usernames ?? [])
       : (contentEmail?.email_addresses ?? []);
 
     return (

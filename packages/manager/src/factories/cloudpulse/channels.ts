@@ -23,7 +23,7 @@ export const notificationChannelFactory =
     details: {
       email: {
         recipient_type: 'read_write_users',
-        usernames: ['test@test.com', 'test2@test.com'],
+        usernames: ['user1', 'user2'],
       },
     },
     created: new Date().toISOString(),

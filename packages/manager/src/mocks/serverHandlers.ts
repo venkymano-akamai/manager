@@ -3591,7 +3591,7 @@ export const handlers = [
     return HttpResponse.json({});
   }),
   http.get('*/monitor/alert-channels', () => {
-    const notificationChannels = notificationChannelFactory.buildList(3);
+    const notificationChannels = notificationChannelFactory.buildList(4);
     notificationChannels.push(
       notificationChannelFactory.build({
         id: 5,
@@ -3602,15 +3602,8 @@ export const handlers = [
       })
     );
     notificationChannels.push(
-      notificationChannelFactory.build({
-        id: 10,
-        label: 'No-service-type-channel',
-        channel_type: 'email',
-        updated: '2023-11-10T04:00:00',
-        updated_by: 'user4',
-      })
+      ...notificationChannelFactory.buildList(10, { details: undefined })
     );
-    notificationChannels.push(...notificationChannelFactory.buildList(10));
     return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
   http.get('*/monitor/alert-channels/:id', ({ params }) => {
@@ -3657,17 +3650,6 @@ export const handlers = [
   http.get('*/monitor/alert-channels/:id/alerts', ({ params }) => {
     if (params.id === 'undefined') {
       return HttpResponse.json({}, { status: 404 });
-    }
-    if (params.id === '10') {
-      return HttpResponse.json(
-        makeResourcePage([
-          notificationChannelAlertsFactory.build({
-            id: 1,
-            label: 'Alert-1',
-            service_type: undefined,
-          }),
-        ])
-      );
     }
     if (params.id === '5') {
       return HttpResponse.json(makeResourcePage([]));

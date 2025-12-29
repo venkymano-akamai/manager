@@ -298,7 +298,7 @@ export const useNotificationChannelQuery = (channelId: number) => {
   });
 };
 
-export const useAlertsByNotificationChannelIdQuery = (channelId: number) => {
+export const useAllAlertsByNotificationChannelIdQuery = (channelId: number) => {
   return useQuery<NotificationChannelAlerts[], APIError[]>({
     ...queryFactory.notificationChannelAlerts(channelId),
   });

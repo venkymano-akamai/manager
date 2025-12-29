@@ -7,9 +7,7 @@ import { renderWithTheme, wrapWithTableBody } from 'src/utilities/testHelpers';
 import { NotificationChannelAlertsTableRow } from './NotificationChannelAlertsTableRow';
 
 describe('NotificationChannelAlertsTableRow', () => {
-  const testAlertNoService = 'Test Alert No Service';
-
-  it('should render alert with link when service_type is present', () => {
+  it('should render alert with link', () => {
     const alert = notificationChannelAlertsFactory.build({
       id: 1,
       label: 'Test Alert',
@@ -20,7 +18,6 @@ describe('NotificationChannelAlertsTableRow', () => {
       wrapWithTableBody(
         <NotificationChannelAlertsTableRow
           alert={alert}
-          hasServiceType={true}
           serviceTypeLabel="Linode"
         />
       )
@@ -32,50 +29,7 @@ describe('NotificationChannelAlertsTableRow', () => {
     expect(screen.getByText('Linode')).toBeVisible();
   });
 
-  it('should render alert without link when service_type is absent', () => {
-    const alert = notificationChannelAlertsFactory.build({
-      id: 2,
-      label: testAlertNoService,
-      service_type: undefined,
-    });
-
-    renderWithTheme(
-      wrapWithTableBody(
-        <NotificationChannelAlertsTableRow
-          alert={alert}
-          hasServiceType={false}
-        />
-      )
-    );
-
-    expect(screen.getByText(testAlertNoService)).toBeVisible();
-    expect(
-      screen.queryByRole('link', { name: testAlertNoService })
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText('Linode')).not.toBeInTheDocument();
-  });
-
-  it('should not render Service Type cell when hasServiceType is false', () => {
-    const alert = notificationChannelAlertsFactory.build({
-      id: 3,
-      label: 'Another Alert',
-      service_type: undefined,
-    });
-
-    renderWithTheme(
-      wrapWithTableBody(
-        <NotificationChannelAlertsTableRow
-          alert={alert}
-          hasServiceType={false}
-        />
-      )
-    );
-
-    // Should only have one cell (Alert Name)
-    expect(screen.getAllByRole('cell')).toHaveLength(1);
-  });
-
-  it('should render Service Type cell when hasServiceType is true', () => {
+  it('should render Service Type cell', () => {
     const alert = notificationChannelAlertsFactory.build({
       id: 4,
       label: 'Service Alert',
@@ -86,7 +40,6 @@ describe('NotificationChannelAlertsTableRow', () => {
       wrapWithTableBody(
         <NotificationChannelAlertsTableRow
           alert={alert}
-          hasServiceType={true}
           serviceTypeLabel="Managed Databases"
         />
       )
@@ -108,7 +61,6 @@ describe('NotificationChannelAlertsTableRow', () => {
       wrapWithTableBody(
         <NotificationChannelAlertsTableRow
           alert={alert}
-          hasServiceType={true}
           serviceTypeLabel="Linode"
         />
       )
@@ -137,7 +89,6 @@ describe('NotificationChannelAlertsTableRow', () => {
       wrapWithTableBody(
         <NotificationChannelAlertsTableRow
           alert={linodeAlert}
-          hasServiceType={true}
           serviceTypeLabel="Linode"
         />
       )
@@ -150,7 +101,6 @@ describe('NotificationChannelAlertsTableRow', () => {
       wrapWithTableBody(
         <NotificationChannelAlertsTableRow
           alert={dbaasAlert}
-          hasServiceType={true}
           serviceTypeLabel="Managed Databases"
         />
       )

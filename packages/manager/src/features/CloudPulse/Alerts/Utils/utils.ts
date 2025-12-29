@@ -238,25 +238,24 @@ export const getAlertChipBorderRadius = (
  * for displaying email recipients in notification channels.
  *
  * @param channel The notification channel to check
- * @returns true if we should use details.email.usernames, false if we should use content.email.email_addresses
+ * @returns true if we should use content.email.email_addresses, false if we should use details.email.usernames
  */
-export const shouldUseDetailsForEmail = (
+export const shouldUseContentsForEmail = (
   channel: NotificationChannel
 ): boolean => {
   if (channel.channel_type !== 'email') {
     return false;
   }
 
-  const contentEmail = channel.content?.email;
-
-  // Use details if: content is missing, content is empty, content.email is empty, or content.email.email_addresses is empty
+  const detailsEmail = channel.details?.email;
+  // Use content if: details is missing, detail is empty, detail.email is empty or detail.email.usernames is empty
   return (
-    !channel.content ||
-    Object.keys(channel.content).length === 0 ||
-    !contentEmail ||
-    Object.keys(contentEmail).length === 0 ||
-    !contentEmail.email_addresses ||
-    contentEmail.email_addresses.length === 0
+    !channel.details ||
+    Object.keys(channel.details).length === 0 ||
+    !detailsEmail ||
+    Object.keys(detailsEmail).length === 0 ||
+    !detailsEmail.usernames ||
+    detailsEmail.usernames.length === 0
   );
 };
 
@@ -269,11 +268,11 @@ export const getChipLabels = (
 ): AlertDimensionsProp => {
   if (value.channel_type === 'email') {
     const contentEmail = value.content?.email;
-    const useDetails = shouldUseDetailsForEmail(value);
+    const useContent = shouldUseContentsForEmail(value);
 
-    const recipients = useDetails
-      ? (value.details?.email?.usernames ?? [])
-      : (contentEmail?.email_addresses ?? []);
+    const recipients = useContent
+      ? (contentEmail?.email_addresses ?? [])
+      : (value.details?.email?.usernames ?? []);
 
     return {
       label: 'To',

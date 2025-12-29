@@ -8,7 +8,7 @@ import { NotificationChannelDetail } from './NotificationChannelDetail';
 
 // Mock Queries
 const queryMocks = vi.hoisted(() => ({
-  useAlertsByNotificationChannelIdQuery: vi.fn(),
+  useAllAlertsByNotificationChannelIdQuery: vi.fn(),
   useCloudPulseServiceTypes: vi.fn(),
   useNotificationChannelQuery: vi.fn(),
   useParams: vi.fn(),
@@ -20,8 +20,8 @@ const hookMocks = vi.hoisted(() => ({
 
 vi.mock('src/queries/cloudpulse/alerts', () => ({
   ...vi.importActual('src/queries/cloudpulse/alerts'),
-  useAlertsByNotificationChannelIdQuery:
-    queryMocks.useAlertsByNotificationChannelIdQuery,
+  useAllAlertsByNotificationChannelIdQuery:
+    queryMocks.useAllAlertsByNotificationChannelIdQuery,
   useNotificationChannelQuery: queryMocks.useNotificationChannelQuery,
 }));
 
@@ -49,7 +49,7 @@ beforeEach(() => {
     channelId: '1',
   });
 
-  queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+  queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
     data: [],
     isError: false,
     isLoading: false,
@@ -158,7 +158,7 @@ describe('NotificationChannelDetail component tests', () => {
       },
     ];
 
-    queryMocks.useAlertsByNotificationChannelIdQuery.mockReturnValue({
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
       data: alerts,
       isError: false,
       isLoading: false,

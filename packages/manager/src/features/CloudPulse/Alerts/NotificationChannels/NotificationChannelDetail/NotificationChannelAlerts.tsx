@@ -8,7 +8,7 @@ import { TableRow } from 'src/components/TableRow';
 import { TableRowEmpty } from 'src/components/TableRowEmpty/TableRowEmpty';
 import { TableSortCell } from 'src/components/TableSortCell/TableSortCell';
 import { useOrderV2 } from 'src/hooks/useOrderV2';
-import { useAlertsByNotificationChannelIdQuery } from 'src/queries/cloudpulse/alerts';
+import { useAllAlertsByNotificationChannelIdQuery } from 'src/queries/cloudpulse/alerts';
 import { useCloudPulseServiceTypes } from 'src/queries/cloudpulse/services';
 
 import { getServiceTypeLabel } from '../../Utils/utils';
@@ -33,7 +33,7 @@ export const NotificationChannelAlerts = React.memo(
       data: channelAlerts,
       isError: isChannelAlertsError,
       isLoading: isChannelAlertsLoading,
-    } = useAlertsByNotificationChannelIdQuery(channelId);
+    } = useAllAlertsByNotificationChannelIdQuery(channelId);
 
     const { handleOrderChange, order, orderBy, sortedData } =
       useOrderV2<NotificationChannelAlertsType>({
@@ -47,12 +47,6 @@ export const NotificationChannelAlerts = React.memo(
         },
         preferenceKey: 'notification-channel-alerts',
       });
-
-    // Check if any alert has service_type to conditionally render the column
-    const hasServiceType =
-      sortedData && sortedData.length > 0
-        ? sortedData.some((alert) => alert.service_type)
-        : false;
 
     if (isChannelAlertsLoading || isFetching) {
       return (
@@ -78,65 +72,66 @@ export const NotificationChannelAlerts = React.memo(
       );
     }
 
-    return (
-      <>
-        <Typography marginBottom={2} variant="h2">
-          Associated Alerts
-        </Typography>
-        {!channelAlerts?.length ? (
+    if (!channelAlerts?.length) {
+      return (
+        <>
+          <Typography marginBottom={2} variant="h2">
+            Associated Alerts
+          </Typography>
           <Notice variant="info">
             No alerts are associated with this notification channel.
             <br />
             Add or assign alerts to start receiving notifications through this
             channel.
           </Notice>
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableSortCell
-                  active={orderBy === 'label'}
-                  direction={order}
-                  handleClick={handleOrderChange}
-                  label="label"
-                >
-                  Alert Name
-                </TableSortCell>
-                {hasServiceType && (
-                  <TableSortCell
-                    active={orderBy === 'service_type'}
-                    direction={order}
-                    handleClick={handleOrderChange}
-                    label="service_type"
-                  >
-                    Service Type
-                  </TableSortCell>
-                )}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedData && sortedData.length > 0 ? (
-                sortedData.map((alert) => (
-                  <NotificationChannelAlertsTableRow
-                    alert={alert}
-                    hasServiceType={hasServiceType}
-                    key={alert.id}
-                    serviceTypeLabel={
-                      hasServiceType && alert.service_type
-                        ? getServiceTypeLabel(
-                            alert.service_type,
-                            serviceTypeList
-                          )
-                        : undefined
-                    }
-                  />
-                ))
-              ) : (
-                <TableRowEmpty colSpan={hasServiceType ? 2 : 1} />
-              )}
-            </TableBody>
-          </Table>
-        )}
+        </>
+      );
+    }
+
+    return (
+      <>
+        <Typography marginBottom={2} variant="h2">
+          Associated Alerts
+        </Typography>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableSortCell
+                active={orderBy === 'label'}
+                direction={order}
+                handleClick={handleOrderChange}
+                label="label"
+              >
+                Alert Name
+              </TableSortCell>
+              <TableSortCell
+                active={orderBy === 'service_type'}
+                direction={order}
+                handleClick={handleOrderChange}
+                label="service_type"
+              >
+                Service Type
+              </TableSortCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedData && sortedData.length > 0 ? (
+              sortedData.map((alert) => (
+                <NotificationChannelAlertsTableRow
+                  alert={alert}
+                  key={alert.id}
+                  serviceTypeLabel={
+                    alert.service_type
+                      ? getServiceTypeLabel(alert.service_type, serviceTypeList)
+                      : undefined
+                  }
+                />
+              ))
+            ) : (
+              <TableRowEmpty colSpan={2} />
+            )}
+          </TableBody>
+        </Table>
       </>
     );
   }
