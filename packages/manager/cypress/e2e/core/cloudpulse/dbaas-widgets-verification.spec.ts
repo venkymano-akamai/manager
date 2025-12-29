@@ -296,6 +296,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     // select a different preset but cancel
     ui.button.findByTitle('Last day').click();
 
+    // Click the "Apply" button to confirm the end date and time
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
