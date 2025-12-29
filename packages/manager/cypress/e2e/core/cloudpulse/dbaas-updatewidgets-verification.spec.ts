@@ -183,7 +183,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
         }
         expect(metric[0].name).to.equal(metricData.name);
         expect(metric[0].aggregate_function).to.equal('min');
-        expect(timeRange).to.have.property('unit', 'days');
+        expect(timeRange).to.have.property('unit', 'hr');
         expect(timeRange).to.have.property('value', 1);
         expect(entity_ids).to.deep.equal([1]);
         const filtersStr = JSON.stringify(filters);
