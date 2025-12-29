@@ -52,6 +52,7 @@ import {
   creditPaymentResponseFactory,
   dashboardFactory,
   databaseBackupFactory,
+  databaseConnectionPoolFactory,
   databaseEngineFactory,
   databaseFactory,
   databaseInstanceFactory,
@@ -212,6 +213,11 @@ const makeMockDatabase = (params: PathParams): Database => {
 
     db.ssl_connection = true;
   }
+
+  if (db.engine === 'postgresql') {
+    db.connection_pool_port = 100;
+  }
+
   const database = databaseFactory.build(db);
 
   if (database.platform !== 'rdbms-default') {
@@ -369,6 +375,11 @@ const databases = [
     const combinedList = [...engine1, ...engine2];
 
     return HttpResponse.json(makeResourcePage(combinedList));
+  }),
+
+  http.get('*/databases/postgresql/instances/:id/connection-pools', () => {
+    const connectionPools = databaseConnectionPoolFactory.buildList(5);
+    return HttpResponse.json(makeResourcePage(connectionPools));
   }),
 
   http.get('*/databases/:engine/instances/:id', ({ params }) => {
@@ -3602,6 +3613,15 @@ export const handlers = [
       })
     );
     notificationChannels.push(
+      notificationChannelFactory.build({
+        label: 'System channel',
+        updated: '2023-11-05T04:00:00',
+        updated_by: 'user5',
+        created_by: 'admin',
+        type: 'system',
+      })
+    );
+    notificationChannels.push(
       ...notificationChannelFactory.buildList(10, { details: undefined })
     );
     return HttpResponse.json(makeResourcePage(notificationChannels));
@@ -3646,20 +3666,6 @@ export const handlers = [
       );
     }
     return HttpResponse.json({}, { status: 404 });
-  }),
-  http.get('*/monitor/alert-channels/:id/alerts', ({ params }) => {
-    if (params.id === 'undefined') {
-      return HttpResponse.json({}, { status: 404 });
-    }
-    if (params.id === '5') {
-      return HttpResponse.json(makeResourcePage([]));
-    }
-    const alerts = notificationChannelAlertsFactory.buildList(3);
-    const dbaasalerts = notificationChannelAlertsFactory.buildList(2, {
-      service_type: 'dbaas',
-    });
-    alerts.push(...dbaasalerts);
-    return HttpResponse.json(makeResourcePage(alerts));
   }),
   http.get('*/monitor/services', () => {
     const response: ServiceTypesList = {
