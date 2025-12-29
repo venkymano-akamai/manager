@@ -18,6 +18,7 @@ export interface CloudPulseLineGraph extends AreaChartProps {
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   const { error, loading, unit, ...rest } = props;
   const flags = useFlags();
+
   const theme = useTheme();
 
   // to reduce the x-axis tick count for small screen
