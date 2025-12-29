@@ -1,11 +1,10 @@
-import { Box, LinkButton, NewFeatureChip, Paper } from '@linode/ui';
+import { Box, LinkButton, Paper } from '@linode/ui';
 import { GridLegacy } from '@mui/material';
 import * as React from 'react';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { SuspenseLoader } from 'src/components/SuspenseLoader';
-import { useFlags } from 'src/hooks/useFlags';
 
 import { GlobalFilters } from '../Overview/GlobalFilters';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
@@ -30,8 +29,6 @@ export interface DashboardProp {
 }
 
 export const CloudPulseDashboardLanding = () => {
-  const flags = useFlags();
-
   const [filterData, setFilterData] = React.useState<FilterData>({
     id: {},
     label: {},
@@ -92,14 +89,7 @@ export const CloudPulseDashboardLanding = () => {
       <DocumentTitleSegment segment="Dashboards" />
       <Box>
         <LandingHeader
-          breadcrumbProps={{
-            pathname: '/metrics',
-            labelOptions: {
-              suffixComponent: flags.aclp?.isNew ? (
-                <NewFeatureChip />
-              ) : undefined,
-            },
-          }}
+          breadcrumbProps={{ pathname: '/metrics' }}
           docsLabel="Docs"
           docsLink="https://techdocs.akamai.com/cloud-computing/docs/akamai-cloud-pulse"
         />
