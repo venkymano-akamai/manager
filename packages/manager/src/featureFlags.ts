@@ -107,7 +107,7 @@ interface AclpFlag {
   /**
    * This property indicates whether the feature is new or not
    */
-  isNew?: boolean;
+  new?: boolean;
 
   /**
    * This property indicates whether to show widget dimension filters or not
