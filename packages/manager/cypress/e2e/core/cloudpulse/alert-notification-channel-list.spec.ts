@@ -276,11 +276,11 @@ describe('Notification Channel Listing Page', () => {
       {
         column: 'Alerts',
         ascending: [...notificationChannels]
-          .sort((a, b) => a.alerts.length - b.alerts.length)
+          .sort((a, b) => a.alerts.alert_count - b.alerts.alert_count)
           .map((ch) => ch.id),
 
         descending: [...notificationChannels]
-          .sort((a, b) => b.alerts.length - a.alerts.length)
+          .sort((a, b) => b.alerts.alert_count - a.alerts.alert_count)
           .map((ch) => ch.id),
       },
 
