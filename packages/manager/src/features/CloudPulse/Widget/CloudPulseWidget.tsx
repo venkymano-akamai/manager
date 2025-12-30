@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useProfile, useRegionsQuery } from '@linode/queries';
 import { Box, Paper, Typography } from '@linode/ui';
 import { GridLegacy, Stack, useTheme } from '@mui/material';
@@ -173,6 +175,13 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     props.widget.group_by
   );
   const theme = useTheme();
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: widget.label });
+
+  const style = {
+    transition,
+    transform: CSS.Transform.toString(transform),
+  };
 
   const {
     globalFilterGroupBy,
@@ -480,7 +489,15 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     linodeFromVolumes.isLoading,
   ]);
   return (
-    <GridLegacy container item lg={widget.size} xs={12}>
+    <GridLegacy
+      container
+      item
+      lg={widget.size}
+      ref={setNodeRef}
+      xs={12}
+      {...attributes}
+      sx={style}
+    >
       <Stack
         spacing={2}
         sx={{
@@ -501,6 +518,16 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
               padding: 1,
             }}
           >
+            <Box
+              {...listeners}
+              sx={{
+                cursor: 'grab',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              ⠿
+            </Box>
             <Typography flex={{ sm: 2, xs: 0 }} marginLeft={1} variant="h2">
               {convertStringToCamelCasesWithSpaces(widget.label)} (
               {scaledWidgetUnit.current}

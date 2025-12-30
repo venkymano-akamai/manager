@@ -1,3 +1,5 @@
+import { closestCorners, DndContext } from '@dnd-kit/core';
+import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { GridLegacy, Paper } from '@mui/material';
 import React from 'react';
 
@@ -79,6 +81,8 @@ export const RenderWidgets = React.memo(
 
     const flags = useFlags();
 
+    const [, setSelfUpdate] = React.useState<number>(0);
+
     const getCloudPulseGraphProperties = (
       widget: Widgets
     ): CloudPulseWidgetProperties => {
@@ -141,6 +145,27 @@ export const RenderWidgets = React.memo(
       }
     };
 
+    const reOrderWidgets = (event: any) => {
+      const { active, over } = event;
+
+      if (active.id !== over.id) {
+        const oldIndex = dashboard.widgets.findIndex(
+          (widget) => widget.label === active.id
+        );
+        const newIndex = dashboard.widgets.findIndex(
+          (widget) => widget.label === over.id
+        );
+
+        const newWidgetsOrder = Array.from(dashboard.widgets);
+        const [movedWidget] = newWidgetsOrder.splice(oldIndex, 1);
+        newWidgetsOrder.splice(newIndex, 0, movedWidget);
+
+        dashboard.widgets = newWidgetsOrder;
+
+        setSelfUpdate((prev) => prev + 1);
+      }
+    };
+
     if (!dashboard.widgets?.length) {
       return renderPlaceHolder(
         'No visualizations are available at this moment. Create Dashboards to list here.'
@@ -160,45 +185,57 @@ export const RenderWidgets = React.memo(
     // maintain a copy
     const newDashboard: Dashboard = createObjectCopy(dashboard)!;
     return (
-      <GridLegacy columnSpacing={2} container item rowSpacing={2} xs={12}>
-        {{ ...newDashboard }.widgets.map((widget, index) => {
-          // check if widget metric definition is available or not
-          if (widget) {
-            // find the metric defintion of the widget label
-            const availMetrics = metricDefinitions?.data.find(
-              (availMetrics: MetricDefinition) =>
-                widget.metric === availMetrics.metric
-            );
-            const cloudPulseWidgetProperties = getCloudPulseGraphProperties({
-              ...widget,
-            });
+      <DndContext
+        collisionDetection={closestCorners}
+        onDragEnd={reOrderWidgets}
+      >
+        <GridLegacy columnSpacing={2} container item rowSpacing={2} xs={12}>
+          <SortableContext
+            items={newDashboard.widgets.map((widget) => widget.label)}
+            strategy={rectSortingStrategy}
+          >
+            {{ ...newDashboard }.widgets.map((widget, index) => {
+              // check if widget metric definition is available or not
+              if (widget) {
+                // find the metric defintion of the widget label
+                const availMetrics = metricDefinitions?.data.find(
+                  (availMetrics: MetricDefinition) =>
+                    widget.metric === availMetrics.metric
+                );
+                const cloudPulseWidgetProperties = getCloudPulseGraphProperties(
+                  {
+                    ...widget,
+                  }
+                );
 
-            // metric definition is available but time_granularity is not present
-            if (
-              availMetrics &&
-              !cloudPulseWidgetProperties.widget.time_granularity
-            ) {
-              cloudPulseWidgetProperties.widget.time_granularity =
-                getTimeGranularity(availMetrics.scrape_interval);
-            }
-            return (
-              <CloudPulseWidget
-                key={widget.label}
-                {...cloudPulseWidgetProperties}
-                authToken={jweToken?.token}
-                availableMetrics={availMetrics}
-                isJweTokenFetching={isJweTokenFetching}
-                linodeRegion={linodeRegion}
-                region={region}
-                resources={resourceList!}
-                savePref={savePref}
-              />
-            );
-          } else {
-            return <React.Fragment key={index} />;
-          }
-        })}
-      </GridLegacy>
+                // metric definition is available but time_granularity is not present
+                if (
+                  availMetrics &&
+                  !cloudPulseWidgetProperties.widget.time_granularity
+                ) {
+                  cloudPulseWidgetProperties.widget.time_granularity =
+                    getTimeGranularity(availMetrics.scrape_interval);
+                }
+                return (
+                  <CloudPulseWidget
+                    key={widget.label}
+                    {...cloudPulseWidgetProperties}
+                    authToken={jweToken?.token}
+                    availableMetrics={availMetrics}
+                    isJweTokenFetching={isJweTokenFetching}
+                    linodeRegion={linodeRegion}
+                    region={region}
+                    resources={resourceList!}
+                    savePref={savePref}
+                  />
+                );
+              } else {
+                return <React.Fragment key={index} />;
+              }
+            })}
+          </SortableContext>
+        </GridLegacy>
+      </DndContext>
     );
   },
   (oldProps: WidgetProps, newProps: WidgetProps) => {
