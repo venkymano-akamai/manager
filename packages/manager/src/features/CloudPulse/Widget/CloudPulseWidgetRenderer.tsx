@@ -1,6 +1,9 @@
 import { closestCorners, DndContext } from '@dnd-kit/core';
 import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
+import { useMutatePreferences, usePreferences } from '@linode/queries';
 import { GridLegacy, Paper } from '@mui/material';
+import { i } from 'node_modules/vite/dist/node/chunks/moduleRunnerTransport';
+import { set } from 'ramda';
 import React from 'react';
 
 import { useFlags } from 'src/hooks/useFlags';
@@ -80,8 +83,18 @@ export const RenderWidgets = React.memo(
     } = props;
 
     const flags = useFlags();
+    const { mutateAsync: updatePreferences } = useMutatePreferences();
+    const { data: orderOfWidgets } = usePreferences(
+      (data) => data?.dashboardWidgetOrder
+    );
 
-    const [, setSelfUpdate] = React.useState<number>(0);
+    const dashboardRef = React.useRef<Dashboard>(dashboard);
+
+    const [widgetOrder, setWidgetOrder] = React.useState<number[]>(
+      orderOfWidgets
+        ? (orderOfWidgets[dashboard.id] ?? [])
+        : dashboard.widgets.map((_, index) => index)
+    );
 
     const getCloudPulseGraphProperties = (
       widget: Widgets
@@ -160,11 +173,36 @@ export const RenderWidgets = React.memo(
         const [movedWidget] = newWidgetsOrder.splice(oldIndex, 1);
         newWidgetsOrder.splice(newIndex, 0, movedWidget);
 
-        dashboard.widgets = newWidgetsOrder;
+        setWidgetOrder(
+          newWidgetsOrder.map((item, index) =>
+            dashboardRef.current.widgets.indexOf(item)
+          )
+        );
 
-        setSelfUpdate((prev) => prev + 1);
+        updatePreferences({
+          dashboardWidgetOrder: {
+            ...orderOfWidgets,
+            [dashboard.id]: newWidgetsOrder.map((item, index) =>
+              dashboardRef.current.widgets.indexOf(item)
+            ),
+          },
+        });
       }
     };
+
+    // React.useEffect(() => {
+    // console.log('Updating preferences with widget order:', widgetOrder);
+    //   return () => {
+    //     if (!savePref && !dashboard.widgets) return;
+
+    //     updatePreferences({
+    //       dashboardWidgetOrder: {
+    //         ...orderOfWidgets,
+    //         [dashboard.id]: widgetOrder,
+    //       },
+    //     });
+    //   };
+    // }, []);
 
     if (!dashboard.widgets?.length) {
       return renderPlaceHolder(
@@ -184,6 +222,13 @@ export const RenderWidgets = React.memo(
 
     // maintain a copy
     const newDashboard: Dashboard = createObjectCopy(dashboard)!;
+
+    if (widgetOrder) {
+      newDashboard.widgets = widgetOrder?.map(
+        (val, index) => newDashboard.widgets[val]
+      );
+    }
+
     return (
       <DndContext
         collisionDetection={closestCorners}

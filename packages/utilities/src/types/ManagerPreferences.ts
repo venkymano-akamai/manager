@@ -26,6 +26,7 @@ export type ManagerPreferences = Partial<{
   avatarColor: string;
   backups_cta_dismissed: boolean;
   collapsedSideNavProductFamilies: number[];
+  dashboardWidgetOrder: Record<number, number[]>;
   desktop_sidebar_open: boolean;
   dismissed_notifications: Record<string, DismissedNotification>;
   domains_group_by_tag: boolean;

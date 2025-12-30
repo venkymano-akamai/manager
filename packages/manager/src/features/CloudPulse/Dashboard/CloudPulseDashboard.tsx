@@ -192,6 +192,7 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
       groupBy={groupBy}
       isJweTokenFetching={isJweTokenFetching}
       jweToken={jweToken}
+      key={dashboard.id}
       linodeRegion={linodeRegion}
       manualRefreshTimeStamp={manualRefreshTimeStamp}
       metricDefinitions={metricDefinitions}
