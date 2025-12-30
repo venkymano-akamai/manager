@@ -20,12 +20,6 @@ export const notificationChannelFactory =
         subject: 'Alert',
       },
     },
-    details: {
-      email: {
-        recipient_type: 'read_write_users',
-        usernames: ['user1', 'user2'],
-      },
-    },
     created: new Date().toISOString(),
     created_by: 'user1',
     id: Factory.each((i) => i),
@@ -34,9 +28,7 @@ export const notificationChannelFactory =
     type: 'user',
     updated: new Date().toISOString(),
     updated_by: 'user1',
-  } as any);
-/* 'as any' is used here to bypass strict type checking for the factory definition to ensure backward compatibility with content
- */
+  });
 
 export const notificationChannelAlertsFactory =
   Factory.Sync.makeFactory<NotificationChannelAlerts>({

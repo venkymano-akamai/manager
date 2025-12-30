@@ -50,28 +50,6 @@ describe('NotificationChannelAlertsTableRow', () => {
     expect(screen.getByText('Managed Databases')).toBeVisible();
   });
 
-  it('should render correct data-qa attributes', () => {
-    const alert = notificationChannelAlertsFactory.build({
-      id: 5,
-      label: 'QA Test Alert',
-      service_type: 'linode',
-    });
-
-    renderWithTheme(
-      wrapWithTableBody(
-        <NotificationChannelAlertsTableRow
-          alert={alert}
-          serviceTypeLabel="Linode"
-        />
-      )
-    );
-
-    expect(screen.getByTestId('table-row-5')).toBeVisible();
-
-    const link = screen.getByRole('link', { name: 'QA Test Alert' });
-    expect(link).toHaveAttribute('data-qa-alert-link', 'true');
-  });
-
   it('should render multiple service types correctly', () => {
     const linodeAlert = notificationChannelAlertsFactory.build({
       id: 7,

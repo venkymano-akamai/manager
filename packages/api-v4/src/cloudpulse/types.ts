@@ -474,7 +474,7 @@ export interface CreateNotificationChannelPayload {
 export interface NotificationChannelAlerts {
   id: number;
   label: string;
-  service_type?: CloudPulseServiceType;
+  service_type: CloudPulseServiceType;
   type: 'alerts-definitions';
   url: string;
 }

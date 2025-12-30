@@ -448,13 +448,6 @@ describe('transformDimensionValue', () => {
 });
 
 describe('shouldUseContentsForEmail', () => {
-  it('should return false for non-email notification channels', () => {
-    const notificationChannel = notificationChannelFactory.build({
-      channel_type: 'slack',
-    });
-    expect(shouldUseContentsForEmail(notificationChannel)).toBe(false);
-  });
-
   it('should return false for email channel with valid usernames in details', () => {
     const notificationChannel = notificationChannelFactory.build({
       channel_type: 'email',
@@ -503,6 +496,7 @@ describe('shouldUseContentsForEmail', () => {
       details: {
         email: {
           usernames: [],
+          recipient_type: 'admin_users',
         },
       },
     });

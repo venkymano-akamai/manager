@@ -12,7 +12,6 @@ const notificationChannels = notificationChannelFactory.buildList(3, {
       email_addresses: ['1@test.com', '2@test.com'],
     },
   },
-  details: undefined,
 });
 
 const queryMocks = vi.hoisted(() => ({

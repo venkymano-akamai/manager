@@ -106,6 +106,9 @@ describe('NotificationChannelDetail component tests', () => {
     const channelDetails = notificationChannelFactory.build({
       id: 1,
       label: 'Test Channel',
+      details: {
+        email: { recipient_type: 'user', usernames: ['user1', 'user2'] },
+      },
     });
 
     queryMocks.useNotificationChannelQuery.mockReturnValue({

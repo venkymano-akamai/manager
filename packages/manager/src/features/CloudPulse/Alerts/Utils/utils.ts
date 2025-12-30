@@ -243,11 +243,8 @@ export const getAlertChipBorderRadius = (
 export const shouldUseContentsForEmail = (
   channel: NotificationChannel
 ): boolean => {
-  if (channel.channel_type !== 'email') {
-    return false;
-  }
-
-  const detailsEmail = channel.details?.email;
+  const detailsEmail =
+    channel.channel_type === 'email' ? channel.details?.email : undefined;
   // Use content if: details is missing, detail is empty, detail.email is empty or detail.email.usernames is empty
   return (
     !channel.details ||

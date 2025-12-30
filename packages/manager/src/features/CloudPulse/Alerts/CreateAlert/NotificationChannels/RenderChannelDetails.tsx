@@ -16,11 +16,11 @@ export const RenderChannelDetails = (props: RenderChannelDetailProps) => {
   if (template.channel_type === 'email') {
     const contentEmail = template.content?.email;
     const detailEmail = template.details?.email;
-    const useDetails = shouldUseContentsForEmail(template);
+    const useContents = shouldUseContentsForEmail(template);
 
-    const recipients = useDetails
-      ? (detailEmail?.usernames ?? [])
-      : (contentEmail?.email_addresses ?? []);
+    const recipients = useContents
+      ? (contentEmail?.email_addresses ?? [])
+      : (detailEmail?.usernames ?? []);
 
     return (
       <>
