@@ -27,6 +27,7 @@ import type {
   EditAlertPayloadWithService,
   EntityAlertUpdatePayload,
   NotificationChannel,
+  NotificationChannelAlerts,
 } from '@linode/api-v4/lib/cloudpulse';
 import type { APIError, Filter, Params } from '@linode/api-v4/lib/types';
 
@@ -282,12 +283,24 @@ export const useCreateNotificationChannel = () => {
           newChannel,
         ]);
       }
+
+      queryClient.setQueryData(
+        queryFactory.notificationChannels._ctx.channelById(newChannel.id)
+          .queryKey,
+        newChannel
+      );
     },
   });
 };
 
 export const useNotificationChannelQuery = (channelId: number) => {
   return useQuery<NotificationChannel, APIError[]>({
-    ...queryFactory.notificationChannel(channelId),
+    ...queryFactory.notificationChannels._ctx.channelById(channelId),
+  });
+};
+
+export const useAllAlertsByNotificationChannelIdQuery = (channelId: number) => {
+  return useQuery<NotificationChannelAlerts[], APIError[]>({
+    ...queryFactory.notificationChannelAlerts(channelId),
   });
 };

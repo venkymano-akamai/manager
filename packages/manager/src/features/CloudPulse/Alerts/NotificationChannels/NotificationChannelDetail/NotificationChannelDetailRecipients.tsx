@@ -25,7 +25,8 @@ export const NotificationChannelRecipients = React.memo(
     const emailDetails = channelDetails.details?.email;
 
     // Get usernames from details or email_addresses from content
-    const recipients = emailDetails?.usernames ?? [];
+    const recipients = emailDetails?.usernames;
+    const recipientType = emailDetails?.recipient_type;
     return (
       <>
         <Typography marginBottom={2} variant="h2">
@@ -42,11 +43,18 @@ export const NotificationChannelRecipients = React.memo(
           }}
         >
           <DisplayAlertDetailChips
-            label="Recipients"
-            mergeChips={false}
+            label="Recipient Type"
             valueGridColumns={2}
-            values={recipients}
+            values={[recipientType ?? '']}
           />
+          {recipients && recipients.length && (
+            <DisplayAlertDetailChips
+              label="Recipients"
+              mergeChips={false}
+              valueGridColumns={2}
+              values={recipients}
+            />
+          )}
         </GridLegacy>
       </>
     );

@@ -1,6 +1,9 @@
 import { Factory } from '@linode/utilities';
 
-import type { NotificationChannel } from '@linode/api-v4';
+import type {
+  NotificationChannel,
+  NotificationChannelAlerts,
+} from '@linode/api-v4';
 
 export const notificationChannelFactory =
   Factory.Sync.makeFactory<NotificationChannel>({
@@ -17,12 +20,6 @@ export const notificationChannelFactory =
         subject: 'Alert',
       },
     },
-    details: {
-      email: {
-        recipient_type: 'read_write_users',
-        usernames: ['test@test.com', 'test2@test.com'],
-      },
-    },
     created: new Date().toISOString(),
     created_by: 'user1',
     id: Factory.each((i) => i),
@@ -31,6 +28,13 @@ export const notificationChannelFactory =
     type: 'user',
     updated: new Date().toISOString(),
     updated_by: 'user1',
-  } as any);
-/* 'as any' is used here to bypass strict type checking for the factory definition to ensure backward compatibility with content
- */
+  });
+
+export const notificationChannelAlertsFactory =
+  Factory.Sync.makeFactory<NotificationChannelAlerts>({
+    type: 'alerts-definitions',
+    id: Factory.each((i) => i),
+    service_type: 'linode',
+    label: Factory.each((id) => `Alert-${id}`),
+    url: Factory.each((i) => `monitor/alert-definitions/${i}`),
+  });
