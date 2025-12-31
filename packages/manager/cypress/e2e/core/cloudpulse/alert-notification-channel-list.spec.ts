@@ -146,7 +146,7 @@ const VerifyChannelSortingParams = (
   );
 
   const order = sortOrderMap[sortOrder];
-  const orderBy = LabelLookup[columnLabel];
+  const orderBy = encodeURIComponent(LabelLookup[columnLabel]);
 
   cy.url().should(
     'endWith',
@@ -276,11 +276,15 @@ describe('Notification Channel Listing Page', () => {
       {
         column: 'Alerts',
         ascending: [...notificationChannels]
-          .sort((a, b) => a.alerts.alert_count - b.alerts.alert_count)
+          .sort(
+            (a, b) => a.alerts.alert_count - b.alerts.alert_count || a.id - b.id
+          )
           .map((ch) => ch.id),
 
         descending: [...notificationChannels]
-          .sort((a, b) => b.alerts.alert_count - a.alerts.alert_count)
+          .sort(
+            (a, b) => b.alerts.alert_count - a.alerts.alert_count || a.id - b.id
+          )
           .map((ch) => ch.id),
       },
 
