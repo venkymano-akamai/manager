@@ -1,7 +1,12 @@
 import { closestCorners, DndContext } from '@dnd-kit/core';
-import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+} from '@dnd-kit/sortable';
 import { useMutatePreferences, usePreferences } from '@linode/queries';
 import { GridLegacy, Paper } from '@mui/material';
+import { create } from 'domain';
 import { i } from 'node_modules/vite/dist/node/chunks/moduleRunnerTransport';
 import { set } from 'ramda';
 import React from 'react';
@@ -88,13 +93,15 @@ export const RenderWidgets = React.memo(
       (data) => data?.dashboardWidgetOrder
     );
 
-    const dashboardRef = React.useRef<Dashboard>(dashboard);
+    const dashboardRef = React.useRef<Dashboard>(createObjectCopy(dashboard));
 
-    const [widgetOrder, setWidgetOrder] = React.useState<number[]>(
+    const [widgetOrder, setWidgetOrder] = React.useState<string[]>(
       orderOfWidgets
         ? (orderOfWidgets[dashboard.id] ?? [])
-        : dashboard.widgets.map((_, index) => index)
+        : dashboard.widgets.map((item, index) => item.label)
     );
+
+    const [orderUpdated, setOrderUpdated] = React.useState<boolean>(false);
 
     const getCloudPulseGraphProperties = (
       widget: Widgets
@@ -158,6 +165,13 @@ export const RenderWidgets = React.memo(
       }
     };
 
+    /**
+     * logic
+     * original array - [0,1,2,3]
+     * new order - [2,1,0,3]
+     * new order2 - [1,2,0,3]
+     */
+
     const reOrderWidgets = (event: any) => {
       const { active, over } = event;
 
@@ -168,27 +182,34 @@ export const RenderWidgets = React.memo(
         const newIndex = dashboard.widgets.findIndex(
           (widget) => widget.label === over.id
         );
-
-        const newWidgetsOrder = Array.from(dashboard.widgets);
-        const [movedWidget] = newWidgetsOrder.splice(oldIndex, 1);
-        newWidgetsOrder.splice(newIndex, 0, movedWidget);
-
-        setWidgetOrder(
-          newWidgetsOrder.map((item, index) =>
-            dashboardRef.current.widgets.indexOf(item)
-          )
-        );
+        dashboard.widgets = arrayMove(dashboard.widgets, oldIndex, newIndex);
+        setWidgetOrder(dashboard.widgets.map((item) => item.label));
 
         updatePreferences({
           dashboardWidgetOrder: {
             ...orderOfWidgets,
-            [dashboard.id]: newWidgetsOrder.map((item, index) =>
-              dashboardRef.current.widgets.indexOf(item)
-            ),
+            [dashboard.id]: dashboard.widgets.map((item, index) => item.label),
           },
         });
       }
     };
+
+    React.useEffect(() => {
+      if (widgetOrder && dashboardRef?.current) {
+        widgetOrder?.map((val, index) => {
+          const newIndex = dashboardRef.current
+            ? dashboardRef.current.widgets.findIndex(
+                (widget) => widget.label === val
+              )
+            : -1;
+          if (newIndex > -1 && dashboardRef.current) {
+            dashboard.widgets[index] = dashboardRef.current.widgets[newIndex];
+          }
+          return dashboard.widgets[index];
+        });
+      }
+      setOrderUpdated(true);
+    }, []);
 
     // React.useEffect(() => {
     // console.log('Updating preferences with widget order:', widgetOrder);
@@ -213,22 +234,15 @@ export const RenderWidgets = React.memo(
     if (
       !dashboard.service_type ||
       (!isJweTokenFetching && !jweToken?.token) ||
-      !resourceList?.length
+      !resourceList?.length ||
+      !orderOfWidgets || !orderUpdated
     ) {
       return renderPlaceHolder(
         'Select a dashboard and filters to visualize metrics.'
       );
     }
 
-    // maintain a copy
-    const newDashboard: Dashboard = createObjectCopy(dashboard)!;
-
-    if (widgetOrder) {
-      newDashboard.widgets = widgetOrder?.map(
-        (val, index) => newDashboard.widgets[val]
-      );
-    }
-
+    const newDashboard = createObjectCopy(dashboard);
     return (
       <DndContext
         collisionDetection={closestCorners}
