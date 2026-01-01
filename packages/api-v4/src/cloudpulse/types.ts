@@ -472,3 +472,22 @@ export interface CreateNotificationChannelPayload {
    */
   label: string;
 }
+
+export interface EditNotificationChannelPayload {
+  /**
+   * The details of the channel to edit.
+   */
+  details: EmailDetail;
+  /**
+   * The label of the channel to edit.
+   */
+  label: string;
+}
+
+export interface EditNotificationChannelPayloadWithId
+  extends EditNotificationChannelPayload {
+  /**
+   * The ID of the channel to edit.
+   */
+  channelId: number;
+}
