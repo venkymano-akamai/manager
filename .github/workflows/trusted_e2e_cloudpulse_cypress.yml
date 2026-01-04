@@ -95,7 +95,7 @@ jobs:
       - name: Run Cloudpulse Cypress tests
         run: |
           cd packages/manager
-          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/!(cloudpulse-navigation.spec.ts|dashboard-switch-filter-reset.spec.ts)'
+          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/**/*.spec.ts'
       
       - name: Set Cloudpulse E2E final status
         if: always()
