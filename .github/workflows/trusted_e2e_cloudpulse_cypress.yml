@@ -7,6 +7,15 @@ on:
         description: "PR number to run E2E against"
         required: true
         type: number
+      run_type:
+        description: "Type of Cypress run"
+        required: true
+        type: choice
+        default: run_cypress
+        options:
+          - run_cypress
+          - run_cypress_metrics
+          - run_cypress_alerts
 permissions:
   contents: read
   statuses: write
@@ -91,11 +100,25 @@ jobs:
         run: |
           cd packages/manager
           pnpm exec cypress install
+          
+      - name: Determine Cypress spec to run
+        id: cypress_spec
+        run: |
+          if [ "${{ github.event.inputs.run_type }}" = "run_cypress" ]; then
+            echo "spec=cypress/e2e/core/cloudpulse/**/*.spec.ts" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.run_type }}" = "run_cypress_alerts" ]; then
+            echo "spec=cypress/e2e/core/cloudpulse/alerts/*.spec.ts" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.run_type }}" = "run_cypress_metrics" ]; then
+            echo "spec=cypress/e2e/core/cloudpulse/*.spec.ts" >> $GITHUB_OUTPUT
+          else
+            # Fallback to original full Cloudpulse run
+            echo "spec=cypress/e2e/core/cloudpulse/**/*.spec.ts" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run Cloudpulse Cypress tests
         run: |
           cd packages/manager
-          pnpm cy:run -s 'cypress/e2e/core/cloudpulse/**/*.spec.ts'
+          pnpm cy:run -s '${{ steps.cypress_spec.outputs.spec }}'
       
       - name: Set Cloudpulse E2E final status
         if: always()
