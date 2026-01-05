@@ -151,7 +151,7 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       });
 
     ui.button.findByTitle('Filters').click();
-    cy.wait(1000);
+    cy.wait(1500);
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
@@ -344,6 +344,7 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
   });
 
   it('clears the Port Filter and verifies updated user preferences', () => {
+    cy.wait(1500);
     cy.intercept('PUT', apiMatcher('profile/preferences')).as(
       'updateDBClustersPreference'
     );
