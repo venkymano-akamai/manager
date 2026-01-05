@@ -245,7 +245,7 @@ export const shouldUseContentsForEmail = (
 ): boolean => {
   const detailsEmail =
     channel.channel_type === 'email' ? channel.details?.email : undefined;
-  // Use content if: details is missing, detail is empty, detail.email is empty or detail.email.usernames is empty
+  // Use content if: details is missing, details is empty, details.email is empty or details.email.usernames is empty
   return (
     !channel.details ||
     Object.keys(channel.details).length === 0 ||
