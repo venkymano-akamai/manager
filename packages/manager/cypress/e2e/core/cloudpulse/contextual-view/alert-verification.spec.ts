@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
@@ -219,6 +220,7 @@ describe('update linode label', () => {
 
       // Visit the database alerts page
       cy.visitWithLogin(`/linodes/${linode.id}/alerts`);
+      cy.wait(1000);
 
       // Navigation to Alerts beta
       ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
@@ -249,13 +251,6 @@ describe('update linode label', () => {
           "Account-level alerts can't be enabled or disabled for a single entity."
         )
         .should('be.visible');
-
-      // ui.tooltip
-      //   .findByText(
-      //     "Region-level alerts can't be enabled or disabled for a single entity."
-      //   )
-      //   .should('be.visible');
-
       // Alert Links Verification
       [1, 2, 3, 4].forEach((id) => {
         cy.get(`[data-qa-alert-cell="${id}"]`).within(() => {

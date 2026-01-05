@@ -151,6 +151,7 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+    cy.wait(1000);
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
