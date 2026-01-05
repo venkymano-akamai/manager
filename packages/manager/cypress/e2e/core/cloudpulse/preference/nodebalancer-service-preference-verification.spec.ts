@@ -151,6 +151,7 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+    cy.wait('@getMetrics');
     cy.wait(1500);
   });
 

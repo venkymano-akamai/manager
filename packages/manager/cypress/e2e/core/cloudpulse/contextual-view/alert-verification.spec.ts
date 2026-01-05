@@ -221,7 +221,6 @@ describe('update linode label', () => {
       // Visit the database alerts page
       cy.visitWithLogin(`/linodes/${linode.id}/alerts`);
       cy.wait(1000);
-
       // Navigation to Alerts beta
       ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
 
