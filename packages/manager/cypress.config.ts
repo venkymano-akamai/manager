@@ -55,7 +55,10 @@ export default defineConfig({
   video: false,
 
   // Only retry test when running via CI.
-  retries: 0,
+  retries: {
+    runMode: process.env.CI ? 2 : 0,
+    openMode: 0,
+  },
 
   experimentalMemoryManagement: true,
 
