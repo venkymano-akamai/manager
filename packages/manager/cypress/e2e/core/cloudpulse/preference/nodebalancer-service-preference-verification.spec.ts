@@ -1,5 +1,5 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
-/*  sonarjs/no-skipped-tests */
+/* eslint-disable sonarjs/no-skipped-tests */
 
 /**
  * @file Integration Tests for CloudPulse NodeBalancer Preferences.
