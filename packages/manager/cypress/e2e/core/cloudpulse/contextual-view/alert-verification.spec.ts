@@ -200,7 +200,7 @@ describe('update linode label', () => {
     cy.defer(() =>
       createTestLinode({ region: mockRegion.id, booted: true })
     ).then((linode) => {
-      mockGetLinodes(mockLinodes);
+      mockGetLinodes(mockLinodes).as('getLinodes');
       mockAppendFeatureFlags(flagsFactory.build());
       mockGetAccount(mockAccount);
       mockGetAlertDefinition(serviceType, alerts).as(
@@ -212,9 +212,6 @@ describe('update linode label', () => {
       mockAddEntityToAlert(serviceType, '100', { [ALERT_TYPE]: 100 }).as(
         'addEntityToAlert'
       );
-      mockGetAlertDefinition(serviceType, alerts).as(
-        'getDBaaSAlertDefinitions'
-      );
       mockDeleteEntityFromAlert(serviceType, '100', 4).as(
         'deleteEntityToAlert'
       );
@@ -222,10 +219,9 @@ describe('update linode label', () => {
 
       // Visit the database alerts page
       cy.visitWithLogin(`/linodes/${linode.id}/alerts`);
-
       // Navigation to Alerts beta
       ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
-
+      cy.wait('@getDBaaSAlertDefinitions');
       cy.get('[data-qa-notice="true"]')
         .should('be.visible')
         .contains(
@@ -252,12 +248,6 @@ describe('update linode label', () => {
           "Account-level alerts can't be enabled or disabled for a single entity."
         )
         .should('be.visible');
-
-      // ui.tooltip
-      //   .findByText(
-      //     "Region-level alerts can't be enabled or disabled for a single entity."
-      //   )
-      //   .should('be.visible');
 
       // Alert Links Verification
       [1, 2, 3, 4].forEach((id) => {
