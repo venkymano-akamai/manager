@@ -168,7 +168,7 @@ const sortCases = [
 ];
 
 authenticate();
-describe.skip('update linode label', () => {
+describe('update linode label', () => {
   beforeEach(() => {
     cleanUp(['linodes']);
     cy.tag('method:e2e');
