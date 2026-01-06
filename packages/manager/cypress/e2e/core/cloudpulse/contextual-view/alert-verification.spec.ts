@@ -1,3 +1,5 @@
+/*  sonarjs/no-skipped-tests */
+
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
