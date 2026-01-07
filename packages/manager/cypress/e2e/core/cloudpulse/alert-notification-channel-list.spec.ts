@@ -537,7 +537,7 @@ describe('Notification Channel Listing Page', () => {
       channel_type: 'email',
       alerts: [],
     });
-    const userChannelLabel = 'Channel-error';
+    const userChannelLabel = notificationChannel.label;
     mockGetAlertChannels([notificationChannel]);
 
     // Arrange: Mock the DELETE API to return a 500 error
