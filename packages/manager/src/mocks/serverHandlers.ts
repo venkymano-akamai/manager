@@ -3609,6 +3609,12 @@ export const handlers = [
         updated_by: 'user3',
         created_by: 'admin',
         alerts: [],
+        details: {
+          email: {
+            usernames: ['user1', 'user2'],
+            recipient_type: 'user',
+          },
+        },
       })
     );
     notificationChannels.push(
