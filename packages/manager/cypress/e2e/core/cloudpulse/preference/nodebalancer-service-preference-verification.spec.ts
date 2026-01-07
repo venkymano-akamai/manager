@@ -1,5 +1,4 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
-/* eslint-disable sonarjs/no-skipped-tests */
 
 /**
  * @file Integration Tests for CloudPulse NodeBalancer Preferences.
@@ -100,7 +99,7 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
     mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
     mockGetCloudPulseServices([serviceType]).as('fetchServices');
-    mockGetCloudPulseDashboard(id, dashboard);
+    mockGetCloudPulseDashboard(id, dashboard).as('fetchDashboardById');
     mockCreateCloudPulseJWEToken(serviceType);
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
@@ -129,9 +128,17 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
 
     // navigate to the metrics page
     cy.visitWithLogin('/metrics');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
 
     // Wait for the services and dashboard API calls to complete before proceeding
-    cy.wait(['@fetchServices', '@fetchDashboard', '@fetchPreferences']);
+    cy.wait([
+      '@fetchServices',
+      '@fetchDashboard',
+      '@fetchPreferences',
+      '@fetchDashboardById',
+    ]);
 
     ui.button.findByTitle('Filters').click();
 
@@ -153,6 +160,11 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+
+    cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
@@ -394,5 +406,10 @@ describe('Integration Tests for NodeBalancer Dashboard Preferences', () => {
       comparePreferences(expectedAclpPreference, responseBody?.aclpPreference);
       comparePreferences(expectedAclpPreference, request.body.aclpPreference);
     });
+  });
+  after(() => {
+    cy.clearCookies({ log: false });
+    cy.clearLocalStorage({ log: false });
+    cy.window({ log: false }).then((win) => win.sessionStorage.clear());
   });
 });
