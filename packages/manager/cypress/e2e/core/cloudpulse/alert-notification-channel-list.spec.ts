@@ -475,8 +475,6 @@ describe('Notification Channel Listing Page', () => {
     cy.get('@searchInput').clear();
     cy.get('@searchInput').type(userChannelLabel);
 
-    cy.log('notification-channel :', JSON.stringify(userChannelLabel));
-
     // --- Act: Open action menu ---
     ui.actionMenu
       .findByTitle(`Action menu for Notification Channel ${userChannelLabel}`)
