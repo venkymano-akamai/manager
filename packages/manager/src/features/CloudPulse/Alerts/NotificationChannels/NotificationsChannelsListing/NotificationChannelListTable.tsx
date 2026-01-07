@@ -266,10 +266,10 @@ export const NotificationChannelListTable = React.memo(
                   action: 'deletion',
                   name: selectedChannel?.label ?? '',
                   primaryBtnText: 'Delete',
-                  type: 'Channel',
+                  type: 'Notification Channel',
                 }}
                 expand
-                label="Channel Label"
+                label="Notification Channel Label"
                 loading={deleteState.isDeleting}
                 onClick={handleDeleteConfirm}
                 onClose={() => {
@@ -281,7 +281,7 @@ export const NotificationChannelListTable = React.memo(
               >
                 <Notice variant="warning">
                   <Typography>
-                    <strong>Warning:</strong> Deleting this notification channel
+                    <strong>Warning:</strong> Deleting your Notification Channel
                     will result in permanent data loss.
                   </Typography>
                 </Notice>
