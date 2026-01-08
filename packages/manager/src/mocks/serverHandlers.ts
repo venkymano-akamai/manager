@@ -21,6 +21,10 @@ import {
   linodeStatsFactory,
   linodeTransferFactory,
   linodeTypeFactory,
+  marketplaceCategoryFactory,
+  marketplacePartnersFactory,
+  marketplaceProductFactory,
+  marketplaceTypeFactory,
   nodeBalancerConfigFactory,
   nodeBalancerConfigNodeFactory,
   nodeBalancerFactory,
@@ -619,6 +623,43 @@ const netLoadBalancers = [
   ),
 ];
 
+const marketplace = [
+  http.get('*/v4beta/marketplace/products', () => {
+    const marketplaceProduct = marketplaceProductFactory.buildList(10);
+    return HttpResponse.json(makeResourcePage([...marketplaceProduct]));
+  }),
+  http.get('*/v4beta/marketplace/products/:productId', () => {
+    const marketplaceProductDetail = marketplaceProductFactory.build({
+      details: {
+        overview: {
+          description:
+            'This is a detailed description of the marketplace product.',
+        },
+        pricing: 'Pricing information goes here.',
+        documentation: 'Documentation link or information goes here.',
+        support: 'Support information goes here.',
+      },
+    });
+    return HttpResponse.json(marketplaceProductDetail);
+  }),
+  http.get('*/v4beta/marketplace/categories', () => {
+    const marketplaceCategory = marketplaceCategoryFactory.buildList(5);
+    return HttpResponse.json(makeResourcePage([...marketplaceCategory]));
+  }),
+  http.get('*/v4beta/marketplace/types', () => {
+    const marketplaceType = marketplaceTypeFactory.buildList(5);
+    return HttpResponse.json(makeResourcePage([...marketplaceType]));
+  }),
+  http.get('*/v4beta/marketplace/partners', () => {
+    const marketplaceType = marketplacePartnersFactory.buildList(5);
+    return HttpResponse.json(makeResourcePage([...marketplaceType]));
+  }),
+  http.post('*/v4beta/marketplace/referral', async () => {
+    await sleep(2000);
+    return HttpResponse.json({});
+  }),
+];
+
 const nanodeType = linodeTypeFactory.build({ id: 'g6-nanode-1' });
 const standardTypes = linodeTypeFactory.buildList(7);
 const dedicatedTypes = dedicatedTypeFactory.buildList(7);
@@ -683,7 +724,11 @@ export const handlers = [
       // restricted: true,
       // user_type: 'default',
     });
-    return HttpResponse.json(profile);
+    return HttpResponse.json(profile, {
+      headers: {
+        'X-Customer-UUID': '51C68049-266E-451B-80ABFC92B5B9D576',
+      },
+    });
   }),
 
   http.put('*/profile', async ({ request }) => {
@@ -4480,6 +4525,7 @@ export const handlers = [
   ...vpc,
   ...entities,
   ...netLoadBalancers,
+  ...marketplace,
   http.get('*/v4beta/maintenance/policies', () => {
     return HttpResponse.json(
       makeResourcePage(maintenancePolicyFactory.buildList(2))
