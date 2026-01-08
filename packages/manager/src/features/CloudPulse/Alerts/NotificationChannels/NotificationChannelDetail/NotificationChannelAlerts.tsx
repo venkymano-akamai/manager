@@ -110,7 +110,7 @@ export const NotificationChannelAlerts = React.memo(
                 handleClick={handleOrderChange}
                 label="service_type"
               >
-                Service Type
+                Service
               </TableSortCell>
             </TableRow>
           </TableHead>

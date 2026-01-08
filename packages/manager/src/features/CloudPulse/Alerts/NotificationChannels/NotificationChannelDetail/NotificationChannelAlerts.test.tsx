@@ -33,7 +33,7 @@ describe('NotificationChannelAlerts', () => {
   const mockServiceTypes = serviceTypesFactory.buildList(3);
   const associatedAlertsText = 'Associated Alerts';
   const alertNameText = 'Alert Name';
-  const serviceTypeText = 'Service Type';
+  const serviceTypeText = 'Service';
 
   beforeEach(() => {
     queryMocks.useCloudPulseServiceTypes.mockReturnValue({
