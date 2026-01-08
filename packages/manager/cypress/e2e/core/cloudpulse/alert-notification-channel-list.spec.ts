@@ -443,7 +443,7 @@ describe('Notification Channel Listing Page', () => {
       .should('be.visible')
       .within(() => {
         // Focus the "Alert Label" confirmation input
-        cy.findByLabelText('Channel Label').click();
+        cy.findByLabelText('Notification Channel Label').click();
 
         // Type the alert label to enable the Delete button
         cy.focused().type(userChannelLabel);
@@ -555,7 +555,7 @@ describe('Notification Channel Listing Page', () => {
       .should('be.visible')
       .within(() => {
         // Focus the "Alert Label" confirmation input
-        cy.findByLabelText('Channel Label').click();
+        cy.findByLabelText('Notification Channel Label').click();
 
         // Type the alert label to enable the Delete button
         cy.focused().type(userChannelLabel);
