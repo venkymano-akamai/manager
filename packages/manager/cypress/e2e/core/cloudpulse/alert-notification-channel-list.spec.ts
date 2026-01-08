@@ -18,6 +18,7 @@ import {
   notificationChannelFactory,
 } from 'src/factories';
 import {
+  channelTypeMap,
   DELETE_CHANNEL_FAILED_MESSAGE,
   DELETE_CHANNEL_SUCCESS_MESSAGE,
   DELETE_CHANNEL_TOOLTIP_TEXT,
@@ -47,68 +48,65 @@ interface VerifyChannelSortingParams {
   sortOrder: SortOrder;
 }
 
-const notificationChannels = notificationChannelFactory
-  .buildList(26)
-  .map((ch, i) => {
-    const isEmail = i % 2 === 0;
+// Helper to generate alerts
+const generateAlerts = (numAlerts: number) =>
+  Array.from({ length: numAlerts }).map((_, idx) => ({
+    id: idx + 1,
+    label: `Alert-${idx + 1}`,
+    type: 'alerts-definitions' as const, // <-- tell TS this is literal
+    url: 'Sample',
+  }));
 
-    // force first email user to have 0 alerts
-    const isForcedEmailUserNoAlerts = isEmail && i === 0;
+const guaranteedChannels: NotificationChannel[] = [
+  notificationChannelFactory.build({
+    id: 1,
+    label: 'Email-System-0Alerts',
+    type: 'system',
+    channel_type: 'email',
+    alerts: generateAlerts(0),
+  }),
+  notificationChannelFactory.build({
+    id: 2,
+    label: 'Email-User-0Alerts',
+    type: 'user',
+    channel_type: 'email',
+    alerts: generateAlerts(0),
+  }),
+  notificationChannelFactory.build({
+    id: 3,
+    label: 'Webhook-System-3Alerts',
+    type: 'system',
+    channel_type: 'webhook',
+    alerts: generateAlerts(3),
+  }),
+  notificationChannelFactory.build({
+    id: 4,
+    label: 'Webhook-User-3Alerts',
+    type: 'user',
+    channel_type: 'webhook',
+    alerts: generateAlerts(3),
+  }),
+];
 
-    const type: 'system' | 'user' = isForcedEmailUserNoAlerts
-      ? 'user'
-      : isEmail
-        ? i % 4 === 0
-          ? 'system'
-          : 'user'
-        : i % 3 === 0
-          ? 'user'
-          : 'system';
+// Generate remaining channels up to 26
+const remainingChannels: NotificationChannel[] = Array.from({ length: 26 - guaranteedChannels.length }, (_, idx) => {
+  const id = guaranteedChannels.length + idx + 1;
+  const type: 'user' | 'system' = Math.random() < 0.5 ? 'user' : 'system';
+  const channel_type: 'email' | 'webhook' = Math.random() < 0.5 ? 'email' : 'webhook';
+  const alertsCount = Math.random() < 0.5 ? 0 : 3;
 
-    const numAlerts = isForcedEmailUserNoAlerts
-      ? 0
-      : Math.random() < 0.5
-        ? 0
-        : 3;
-
-    const alerts = Array.from({ length: numAlerts }).map((_, idx) => ({
-      id: idx + 1,
-      label: `Alert-${idx + 1}`,
-      type: 'alerts-definitions',
-      url: 'Sample',
-    }));
-
-    return {
-      ...ch,
-      id: i + 1,
-      label: `Channel-${i + 1}`,
-      type,
-      created_by: type,
-      updated_by: type,
-      channel_type: isEmail ? 'email' : 'webhook',
-      updated: new Date(2024, 0, i + 1).toISOString(),
-      alerts,
-      content: isEmail
-        ? {
-            email: {
-              email_addresses: [`test-${i + 1}@example.com`],
-              subject: 'Test Subject',
-              message: 'Test message',
-            },
-          }
-        : {
-            webhook: {
-              webhook_url: `https://example.com/webhook/${i + 1}`,
-              http_headers: [
-                {
-                  header_key: 'Authorization',
-                  header_value: 'Bearer secret-token',
-                },
-              ],
-            },
-          },
-    } as NotificationChannel;
+  return notificationChannelFactory.build({
+    id,
+    label: `Channel-${id}`,
+    type,
+    channel_type,
+    alerts: generateAlerts(alertsCount),
   });
+});
+
+const notificationChannels = [...guaranteedChannels, ...remainingChannels];
+
+
 
 /**
  * Finds a notification channel by channel_type, owner type, and alerts length,
@@ -117,7 +115,7 @@ const notificationChannels = notificationChannelFactory
  * Throws an error if no matching channel is found.
  * This guarantees the return type is always 'NotificationChannel'.
  */
-const findChannelLabel = (
+const findChannel = (
   // List of all notification channels to search
   channels: NotificationChannel[],
 
@@ -151,7 +149,7 @@ const findChannelLabel = (
   // Safe to return: channel is guaranteed to exist
   return channel;
 };
-const { label: userChannelLabel, id: userChannelId } = findChannelLabel(
+const { label: userChannelLabel, id: userChannelId } = findChannel(
   notificationChannels,
   'email', // channel_type
   'user', // channel owner/type
@@ -320,7 +318,7 @@ describe('Notification Channel Listing Page', () => {
           cy.wrap($row).within(() => {
             cy.findByText(expected.label).should('be.visible');
             cy.findByText(String(expected.alerts.length)).should('be.visible');
-            cy.findByText('Email').should('be.visible');
+            cy.findByText(channelTypeMap[expected.channel_type]).should('be.visible');
             cy.get('td').eq(3).should('have.text', expected.created_by);
             cy.findByText(
               formatDate(expected.updated, {
@@ -460,7 +458,7 @@ describe('Notification Channel Listing Page', () => {
 
   it('Deletes a user-type email notification channel with alerts', () => {
     // --- Arrange: Find a channel that has at least 1 alert ---
-    const { label: userChannelLabel } = findChannelLabel(
+    const { label: userChannelLabel } = findChannel(
       notificationChannels,
       'email', // channel_type
       'user', // owner/type
@@ -492,7 +490,7 @@ describe('Notification Channel Listing Page', () => {
 
   it('Ensures system-type channels never show the Delete button', () => {
     // --- User-type email channel with alerts ---
-    const { label: systemChannelLabel } = findChannelLabel(
+    const { label: systemChannelLabel } = findChannel(
       notificationChannels,
       'email', // channel_type
       'system', // type/owner
