@@ -460,7 +460,7 @@ describe('Notification Channel Listing Page', () => {
     ui.toast.assertMessage(DELETE_CHANNEL_SUCCESS_MESSAGE);
   });
 
-  it('Deletes a user-type email notification channel with alerts', () => {
+  it('Disable deletion of a user-type email notification channel with alerts', () => {
     // --- Arrange: Find a channel that has at least 1 alert ---
     const { label: userChannelLabel } = findChannel(
       notificationChannels,
