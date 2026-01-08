@@ -89,24 +89,26 @@ const guaranteedChannels: NotificationChannel[] = [
 ];
 
 // Generate remaining channels up to 26
-const remainingChannels: NotificationChannel[] = Array.from({ length: 26 - guaranteedChannels.length }, (_, idx) => {
-  const id = guaranteedChannels.length + idx + 1;
-  const type: 'user' | 'system' = Math.random() < 0.5 ? 'user' : 'system';
-  const channel_type: 'email' | 'webhook' = Math.random() < 0.5 ? 'email' : 'webhook';
-  const alertsCount = Math.random() < 0.5 ? 0 : 3;
+const remainingChannels: NotificationChannel[] = Array.from(
+  { length: 26 - guaranteedChannels.length },
+  (_, idx) => {
+    const id = guaranteedChannels.length + idx + 1;
+    const type: 'system' | 'user' = Math.random() < 0.5 ? 'user' : 'system';
+    const channelType: 'email' | 'webhook' =
+      Math.random() < 0.5 ? 'email' : 'webhook';
+    const alertsCount = Math.random() < 0.5 ? 0 : 3;
 
-  return notificationChannelFactory.build({
-    id,
-    label: `Channel-${id}`,
-    type,
-    channel_type,
-    alerts: generateAlerts(alertsCount),
-  });
-});
+    return notificationChannelFactory.build({
+      id,
+      label: `Channel-${id}`,
+      type,
+      channel_type: channelType,
+      alerts: generateAlerts(alertsCount),
+    });
+  }
+);
 
 const notificationChannels = [...guaranteedChannels, ...remainingChannels];
-
-
 
 /**
  * Finds a notification channel by channel_type, owner type, and alerts length,
@@ -318,7 +320,9 @@ describe('Notification Channel Listing Page', () => {
           cy.wrap($row).within(() => {
             cy.findByText(expected.label).should('be.visible');
             cy.findByText(String(expected.alerts.length)).should('be.visible');
-            cy.findByText(channelTypeMap[expected.channel_type]).should('be.visible');
+            cy.findByText(channelTypeMap[expected.channel_type]).should(
+              'be.visible'
+            );
             cy.get('td').eq(3).should('have.text', expected.created_by);
             cy.findByText(
               formatDate(expected.updated, {
