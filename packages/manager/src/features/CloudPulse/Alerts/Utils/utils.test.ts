@@ -446,7 +446,6 @@ describe('transformDimensionValue', () => {
     ).toBe('Test_value');
   });
 });
-
 describe('shouldUseContentsForEmail', () => {
   it('should return false for email channel with valid usernames in details', () => {
     const notificationChannel = notificationChannelFactory.build({
