@@ -1,4 +1,6 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
+/*  sonarjs/no-skipped-tests */
+
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
@@ -198,7 +200,7 @@ describe('Alert Contextual view for linode', () => {
     cy.defer(() =>
       createTestLinode({ region: mockRegion.id, booted: true })
     ).then((linode) => {
-      mockGetLinodes(mockLinodes);
+      mockGetLinodes(mockLinodes).as('getLinodes');
       mockAppendFeatureFlags(flagsFactory.build());
       mockGetAccount(mockAccount);
       mockGetAlertDefinition(serviceType, alerts).as(
@@ -210,9 +212,6 @@ describe('Alert Contextual view for linode', () => {
       mockAddEntityToAlert(serviceType, '100', { [ALERT_TYPE]: 100 }).as(
         'addEntityToAlert'
       );
-      mockGetAlertDefinition(serviceType, alerts).as(
-        'getDBaaSAlertDefinitions'
-      );
       mockDeleteEntityFromAlert(serviceType, '100', 4).as(
         'deleteEntityToAlert'
       );
@@ -223,7 +222,7 @@ describe('Alert Contextual view for linode', () => {
       cy.wait(1000);
       // Navigation to Alerts beta
       ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
-
+      cy.wait('@getDBaaSAlertDefinitions');
       cy.get('[data-qa-notice="true"]')
         .should('be.visible')
         .contains(
