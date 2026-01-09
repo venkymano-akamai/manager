@@ -105,6 +105,11 @@ interface AclpFlag {
   humanizableUnits?: string[];
 
   /**
+   * This property indicates whether the feature is new or not
+   */
+  new?: boolean;
+
+  /**
    * This property indicates whether to show widget dimension filters or not
    */
   showWidgetDimensionFilters?: boolean;
@@ -221,7 +226,6 @@ export interface Flags {
   iam: BetaFeatureFlag;
   iamDelegation: BaseFeatureFlag;
   iamLimitedAvailabilityBadges: boolean;
-  iamRbacPrimaryNavChanges: boolean;
   ipv6Sharing: boolean;
   kubernetesBlackwellPlans: boolean;
   limitsEvolution: LimitsEvolution;
@@ -231,6 +235,7 @@ export interface Flags {
   lkeEnterprise2: LkeEnterpriseFlag;
   mainContentBanner: MainContentBanner;
   marketplaceAppOverrides: MarketplaceAppOverride[];
+  marketplaceV2: boolean;
   metadata: boolean;
   mtc: MTC;
   networkLoadBalancer: boolean;
@@ -351,12 +356,12 @@ export type ProductInformationBannerLocation =
   | 'Identity and Access'
   | 'Images'
   | 'Kubernetes'
-  | 'LinodeCreate' // Use for Marketplace banners
   | 'Linodes'
   | 'LoadBalancers'
   | 'Logs'
   | 'Longview'
   | 'Managed'
+  | 'Marketplace'
   | 'Network LoadBalancers'
   | 'NodeBalancers'
   | 'Object Storage'

@@ -24,8 +24,8 @@ export const RenderChannelDetails = (props: RenderChannelDetailProps) => {
 
     return (
       <>
-        {recipients.map((value, index) => (
-          <Chip key={index} label={value} />
+        {recipients.map((value) => (
+          <Chip key={value} label={value} />
         ))}
       </>
     );
