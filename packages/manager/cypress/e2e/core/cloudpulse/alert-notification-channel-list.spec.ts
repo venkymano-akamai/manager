@@ -112,7 +112,7 @@ const notificationChannels = [...guaranteedChannels, ...remainingChannels];
 
 /**
  * Finds a notification channel by channel_type, owner type, and alerts length,
- * and returns its label.
+ * and returns its NotificationChannel object.
  *
  * Throws an error if no matching channel is found.
  * This guarantees the return type is always 'NotificationChannel'.
