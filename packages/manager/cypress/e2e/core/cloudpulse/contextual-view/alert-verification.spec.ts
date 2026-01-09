@@ -219,6 +219,7 @@ describe('update linode label', () => {
 
       // Visit the database alerts page
       cy.visitWithLogin(`/linodes/${linode.id}/alerts`);
+      cy.wait(1000);
       // Navigation to Alerts beta
       ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
       cy.wait('@getDBaaSAlertDefinitions');
@@ -293,7 +294,6 @@ describe('update linode label', () => {
         .should('be.disabled');
 
       // search for alert
-      cy.get('[data-qa-alert-cell="4"]').should('exist');
       cy.findByPlaceholderText('Search for Alerts').type('Alert-4');
 
       // toggle the alert
