@@ -47,14 +47,14 @@ export const NotificationChannelRecipients = React.memo(
             valueGridColumns={2}
             values={[recipientType ?? '']}
           />
-          {recipients && recipients.length && (
+          {recipients?.length ? (
             <DisplayAlertDetailChips
               label="Recipients"
               mergeChips={false}
               valueGridColumns={2}
               values={recipients}
             />
-          )}
+          ) : null}
         </GridLegacy>
       </>
     );
