@@ -242,9 +242,28 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
     preferenceKey: 'alerts-landing',
   });
 
+  // Custom sorting for service_type to sort by display labels
+  const customSortedData = React.useMemo(() => {
+    if (!sortedData || orderBy !== 'service_type') {
+      return sortedData;
+    }
+
+    return [...sortedData].sort((a: Alert, b: Alert) => {
+      const serviceA =
+        services.find((service) => service.value === a.service_type)?.label ??
+        a.service_type;
+      const serviceB =
+        services.find((service) => service.value === b.service_type)?.label ??
+        b.service_type;
+
+      const result = serviceA.localeCompare(serviceB);
+      return order === 'asc' ? result : -result;
+    });
+  }, [sortedData, orderBy, order, services]);
+
   return (
     <>
-      <Paginate data={sortedData ?? []}>
+      <Paginate data={customSortedData ?? []}>
         {({
           count,
           data: paginatedAndOrderedAlerts,
