@@ -371,10 +371,10 @@ export const useDeleteNotificationChannel = () => {
       });
     },
   });
-}
+};
 
 export const useAllAlertsByNotificationChannelIdQuery = (channelId: number) => {
-  return useQuery<NotificationChannelAlerts[], APIError[]>({
-    ...queryFactory.notificationChannelAlerts(channelId),
-  });
+  return useQuery<NotificationChannelAlerts[], APIError[]>(
+    queryFactory.notificationChannelAlerts(channelId)
+  );
 };
