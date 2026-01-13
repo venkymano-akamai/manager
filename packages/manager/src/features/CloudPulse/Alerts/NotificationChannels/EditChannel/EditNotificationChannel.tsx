@@ -41,7 +41,7 @@ export interface EditNotificationChannelProps {
   /**
    * The channel ID being edited.
    */
-  channelId: string;
+  channelId: number;
 }
 
 export const EditNotificationChannel = (
@@ -67,6 +67,10 @@ export const EditNotificationChannel = (
   });
 
   const { control, handleSubmit, formState } = formMethods;
+
+  const handleRecipientsError = React.useCallback(() => {
+    formMethods.resetField('recipients', { defaultValue: [] });
+  }, [formMethods]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -141,6 +145,7 @@ export const EditNotificationChannel = (
                 error={fieldState.error?.message}
                 onBlur={field.onBlur}
                 onChange={field.onChange}
+                onError={handleRecipientsError}
                 value={field.value ?? []}
               />
             )}

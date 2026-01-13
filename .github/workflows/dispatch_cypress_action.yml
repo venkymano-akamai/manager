@@ -27,7 +27,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.issue.number;
-
+            const commentBody = context.payload.comment.body.trim();
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -35,5 +35,6 @@ jobs:
               ref: 'aclp_develop',
               inputs: {
                 pr_number: prNumber.toString(),
+                run_type:  commentBody,
               },
             });
