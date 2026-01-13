@@ -242,6 +242,14 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
     preferenceKey: 'alerts-landing',
   });
 
+  // Create a map for service value-to-label mapping to optimize sorting
+  const serviceValueToLabelMap = React.useMemo(() => {
+    return services.reduce<Record<string, string>>((map, { label, value }) => {
+      map[value] = label;
+      return map;
+    }, {});
+  }, [services]);
+
   // Custom sorting for service_type to sort by display labels
   const customSortedData = React.useMemo(() => {
     if (!sortedData || orderBy !== 'service_type') {
@@ -249,17 +257,13 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
     }
 
     return [...sortedData].sort((a: Alert, b: Alert) => {
-      const serviceA =
-        services.find((service) => service.value === a.service_type)?.label ??
-        a.service_type;
-      const serviceB =
-        services.find((service) => service.value === b.service_type)?.label ??
-        b.service_type;
+      const serviceA = serviceValueToLabelMap[a.service_type] || a.service_type;
+      const serviceB = serviceValueToLabelMap[b.service_type] || b.service_type;
 
       const result = serviceA.localeCompare(serviceB);
       return order === 'asc' ? result : -result;
     });
-  }, [sortedData, orderBy, order, services]);
+  }, [sortedData, orderBy, order, serviceValueToLabelMap]);
 
   return (
     <>
