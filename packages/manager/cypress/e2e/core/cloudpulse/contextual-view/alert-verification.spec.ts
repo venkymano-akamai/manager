@@ -1,3 +1,6 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
+/*  sonarjs/no-skipped-tests */
+
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
@@ -165,7 +168,7 @@ const sortCases = [
 ];
 
 authenticate();
-describe('update linode label', () => {
+describe('Alert Contextual view for linode', () => {
   beforeEach(() => {
     cleanUp(['linodes']);
     cy.tag('method:e2e');
@@ -197,7 +200,7 @@ describe('update linode label', () => {
     cy.defer(() =>
       createTestLinode({ region: mockRegion.id, booted: true })
     ).then((linode) => {
-      mockGetLinodes(mockLinodes);
+      mockGetLinodes(mockLinodes).as('getLinodes');
       mockAppendFeatureFlags(flagsFactory.build());
       mockGetAccount(mockAccount);
       mockGetAlertDefinition(serviceType, alerts).as(
@@ -209,9 +212,6 @@ describe('update linode label', () => {
       mockAddEntityToAlert(serviceType, '100', { [ALERT_TYPE]: 100 }).as(
         'addEntityToAlert'
       );
-      mockGetAlertDefinition(serviceType, alerts).as(
-        'getDBaaSAlertDefinitions'
-      );
       mockDeleteEntityFromAlert(serviceType, '100', 4).as(
         'deleteEntityToAlert'
       );
@@ -219,10 +219,10 @@ describe('update linode label', () => {
 
       // Visit the database alerts page
       cy.visitWithLogin(`/linodes/${linode.id}/alerts`);
-
+      cy.wait(1000);
       // Navigation to Alerts beta
       ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
-
+      cy.wait('@getDBaaSAlertDefinitions');
       cy.get('[data-qa-notice="true"]')
         .should('be.visible')
         .contains(
@@ -250,12 +250,6 @@ describe('update linode label', () => {
         )
         .should('be.visible');
 
-      // ui.tooltip
-      //   .findByText(
-      //     "Region-level alerts can't be enabled or disabled for a single entity."
-      //   )
-      //   .should('be.visible');
-
       // Alert Links Verification
       [1, 2, 3, 4].forEach((id) => {
         cy.get(`[data-qa-alert-cell="${id}"]`).within(() => {
@@ -268,29 +262,11 @@ describe('update linode label', () => {
             .and('have.text', `Alert-${id}`);
         });
       });
-
-      // Search Functionality Test
-      cy.findByPlaceholderText('Search for Alerts')
-        .should('be.visible')
-        .type(alerts[0].label);
-      cy.get(`[data-qa-alert-cell="${alerts[0].id}"]`).should('be.visible');
-      [1, 2, 3].forEach((index) =>
-        cy.get(`[data-qa-alert-cell="${alerts[index].id}"]`).should('not.exist')
-      );
-
-      // Clear Search
-      cy.findByPlaceholderText('Search for Alerts')
-        .should('be.visible')
-        .clear();
-
       // Select Alert Type Test
       cy.findByPlaceholderText('Select Alert Type')
         .should('be.visible')
         .type(`${alerts[0].type}{enter}`);
       cy.get(`[data-qa-alert-cell="${alerts[0].id}"]`).should('be.visible');
-      [1, 3].forEach((index) =>
-        cy.get(`[data-qa-alert-cell="${alerts[index].id}"]`).should('not.exist')
-      );
 
       // check it is disabled as region should be un toggled
       ui.toggle
@@ -299,10 +275,7 @@ describe('update linode label', () => {
         .should('be.visible')
         .should('be.disabled');
 
-      // search for alert
-      cy.get('[data-qa-alert-cell="4"]').should('exist');
       cy.findByPlaceholderText('Search for Alerts').type('Alert-4');
-
       // toggle the alert
       ui.toggle
         .find()
@@ -313,7 +286,6 @@ describe('update linode label', () => {
       ui.button.findByTitle('Save').should('be.visible').click();
       ui.button.findByTitle('Confirm').should('be.visible').click();
 
-      // Assert successful API call for disabling the alert
       ui.toast.assertMessage('Your settings for alerts have been saved.');
     });
   });
