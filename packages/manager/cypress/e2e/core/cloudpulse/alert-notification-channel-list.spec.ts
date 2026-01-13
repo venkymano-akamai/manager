@@ -84,6 +84,13 @@ const guaranteedChannels: NotificationChannel[] = [
     channel_type: 'webhook',
     alerts: generateAlerts(3),
   }),
+  notificationChannelFactory.build({
+    id: 5,
+    label: 'email-User-3Alerts',
+    type: 'user',
+    channel_type: 'email',
+    alerts: generateAlerts(3),
+  }),
 ];
 
 // Generate remaining channels up to 26
