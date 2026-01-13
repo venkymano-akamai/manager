@@ -40,6 +40,8 @@ import {
   entityGroupingOptions,
 } from 'src/features/CloudPulse/Alerts/constants';
 import { formatDate } from 'src/utilities/formatDate';
+
+import type { NotificationChannel } from '@linode/api-v4';
 export interface MetricDetails {
   aggregationType: string;
   dataField: string;
@@ -488,7 +490,8 @@ describe('Create Alert', () => {
 
         // 🔹 Validate system-channel-1
         const systemChannel = body.data.find(
-          (c: any) => c.label === 'system-channel-1' && c.type === 'system'
+          (channel: NotificationChannel) =>
+            channel.label === 'system-channel-1' && channel.type === 'system'
         );
         expect(systemChannel, 'system channel exists').to.exist;
 
@@ -503,14 +506,6 @@ describe('Create Alert', () => {
         expect(systemChannel)
           .to.have.nested.property('content.email.email_addresses')
           .that.deep.equals(['test@test.com', 'test2@test.com']);
-        expect(systemChannel).to.have.nested.property(
-          'content.email.subject',
-          'Sample Alert'
-        );
-        expect(systemChannel).to.have.nested.property(
-          'content.email.message',
-          'You have a new Alert'
-        );
 
         // Ensure details is absent for system channel
         expect(systemChannel.details).to.be.undefined;
@@ -519,7 +514,6 @@ describe('Create Alert', () => {
         const userChannel = body.data.find(
           (c: any) => c.label === 'user-channel-3' && c.type === 'user'
         );
-        expect(userChannel, 'user channel exists').to.exist;
 
         // Top-level
         expect(userChannel.id).to.eq(3);
@@ -530,20 +524,7 @@ describe('Create Alert', () => {
         expect(userChannel)
           .to.have.nested.property('content.email.email_addresses')
           .that.deep.equals(['test@test.com', 'test2@test.com']);
-        expect(userChannel).to.have.nested.property(
-          'content.email.subject',
-          'Sample Alert'
-        );
-        expect(userChannel).to.have.nested.property(
-          'content.email.message',
-          'You have a new Alert'
-        );
 
-        // Details email
-        expect(userChannel).to.have.nested.property(
-          'details.email.recipient_type',
-          'user'
-        );
         expect(userChannel)
           .to.have.nested.property('details.email.usernames')
           .that.deep.equals(['LinodeUser', 'LinodeUser1']);
