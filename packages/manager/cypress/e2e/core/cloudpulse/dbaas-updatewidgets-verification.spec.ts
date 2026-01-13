@@ -183,7 +183,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
         }
         expect(metric[0].name).to.equal(metricData.name);
         expect(metric[0].aggregate_function).to.equal('min');
-        expect(timeRange).to.have.property('unit', 'days');
+        expect(timeRange).to.have.property('unit', 'hr');
         expect(timeRange).to.have.property('value', 1);
         expect(entity_ids).to.deep.equal([1]);
         const filtersStr = JSON.stringify(filters);
@@ -202,10 +202,7 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
     cy.wait('@fetchPreferences');
     cy.wait(5000);
     // validate the API calls are going with intended payload
-    cy.get('[aria-labelledby="start-date"]', { timeout: 50000 })
-      .parent()
-      .as('startDateInput');
-    cy.get('@startDateInput').click();
+    ui.button.findByTitle('Last day').click();
     cy.get('[data-qa-preset="Last 7 days"]', { timeout: 50000 }).click();
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')

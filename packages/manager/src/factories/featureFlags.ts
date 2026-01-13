@@ -17,16 +17,14 @@ export const productInformationBannerFactory =
   });
 
 export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
-  aclp: { beta: true, enabled: true },
-  objMultiCluster: false,
-  objectStorageGen2: { enabled: false },
+  aclp: { beta: true, enabled: true, showWidgetDimensionFilters: true },
   aclpAlerting: {
     accountAlertLimit: 10,
     accountMetricLimit: 10,
     alertDefinitions: true,
     beta: true,
     recentActivity: false,
-    notificationChannels: false,
+    notificationChannels: true,
     editDisabledStatuses: [
       'in progress',
       'failed',
@@ -34,6 +32,7 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       'enabling',
       'disabling',
     ],
+    systemChannelSupportedServices: ['dbaas'],
   },
   aclpServices: {
     linode: {

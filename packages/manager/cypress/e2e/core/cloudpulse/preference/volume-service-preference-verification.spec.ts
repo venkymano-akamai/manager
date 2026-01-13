@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Volume(blockstorage) Dashboard.
  */
@@ -54,7 +56,11 @@ const getFiltersForMetric = (metricName: string) => {
   return metric.filters.map((filter) => ({
     dimension_label: filter.dimension_label,
     label: filter.dimension_label,
-    values: filter.value ? [filter.value] : undefined,
+    values: filter.value
+      ? Array.isArray(filter.value)
+        ? filter.value
+        : [filter.value]
+      : undefined,
   }));
 };
 
@@ -208,6 +214,11 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+
+    cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
+
+    cy.wait(1000);
+
     cy.scrollTo('top');
   });
 
@@ -246,11 +257,9 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       );
     });
 
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get('button[data-qa-preset="Last day"]')
-      .should('be.visible')
-      .and('have.text', 'Last day');
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
     ui.buttonGroup
       .findButtonByTitle('Cancel')
@@ -281,6 +290,9 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       comparePreferences(responseBody?.aclpPreference, expectedAclpPreference);
       comparePreferences(request.body.aclpPreference, expectedAclpPreference);
     });
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('clears the Region filter and verifies updated user preferences', () => {

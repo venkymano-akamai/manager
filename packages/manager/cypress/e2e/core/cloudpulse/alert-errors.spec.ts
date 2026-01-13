@@ -1,5 +1,6 @@
 import { mockGetAccount } from 'support/intercepts/account';
 import {
+  mockGetAlertChannelsTypeError,
   mockGetAllAlertDefinitions,
   mockGetCloudPulseServices,
   mockUpdateAlertDefinitionsError,
@@ -51,6 +52,9 @@ describe('Alerts Listing Page - Error Handling', () => {
     ).as('getSecondAlertDefinitions');
     cy.visitWithLogin('/alerts/definitions');
     cy.wait('@getAlertDefinitionsList');
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
   });
 
   it('should display correct error messages when disabling or enabling alerts fails', () => {
@@ -93,5 +97,18 @@ describe('Alerts Listing Page - Error Handling', () => {
     // Enable "Alert-2"
     searchAlert('Alert-2');
     toggleAlertStatus('Alert-2', 'Enable', '@getSecondAlertDefinitions');
+  });
+
+  it('shows the correct error message when loading notification channels fails', () => {
+    const errorMessage = 'Error in fetching the notification channels.';
+    mockGetAlertChannelsTypeError(errorMessage).as('getAlertChannelsError');
+
+    cy.visitWithLogin('/alerts/notification-channels');
+
+    cy.wait('@getAlertChannelsError');
+
+    cy.get('[data-qa-error-msg="true"]')
+      .should('be.visible')
+      .and('have.text', errorMessage);
   });
 });

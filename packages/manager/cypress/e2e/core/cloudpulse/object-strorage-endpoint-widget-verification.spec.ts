@@ -34,6 +34,7 @@ import {
 } from 'src/factories';
 import { generateGraphData } from 'src/features/CloudPulse/Utils/CloudPulseWidgetUtils';
 import { formatToolTip } from 'src/features/CloudPulse/Utils/unitConversion';
+import { humanizeLargeData } from 'src/features/CloudPulse/Utils/utils';
 
 import type {
   CloudPulseMetricsResponse,
@@ -55,9 +56,9 @@ import type { Interception } from 'support/cypress-exports';
  */
 const expectedGranularityArray = ['Auto', '1 day', '1 hr'];
 const timeDurationToSelect = 'Last 24 Hours';
-const {metrics, serviceType } = widgetDetails.objectstorage;
-const id=10;
-const dashboardName='object storageby endpoint dashboard';
+const { metrics, serviceType } = widgetDetails.objectstorage;
+const id = 10;
+const dashboardName = 'object storageby endpoint dashboard';
 
 // Build a shared dimension object
 const dimensions = [
@@ -158,15 +159,21 @@ const getWidgetLegendRowValuesFromResponse = (
     groupBy: ['endpoint'],
   });
 
-  // Destructure metrics data from the first legend row
+  // Extract metrics from the first legend row
   const { average, last, max } = graphData.legendRowsData[0].data;
 
-  // Round the metrics values to two decimal places
-  const roundedAverage = formatToolTip(average, unit);
-  const roundedLast = formatToolTip(last, unit);
-  const roundedMax = formatToolTip(max, unit);
-  // Return the rounded values in an object
-  return { average: roundedAverage, last: roundedLast, max: roundedMax };
+  // Helper function to format value based on unit
+  const formatValue = (value: number) =>
+    unit === 'Count'
+      ? `${humanizeLargeData(value)} ${unit}`
+      : formatToolTip(value, unit);
+
+  // Return formatted metrics
+  return {
+    average: formatValue(average),
+    last: formatValue(last),
+    max: formatValue(max),
+  };
 };
 
 describe('Integration Tests for Object Storage Dashboard ', () => {
@@ -301,16 +308,19 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
       .should('be.visible')
       .click();
 
-      cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-      cy.get('@startDateInput').click();
-      cy.get(`[data-qa-preset="Last day"]`).click();
-      cy.get('[data-qa-buttons="apply"]')
-        .should('be.visible')
-        .should('be.enabled')
-        .click();
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
+
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
+
+    cy.get('[data-qa-buttons="apply"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
 
     //  Select a region from the dropdown.
-
     ui.regionSelect.find().clear();
     ui.regionSelect.find().click();
     cy.focused().type(`${mockRegion.label}{enter}`);
@@ -416,7 +426,9 @@ describe('Integration Tests for Object Storage Dashboard ', () => {
       cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
-          cy.get('[data-qa-graph-row-title="endpoint_type-E3-us-sea-3.linodeobjects.com"]')
+          cy.get(
+            '[data-qa-graph-row-title="endpoint_type-E3-us-sea-3.linodeobjects.com"]'
+          )
             .should('be.visible')
             .and('have.text', 'endpoint_type-E3-us-sea-3.linodeobjects.com');
         });

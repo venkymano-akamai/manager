@@ -61,7 +61,33 @@ const alertDetails = alertFactory.build({
 });
 const { rule_criteria } = alertDetails;
 const { rules } = rule_criteria;
-const notificationChannels = notificationChannelFactory.build();
+const notificationChannels = [
+  notificationChannelFactory.build({
+    id: 1,
+    label: 'user-channel-1',
+    type: 'user',
+    channel_type: 'email',
+  }),
+  notificationChannelFactory.build({
+    id: 2,
+    label: 'system-channel-1',
+    type: 'system',
+    channel_type: 'email',
+  }),
+  notificationChannelFactory.build({
+    id: 3,
+    label: 'user-channel-3',
+    type: 'user',
+    channel_type: 'email',
+    details: {
+      email: {
+        recipient_type: 'user',
+        usernames: ['LinodeUser', 'LinodeUser1'],
+      },
+    },
+  }),
+];
+
 const mockProfile = profileFactory.build({
   timezone: 'gmt',
 });
@@ -369,7 +395,7 @@ describe('Integration Tests for Alert Show Detail Page', () => {
         mockGetAlertDefinitions(service_type, id, alertDetails).as(
           'getDBaaSAlertDefinitions'
         );
-        mockGetAlertChannels([notificationChannels]);
+        mockGetAlertChannels(notificationChannels);
         mockGetAllAlertDefinitions([alertDetails]).as(
           'getAlertDefinitionsList'
         );
@@ -468,18 +494,47 @@ describe('Integration Tests for Alert Show Detail Page', () => {
         cy.get('[data-qa-item="consecutive occurrences"]')
           .should('be.visible')
           .should('have.text', 'consecutive occurrences.');
-        // Execute the appropriate validation logic based on the alert's grouping label (e.g., 'Region' or 'Account')
 
         scopeActions[groupLabel]?.();
-        // Validate Notification Channels Section
+        const expectedChannels = [
+          {
+            type: 'Email',
+            label: 'user-channel-1',
+            to: ['test@test.com', 'test2@test.com'],
+          },
+          {
+            type: 'Email',
+            label: 'system-channel-1',
+            to: ['test@test.com', 'test2@test.com'],
+          },
+          {
+            type: 'Email',
+            label: 'user-channel-3',
+            to: ['LinodeUser', 'LinodeUser1'],
+          },
+        ];
+
         cy.get('[data-qa-section="Notification Channels"]').within(() => {
-          cy.findByText('Type:').should('be.visible');
-          cy.findByText('Email').should('be.visible');
-          cy.findByText('Channel:').should('be.visible');
-          cy.findByText('Channel-1').should('be.visible');
-          cy.findByText('To:').should('be.visible');
-          cy.findByText('test@test.com').should('be.visible');
-          cy.findByText('test2@test.com').should('be.visible');
+          expectedChannels.forEach((channel) => {
+            // 1. Find the channel row by its label
+            cy.contains('[data-qa-item="Channel"]', channel.label)
+              .parent() // parent contains Type, Channel, To
+              .within(() => {
+                // 2. Check the type
+                cy.get('[data-qa-item="Type"]').should(
+                  'contain.text',
+                  channel.type
+                );
+
+                // 3. Check the recipients (To)
+                cy.get('[data-qa-item="To"] [data-qa-chip]').then(($chips) => {
+                  const recipients = $chips
+                    .toArray()
+                    .map((chip) => chip.getAttribute('data-qa-chip'));
+                  expect(recipients).to.deep.equal(channel.to);
+                });
+              });
+          });
         });
       });
     });

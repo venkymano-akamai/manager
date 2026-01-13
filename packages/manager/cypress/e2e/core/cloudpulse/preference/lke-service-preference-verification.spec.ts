@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 /**
  * @file Integration Tests for CloudPulse Lke Preferences.
  *
@@ -154,6 +155,11 @@ describe('Integration Tests for Linode Dashboard Preferences', () => {
       });
 
     ui.button.findByTitle('Filters').click();
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
+    cy.wait('@getMetrics');
+    cy.wait(1000);
   });
 
   it('reloads the page and verifies preferences are restored from API', () => {
@@ -194,11 +200,9 @@ describe('Integration Tests for Linode Dashboard Preferences', () => {
         'true'
       );
     });
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get('button[data-qa-preset="Last day"]')
-      .should('be.visible')
-      .and('have.text', 'Last day');
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
     ui.buttonGroup
       .findButtonByTitle('Cancel')

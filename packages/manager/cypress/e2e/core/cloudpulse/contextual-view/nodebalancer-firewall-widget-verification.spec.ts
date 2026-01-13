@@ -31,6 +31,7 @@ import {
 } from 'src/factories';
 import { generateGraphData } from 'src/features/CloudPulse/Utils/CloudPulseWidgetUtils';
 import { formatToolTip } from 'src/features/CloudPulse/Utils/unitConversion';
+import { humanizeLargeData } from 'src/features/CloudPulse/Utils/utils';
 
 import type { CloudPulseMetricsResponse } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
@@ -106,12 +107,17 @@ const getWidgetLegendRowValuesFromResponse = (
   // Destructure metrics data from the first legend row
   const { average, last, max } = graphData.legendRowsData[0].data;
 
-  // Round the metrics values to two decimal places
-  const roundedAverage = formatToolTip(average, unit);
-  const roundedLast = formatToolTip(last, unit);
-  const roundedMax = formatToolTip(max, unit);
-  // Return the rounded values in an object
-  return { average: roundedAverage, last: roundedLast, max: roundedMax };
+  const formatValue = (value: number) =>
+    unit === 'Count'
+      ? `${humanizeLargeData(value)} ${unit}`
+      : formatToolTip(value, unit);
+
+  // Return formatted metrics
+  return {
+    average: formatValue(average),
+    last: formatValue(last),
+    max: formatValue(max),
+  };
 };
 const mockRegion = regionFactory.build({
   capabilities: ['Linodes', 'Cloud Firewall'],
@@ -170,12 +176,12 @@ describe('Integration Tests for Firewall Dashboard', () => {
     cy.visitWithLogin(`/firewalls/${mockFirewalls[0].id}/metrics`);
     cy.wait(['@fetchDashboard', '@fetchMetricDefinitions']);
 
-    // Wait for the services and dashboard API calls to complete before proceeding
+    // Select a time duration from the autocomplete input.
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
 
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-
-    cy.get('[data-qa-preset="Last day"]').click();
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
 
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')

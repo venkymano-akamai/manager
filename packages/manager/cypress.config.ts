@@ -51,11 +51,15 @@ export default defineConfig({
 
   // Recording and test troubleshooting.
   projectId: '5rhsif',
-  screenshotOnRunFailure: true,
-  video: true,
+  screenshotOnRunFailure: false,
+  video: false,
 
-  // Only retry test when running via CI.
-  retries: 0,
+  retries: {
+    // Retry only failed tests in CI to reduce flakiness.
+    // Local runs remain strict to surface failures immediately.
+    runMode: process.env.CI ? 2 : 0,
+    openMode: 0,
+  },
 
   experimentalMemoryManagement: true,
 

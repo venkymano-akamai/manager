@@ -30,6 +30,7 @@ import {
 } from 'src/factories';
 import { generateGraphData } from 'src/features/CloudPulse/Utils/CloudPulseWidgetUtils';
 import { formatToolTip } from 'src/features/CloudPulse/Utils/unitConversion';
+import { humanizeLargeData } from 'src/features/CloudPulse/Utils/utils';
 
 import type { CloudPulseMetricsResponse, Dashboard } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
@@ -66,7 +67,11 @@ const getFiltersForMetric = (metricName: string) => {
   return metric.filters.map((filter) => ({
     dimension_label: filter.dimension_label,
     label: filter.dimension_label,
-    values: filter.value ? [filter.value] : undefined,
+    values: filter.value
+      ? Array.isArray(filter.value)
+        ? filter.value
+        : [filter.value]
+      : undefined,
   }));
 };
 
@@ -178,15 +183,21 @@ const getWidgetLegendRowValuesFromResponse = (
     groupBy: ['entity_id'],
   });
 
-  // Destructure metrics data from the first legend row
+  // Extract metrics from the first legend row
   const { average, last, max } = graphData.legendRowsData[0].data;
 
-  // Round the metrics values to two decimal places
-  const roundedAverage = formatToolTip(average, unit);
-  const roundedLast = formatToolTip(last, unit);
-  const roundedMax = formatToolTip(max, unit);
-  // Return the rounded values in an object
-  return { average: roundedAverage, last: roundedLast, max: roundedMax };
+  // Helper function to format value based on unit
+  const formatValue = (value: number) =>
+    unit === 'Count'
+      ? `${humanizeLargeData(value)} ${unit}`
+      : formatToolTip(value, unit);
+
+  // Return formatted metrics
+  return {
+    average: formatValue(average),
+    last: formatValue(last),
+    max: formatValue(max),
+  };
 };
 const mockVolumesEncrypted = [
   volumeFactory.build({
@@ -265,16 +276,18 @@ describe('Integration Tests for Blockstorage Dashboard ', () => {
       .click();
 
     // Select a time duration from the autocomplete input.
-    cy.get('[aria-labelledby="start-date"]').parent().as('startDateInput');
-    cy.get('@startDateInput').click();
-    cy.get(`[data-qa-preset="Last day"]`).click();
+    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
+    cy.get('@timeRangeTrigger').click();
+
+    // select a different preset but cancel
+    ui.button.findByTitle('Last day').click();
+
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
 
     //  Select a region from the dropdown.
-
     ui.regionSelect.find().clear();
     ui.regionSelect.find().click();
     ui.regionSelect.find().click().type(`${mockRegions[0].label}{enter}`);

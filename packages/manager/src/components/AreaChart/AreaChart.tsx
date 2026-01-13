@@ -137,6 +137,11 @@ export interface AreaChartProps {
   timezone: string;
 
   /**
+   * formatter for the tooltip value
+   */
+  tooltipCustomValueFormatter?: (value: number, unit: string) => string;
+
+  /**
    * unit to be displayed with data
    */
   unit: string;
@@ -191,6 +196,7 @@ export const AreaChart = (props: AreaChartProps) => {
     xAxis,
     xAxisTickCount,
     yAxisProps,
+    tooltipCustomValueFormatter,
   } = props;
 
   const theme = useTheme();
@@ -337,7 +343,9 @@ export const AreaChart = (props: AreaChartProps) => {
                 {item.dataKey}
               </Typography>
               <Typography marginLeft={2} sx={{ font: theme.font.bold }}>
-                {tooltipValueFormatter(item.value, unit)}
+                {tooltipCustomValueFormatter
+                  ? tooltipCustomValueFormatter(item.value, unit)
+                  : tooltipValueFormatter(item.value, unit)}
               </Typography>
             </Box>
           ))}

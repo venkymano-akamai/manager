@@ -18,7 +18,6 @@ import {
   mockGetCloudPulseServiceByType,
   mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
-import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetLinodes } from 'support/intercepts/linodes';
 import { mockGetProfile } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
@@ -30,7 +29,6 @@ import {
   alertFactory,
   cpuRulesFactory,
   dashboardMetricFactory,
-  flagsFactory,
   memoryRulesFactory,
   notificationChannelFactory,
   serviceAlertFactory,
@@ -42,6 +40,8 @@ import {
   entityGroupingOptions,
 } from 'src/features/CloudPulse/Alerts/constants';
 import { formatDate } from 'src/utilities/formatDate';
+
+import type { NotificationChannel } from '@linode/api-v4';
 export interface MetricDetails {
   aggregationType: string;
   dataField: string;
@@ -81,12 +81,34 @@ const mockLinode = linodeFactory.buildList(10).map((linode, index) => ({
   alerts: { user_alerts: [1], system_alerts: [] },
 }));
 
-const notificationChannels = notificationChannelFactory.build({
-  channel_type: 'email',
-  id: 1,
-  label: 'channel-1',
-  type: 'custom',
-});
+const channelLabel = 'user-channel-1';
+
+const notificationChannels = [
+  notificationChannelFactory.build({
+    id: 1,
+    label: 'user-channel-1',
+    type: 'user',
+    channel_type: 'email',
+  }),
+  notificationChannelFactory.build({
+    id: 2,
+    label: 'system-channel-1',
+    type: 'system',
+    channel_type: 'email',
+  }),
+  notificationChannelFactory.build({
+    id: 3,
+    label: 'user-channel-3',
+    type: 'user',
+    channel_type: 'email',
+    details: {
+      email: {
+        recipient_type: 'user',
+        usernames: ['LinodeUser', 'LinodeUser1'],
+      },
+    },
+  }),
+];
 
 const customAlertDefinition = alertDefinitionFactory.build({
   channel_ids: [1],
@@ -196,6 +218,44 @@ const verifyAlertRow = (
       });
     });
 };
+const createNotificationChannel = (channelLabel: string) => {
+  // Add notification channel
+  ui.buttonGroup.find().contains('Add notification channel').click();
+
+  // Select Type = Email
+  ui.autocomplete.findByLabel('Type').should('be.visible').type('Email');
+  ui.autocompletePopper.findByTitle('Email').should('be.visible').click();
+
+  // Open Channel dropdown
+  ui.autocomplete
+    .findByLabel('Channel')
+    .should('be.visible')
+    .as('channelField')
+    .parent()
+    .find('button[title="Open"]')
+    .click();
+
+  // Validate available options
+  cy.get('[data-qa-autocomplete-popper="true"]').within(() => {
+    cy.findByText(channelLabel).should('exist');
+    cy.findByText('system-channel-1').should('not.exist');
+  });
+
+  // Select channel
+  cy.get('@channelField').type(channelLabel);
+  ui.autocompletePopper.findByTitle(channelLabel).should('be.visible').click();
+
+  // Add channel
+  ui.drawer
+    .findByTitle('Add Notification Channel')
+    .should('be.visible')
+    .within(() => {
+      ui.buttonGroup
+        .findButtonByTitle('Add channel')
+        .should('be.visible')
+        .click();
+    });
+};
 
 describe('Create Alert', () => {
   /*
@@ -237,7 +297,35 @@ describe('Create Alert', () => {
         regions: 'us-ord,us-east',
       });
       mockGetCloudPulseServiceByType(serviceType, services);
-      mockAppendFeatureFlags(flagsFactory.build());
+      cy.intercept('GET', '**/sdk/evalx/**/contexts/**', (req) => {
+        req.continue((res) => {
+          res.body ||= {};
+
+          const { aclpAlerting, aclp, aclpServices } = res.body;
+
+          if (aclpAlerting?.value) {
+            aclpAlerting.value.systemChannelSupportedServices = ['dbaas'];
+          }
+
+          if (aclp?.value) {
+            Object.assign(aclp.value, {
+              beta: true,
+              enabled: true,
+              showWidgetDimensionFilters: true,
+            });
+          }
+
+          if (aclpServices?.value) {
+            // 👇 ensure structure exists
+            aclpServices.value.linode ??= {};
+            aclpServices.value.linode.alerts = {
+              beta: true,
+              enabled: true,
+            };
+          }
+        });
+      });
+
       mockGetAccount(mockAccount);
       mockGetProfile(mockProfile);
       mockGetCloudPulseServices([serviceType]);
@@ -245,7 +333,7 @@ describe('Create Alert', () => {
       mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
       mockGetLinodes(mockLinode);
       mockGetAllAlertDefinitions([alerts]).as('getAlertDefinitionsList');
-      mockGetAlertChannels([notificationChannels]);
+      mockGetAlertChannels(notificationChannels).as('getAlertChannels');
       mockCreateAlertDefinition(serviceType, alerts).as(
         'createAlertDefinition'
       );
@@ -396,39 +484,65 @@ describe('Create Alert', () => {
 
       cy.get('[data-qa-trigger-occurrences]').should('be.visible').type('5');
 
+      cy.wait('@getAlertChannels').then(({ response }) => {
+        const body = response?.body;
+        expect(body).to.have.property('data').that.is.an('array');
+
+        // 🔹 Validate system-channel-1
+        const systemChannel = body.data.find(
+          (channel: NotificationChannel) =>
+            channel.label === 'system-channel-1' && channel.type === 'system'
+        );
+        expect(systemChannel, 'system channel exists').to.exist;
+
+        // Top-level
+        expect(systemChannel.id).to.eq(2);
+        expect(systemChannel.status).to.eq('Enabled');
+        expect(systemChannel.type).to.eq('system');
+        expect(systemChannel.created_by).to.eq('user1');
+        expect(systemChannel.updated_by).to.eq('user1');
+
+        // Content email
+        expect(systemChannel)
+          .to.have.nested.property('content.email.email_addresses')
+          .that.deep.equals(['test@test.com', 'test2@test.com']);
+
+        // Ensure details is absent for system channel
+        expect(systemChannel.details).to.be.undefined;
+
+        // 🔹 Validate user-channel-3 (with details)
+        const userChannel = body.data.find(
+          (c: any) => c.label === 'user-channel-3' && c.type === 'user'
+        );
+
+        // Top-level
+        expect(userChannel.id).to.eq(3);
+        expect(userChannel.status).to.eq('Enabled');
+        expect(userChannel.created_by).to.eq('user1');
+
+        // Content email
+        expect(userChannel)
+          .to.have.nested.property('content.email.email_addresses')
+          .that.deep.equals(['test@test.com', 'test2@test.com']);
+
+        expect(userChannel)
+          .to.have.nested.property('details.email.usernames')
+          .that.deep.equals(['LinodeUser', 'LinodeUser1']);
+      });
+
       // Add notification channel
-      ui.buttonGroup.find().contains('Add notification channel').click();
+      createNotificationChannel(channelLabel);
 
-      ui.autocomplete.findByLabel('Type').should('be.visible').type('Email');
-      ui.autocompletePopper.findByTitle('Email').should('be.visible').click();
+      // Add notification channel-2
+      createNotificationChannel('user-channel-3');
 
-      ui.autocomplete
-        .findByLabel('Channel')
-        .should('be.visible')
-        .type('channel-1');
-
-      ui.autocompletePopper
-        .findByTitle('channel-1')
-        .should('be.visible')
-        .click();
-
-      // Add channel
-      ui.drawer
-        .findByTitle('Add Notification Channel')
-        .should('be.visible')
-        .within(() => {
-          ui.buttonGroup
-            .findButtonByTitle('Add channel')
-            .should('be.visible')
-            .click();
-        });
-      // Click on submit button
+      // Submit
       ui.buttonGroup
         .find()
         .find('button')
         .filter('[type="submit"]')
         .should('be.visible')
-        .should('be.enabled')
+        .and('be.enabled')
         .click();
 
       cy.wait('@createAlertDefinition').then(({ request, response }) => {
@@ -446,7 +560,6 @@ describe('Create Alert', () => {
         } = customAlertDefinition;
 
         const { created_by, status, updated } = alerts;
-
         // Validate top-level properties
         expect(request.body.label).to.equal(label);
         expect(request.body.description).to.equal(description);
@@ -503,7 +616,6 @@ describe('Create Alert', () => {
         expect(triggerConditions.criteria_condition).to.equal(
           criteria_condition
         );
-
         // Verify URL redirection and toast notification
         cy.url().should('endWith', '/alerts/definitions');
         ui.toast.assertMessage(CREATE_ALERT_SUCCESS_MESSAGE);

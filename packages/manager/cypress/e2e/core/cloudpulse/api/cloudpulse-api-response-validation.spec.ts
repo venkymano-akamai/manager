@@ -11,7 +11,7 @@ describe('CloudPulse API - Dashboards and Metric Definitions', () => {
 
   // Map of environments to their corresponding Cloud URLs
   const apiRootToCloudMap: Record<string, string> = {
-    'https://api.linode.com/v4': 'https://api.linode.com/api',
+    'https://api.linode.com/v4': 'https://api.linode.com',
     'https://api.dev.linode.com/v4': 'https://api.dev.linode.com',
     'https://api.staging.linode.com/v4': 'https://api.staging.linode.com',
     'https://api.devcloud.linode.com/v4': 'https://api.devcloud.linode.com',
