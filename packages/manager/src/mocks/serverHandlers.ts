@@ -3692,7 +3692,7 @@ export const handlers = [
             recipient_type: 'user',
           },
         },
-        alerts: {alert_count: 0}
+        alerts: { alert_count: 0 },
       })
     );
     notificationChannels.push(
@@ -3701,7 +3701,7 @@ export const handlers = [
         label: 'System channel',
         updated: '2023-11-05T04:00:00',
         updated_by: 'system',
-        created_by: 'sytem',
+        created_by: 'system',
         type: 'system',
       })
     );
@@ -3751,7 +3751,7 @@ export const handlers = [
           label: 'System channel',
           updated: '2023-11-05T04:00:00',
           updated_by: 'system',
-          created_by: 'sytem',
+          created_by: 'system',
           type: 'system',
           channel_type: 'email',
           content: {
