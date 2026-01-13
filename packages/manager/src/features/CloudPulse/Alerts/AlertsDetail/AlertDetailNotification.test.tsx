@@ -41,7 +41,6 @@ describe('AlertDetailNotification component tests', () => {
     const { getAllByText, getByText } = renderWithTheme(
       <AlertDetailNotification channelIds={[1, 2, 3]} />
     );
-
     expect(getByText(notificationChannel)).toBeInTheDocument();
     expect(getAllByText('Email').length).toBe(notificationChannels.length);
     expect(getAllByText('1@test.com').length).toBe(notificationChannels.length);
