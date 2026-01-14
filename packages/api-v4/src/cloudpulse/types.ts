@@ -282,14 +282,13 @@ export interface Alert {
   updated_by: string;
 }
 
-interface NotificationChannelAlerts {
-  id: number;
-  label: string;
+interface NotificationChannelAlertInfo {
+  alert_count: number;
   type: 'alerts-definitions';
   url: string;
 }
 interface NotificationChannelBase {
-  alerts: NotificationChannelAlerts[];
+  alerts: NotificationChannelAlertInfo;
   channel_type: ChannelType;
   created: string;
   created_by: string;
@@ -301,7 +300,7 @@ interface NotificationChannelBase {
   updated_by: string;
 }
 
-interface NotificationChannelEmail extends NotificationChannelBase {
+export interface NotificationChannelEmail extends NotificationChannelBase {
   channel_type: AlertNotificationEmail;
   content?: {
     email: {
@@ -497,4 +496,11 @@ export interface DeleteChannelPayload {
    * The ID of the channel to delete.
    */
   channelId: number;
+}
+export interface NotificationChannelAlerts {
+  id: number;
+  label: string;
+  service_type: CloudPulseServiceType;
+  type: 'alerts-definitions';
+  url: string;
 }
