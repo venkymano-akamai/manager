@@ -49,13 +49,11 @@ interface VerifyChannelSortingParams {
 }
 
 // Helper to generate alerts
-const generateAlerts = (numAlerts: number) =>
-  Array.from({ length: numAlerts }).map((_, idx) => ({
-    id: idx + 1,
-    label: `Alert-${idx + 1}`,
-    type: 'alerts-definitions' as const, // <-- tell TS this is literal
-    url: 'Sample',
-  }));
+const generateAlerts = (numAlerts: number) => ({
+  alert_count: numAlerts,
+  type: 'alerts-definitions' as const,
+  url: '/monitor/alert-channels/alerts',
+});
 
 const guaranteedChannels: NotificationChannel[] = [
   notificationChannelFactory.build({
@@ -84,6 +82,13 @@ const guaranteedChannels: NotificationChannel[] = [
     label: 'Webhook-User-3Alerts',
     type: 'user',
     channel_type: 'webhook',
+    alerts: generateAlerts(3),
+  }),
+  notificationChannelFactory.build({
+    id: 5,
+    label: 'email-User-3Alerts',
+    type: 'user',
+    channel_type: 'email',
     alerts: generateAlerts(3),
   }),
 ];
@@ -137,8 +142,8 @@ const findChannel = (
       // Special handling for zero alerts:
       // alerts may be undefined or an empty array
       (alertsLength === 0
-        ? !ch.alerts || ch.alerts.length === 0
-        : ch.alerts?.length === alertsLength)
+        ? !ch.alerts || ch.alerts.alert_count === 0
+        : ch.alerts?.alert_count === alertsLength)
   );
 
   // Fail fast if no matching channel is found
@@ -212,7 +217,7 @@ const VerifyChannelSortingParams = (
   );
 
   const order = sortOrderMap[sortOrder];
-  const orderBy = LabelLookup[columnLabel];
+  const orderBy = encodeURIComponent(LabelLookup[columnLabel]);
 
   cy.url().should(
     'endWith',
@@ -280,16 +285,7 @@ describe('Notification Channel Listing Page', () => {
         }
 
         // Alerts list
-        expect(item.alerts.length).to.eq(expected.alerts.length);
-
-        item.alerts.forEach((alert, aIndex) => {
-          const expAlert = expected.alerts[aIndex];
-
-          expect(alert.id).to.eq(expAlert.id);
-          expect(alert.label).to.eq(expAlert.label);
-          expect(alert.type).to.eq(expAlert.type);
-          expect(alert.url).to.eq(expAlert.url);
-        });
+        expect(item.alerts.alert_count).to.eq(expected.alerts.alert_count);
       });
     });
   });
@@ -319,7 +315,9 @@ describe('Notification Channel Listing Page', () => {
 
           cy.wrap($row).within(() => {
             cy.findByText(expected.label).should('be.visible');
-            cy.findByText(String(expected.alerts.length)).should('be.visible');
+            cy.findByText(String(expected.alerts.alert_count)).should(
+              'be.visible'
+            );
             cy.findByText(channelTypeMap[expected.channel_type]).should(
               'be.visible'
             );
@@ -351,11 +349,11 @@ describe('Notification Channel Listing Page', () => {
       {
         column: 'Alerts',
         ascending: [...notificationChannels]
-          .sort((a, b) => a.alerts.length - b.alerts.length)
+          .sort((a, b) => a.alerts.alert_count - b.alerts.alert_count)
           .map((ch) => ch.id),
 
         descending: [...notificationChannels]
-          .sort((a, b) => b.alerts.length - a.alerts.length)
+          .sort((a, b) => b.alerts.alert_count - a.alerts.alert_count)
           .map((ch) => ch.id),
       },
 
@@ -535,7 +533,7 @@ describe('Notification Channel Listing Page', () => {
       created_by: 'user',
       updated_by: 'user',
       channel_type: 'email',
-      alerts: [],
+      alerts: generateAlerts(0),
     });
     const userChannelLabel = notificationChannel.label;
     mockGetAlertChannels([notificationChannel]);
