@@ -105,6 +105,7 @@ import {
   networkLoadBalancerNodeFactory,
   nodeBalancerTypeFactory,
   nodePoolFactory,
+  notificationChannelAlertsFactory,
   notificationChannelFactory,
   notificationFactory,
   objectStorageBucketFactoryGen2,
@@ -652,7 +653,7 @@ const marketplace = [
     const marketplaceProduct = marketplaceProductFactory.buildList(10);
     return HttpResponse.json(makeResourcePage([...marketplaceProduct]));
   }),
-  http.get('*/v4beta/marketplace/products/:productId', () => {
+  http.get('*/v4beta/marketplace/products/:productId/details', () => {
     const marketplaceProductDetail = marketplaceProductFactory.build({
       details: {
         overview: {
@@ -3670,10 +3671,18 @@ export const handlers = [
     return HttpResponse.json({});
   }),
   http.get('*/monitor/alert-channels', () => {
-    const notificationChannels = notificationChannelFactory.buildList(3);
+    const notificationChannels = notificationChannelFactory.buildList(3, {
+      details: {
+        email: {
+          recipient_type: 'user',
+          usernames: ['user1', 'user2'],
+        },
+      },
+    });
     notificationChannels.push(
       notificationChannelFactory.build({
-        label: 'Email test channel',
+        id: 5,
+        label: 'No-alerts-channel',
         updated: '2023-11-05T04:00:00',
         updated_by: 'user3',
         created_by: 'admin',
@@ -3683,20 +3692,101 @@ export const handlers = [
             recipient_type: 'user',
           },
         },
-        alerts: [],
+        alerts: { alert_count: 0 },
       })
     );
     notificationChannels.push(
       notificationChannelFactory.build({
+        id: 4,
         label: 'System channel',
         updated: '2023-11-05T04:00:00',
-        updated_by: 'user5',
-        created_by: 'admin',
+        updated_by: 'system',
+        created_by: 'system',
         type: 'system',
       })
     );
-    notificationChannels.push(...notificationChannelFactory.buildList(3));
+    notificationChannels.push(
+      ...notificationChannelFactory.buildList(3, { details: undefined })
+    );
     return HttpResponse.json(makeResourcePage(notificationChannels));
+  }),
+  http.get('*/monitor/alert-channels/:id', ({ params }) => {
+    if (params.id === '5') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({
+          id: 5,
+          alerts: {
+            alert_count: 0,
+          },
+          label: 'No-alerts-channel',
+          updated: '2023-11-05T04:00:00',
+          updated_by: 'user3',
+          created_by: 'admin',
+          type: 'user',
+          channel_type: 'email',
+          details: {
+            email: {
+              recipient_type: 'user',
+              usernames: [
+                'user1',
+                'user2',
+                'user3',
+                'user4',
+                'user5',
+                'user6',
+                'user7',
+                'user8',
+                'user9',
+                'user10',
+              ],
+            },
+          },
+        })
+      );
+    }
+    if (params.id === '4') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({
+          id: 4,
+          label: 'System channel',
+          updated: '2023-11-05T04:00:00',
+          updated_by: 'system',
+          created_by: 'system',
+          type: 'system',
+          channel_type: 'email',
+          content: {
+            email: {
+              email_addresses: ['Users-with-read-write-access-to-resources'],
+            },
+          },
+        })
+      );
+    }
+    if (params.id !== 'undefined') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({
+          id: Number(params.id),
+          details: {
+            email: { recipient_type: 'user', usernames: ['user1', 'user2'] },
+          },
+        })
+      );
+    }
+    return HttpResponse.json({}, { status: 404 });
+  }),
+  http.get('*/monitor/alert-channels/:id/alerts', ({ params }) => {
+    if (params.id === 'undefined') {
+      return HttpResponse.json({}, { status: 404 });
+    }
+    if (params.id === '5') {
+      return HttpResponse.json(makeResourcePage([]));
+    }
+    const alerts = notificationChannelAlertsFactory.buildList(3);
+    const dbaasalerts = notificationChannelAlertsFactory.buildList(2, {
+      service_type: 'dbaas',
+    });
+    alerts.push(...dbaasalerts);
+    return HttpResponse.json(makeResourcePage(alerts));
   }),
   http.get('*/monitor/services', () => {
     const response: ServiceTypesList = {
