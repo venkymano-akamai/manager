@@ -238,12 +238,16 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
     }, {});
   }, [services]);
 
-  const { order, orderBy, handleOrderChange, sortedData } = useOrderV2({
-    data: alerts?.map((alert) => ({
+  const alertsWithServiceLabels = React.useMemo(() => {
+    return alerts.map((alert) => ({
       ...alert,
       service_type_label:
         serviceValueToLabelMap[alert.service_type] || alert.service_type,
-    })),
+    }));
+  }, [alerts, serviceValueToLabelMap]);
+
+  const { order, orderBy, handleOrderChange, sortedData } = useOrderV2({
+    data: alertsWithServiceLabels,
     initialRoute: {
       defaultOrder: {
         order: 'asc',
