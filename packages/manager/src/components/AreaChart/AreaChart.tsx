@@ -371,7 +371,9 @@ export const AreaChart = (props: AreaChartProps) => {
               wrapperStyle={legendStyles}
             />
           )}
-          <ReferenceArea strokeOpacity={0.3} x1={x1} x2={x2} />
+          {x1 !== null && x2 !== null && (
+            <ReferenceArea strokeOpacity={0.3} x1={x1} x2={x2} />
+          )}
           {areas.map(({ color, dataKey }) => (
             <Area
               connectNulls={connectNulls}
