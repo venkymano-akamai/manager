@@ -154,10 +154,15 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             buttonType="primary"
             name="Reset Zoom"
             onClick={zoomOut}
-            sx={{
+            sx={(theme) => ({
               height: '26px',
-              width: '124px',
-            }}
+              width: '84px',
+              paddingTop: theme.spacingFunction(4),
+              paddingBottom: theme.spacingFunction(4),
+              paddingRight: theme.spacingFunction(8),
+              paddingLeft: theme.spacingFunction(8),
+              fontSize: theme.tokens.font.FontSize.Xxxs,
+            })}
             variant="contained"
           >
             Reset Zoom
