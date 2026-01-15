@@ -41,8 +41,13 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   // to reduce the x-axis tick count for small screen
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const onMouseDown = (e: CategoricalChartState) => {
-    if (e && e.activePayload && e.activePayload !== null) {
+  const onMouseDown = React.useCallback((e: CategoricalChartState) => {
+    if (
+      e &&
+      e.activePayload &&
+      e.activePayload !== null &&
+      e.activePayload.length > 0
+    ) {
       const refAreaLeft =
         e.activePayload[e.activePayload.length - 1].payload.timestamp;
       setZoom((prev) => ({
@@ -51,20 +56,29 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
         refAreaRight: undefined,
       }));
     }
-  };
+  }, []);
 
-  const onMouseMove = (e: CategoricalChartState) => {
-    if (zoom.refAreaLeft && e && e.activePayload && e.activePayload !== null) {
-      const refAreaRight =
-        e.activePayload[e.activePayload.length - 1].payload.timestamp;
-      setZoom((prev) => ({
-        ...prev,
-        refAreaRight,
-      }));
-    }
-  };
+  const onMouseMove = React.useCallback(
+    (e: CategoricalChartState) => {
+      if (
+        zoom.refAreaLeft &&
+        e &&
+        e.activePayload &&
+        e.activePayload !== null &&
+        e.activePayload.length > 0
+      ) {
+        const refAreaRight =
+          e.activePayload[e.activePayload.length - 1].payload.timestamp;
+        setZoom((prev) => ({
+          ...prev,
+          refAreaRight,
+        }));
+      }
+    },
+    [zoom.refAreaLeft]
+  );
 
-  const onMouseUp = () => {
+  const onMouseUp = React.useCallback(() => {
     if (
       !zoom.refAreaLeft ||
       !zoom.refAreaRight ||
@@ -90,12 +104,11 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
       refAreaLeft: undefined,
       refAreaRight: undefined,
     }));
-  };
+  }, [zoom.refAreaLeft, zoom.refAreaRight]);
 
-  const zoomOut = () => {
+  const zoomOut = React.useCallback(() => {
     setZoom(initialZoomState);
-  };
-
+  }, []);
   const zoomedData = React.useMemo(() => {
     if (zoom.left === 'dataMin' || zoom.right === 'dataMax') {
       return data;
