@@ -230,18 +230,6 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
     }
   };
 
-  const { order, orderBy, handleOrderChange, sortedData } = useOrderV2({
-    data: alerts,
-    initialRoute: {
-      defaultOrder: {
-        order: 'asc',
-        orderBy: 'service_type',
-      },
-      from: '/alerts/definitions',
-    },
-    preferenceKey: 'alerts-landing',
-  });
-
   // Create a map for service value-to-label mapping to optimize sorting
   const serviceValueToLabelMap = React.useMemo(() => {
     return services.reduce<Record<string, string>>((map, { label, value }) => {
@@ -250,24 +238,25 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
     }, {});
   }, [services]);
 
-  // Custom sorting for service_type to sort by display labels
-  const customSortedData = React.useMemo(() => {
-    if (!sortedData || orderBy !== 'service_type') {
-      return sortedData;
-    }
-
-    return [...sortedData].sort((a: Alert, b: Alert) => {
-      const serviceA = serviceValueToLabelMap[a.service_type] || a.service_type;
-      const serviceB = serviceValueToLabelMap[b.service_type] || b.service_type;
-
-      const result = serviceA.localeCompare(serviceB);
-      return order === 'asc' ? result : -result;
-    });
-  }, [sortedData, orderBy, order, serviceValueToLabelMap]);
+  const { order, orderBy, handleOrderChange, sortedData } = useOrderV2({
+    data: alerts?.map((alert) => ({
+      ...alert,
+      service_type_label:
+        serviceValueToLabelMap[alert.service_type] || alert.service_type,
+    })),
+    initialRoute: {
+      defaultOrder: {
+        order: 'asc',
+        orderBy: 'service_type_label',
+      },
+      from: '/alerts/definitions',
+    },
+    preferenceKey: 'alerts-landing',
+  });
 
   return (
     <>
-      <Paginate data={customSortedData ?? []}>
+      <Paginate data={sortedData ?? []}>
         {({
           count,
           data: paginatedAndOrderedAlerts,
@@ -283,7 +272,6 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
               handlePageChange,
               order
             );
-
           return (
             <>
               <GridLegacy sx={{ marginTop: 2 }}>
