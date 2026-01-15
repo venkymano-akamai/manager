@@ -9,10 +9,7 @@ import { useFlags } from 'src/hooks/useFlags';
 import { humanizeLargeData } from '../../Utils/utils';
 
 import type { CategoricalChartState } from 'recharts/types/chart/types';
-import type {
-  AreaChartProps,
-  DataSet,
-} from 'src/components/AreaChart/AreaChart';
+import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
 
 export interface CloudPulseLineGraph extends AreaChartProps {
   error?: string;
@@ -20,12 +17,10 @@ export interface CloudPulseLineGraph extends AreaChartProps {
 }
 
 type ZoomState = {
-  bottom: 'auto' | number;
   left: 'dataMin' | number;
   refAreaLeft?: number;
   refAreaRight?: number;
   right: 'dataMax' | number;
-  top: 'auto' | number;
 };
 
 const initialZoomState: ZoomState = {
@@ -33,8 +28,6 @@ const initialZoomState: ZoomState = {
   right: 'dataMax',
   refAreaLeft: undefined,
   refAreaRight: undefined,
-  top: 'auto',
-  bottom: 'auto',
 };
 
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
