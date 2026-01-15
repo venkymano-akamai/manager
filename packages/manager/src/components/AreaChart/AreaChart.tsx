@@ -183,16 +183,10 @@ export interface AreaChartProps {
    */
   xAxisTickCount?: number;
 
-  /** externally controlled x-axis domain */
-  xDomain?: ['dataMin' | number, 'dataMax' | number];
-
   /**
    * y-axis properties
    */
   yAxisProps?: YAxisProps;
-
-  /** externally controlled y-axis domain */
-  yDomain?: [number, number];
 
   /** zoom callbacks passed from client */
   zoomCallbacks?: ZoomCallbacks;
@@ -225,6 +219,8 @@ export const AreaChart = (props: AreaChartProps) => {
   } = props;
 
   const theme = useTheme();
+  const { onMouseDown, onMouseMove, onMouseUp } = zoomCallbacks || {};
+  const { x1, x2 } = referenceArea || {};
 
   const [activeSeries, setActiveSeries] = React.useState<Array<string>>([]);
   const handleLegendClick = (dataKey: string) => {
@@ -311,9 +307,9 @@ export const AreaChart = (props: AreaChartProps) => {
           aria-label={ariaLabel}
           data={data}
           margin={margin}
-          onMouseDown={zoomCallbacks?.onMouseDown}
-          onMouseMove={zoomCallbacks?.onMouseMove}
-          onMouseUp={zoomCallbacks?.onMouseUp}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
         >
           <CartesianGrid
             stroke={theme.color.grey7}
@@ -375,13 +371,7 @@ export const AreaChart = (props: AreaChartProps) => {
               wrapperStyle={legendStyles}
             />
           )}
-          {referenceArea && (
-            <ReferenceArea
-              strokeOpacity={0.3}
-              x1={referenceArea.x1}
-              x2={referenceArea.x2}
-            />
-          )}
+          <ReferenceArea strokeOpacity={0.3} x1={x1} x2={x2} />
           {areas.map(({ color, dataKey }) => (
             <Area
               connectNulls={connectNulls}

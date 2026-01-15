@@ -1,6 +1,6 @@
 import { Button, CircleProgress, ErrorState, Typography } from '@linode/ui';
 import { roundTo } from '@linode/utilities';
-import { Box, Grid, useMediaQuery, useTheme } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import * as React from 'react';
 
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
@@ -149,9 +149,10 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           <ErrorState errorText={error} />
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Box display="flex" flexDirection="column" gap={3}>
           <Button
             buttonType="primary"
+            disabled={zoom.left === 'dataMin' && zoom.right === 'dataMax'}
             name="Reset Zoom"
             onClick={zoomOut}
             sx={(theme) => ({
@@ -208,7 +209,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
               onMouseUp,
             }}
           />
-        </Grid>
+        </Box>
       )}
       {zoomedData.length === 0 && (
         <Box
