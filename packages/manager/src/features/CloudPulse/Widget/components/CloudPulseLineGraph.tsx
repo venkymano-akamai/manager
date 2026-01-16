@@ -159,6 +159,10 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
               width: '84px',
               padding: theme.spacingFunction(4, 8),
               fontSize: theme.tokens.font.FontSize.Xxxs,
+              display:
+                zoom.left === 'dataMin' && zoom.right === 'dataMax'
+                  ? 'none'
+                  : 'flex',
             })}
             variant="contained"
           >
