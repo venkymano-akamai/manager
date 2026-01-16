@@ -51,7 +51,6 @@ export const NotificationChannelRecipients = React.memo(
             <DisplayAlertDetailChips
               label="Recipients"
               mergeChips={false}
-              valueGridColumns={2}
               values={recipients}
             />
           ) : null}
