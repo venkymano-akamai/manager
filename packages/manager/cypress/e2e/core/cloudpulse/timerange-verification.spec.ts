@@ -202,7 +202,7 @@ const formatToUtcDateTime = (dateStr: string): string => {
  * - Are these tests adding any value? They fail frequently and the failures do
  *   not get reviewed. They do not seem to be protecting us from regressions.
  */
-describe.skip('Integration tests for verifying Cloudpulse custom and preset configurations', () => {
+describe('Integration tests for verifying Cloudpulse custom and preset configurations', () => {
   /*
    * - Mocks user preferences for dashboard details (dashboard, engine, resources, and region).
    * - Simulates loading test data without real API calls.
