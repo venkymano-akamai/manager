@@ -38,7 +38,7 @@ export const computeZoomedInData = ({
   const rightZoom =
     zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right;
   return data.filter(
-    (d) => d.timestamp >= leftZoom && d.timestamp <= rightZoom
+    ({ timestamp }) => timestamp >= leftZoom && timestamp <= rightZoom
   );
 };
 

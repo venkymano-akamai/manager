@@ -89,8 +89,8 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
         ? [zoom.refAreaLeft, zoom.refAreaRight]
         : [zoom.refAreaRight, zoom.refAreaLeft];
 
-    setZoom((z) => ({
-      ...z,
+    setZoom((zoom) => ({
+      ...zoom,
       left: from,
       right: to,
       refAreaLeft: undefined,

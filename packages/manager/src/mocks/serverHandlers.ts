@@ -653,7 +653,7 @@ const marketplace = [
     const marketplaceProduct = marketplaceProductFactory.buildList(10);
     return HttpResponse.json(makeResourcePage([...marketplaceProduct]));
   }),
-  http.get('*/v4beta/marketplace/products/:productId', () => {
+  http.get('*/v4beta/marketplace/products/:productId/details', () => {
     const marketplaceProductDetail = marketplaceProductFactory.build({
       details: {
         overview: {
@@ -3825,7 +3825,7 @@ export const handlers = [
           }),
         }),
         serviceTypesFactory.build({
-          label: 'Block Storage',
+          label: 'Volumes',
           service_type: 'blockstorage',
           regions: 'us-iad,us-east',
           alert: serviceAlertFactory.build({
@@ -3854,7 +3854,7 @@ export const handlers = [
       nodebalancer: 'NodeBalancers',
       firewall: 'Firewalls',
       objectstorage: 'Object Storage',
-      blockstorage: 'Block Storage',
+      blockstorage: 'Volumes',
       lke: 'LKE',
     };
     const serviceTypeScopeMap: Record<
