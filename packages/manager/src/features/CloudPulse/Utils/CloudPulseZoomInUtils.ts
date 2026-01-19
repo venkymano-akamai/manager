@@ -1,0 +1,123 @@
+import type { ZoomState } from '../Widget/components/CloudPulseLineGraph';
+import type { Metrics } from '@linode/utilities';
+import type { DataSet } from 'src/components/AreaChart/AreaChart';
+import type { MetricsDisplayRow } from 'src/components/LineGraph/MetricsDisplay';
+
+interface ZoomStateData {
+  /**
+   * The data to be processed according
+   */
+  data: DataSet[];
+  /**
+   * The legend rows to be processed according to zoom state
+   */
+  legendRows?: MetricsDisplayRow[];
+  /**
+   * The current zoom state
+   */
+  zoom: ZoomState;
+}
+
+/**
+ * @param data The data for which to compute the zoomed-in subset
+ * @param zoom The current zoom state
+ * @returns The subset of data that falls within the zoomed-in range
+ */
+export const computeZoomedInData = ({
+  data,
+  zoom,
+}: ZoomStateData): DataSet[] => {
+  if (!data || data.length === 0) {
+    return data;
+  }
+  if (zoom.left === 'dataMin' && zoom.right === 'dataMax') {
+    return data;
+  }
+
+  const leftZoom = zoom.left === 'dataMin' ? data[0].timestamp : zoom.left;
+  const rightZoom =
+    zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right;
+  return data.filter(
+    (d) => d.timestamp >= leftZoom && d.timestamp <= rightZoom
+  );
+};
+
+/**
+ * @param zoom The current zoom state
+ * @param data The data to compute legend rows from
+ * @param legendRows The original legend rows
+ * @returns The computed legend rows based on the zoomed-in data
+ */
+export const computeLegendRowsBasedOnData = ({
+  data,
+  zoom,
+  legendRows,
+}: ZoomStateData) => {
+  if (!legendRows) return undefined;
+
+  // If not zoomed, return original rows unchanged
+  if (zoom.left === 'dataMin' && zoom.right === 'dataMax') {
+    return legendRows;
+  }
+
+  const leftZoom = zoom.left === 'dataMin' ? data[0].timestamp : zoom.left;
+  const rightZoom =
+    zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right;
+
+  return legendRows.map((legendRow) => {
+    const values: number[] = [];
+
+    for (const dataRow of data) {
+      const value = dataRow[legendRow.legendTitle];
+      if (
+        typeof value === 'number' &&
+        !Number.isNaN(value) &&
+        dataRow.timestamp >= leftZoom &&
+        dataRow.timestamp <= rightZoom
+      ) {
+        values.push(value);
+      }
+    }
+
+    return {
+      ...legendRow,
+      data: getMetricsFromDimensionData(values),
+    };
+  });
+};
+
+/**
+ * @param data The data of the current dimension
+ * @returns The max, avg, last, length, total from the data
+ */
+export const getMetricsFromDimensionData = (data: number[]): Metrics => {
+  // If there's no data
+  if (!data || !Array.isArray(data) || data.length < 1) {
+    return { average: 0, last: 0, length: 0, max: 0, total: 0 };
+  }
+
+  let max = 0;
+  let sum = 0;
+
+  // The data is large, so we get everything we need in one iteration
+  data.forEach((value): void => {
+    if (!value || isNaN(value)) {
+      return;
+    }
+
+    if (value > max) {
+      max = value;
+    }
+
+    sum += value;
+  });
+
+  const length = data.length;
+
+  // Safeguard against dividing by 0
+  const average = length > 0 ? sum / length : 0;
+
+  const last = data[length - 1] || 0;
+
+  return { average, last, length, max, total: sum };
+};

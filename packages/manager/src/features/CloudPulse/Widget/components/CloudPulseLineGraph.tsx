@@ -6,17 +6,25 @@ import * as React from 'react';
 import { AreaChart } from 'src/components/AreaChart/AreaChart';
 import { useFlags } from 'src/hooks/useFlags';
 
+import {
+  computeLegendRowsBasedOnData,
+  computeZoomedInData,
+} from '../../Utils/CloudPulseZoomInUtils';
 import { humanizeLargeData } from '../../Utils/utils';
 
 import type { CategoricalChartState } from 'recharts/types/chart/types';
-import type { AreaChartProps } from 'src/components/AreaChart/AreaChart';
+import type {
+  AreaChartProps,
+  DataSet,
+} from 'src/components/AreaChart/AreaChart';
 
 export interface CloudPulseLineGraph extends AreaChartProps {
+  data: DataSet[];
   error?: string;
   loading?: boolean;
 }
 
-type ZoomState = {
+export type ZoomState = {
   left: 'dataMin' | number;
   refAreaLeft?: number;
   refAreaRight?: number;
@@ -31,7 +39,7 @@ const initialZoomState: ZoomState = {
 };
 
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
-  const { error, loading, unit, data, ...rest } = props;
+  const { error, loading, unit, data, legendRows, ...rest } = props;
   const [zoom, setZoom] = React.useState<ZoomState>(initialZoomState);
 
   const flags = useFlags();
@@ -42,41 +50,25 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   const onMouseDown = React.useCallback((e: CategoricalChartState) => {
-    if (
-      e &&
-      e.activePayload &&
-      e.activePayload !== null &&
-      e.activePayload.length > 0
-    ) {
-      const refAreaLeft =
-        e.activePayload[e.activePayload.length - 1].payload.timestamp;
-      setZoom((prev) => ({
-        ...prev,
-        refAreaLeft,
-        refAreaRight: undefined,
-      }));
-    }
+    const payload = e?.activePayload?.[0]?.payload;
+    if (!payload?.timestamp) return;
+    const refAreaLeft = payload.timestamp;
+    setZoom((prev) => ({
+      ...prev,
+      refAreaLeft,
+      refAreaRight: undefined,
+    }));
   }, []);
 
-  const onMouseMove = React.useCallback(
-    (e: CategoricalChartState) => {
-      if (
-        zoom.refAreaLeft &&
-        e &&
-        e.activePayload &&
-        e.activePayload !== null &&
-        e.activePayload.length > 0
-      ) {
-        const refAreaRight =
-          e.activePayload[e.activePayload.length - 1].payload.timestamp;
-        setZoom((prev) => ({
-          ...prev,
-          refAreaRight,
-        }));
-      }
-    },
-    [zoom.refAreaLeft]
-  );
+  const onMouseMove = React.useCallback((e: CategoricalChartState) => {
+    const payload = e?.activePayload?.[0]?.payload;
+    if (!payload?.timestamp) return;
+    const refAreaRight = payload.timestamp;
+    setZoom((prev) => ({
+      ...prev,
+      refAreaRight,
+    }));
+  }, []);
 
   const onMouseUp = React.useCallback(() => {
     if (
@@ -109,20 +101,14 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   const zoomOut = React.useCallback(() => {
     setZoom(initialZoomState);
   }, []);
+
   const zoomedData = React.useMemo(() => {
-    if (zoom.left === 'dataMin' || zoom.right === 'dataMax') {
-      return data;
-    }
+    return computeZoomedInData({ data, zoom });
+  }, [data, zoom]);
 
-    const zoomData = [];
-
-    for (const d of data) {
-      if (d.timestamp >= zoom.left && d.timestamp <= zoom.right) {
-        zoomData.push(d);
-      }
-    }
-    return zoomData;
-  }, [data, zoom.left, zoom.right]);
+  const zoomedLegendRows = React.useMemo(() => {
+    return computeLegendRowsBasedOnData({ zoom, data: zoomedData, legendRows });
+  }, [legendRows, zoom, zoomedData]);
 
   if (loading) {
     return <CircleProgress sx={{ minHeight: '380px' }} />;
@@ -152,7 +138,6 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
         <Box display="flex" flexDirection="column" gap={3}>
           <Button
             buttonType="primary"
-            disabled={zoom.left === 'dataMin' && zoom.right === 'dataMax'}
             onClick={zoomOut}
             sx={(theme) => ({
               height: '26px',
@@ -173,6 +158,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             data={zoomedData}
             fillOpacity={0.5}
             legendHeight="165px"
+            legendRows={zoomedLegendRows}
             margin={{
               bottom: 0,
               left: -15,
