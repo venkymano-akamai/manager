@@ -651,39 +651,30 @@ export const mockCreateAlertChannelSuccess = (
 };
 
 /**
- * Mocks client error while creating alert channel (400).
+ * Mocks error responses when creating alert channels.
  * Intercepts POST requests to create alert channels and returns an error response.
- * @param {string} field - The field that caused the error.
- * @param {string} reason - The reason for the error.
+ *
+ * @param {Object | string} errorPayload - Either an object with field and reason properties for validation errors,
+ *                                         or a string error message for server errors.
  * @param {number} statusCode - The HTTP status code for the error response (default is 400).
  * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
+ *
+ * @example
+ * // Mock a validation error (400)
+ * mockCreateAlertChannelError({ field: 'name', reason: 'Required' }, 400);
+ *
+ * @example
+ * // Mock a server error (500)
+ * mockCreateAlertChannelError('Internal server error', 500);
  */
-export const mockCreateAlertChannelBadRequest = (
-  field: string,
-  reason: string,
+export const mockCreateAlertChannelError = (
+  errorPayload: string | { field: string; reason: string },
   statusCode: number = 400
 ): Cypress.Chainable<null> => {
   return cy.intercept(
     'POST',
     apiMatcher('/monitor/alert-channels'),
-    makeErrorResponse({ field, reason }, statusCode)
-  );
-};
-
-/**
- * Mocks server error while creating alert channel (500).
- * Intercepts POST requests to create alert channels and returns an error response.
- *
- * @param {string} errorMessage - The error message to return in the response.
- * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
- */
-export const mockCreateAlertChannelServerError = (
-  errorMessage: string = 'Internal server error'
-): Cypress.Chainable<null> => {
-  return cy.intercept(
-    'POST',
-    apiMatcher('/monitor/alert-channels'),
-    makeErrorResponse(errorMessage, 500)
+    makeErrorResponse(errorPayload, statusCode)
   );
 };
 /**

@@ -4,7 +4,7 @@
 import { profileFactory } from '@linode/utilities';
 import { mockGetAccount, mockGetUsers } from 'support/intercepts/account';
 import {
-  mockCreateAlertChannelServerError,
+  mockCreateAlertChannelError,
   mockCreateAlertChannelSuccess,
   mockGetAlertChannels,
 } from 'support/intercepts/cloudpulse';
@@ -192,7 +192,7 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
       });
   });
   it('should display server related message when API returns an error during channel creation', () => {
-    mockCreateAlertChannelServerError('500 Internal Server Error').as(
+    mockCreateAlertChannelError('Internal Server Error', 500).as(
       'createAlertChannelServerError'
     );
 
@@ -227,6 +227,6 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
       .should('eq', 500);
 
     // Verify toast message
-    ui.toast.assertMessage('500 Internal Server Error');
+    ui.toast.assertMessage('Internal Server Error');
   });
 });

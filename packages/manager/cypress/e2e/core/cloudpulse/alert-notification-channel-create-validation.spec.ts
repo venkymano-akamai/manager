@@ -4,8 +4,7 @@
 import { profileFactory } from '@linode/utilities';
 import { mockGetAccount, mockGetUsers } from 'support/intercepts/account';
 import {
-  mockCreateAlertChannelBadRequest,
-  mockCreateAlertChannelServerError,
+  mockCreateAlertChannelError,
   mockCreateAlertChannelSuccess,
   mockGetAlertChannels,
   mockGetAlertChannelsTypeError,
@@ -63,7 +62,7 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
    * Verifies the payload sent to the API on channel creation
    * Verifies users call fails gracefully
    * Verifies launchdarkly feature flag behavior for select 10 max recipients
-   * Verifies notification listing is fails create notification channel button is not disabled
+   * Verifies create notification button is not disabled when notification listing fails
    * Verifies the name field does not accept special characters and max length of 100 characters
    */
   beforeEach(() => {
@@ -192,7 +191,7 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
   });
 
   it('should display server related message when API returns an error during channel creation', () => {
-    mockCreateAlertChannelServerError('500 Internal Server Error').as(
+    mockCreateAlertChannelError('Internal Server Error', 500).as(
       'createAlertChannelServerError'
     );
 
@@ -227,13 +226,12 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
       .should('eq', 500);
 
     // Verify toast message
-    ui.toast.assertMessage('500 Internal Server Error');
+    ui.toast.assertMessage('Internal Server Error');
   });
 
   it('should display field-specific error message when API returns field error during channel creation', () => {
-    mockCreateAlertChannelBadRequest(
-      'name',
-      'Duplicate labels not allowed',
+    mockCreateAlertChannelError(
+      { field: 'name', reason: 'Duplicate labels not allowed' },
       400
     ).as('createAlertChannelServerFieldError');
 
@@ -523,8 +521,6 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
     ui.autocompletePopper.findByTitle('Deselect All').click();
     // Verify no users are selected
     cy.get('[data-tag-index]').should('have.length', 0);
-
-    // Should we apply nd verify nd also should we check for the case of select all being not present wen more than 10?
   });
 
   it('should verify refresh functionality resets the notification channels type', () => {
@@ -737,5 +733,53 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
       .findByTitle('Create Channel')
       .should('be.visible')
       .and('be.enabled');
+  });
+  it('should verify the name field does not accept special characters and max length of 100 characters', () => {
+    cy.visitWithLogin('/alerts/notification-channels');
+
+    // Wait for initial data load
+    // cy.wait('@getAlertNotificationChannels');
+    // Open Create Channel drawer
+    ui.button
+      .findByTitle('Create Channel')
+      .should('be.visible')
+      .and('be.enabled')
+      .click();
+
+    // Select notification type
+    ui.autocomplete.findByLabel('channel-type-select').click();
+    ui.autocompletePopper.findByTitle('Email').click();
+
+    // Test special characters
+    cy.findByLabelText('Name').clear();
+    cy.findByLabelText('Name').type('Test@Channel#Name!');
+
+    cy.get('body').click(0, 0);
+
+    checkErrorMessage(
+      'Name',
+      'Name cannot contain special characters: * # & + : < > ? @ % { } \\ /.'
+    );
+
+    // Test special characters
+    cy.findByLabelText('Name').clear();
+    cy.findByLabelText('Name').type('[]');
+
+    cy.get('body').click(0, 0);
+
+    checkErrorMessage(
+      'Name',
+      'Name cannot start or end with a special character.'
+    );
+
+    // Test max length
+    cy.findByLabelText('Name').clear();
+    cy.findByLabelText('Name').type(
+      'ThisChannelNameIsWayTooLongAndExceedsThanHundredCharacterLimitSetThisChannelNameIsWayTooLongAndExceedsThanHundredCharacterLimitSet'
+    );
+
+    cy.get('body').click(0, 0);
+
+    checkErrorMessage('Name', 'Name must be 100 characters or less.');
   });
 });
