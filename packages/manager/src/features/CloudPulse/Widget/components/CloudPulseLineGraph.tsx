@@ -11,8 +11,8 @@ import {
   computeZoomedInData,
 } from '../../Utils/CloudPulseZoomInUtils';
 import { humanizeLargeData } from '../../Utils/utils';
+import { useZoomController } from './useZoomController';
 
-import type { CategoricalChartState } from 'recharts/types/chart/types';
 import type {
   AreaChartProps,
   DataSet,
@@ -22,26 +22,21 @@ export interface CloudPulseLineGraph extends AreaChartProps {
   data: DataSet[];
   error?: string;
   loading?: boolean;
+  onZoomChange?: (isZoomed: boolean) => void;
+  zoomResetKey: string;
 }
 
-export type ZoomState = {
-  left: 'dataMin' | number;
-  refAreaLeft?: number;
-  refAreaRight?: number;
-  right: 'dataMax' | number;
-};
-
-const initialZoomState: ZoomState = {
-  left: 'dataMin',
-  right: 'dataMax',
-  refAreaLeft: undefined,
-  refAreaRight: undefined,
-};
-
 export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
-  const { error, loading, unit, data, legendRows, ...rest } = props;
-  const [zoom, setZoom] = React.useState<ZoomState>(initialZoomState);
-
+  const {
+    error,
+    loading,
+    unit,
+    data,
+    legendRows,
+    zoomResetKey,
+    onZoomChange,
+    ...rest
+  } = props;
   const flags = useFlags();
 
   const theme = useTheme();
@@ -49,66 +44,36 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   // to reduce the x-axis tick count for small screen
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const onMouseDown = React.useCallback((e: CategoricalChartState) => {
-    const payload = e?.activePayload?.[0]?.payload;
-    if (!payload?.timestamp) return;
-    const refAreaLeft = payload.timestamp;
-    setZoom((prev) => ({
-      ...prev,
-      refAreaLeft,
-      refAreaRight: undefined,
-    }));
-  }, []);
+  const isHumanizableUnit =
+    flags.aclp?.humanizableUnits?.some(
+      (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
+    ) ?? false;
 
-  const onMouseMove = React.useCallback((e: CategoricalChartState) => {
-    const payload = e?.activePayload?.[0]?.payload;
-    if (!payload?.timestamp) return;
-    const refAreaRight = payload.timestamp;
-    setZoom((prev) => ({
-      ...prev,
-      refAreaRight,
-    }));
-  }, []);
-
-  const onMouseUp = React.useCallback(() => {
-    if (
-      !zoom.refAreaLeft ||
-      !zoom.refAreaRight ||
-      zoom.refAreaLeft === zoom.refAreaRight
-    ) {
-      setZoom((z) => ({
-        ...z,
-        refAreaLeft: undefined,
-        refAreaRight: undefined,
-      }));
-      return;
-    }
-
-    const [from, to] =
-      zoom.refAreaLeft < zoom.refAreaRight
-        ? [zoom.refAreaLeft, zoom.refAreaRight]
-        : [zoom.refAreaRight, zoom.refAreaLeft];
-
-    setZoom((zoom) => ({
-      ...zoom,
-      left: from,
-      right: to,
-      refAreaLeft: undefined,
-      refAreaRight: undefined,
-    }));
-  }, [zoom.refAreaLeft, zoom.refAreaRight]);
-
-  const zoomOut = React.useCallback(() => {
-    setZoom(initialZoomState);
-  }, []);
+  const { zoom, isZoomed, zoomOut, zoomCallbacks } = useZoomController({
+    data,
+    loading,
+    zoomResetKey,
+  });
 
   const zoomedData = React.useMemo(() => {
     return computeZoomedInData({ data, zoom });
   }, [data, zoom]);
 
   const zoomedLegendRows = React.useMemo(() => {
-    return computeLegendRowsBasedOnData({ zoom, data: zoomedData, legendRows });
-  }, [legendRows, zoom, zoomedData]);
+    return computeLegendRowsBasedOnData({
+      zoom,
+      data: zoomedData,
+      legendRows,
+      unit: props.unit,
+      isHumanizableUnit,
+    });
+  }, [isHumanizableUnit, legendRows, props.unit, zoom, zoomedData]);
+
+  React.useEffect(() => {
+    if (onZoomChange) {
+      onZoomChange(isZoomed);
+    }
+  }, [isZoomed, onZoomChange]);
 
   if (loading) {
     return <CircleProgress sx={{ minHeight: '380px' }} />;
@@ -119,10 +84,6 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
   }
 
   const noDataMessage = 'No data to display';
-  const isHumanizableUnit =
-    flags.aclp?.humanizableUnits?.some(
-      (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
-    ) ?? false;
   return (
     <Box
       sx={{
@@ -144,10 +105,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
               width: '84px',
               padding: theme.spacingFunction(4, 8),
               fontSize: theme.tokens.font.FontSize.Xxxs,
-              display:
-                zoom.left === 'dataMin' && zoom.right === 'dataMax'
-                  ? 'none'
-                  : 'flex',
+              display: !isZoomed ? 'none' : 'flex',
             })}
             variant="contained"
           >
@@ -189,11 +147,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
                     tickFormat: (value: number) => `${roundTo(value, 3)}`,
                   }
             }
-            zoomCallbacks={{
-              onMouseDown,
-              onMouseMove,
-              onMouseUp,
-            }}
+            zoomCallbacks={zoomCallbacks}
           />
         </Box>
       )}

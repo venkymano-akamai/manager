@@ -1,5 +1,8 @@
-import type { ZoomState } from '../Widget/components/CloudPulseLineGraph';
-import type { Metrics } from '@linode/utilities';
+import { type Metrics, roundTo } from '@linode/utilities';
+
+import { humanizeLargeData } from './utils';
+
+import type { ZoomState } from '../Widget/components/useZoomController';
 import type { DataSet } from 'src/components/AreaChart/AreaChart';
 import type { MetricsDisplayRow } from 'src/components/LineGraph/MetricsDisplay';
 
@@ -9,9 +12,19 @@ interface ZoomStateData {
    */
   data: DataSet[];
   /**
+   * Indicates if the unit is humanizable
+   */
+  isHumanizableUnit?: boolean;
+  /**
    * The legend rows to be processed according to zoom state
    */
   legendRows?: MetricsDisplayRow[];
+
+  /**
+   * The unit of measurement for formatting
+   */
+  unit?: string;
+
   /**
    * The current zoom state
    */
@@ -52,6 +65,8 @@ export const computeLegendRowsBasedOnData = ({
   data,
   zoom,
   legendRows,
+  unit,
+  isHumanizableUnit,
 }: ZoomStateData) => {
   if (!legendRows) return undefined;
 
@@ -81,6 +96,9 @@ export const computeLegendRowsBasedOnData = ({
 
     return {
       ...legendRow,
+      format: isHumanizableUnit
+        ? (value: number) => `${humanizeLargeData(value)} ${unit}`
+        : (value: number) => `${roundTo(value)} ${unit}`,
       data: getMetricsFromDimensionData(values),
     };
   });

@@ -7,7 +7,7 @@ import {
 } from './CloudPulseZoomInUtils';
 import { formatToolTip } from './unitConversion';
 
-import type { ZoomState } from '../Widget/components/CloudPulseLineGraph';
+import type { ZoomState } from '../Widget/components/useZoomController';
 import type { DataSet } from 'src/components/AreaChart/AreaChart';
 import type { MetricsDisplayRow } from 'src/components/LineGraph/MetricsDisplay';
 
