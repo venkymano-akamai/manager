@@ -36,7 +36,7 @@ describe('useZoomController', () => {
     });
     expect(result.current.zoom.refAreaLeft).toBeUndefined();
   });
-  it('should update refAreaRight on mouse move after drag threshold', () => {
+  it('should update refAreaRight on mouse move', () => {
     const { result } = renderHook(() => useZoomController('test-key'));
 
     act(() => {
@@ -53,20 +53,6 @@ describe('useZoomController', () => {
 
     expect(result.current.zoom.refAreaLeft).toBe(1000);
     expect(result.current.zoom.refAreaRight).toBe(2000);
-  });
-  it('should not update on mouse move below drag threshold', () => {
-    const { result } = renderHook(() => useZoomController('test-key'));
-    act(() => {
-      result.current.zoomCallbacks.onMouseDown({
-        activePayload: [{ payload: { timestamp: 1000 } }],
-      });
-    });
-    act(() => {
-      result.current.zoomCallbacks.onMouseMove({
-        activePayload: [{ payload: { timestamp: 1100 } }],
-      });
-    });
-    expect(result.current.zoom.refAreaLeft).toBeUndefined();
   });
   it('should apply zoom on mouse up with valid drag', () => {
     const { result } = renderHook(() => useZoomController('test-key'));

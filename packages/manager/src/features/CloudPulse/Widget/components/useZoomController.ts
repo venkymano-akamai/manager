@@ -16,8 +16,6 @@ const initialZoomState: ZoomState = {
   refAreaRight: undefined,
 };
 
-const DRAG_THRESHOLD_MS = 500;
-
 export const useZoomController = (zoomResetKey: string) => {
   const [zoom, setZoom] = React.useState<ZoomState>(initialZoomState);
 
@@ -38,9 +36,6 @@ export const useZoomController = (zoomResetKey: string) => {
 
     const payload = e?.activePayload?.[0]?.payload;
     if (!payload?.timestamp) return;
-
-    const delta = Math.abs(payload.timestamp - dragStart);
-    if (delta < DRAG_THRESHOLD_MS) return;
 
     if (!isDraggingRef.current) {
       isDraggingRef.current = true;
