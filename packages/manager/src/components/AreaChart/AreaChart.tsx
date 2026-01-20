@@ -50,14 +50,29 @@ export interface AreaProps {
 }
 
 interface ZoomCallbacks {
+  /**
+   * callback fired on mouse down event on the chart
+   */
   onMouseDown?: CategoricalChartFunc;
+  /**
+   * callback fired on mouse move event on the chart
+   */
   onMouseMove?: CategoricalChartFunc;
+  /**
+   * callback fired on mouse up event on the chart
+   */
   onMouseUp?: CategoricalChartFunc;
 }
 
 interface ReferenceAreaProps {
-  x1: number;
-  x2: number;
+  /**
+   * ending x-axis value of the reference area
+   */
+  referenceEnd: number;
+  /**
+   * starting x-axis value of the reference area
+   */
+  referenceStart: number;
 }
 
 interface XAxisProps {
@@ -131,7 +146,9 @@ export interface AreaChartProps {
    */
   margin?: { bottom: number; left: number; right: number; top: number };
 
-  /** show reference area highlight */
+  /**
+   * reference area to be highlighted on the chart
+   */
   referenceArea?: null | ReferenceAreaProps;
 
   /**
@@ -188,7 +205,9 @@ export interface AreaChartProps {
    */
   yAxisProps?: YAxisProps;
 
-  /** zoom callbacks passed from client */
+  /**
+   * zoom callbacks (onMouseDown, onMouseMove, onMouseUp)
+   */
   zoomCallbacks?: ZoomCallbacks;
 }
 
@@ -220,7 +239,7 @@ export const AreaChart = (props: AreaChartProps) => {
 
   const theme = useTheme();
   const { onMouseDown, onMouseMove, onMouseUp } = zoomCallbacks || {};
-  const { x1, x2 } = referenceArea || {};
+  const { referenceStart, referenceEnd } = referenceArea || {};
 
   const [activeSeries, setActiveSeries] = React.useState<Array<string>>([]);
   const handleLegendClick = (dataKey: string) => {
@@ -371,8 +390,12 @@ export const AreaChart = (props: AreaChartProps) => {
               wrapperStyle={legendStyles}
             />
           )}
-          {x1 !== null && x2 !== null && (
-            <ReferenceArea strokeOpacity={0.3} x1={x1} x2={x2} />
+          {referenceStart !== null && referenceEnd !== null && (
+            <ReferenceArea
+              strokeOpacity={0.3}
+              x1={referenceStart}
+              x2={referenceEnd}
+            />
           )}
           {areas.map(({ color, dataKey }) => (
             <Area

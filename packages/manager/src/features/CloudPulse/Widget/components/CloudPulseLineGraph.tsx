@@ -122,7 +122,10 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
             }}
             referenceArea={
               zoom.refAreaLeft && zoom.refAreaRight
-                ? { x1: zoom.refAreaLeft, x2: zoom.refAreaRight }
+                ? {
+                    referenceStart: zoom.refAreaLeft,
+                    referenceEnd: zoom.refAreaRight,
+                  }
                 : null
             }
             tooltipCustomValueFormatter={
