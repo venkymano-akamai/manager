@@ -49,11 +49,8 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
       (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
     ) ?? false;
 
-  const { zoom, isZoomed, zoomOut, zoomCallbacks } = useZoomController({
-    data,
-    loading,
-    zoomResetKey,
-  });
+  const { zoom, isZoomed, zoomOut, zoomCallbacks } =
+    useZoomController(zoomResetKey);
 
   const zoomedData = React.useMemo(() => {
     return computeZoomedInData({ data, zoom });
