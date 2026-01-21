@@ -433,7 +433,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
       label: widget.label,
       timeStamp,
       url: flags.aclpReadEndpoint!,
-      shouldRefresh: duration.preset === 'custom' || isZoomed,
+      shouldRefresh: !isZoomed,
     }
   );
   let data: DataSet[] = [];
@@ -600,9 +600,9 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
             xAxis={{ tickFormat, tickGap: 60 }}
             zoomResetKey={
               props.duration.preset ??
-              props.duration.start +
-                props.duration.end +
-                props.duration.timeZone
+              `${props.duration.start},
+                ${props.duration.end},
+                ${props.duration.timeZone}`
             }
           />
         </Paper>

@@ -119,7 +119,7 @@ export const getMetricsFromDimensionData = (data: number[]): Metrics => {
 
   // The data is large, so we get everything we need in one iteration
   data.forEach((value): void => {
-    if (!value || isNaN(value)) {
+    if (value === null || value === undefined || Number.isNaN(value)) {
       return;
     }
 

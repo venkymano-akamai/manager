@@ -40,7 +40,7 @@ export const useCloudPulseMetricsQuery = (
     ),
 
     enabled: !!obj.isFlags && !obj.isFiltersLoading,
-    refetchInterval: obj.shouldRefresh ? false : 20000,
+    refetchInterval: obj.shouldRefresh ? 120000 : false,
     refetchOnWindowFocus: false,
     retry: 0,
   });
