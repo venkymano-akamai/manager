@@ -58,10 +58,10 @@ export const getNotificationChannelActionsList = (
  * @param aclpServices Feature flag configuration for service types
  * @returns Filtered list of service items that have alerts enabled
  */
-export function getServicesList(
+export const getServicesList = (
   serviceTypeList: ServiceTypesList | undefined,
   aclpServices: Partial<AclpServices> | undefined
-): Item<string, CloudPulseServiceType>[] {
+): Item<string, CloudPulseServiceType>[] => {
   if (!serviceTypeList || !serviceTypeList.data.length) {
     return [];
   }
@@ -83,11 +83,11 @@ export function getServicesList(
  * @param searchText Search text to filter alerts by label
  * @returns Filtered list of alerts
  */
-export function getAssociatedAlerts(
+export const getAssociatedAlerts = (
   channelAlerts: NotificationChannelAlerts[] | undefined,
   serviceFilters: Item<string, CloudPulseServiceType>[],
   searchText: string
-): NotificationChannelAlerts[] {
+): NotificationChannelAlerts[] => {
   if (!channelAlerts) {
     return [];
   }

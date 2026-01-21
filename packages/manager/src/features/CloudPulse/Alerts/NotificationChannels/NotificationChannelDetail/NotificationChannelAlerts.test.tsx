@@ -5,7 +5,11 @@ import { notificationChannelAlertsFactory } from 'src/factories/cloudpulse/chann
 import { serviceTypesFactory } from 'src/factories/cloudpulse/services';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
+import { getAssociatedAlerts } from '../Utils/utils';
 import { NotificationChannelAlerts } from './NotificationChannelAlerts';
+
+import type { Item } from '../../constants';
+import type { CloudPulseServiceType } from '@linode/api-v4';
 
 const queryMocks = vi.hoisted(() => ({
   useAllAlertsByNotificationChannelIdQuery: vi.fn(),
@@ -159,5 +163,155 @@ describe('NotificationChannelAlerts', () => {
     alerts.forEach((alert) => {
       expect(screen.getByText(alert.label)).toBeVisible();
     });
+  });
+
+  it('should filter alerts by search text', () => {
+    const alerts = [
+      notificationChannelAlertsFactory.build({
+        label: 'Database Alert',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'CPU Alert',
+        service_type: 'linode',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Memory Alert',
+        service_type: 'linode',
+      }),
+    ];
+
+    // Use the utility function to filter alerts by search text
+    const filteredAlerts = getAssociatedAlerts(alerts, [], 'cpu');
+
+    const alertsWithServiceLabel = filteredAlerts.map((alert) => ({
+      ...alert,
+      service_type_label: mockServiceTypes.find(
+        (st) => st.service_type === alert.service_type
+      )?.label,
+    }));
+
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
+      data: alerts,
+      error: undefined,
+      isError: false,
+      isLoading: false,
+    });
+
+    hookMocks.useOrderV2.mockReturnValue({
+      handleOrderChange: vi.fn(),
+      order: 'asc',
+      orderBy: 'label',
+      sortedData: alertsWithServiceLabel,
+    });
+
+    renderWithTheme(<NotificationChannelAlerts channelId={1} />);
+
+    expect(screen.getByText('CPU Alert')).toBeVisible();
+    expect(screen.queryByText('Database Alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('Memory Alert')).not.toBeInTheDocument();
+  });
+
+  it('should filter alerts by service type', () => {
+    const alerts = [
+      notificationChannelAlertsFactory.build({
+        label: 'Database Alert 1',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Database Alert 2',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Linode Alert',
+        service_type: 'linode',
+      }),
+    ];
+
+    const serviceFilters: Item<string, CloudPulseServiceType>[] = [
+      { label: 'Databases', value: 'dbaas' },
+    ];
+    const filteredAlerts = getAssociatedAlerts(alerts, serviceFilters, '');
+
+    const alertsWithServiceLabel = filteredAlerts.map((alert) => ({
+      ...alert,
+      service_type_label: mockServiceTypes.find(
+        (st) => st.service_type === alert.service_type
+      )?.label,
+    }));
+
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
+      data: alerts,
+      error: undefined,
+      isError: false,
+      isLoading: false,
+    });
+
+    hookMocks.useOrderV2.mockReturnValue({
+      handleOrderChange: vi.fn(),
+      order: 'asc',
+      orderBy: 'label',
+      sortedData: alertsWithServiceLabel,
+    });
+
+    renderWithTheme(<NotificationChannelAlerts channelId={1} />);
+
+    expect(screen.getByText('Database Alert 1')).toBeVisible();
+    expect(screen.getByText('Database Alert 2')).toBeVisible();
+    expect(screen.queryByText('Linode Alert')).not.toBeInTheDocument();
+  });
+
+  it('should filter alerts by both search text and service type', () => {
+    const alerts = [
+      notificationChannelAlertsFactory.build({
+        label: 'Database CPU Alert',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Database Memory Alert',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Linode CPU Alert',
+        service_type: 'linode',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Linode Memory Alert',
+        service_type: 'linode',
+      }),
+    ];
+
+    const serviceFilters: Item<string, CloudPulseServiceType>[] = [
+      { label: 'Databases', value: 'dbaas' },
+    ];
+    const filteredAlerts = getAssociatedAlerts(alerts, serviceFilters, 'cpu');
+
+    const alertsWithServiceLabel = filteredAlerts.map((alert) => ({
+      ...alert,
+      service_type_label: mockServiceTypes.find(
+        (st) => st.service_type === alert.service_type
+      )?.label,
+    }));
+
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
+      data: alerts,
+      error: undefined,
+      isError: false,
+      isLoading: false,
+    });
+
+    hookMocks.useOrderV2.mockReturnValue({
+      handleOrderChange: vi.fn(),
+      order: 'asc',
+      orderBy: 'label',
+      sortedData: alertsWithServiceLabel,
+    });
+
+    renderWithTheme(<NotificationChannelAlerts channelId={1} />);
+
+    expect(screen.getByText('Database CPU Alert')).toBeVisible();
+    expect(screen.queryByText('Database Memory Alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('Linode CPU Alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('Linode Memory Alert')).not.toBeInTheDocument();
   });
 });
