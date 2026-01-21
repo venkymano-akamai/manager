@@ -8,7 +8,7 @@ import type { MetricsDisplayRow } from 'src/components/LineGraph/MetricsDisplay'
 
 interface ZoomStateData {
   /**
-   * The data to be processed according
+   * The data to be processed according to the zoom state
    */
   data: DataSet[];
   /**

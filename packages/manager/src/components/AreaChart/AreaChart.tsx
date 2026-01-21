@@ -390,7 +390,7 @@ export const AreaChart = (props: AreaChartProps) => {
               wrapperStyle={legendStyles}
             />
           )}
-          {referenceStart !== null && referenceEnd !== null && (
+          {referenceStart && referenceEnd && (
             <ReferenceArea
               strokeOpacity={0.3}
               x1={referenceStart}
