@@ -600,9 +600,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
             xAxis={{ tickFormat, tickGap: 60 }}
             zoomResetKey={
               props.duration.preset ??
-              `${props.duration.start},
-                ${props.duration.end},
-                ${props.duration.timeZone}`
+              `${props.duration.start},${props.duration.end},${props.duration.timeZone}`
             }
           />
         </Paper>
