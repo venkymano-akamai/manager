@@ -26,6 +26,7 @@ import { useCloudPulseServiceTypes } from 'src/queries/cloudpulse/services';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
 import { getServiceTypeLabel } from '../../Utils/utils';
+import { getAssociatedAlerts, getServicesList } from '../Utils/utils';
 import { NotificationChannelAlertsTableRow } from './NotificationChannelAlertsTableRow';
 
 import type { Item } from '../../constants';
@@ -41,6 +42,18 @@ interface NotificationChannelAlertsProps {
    */
   channelId: number;
 }
+
+const handleSortClick = (
+  orderBy: string,
+  handleOrderChange: (orderBy: string, order?: Order) => void,
+  handlePageChange: (page: number) => void,
+  order?: Order
+) => {
+  if (order) {
+    handleOrderChange(orderBy, order);
+    handlePageChange(1);
+  }
+};
 
 export const NotificationChannelAlerts = React.memo(
   (props: NotificationChannelAlertsProps) => {
@@ -63,65 +76,24 @@ export const NotificationChannelAlerts = React.memo(
       Item<string, CloudPulseServiceType>[]
     >([]);
 
-    const getServicesList = React.useMemo((): Item<
-      string,
-      CloudPulseServiceType
-    >[] => {
-      return serviceTypeList && serviceTypeList.data.length > 0
-        ? serviceTypeList.data
-            .filter(
-              (service) =>
-                aclpServices?.[service.service_type]?.alerts?.enabled ?? false
-            )
-            .map((service) => ({
-              label: service.label,
-              value: service.service_type,
-            }))
-        : [];
-    }, [aclpServices, serviceTypeList]);
+    const servicesList = React.useMemo(
+      () => getServicesList(serviceTypeList, aclpServices),
+      [aclpServices, serviceTypeList]
+    );
 
-    const getAssociatedAlerts = React.useMemo(() => {
-      if (!channelAlerts) {
-        return [];
-      }
-      let filteredAlerts = channelAlerts;
-
-      if (serviceFilters && serviceFilters.length > 0) {
-        filteredAlerts = filteredAlerts.filter((alert) =>
-          serviceFilters.some(
-            (serviceFilter) => serviceFilter.value === alert.service_type
-          )
-        );
-      }
-
-      if (searchText) {
-        filteredAlerts = filteredAlerts.filter(({ label }) =>
-          label.toLowerCase().includes(searchText.toLowerCase())
-        );
-      }
-      return filteredAlerts;
-    }, [channelAlerts, searchText, serviceFilters]);
-
-    const handleSortClick = (
-      orderBy: string,
-      handleOrderChange: (orderBy: string, order?: Order) => void,
-      handlePageChange: (page: number) => void,
-      order?: Order
-    ) => {
-      if (order) {
-        handleOrderChange(orderBy, order);
-        handlePageChange(1);
-      }
-    };
+    const associatedAlerts = React.useMemo(
+      () => getAssociatedAlerts(channelAlerts, serviceFilters, searchText),
+      [channelAlerts, searchText, serviceFilters]
+    );
 
     const associatedAlertsWithServiceLabels = React.useMemo(() => {
-      return getAssociatedAlerts.map((alert) => ({
+      return associatedAlerts.map((alert) => ({
         ...alert,
         service_type_label: alert.service_type
           ? getServiceTypeLabel(alert.service_type, serviceTypeList)
           : undefined,
       }));
-    }, [getAssociatedAlerts, serviceTypeList]);
+    }, [associatedAlerts, serviceTypeList]);
 
     const { handleOrderChange, order, orderBy, sortedData } =
       useOrderV2<NotificationChannelAlertsType>({
@@ -187,7 +159,7 @@ export const NotificationChannelAlerts = React.memo(
             onChange={(_, selected) => {
               setServiceFilters(selected);
             }}
-            options={getServicesList}
+            options={servicesList}
             placeholder={serviceFilters.length > 0 ? '' : 'Select a Service'}
             renderOption={(props, option, { selected }) => {
               const { key, ...rest } = props;
