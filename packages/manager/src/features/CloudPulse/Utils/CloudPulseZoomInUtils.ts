@@ -47,11 +47,11 @@ export const computeZoomedInData = ({
     return data;
   }
 
-  const leftZoom = zoom.left === 'dataMin' ? data[0].timestamp : zoom.left;
-  const rightZoom =
-    zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right;
+  const minZoom = zoom.left === 'dataMin' ? data[0].timestamp : zoom.left; // left zoom boundary
+  const maxZoom =
+    zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right; // right zoom boundary
   return data.filter(
-    ({ timestamp }) => timestamp >= leftZoom && timestamp <= rightZoom
+    ({ timestamp }) => timestamp >= minZoom && timestamp <= maxZoom
   );
 };
 
@@ -75,9 +75,9 @@ export const computeLegendRowsBasedOnData = ({
     return legendRows;
   }
 
-  const leftZoom = zoom.left === 'dataMin' ? data[0].timestamp : zoom.left;
-  const rightZoom =
-    zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right;
+  const minZoom = zoom.left === 'dataMin' ? data[0].timestamp : zoom.left; // left zoom boundary
+  const maxZoom =
+    zoom.right === 'dataMax' ? data[data.length - 1].timestamp : zoom.right; // right zoom boundary
 
   return legendRows.map((legendRow) => {
     const values: number[] = [];
@@ -87,8 +87,8 @@ export const computeLegendRowsBasedOnData = ({
       if (
         typeof value === 'number' &&
         !Number.isNaN(value) &&
-        dataRow.timestamp >= leftZoom &&
-        dataRow.timestamp <= rightZoom
+        dataRow.timestamp >= minZoom &&
+        dataRow.timestamp <= maxZoom
       ) {
         values.push(value);
       }
@@ -97,8 +97,8 @@ export const computeLegendRowsBasedOnData = ({
     return {
       ...legendRow,
       format: isHumanizableUnit
-        ? (value: number) => `${humanizeLargeData(value)} ${unit}`
-        : (value: number) => `${roundTo(value)} ${unit}`,
+        ? (value: number) => `${humanizeLargeData(value)} ${unit}` // continue to humanize values
+        : (value: number) => `${roundTo(value)} ${unit}`, // only round the values, units and values are already scaled up
       data: getMetricsFromDimensionData(values),
     };
   });

@@ -26,6 +26,7 @@ export const useZoomController = (zoomResetKey: string) => {
     const payload = e?.activePayload?.[0]?.payload;
     if (!payload?.timestamp) return;
 
+    // set the drag start timestamp
     dragStartRef.current = payload.timestamp;
     isDraggingRef.current = false;
   }, []);
@@ -42,14 +43,14 @@ export const useZoomController = (zoomResetKey: string) => {
       setZoom((prev) => ({
         ...prev,
         refAreaLeft: dragStart,
-        refAreaRight: payload.timestamp,
+        refAreaRight: payload.timestamp, // set initial right to show drag
       }));
       return;
     }
 
     setZoom((prev) => ({
       ...prev,
-      refAreaRight: payload.timestamp,
+      refAreaRight: payload.timestamp, // set initial right to show drag
     }));
   }, []);
 
@@ -59,7 +60,7 @@ export const useZoomController = (zoomResetKey: string) => {
       return;
     }
 
-    isDraggingRef.current = false;
+    isDraggingRef.current = false; // reset dragging state on completion
 
     setZoom((prev) => {
       if (
@@ -77,7 +78,7 @@ export const useZoomController = (zoomResetKey: string) => {
       const [from, to] =
         prev.refAreaLeft < prev.refAreaRight
           ? [prev.refAreaLeft, prev.refAreaRight]
-          : [prev.refAreaRight, prev.refAreaLeft];
+          : [prev.refAreaRight, prev.refAreaLeft]; // handle reverse drag
 
       return {
         ...prev,
@@ -98,7 +99,7 @@ export const useZoomController = (zoomResetKey: string) => {
   // Reset when parent explicitly says so
   React.useEffect(() => {
     setZoom(initialZoomState);
-  }, [zoomResetKey]);
+  }, [zoomResetKey]); // here zoomResetKey is usually the timestamp selected from time range picker
 
   const isZoomed = zoom.left !== 'dataMin' || zoom.right !== 'dataMax';
 
