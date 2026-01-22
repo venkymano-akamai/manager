@@ -35,6 +35,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
     legendRows,
     zoomResetKey,
     onZoomChange,
+    showLegend,
     ...rest
   } = props;
   const flags = useFlags();
@@ -129,6 +130,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
                   }
                 : null
             }
+            showLegend={zoomedData.length > 0 ? showLegend : false}
             tooltipCustomValueFormatter={
               isHumanizableUnit
                 ? (value, unit) => `${humanizeLargeData(value)} ${unit}`
