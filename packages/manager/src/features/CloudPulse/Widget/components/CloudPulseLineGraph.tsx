@@ -94,20 +94,21 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
         </Box>
       ) : (
         <Box display="flex" flexDirection="column" gap={3}>
-          <Button
-            buttonType="primary"
-            onClick={zoomOut}
-            sx={(theme) => ({
-              height: '26px',
-              width: '84px',
-              padding: theme.spacingFunction(4, 8),
-              fontSize: theme.tokens.font.FontSize.Xxxs,
-              display: !isZoomed ? 'none' : 'flex',
-            })}
-            variant="contained"
-          >
-            Reset Zoom
-          </Button>
+          {isZoomed && (
+            <Button
+              buttonType="primary"
+              onClick={zoomOut}
+              sx={(theme) => ({
+                height: '26px',
+                width: '84px',
+                padding: theme.spacingFunction(4, 8),
+                fontSize: theme.tokens.font.FontSize.Xxxs,
+              })}
+              variant="contained"
+            >
+              Reset Zoom
+            </Button>
+          )}
           <AreaChart
             {...rest}
             data={zoomedData}
