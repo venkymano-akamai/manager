@@ -50,14 +50,22 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
       (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
     ) ?? false;
 
+  const isZoomEnabled = flags.aclp?.enableZoomInCharts ?? false;
+
   const { zoom, isZoomed, zoomOut, zoomCallbacks } =
     useZoomController(zoomResetKey);
 
   const zoomedData = React.useMemo(() => {
+    if (!isZoomEnabled) {
+      return data;
+    }
     return computeZoomedInData({ data, zoom });
-  }, [data, zoom]);
+  }, [data, zoom, isZoomEnabled]);
 
   const zoomedLegendRows = React.useMemo(() => {
+    if (!isZoomEnabled) {
+      return legendRows;
+    }
     return computeLegendRowsBasedOnData({
       zoom,
       data: zoomedData,
@@ -65,7 +73,14 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
       unit: props.unit,
       isHumanizableUnit,
     });
-  }, [isHumanizableUnit, legendRows, props.unit, zoom, zoomedData]);
+  }, [
+    isHumanizableUnit,
+    isZoomEnabled,
+    legendRows,
+    props.unit,
+    zoom,
+    zoomedData,
+  ]);
 
   React.useEffect(() => {
     if (onZoomChange) {
@@ -150,7 +165,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
                     tickFormat: (value: number) => `${roundTo(value, 3)}`,
                   }
             }
-            zoomCallbacks={zoomCallbacks}
+            zoomCallbacks={isZoomEnabled ? zoomCallbacks : undefined}
           />
         </Box>
       )}
