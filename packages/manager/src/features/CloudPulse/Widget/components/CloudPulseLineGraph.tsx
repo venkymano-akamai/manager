@@ -50,7 +50,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
       (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
     ) ?? false;
 
-  const isZoomEnabled = flags.aclp?.enableZoomInCharts ?? false;
+  const isZoomEnabled = flags.aclp?.enableZoomInCharts ?? true;
 
   const { zoom, isZoomed, zoomOut, zoomCallbacks } =
     useZoomController(zoomResetKey);
