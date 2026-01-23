@@ -34,11 +34,9 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
 
   const noDataMessage = 'No data to display';
   const isHumanizableUnit =
-    flags.aclp?.humanizableUnits ??
-    ['Count']?.some(
+    flags.aclp?.humanizableUnits?.some(
       (unitElement) => unitElement.toLowerCase() === unit.toLowerCase()
-    ) ??
-    false;
+    ) ?? false;
   return (
     <Box
       sx={{
