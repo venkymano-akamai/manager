@@ -34,7 +34,8 @@ interface DimensionFilterFieldProps {
 export const DimensionFilterField = (props: DimensionFilterFieldProps) => {
   const { dataFieldDisabled, dimensionOptions, name, onFilterDelete } = props;
 
-  const { control, resetField } = useFormContext<CreateAlertDefinitionForm>();
+  const { control, resetField, setValue } =
+    useFormContext<CreateAlertDefinitionForm>();
 
   const dataFieldOptions =
     dimensionOptions.map((dimension) => ({
@@ -93,6 +94,10 @@ export const DimensionFilterField = (props: DimensionFilterFieldProps) => {
           (dim) => dim.dimension_label === dimensionFieldWatcher
         ) ?? null)
       : null;
+
+  const handleError = React.useCallback(() => {
+    setValue('hasAPIError', true);
+  }, [setValue]);
 
   return (
     <GridLegacy
@@ -175,6 +180,7 @@ export const DimensionFilterField = (props: DimensionFilterFieldProps) => {
               entities={entities}
               entityType={entityType ?? undefined}
               errorText={fieldState.error?.message}
+              handleError={handleError}
               name={name}
               onBlur={field.onBlur}
               onChange={field.onChange}

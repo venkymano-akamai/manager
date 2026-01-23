@@ -428,6 +428,7 @@ export interface DimensionFilterAutocompleteProps {
    * Current raw string value (or null) from the form state.
    */
   fieldValue: null | string;
+  handleError: () => void;
   /**
    * To control single-select/multi-select in the Autocomplete.
    */

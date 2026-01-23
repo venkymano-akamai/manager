@@ -1,6 +1,6 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { isEmpty } from '@linode/api-v4';
-import { ActionsPanel, Paper, TextField, Typography } from '@linode/ui';
+import { ActionsPanel, Notice, Paper, TextField, Typography } from '@linode/ui';
 import { scrollErrorIntoView } from '@linode/utilities';
 import { useNavigate } from '@tanstack/react-router';
 import { useSnackbar } from 'notistack';
@@ -110,6 +110,11 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     error: serviceMetadataError,
   } = useCloudPulseServiceByServiceType(serviceType ?? '', !!serviceType);
 
+  const hasAPIError = useWatch({
+    control,
+    name: 'hasAPIError',
+  });
+
   const onSubmit = handleSubmit(async (values) => {
     const editPayload: EditAlertPayloadWithService = filterEditFormValues(
       values,
@@ -177,6 +182,12 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
   return (
     <Paper sx={{ paddingLeft: 1, paddingRight: 1, paddingTop: 2 }}>
       <Breadcrumb crumbOverrides={overrides} pathname={'/Definitions/Edit'} />
+      {hasAPIError && (
+        <Notice
+          text="Some data could not be loaded due to API errors. The form will display existing alert data where possible."
+          variant="warning"
+        />
+      )}
       <FormProvider {...formMethods}>
         <form onSubmit={onSubmit} ref={formRef}>
           <Typography marginTop={2} variant="h2">
@@ -247,6 +258,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
               label: 'Submit',
               loading: formState.isSubmitting,
               type: 'submit',
+              disabled: hasAPIError,
             }}
             secondaryButtonProps={{
               label: 'Cancel',

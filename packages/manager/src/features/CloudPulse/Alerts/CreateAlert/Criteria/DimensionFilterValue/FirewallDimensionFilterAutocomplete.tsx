@@ -31,6 +31,7 @@ export const FirewallDimensionFilterAutocomplete = (
     serviceType,
     type,
     selectedRegions,
+    handleError,
   } = props;
 
   const { data: regions } = useRegionsQuery();
@@ -53,7 +54,14 @@ export const FirewallDimensionFilterAutocomplete = (
     multiple,
     onChange: fieldOnChange,
     isLoading,
+    isError,
   });
+
+  React.useEffect(() => {
+    if (isError) {
+      handleError();
+    }
+  }, [isError, handleError]);
 
   return (
     <Autocomplete

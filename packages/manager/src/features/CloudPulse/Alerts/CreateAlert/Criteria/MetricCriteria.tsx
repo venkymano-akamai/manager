@@ -48,8 +48,10 @@ export const MetricCriteriaField = (props: MetricCriteriaProps) => {
     { is_alertable: true }
   );
 
-  const { control } = useFormContext<CreateAlertDefinitionForm>();
-
+  const { control, setValue } = useFormContext<CreateAlertDefinitionForm>();
+  if (isMetricDefinitionError) {
+    setValue('hasAPIError', true);
+  }
   const metricCriteriaWatcher = useWatch({ control, name });
 
   const intervalList =

@@ -29,6 +29,7 @@ export const ObjectStorageDimensionFilterAutocomplete = (
     selectedRegions,
     serviceType,
     type,
+    handleError,
   } = props;
 
   const { data: regions } = useRegionsQuery();
@@ -48,7 +49,14 @@ export const ObjectStorageDimensionFilterAutocomplete = (
     multiple,
     onChange: fieldOnChange,
     isLoading,
+    isError,
   });
+
+  React.useEffect(() => {
+    if (isError) {
+      handleError();
+    }
+  }, [isError, handleError]);
 
   return (
     <Autocomplete

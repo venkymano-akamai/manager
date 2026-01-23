@@ -58,6 +58,10 @@ export const AddChannelListing = (props: AddChannelListingProps) => {
     isLoading: notificationChannelsLoading,
   } = useAllAlertNotificationChannelsQuery();
 
+  if (notificationChannelsError) {
+    setValue('hasAPIError', true);
+  }
+
   const notifications = React.useMemo(() => {
     if (!notificationData) return [];
 
