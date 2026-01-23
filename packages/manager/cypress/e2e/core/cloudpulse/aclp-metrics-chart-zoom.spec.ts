@@ -24,6 +24,7 @@ import {
   mockGetUserPreferences,
 } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
+import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
 
 import {
@@ -184,6 +185,7 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
     getRechartsPointValues(widgetSelector).as('expectedValues');
 
     zoomInOnChart(widgetSelector, 3, 6);
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
 
     getRechartsPointValues(widgetSelector).as('actualValues');
 
@@ -196,7 +198,42 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
     });
   });
 
-  it('should drag from 4th to 7th dot to zoom-in the area chart', () => {
-    cy.log('Verify that the URL contains the zoom parameters');
+  it('should reset zoom and validate widget contents', () => {
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible').click();
+    getRechartsPointValues(widgetSelector).as('expectedValues');
+    cy.get('@expectedValues').should('have.length', 25);
+    cy.contains('button', 'Reset Zoom').should('not.exist');
+  });
+
+  it('restores the widget to its default view after the user changes the date and time and resets zoom', () => {
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getResetMetrics'
+    );
+    ui.button.findByTitle('Last day').as('startDateInput');
+    cy.get('@startDateInput').click();
+
+    ui.button.findByTitle('Last hour').click();
+
+    cy.get('[data-qa-buttons="apply"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
+
+    getRechartsPointValues(widgetSelector).as('expectedValues');
+    cy.get('@expectedValues').should('have.length', 25);
+    cy.contains('button', 'Reset Zoom').should('not.exist');
+
+    cy.get('@getResetMetrics.all').should('have.length', 4);
+  });
+
+  it('maintains zoom view after global refresh and clearing mandatory filters', () => {
+    cy.get('[data-testid="global-refresh"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
+
+    getRechartsPointValues(widgetSelector).as('expectedValues');
+    cy.get('@expectedValues').should('have.length', 4);
+    cy.contains('button', 'Reset Zoom').should('be.visible');
   });
 });
