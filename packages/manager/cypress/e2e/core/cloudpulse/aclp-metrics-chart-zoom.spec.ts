@@ -88,6 +88,17 @@ const databaseMock: Database = databaseFactory.build({
   region: mockRegion.id,
   type: engine,
 });
+/**
+ * Extracts tooltip text values from all data points in a Recharts area chart.
+ *
+ * Scrolls the widget into view, iterates over each
+ * `circle.recharts-area-dot`, triggers a mouseover to display the tooltip,
+ * waits for the tooltip to become visible, and collects the tooltip text
+ * for every data point in render order.
+ *
+ * @param widgetSelector - Selector for the chart widget container
+ * @returns Chainable array of tooltip text values for each chart point
+ */
 
 const getRechartsPointValues = (
   widgetSelector: string
@@ -111,8 +122,20 @@ const getRechartsPointValues = (
     })
     .then(() => actualList);
 };
+/**
+ * Simulates a zoom-in interaction on a Recharts area chart by dragging
+ * between two data points.
+ *
+ * Scrolls the widget into view, finds all `circle.recharts-area-dot`
+ * elements within the chart, and performs a mouse drag starting from
+ * `fromIndex` to `toIndex` to trigger the chart’s zoom behavior.
+ *
+ * @param widgetSelector - Selector for the chart widget container
+ * @param fromIndex - Zero-based index of the starting data point (mousedown)
+ * @param toIndex - Zero-based index of the ending data point (mousemove + mouseup)
+ */
 
-export const zoomInOnChart = (
+const zoomInOnChart = (
   widgetSelector: string,
   fromIndex = 3,
   toIndex = 6
@@ -128,6 +151,30 @@ export const zoomInOnChart = (
       cy.get('@rechartsDots').eq(toIndex).trigger('mouseup', { force: true });
     });
 };
+/**
+ * Asserts the number of visible Recharts area chart dots inside a widget.
+ *
+ * Scrolls the widget into view, scopes all queries to the widget container,
+ * and verifies that the rendered area chart contains the expected number
+ * of `circle.recharts-area-dot` elements.
+ *
+ * @param widgetSelector - Selector for the chart widget container
+ * @param expectedDotCount - Exact number of area chart data points expected
+ */
+const assertRechartsDotsCount = (
+  widgetSelector: string,
+  expectedDotCount: number
+) => {
+  cy.get(widgetSelector)
+    .scrollIntoView()
+    .within(() => {
+      cy.get('circle.recharts-area-dot').should(
+        'have.length',
+        expectedDotCount
+      );
+    });
+};
+
 describe('Integration tests for verifying Cloudpulse Zoom in', () => {
   const now = new Date();
   const end = new Date(now.getTime() + 5.5 * 60 * 60 * 1000); // IST
@@ -200,8 +247,7 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
 
   it('should reset zoom and validate widget contents', () => {
     ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible').click();
-    getRechartsPointValues(widgetSelector).as('expectedValues');
-    cy.get('@expectedValues').should('have.length', 25);
+    assertRechartsDotsCount(widgetSelector, 25);
     cy.contains('button', 'Reset Zoom').should('not.exist');
   });
 
@@ -219,8 +265,7 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
       .should('be.enabled')
       .click();
 
-    getRechartsPointValues(widgetSelector).as('expectedValues');
-    cy.get('@expectedValues').should('have.length', 25);
+    assertRechartsDotsCount(widgetSelector, 25);
     cy.contains('button', 'Reset Zoom').should('not.exist');
 
     cy.get('@getResetMetrics.all').should('have.length', 4);
@@ -232,8 +277,8 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
       .should('be.enabled')
       .click();
 
-    getRechartsPointValues(widgetSelector).as('expectedValues');
-    cy.get('@expectedValues').should('have.length', 4);
+    assertRechartsDotsCount(widgetSelector, 4);
+
     cy.contains('button', 'Reset Zoom').should('be.visible');
   });
 });
