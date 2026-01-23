@@ -185,8 +185,10 @@ describe('NotificationChannelDetail component tests', () => {
     expect(screen.getByText('admin_user')).toBeVisible();
     expect(screen.getByText('ops_user')).toBeVisible();
 
-    // Verify Settings/Recipients section details
-    expect(screen.getByText('Settings')).toBeVisible();
+    // Verify Details/Recipients section details
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Details' })
+    ).toBeVisible();
     expect(screen.getByText(/Recipients/)).toBeVisible();
     expect(screen.getByText('admin')).toBeVisible();
     expect(screen.getByText('ops_team')).toBeVisible();

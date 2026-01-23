@@ -109,7 +109,7 @@ export const NotificationChannelDetail = () => {
               />
             </Box>
             <Box
-              data-qa-section="Settings"
+              data-qa-section="Details"
               flexBasis="50%"
               maxHeight={sectionMaxHeight}
               sx={{
