@@ -25,7 +25,6 @@ import {
 } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
-import { generateRandomMetricsData } from 'support/util/cloudpulse';
 
 import {
   accountFactory,
@@ -81,7 +80,48 @@ const mockProfile = profileFactory.build({
 const mockAccount = accountFactory.build();
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: generateRandomMetricsData('Last 24 Hours', '1 hr'),
+  data: {
+    result_type: 'matrix',
+    result: [
+      {
+        metric: {
+          metric_name: 'system_disk_OPS_total',
+        },
+        values: [
+          [1769097437, '28.76'],
+          [1769101037, '8.71'],
+          [1769104637, '46.31'],
+          [1769108237, '50.19'],
+          [1769111837, '37.17'],
+          [1769115437, '89.50'],
+          [1769119037, '65.45'],
+          [1769122637, '45.11'],
+          [1769126237, '84.03'],
+          [1769129837, '73.04'],
+          [1769133437, '36.44'],
+          [1769137037, '98.57'],
+          [1769140637, '91.49'],
+          [1769144237, '74.01'],
+          [1769147837, '74.00'],
+          [1769151437, '28.30'],
+          [1769155037, '76.37'],
+          [1769158637, '8.17'],
+          [1769162237, '53.51'],
+          [1769165837, '88.35'],
+          [1769169437, '85.80'],
+          [1769173037, '66.69'],
+          [1769176637, '48.55'],
+          [1769180237, '51.13'],
+          [1769183837, '27.41'],
+        ],
+      },
+    ],
+  },
+  isPartial: false,
+  stats: {
+    series_fetched: 2,
+  },
+  status: 'success',
 });
 
 const databaseMock: Database = databaseFactory.build({
@@ -175,6 +215,42 @@ const assertRechartsDotsCount = (
     });
 };
 
+/**
+ * Asserts legend row values (Max, Avg, Last) for a widget area chart.
+ *
+ * Scopes assertions to the widget container and validates that the
+ * legend values match the expected numbers exactly.
+ *
+ * @param widgetSelector - Selector for the widget container
+ * @param max - Expected Max value
+ * @param avg - Expected Avg value
+ * @param last - Expected Last value
+ */
+const getLegendRow = (
+  widgetSelector: string,
+  max: string,
+  avg: string,
+  last: string
+): void => {
+  cy.get(widgetSelector)
+    .should('be.visible')
+    .within(() => {
+      cy.get('.recharts-responsive-container').within(() => {
+        cy.get('[data-qa-graph-column-title="Max"]')
+          .should('be.visible')
+          .and('have.text', String(max));
+
+        cy.get('[data-qa-graph-column-title="Avg"]')
+          .should('be.visible')
+          .and('have.text', String(avg));
+
+        cy.get('[data-qa-graph-column-title="Last"]')
+          .should('be.visible')
+          .and('have.text', String(last));
+      });
+    });
+};
+
 describe('Integration tests for verifying Cloudpulse Zoom in', () => {
   const now = new Date();
   const end = new Date(now.getTime() + 5.5 * 60 * 60 * 1000); // IST
@@ -229,12 +305,18 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
 
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
 
-    getRechartsPointValues(widgetSelector).as('expectedValues');
+    // Validate data points Before zoom-in
 
+    getRechartsPointValues(widgetSelector).as('expectedValues');
+    getLegendRow(widgetSelector, '98.57 OPS', '57.48 OPS', '27.41 OPS');
+
+    // Validate data points after zoom-in
     zoomInOnChart(widgetSelector, 3, 6);
     ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
 
     getRechartsPointValues(widgetSelector).as('actualValues');
+
+    getLegendRow(widgetSelector, '89.5 OPS', '60.58 OPS', '65.45 OPS');
 
     cy.get('@expectedValues').then((expectedRaw) => {
       const expectedValues = expectedRaw as unknown as string[];
@@ -280,5 +362,72 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
     assertRechartsDotsCount(widgetSelector, 4);
 
     cy.contains('button', 'Reset Zoom').should('be.visible');
+  });
+  it('should not change the zoomed view when widget-level groupBy is applied or cleared', () => {
+    ui.button
+      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+      .should('be.visible')
+      .first()
+      .as('dashboardGroupByBtn');
+
+    // Ensure the button is scrolled into view
+    cy.get('@dashboardGroupByBtn').scrollIntoView();
+
+    // Click the Group By button to open the drawer
+    cy.get('@dashboardGroupByBtn').should('be.visible').click();
+
+    ui.autocomplete
+      .findByLabel('Dimensions')
+      .should('be.visible')
+      .type('State of CPU');
+
+    ui.autocompletePopper
+      .findByTitle('State of CPU')
+      .should('be.visible')
+      .click();
+
+    // Close the drawer using ESC
+    cy.get('body').type('{esc}');
+
+    // Click Apply to confirm the Group By selection
+    cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
+
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+    assertRechartsDotsCount(widgetSelector, 4);
+
+    cy.get('@dashboardGroupByBtn').should('be.visible').click();
+    cy.get('[data-qa-autocomplete="Dimensions"]').within(() => {
+      cy.get('button[aria-label="Clear"]').should('be.visible').click({});
+    });
+
+    // Click Apply to confirm unselection
+    cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
+
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+    assertRechartsDotsCount(widgetSelector, 4);
+  });
+
+  it('should not change the zoomed view when widget-level groupBy, granularity, or aggregation is changed', () => {
+    cy.get(widgetSelector)
+      .should('be.visible')
+      .within(() => {
+        ui.autocomplete
+          .findByLabel('Select an Interval')
+          .should('be.visible')
+          .type('5 min{enter}');
+      });
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+    assertRechartsDotsCount(widgetSelector, 4);
+
+    cy.get(widgetSelector)
+      .should('be.visible')
+      .within(() => {
+        ui.autocomplete
+          .findByLabel('Select an Aggregate Function')
+          .should('be.visible')
+          .type('min{enter}');
+      });
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+    assertRechartsDotsCount(widgetSelector, 4);
   });
 });
