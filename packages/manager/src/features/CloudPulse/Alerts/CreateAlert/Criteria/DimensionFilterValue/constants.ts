@@ -460,4 +460,6 @@ export interface DimensionFilterAutocompleteProps {
    * The list of pre-defined values for static options.
    */
   values?: null | string[];
+
+  maxNumber?: number
 }

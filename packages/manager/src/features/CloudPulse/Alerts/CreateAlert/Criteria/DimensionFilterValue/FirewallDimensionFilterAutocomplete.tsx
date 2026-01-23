@@ -31,6 +31,7 @@ export const FirewallDimensionFilterAutocomplete = (
     serviceType,
     type,
     selectedRegions,
+    maxNumber = 1,
   } = props;
 
   const { data: regions } = useRegionsQuery();
@@ -55,14 +56,39 @@ export const FirewallDimensionFilterAutocomplete = (
     isLoading,
   });
 
+  const maxReached = React.useMemo(() => {
+    if (!multiple || fieldValue === '') {
+      return false;
+    }
+
+    const values = fieldValue?.split(',') || [];
+
+    return values.length >= maxNumber;
+  }, [fieldValue, maxNumber, multiple]);
+
   return (
     <Autocomplete
       data-qa-dimension-filter={`${name}-value`}
       data-testid="value"
       disabled={disabled}
+      disableSelectAll={values.length > maxNumber}
       errorText={
         errorText ?? (isError ? 'Failed to fetch the values.' : undefined)
       }
+      getOptionDisabled={(option) => {
+        if (!maxReached) {
+          return false;
+        }
+
+        const values = fieldValue?.split(',') || [];
+
+        // Allow already selected options (so user can unselect)
+        if (multiple) {
+          return !values.some((selected) => selected === option.value);
+        }
+
+        return false;
+      }}
       isOptionEqualToValue={(option, value) => value.value === option.value}
       label="Value"
       limitTags={1}
