@@ -430,4 +430,33 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
     ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
     assertRechartsDotsCount(widgetSelector, 4);
   });
+
+  it('does not disturb first widget zoom when second widget is added and zoomed', () => {
+    const secondWidgetSelector = '[data-qa-widget="CPU Utilization"]';
+    cy.get(widgetSelector).as('widget');
+    cy.get('@widget')
+      .should('be.visible')
+      .within(() => {
+        ui.button.findByAttribute('aria-label', 'Zoom Out').click();
+      });
+    getRechartsPointValues(widgetSelector).as('actualValues');
+    cy.get('@actualValues').then((actualValues) => {
+      expect(actualValues).to.have.length(4);
+    });
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+
+    cy.get(secondWidgetSelector).as('widget');
+    cy.get('@widget')
+      .should('be.visible')
+      .within(() => {
+        ui.button.findByAttribute('aria-label', 'Zoom Out').click();
+      });
+    zoomInOnChart(secondWidgetSelector, 3, 6);
+    cy.wait(300);
+    getRechartsPointValues(secondWidgetSelector).as('actualValues');
+    cy.get('@actualValues').then((actualValues) => {
+      expect(actualValues).to.have.length(4);
+    });
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+  });
 });
