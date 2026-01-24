@@ -460,7 +460,11 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
     ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
   });
 
-  it('Add widget level dimension filter and validate zoom-in', () => {
+  it('Add and Remove widget level dimension filter and validate zoom-in', () => {
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getMetrics'
+    );
+    // Add Dimension Filter
     cy.get(widgetSelector)
       .should('be.visible')
       .within(() => {
@@ -514,5 +518,20 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
         },
       ]);
     });
+    // Remove Dimension Filter
+    cy.get(widgetSelector)
+      .should('be.visible')
+      .within(() => {
+        ui.button
+          .findByAttribute('aria-label', 'Widget Dimension Filter Disk I/O')
+          .should('be.visible')
+          .click();
+      });
+    cy.get('[data-qa-id="filter-drawer-clear-all"]').click();
+
+    ui.button.findByAttribute('label', 'Apply').click();
+
+    assertRechartsDotsCount(widgetSelector, 4);
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
   });
 });
