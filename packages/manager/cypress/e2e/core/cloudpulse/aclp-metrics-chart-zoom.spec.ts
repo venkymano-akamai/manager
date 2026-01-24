@@ -459,4 +459,60 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
     });
     ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
   });
+
+  it('Add widget level dimension filter and validate zoom-in', () => {
+    cy.get(widgetSelector)
+      .should('be.visible')
+      .within(() => {
+        ui.button
+          .findByAttribute('aria-label', 'Widget Dimension Filter Disk I/O')
+          .should('be.visible')
+          .click();
+      });
+
+    ui.button.findByTitle('Add Filter').click();
+    cy.get('[data-testid="dimension_filters.0-id"]').within(() => {
+      ui.autocomplete.findByLabel('Dimension').should('be.visible').click();
+      ui.autocomplete.findByLabel('Dimension').type('State of CPU');
+
+      ui.autocompletePopper
+        .findByTitle('State of CPU')
+        .should('be.visible')
+        .click();
+
+      // Select operator
+      ui.autocomplete
+        .findByLabel('Operator')
+        .should('be.visible')
+        .type('Starts with');
+
+      ui.autocompletePopper
+        .findByTitle('Starts with')
+        .should('be.visible')
+        .click();
+
+      cy.findByPlaceholderText('Enter a Value').type('User').click();
+    });
+    ui.button.findByAttribute('label', 'Apply').click();
+    assertRechartsDotsCount(widgetSelector, 4);
+    ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
+    cy.wait('@getMetrics').then((interception) => {
+      const { filters } = interception.request.body;
+
+      expect(filters).to.have.length(2);
+
+      expect(filters).to.deep.include.members([
+        {
+          dimension_label: 'node_type',
+          operator: 'eq',
+          value: 'secondary',
+        },
+        {
+          dimension_label: 'state',
+          operator: 'startswith',
+          value: 'User',
+        },
+      ]);
+    });
+  });
 });
