@@ -113,7 +113,7 @@ export const CloudPulseLineGraph = React.memo((props: CloudPulseLineGraph) => {
           {isZoomed && (
             <Button
               buttonType="primary"
-              data-qa-buttons="true"
+              data-qa-buttons
               onClick={zoomOut}
               sx={(theme) => ({
                 height: '26px',
