@@ -28,7 +28,7 @@ export const NotificationChannelAlertsTableRow = React.memo(
 
     return (
       <TableRow
-        data-qa-alert-cell={`table-row-${id}`}
+        data-qa-alert-cell={id}
         data-testid={`table-row-${id}`}
         key={`alert-row-${id}`}
       >

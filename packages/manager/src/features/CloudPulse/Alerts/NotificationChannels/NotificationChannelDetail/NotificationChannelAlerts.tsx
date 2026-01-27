@@ -205,6 +205,8 @@ export const NotificationChannelAlerts = React.memo(
                     <TableRow>
                       <TableSortCell
                         active={orderBy === 'label'}
+                        data-qa-header={'label'}
+                        data-qa-sorting={'label'}
                         direction={order}
                         handleClick={handleTableSort}
                         label="label"
@@ -213,6 +215,8 @@ export const NotificationChannelAlerts = React.memo(
                       </TableSortCell>
                       <TableSortCell
                         active={orderBy === 'service_type_label'}
+                        data-qa-header={'service_type_label'}
+                        data-qa-sorting={'service_type_label'}
                         direction={order}
                         handleClick={handleTableSort}
                         label="service_type_label"
