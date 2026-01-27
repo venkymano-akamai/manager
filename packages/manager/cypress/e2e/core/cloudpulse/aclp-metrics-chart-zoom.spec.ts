@@ -1,5 +1,4 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
-/* eslint-disable cypress/unsafe-to-chain-command */
 
 /**
  * @file Integration Tests for CloudPulse Custom and Preset Verification
@@ -145,23 +144,32 @@ const getRechartsPointValues = (
 ): Cypress.Chainable<string[]> => {
   const actualList: string[] = [];
 
-  return cy
-    .get(widgetSelector)
-    .scrollIntoView()
-    .within(() => {
-      cy.get('circle.recharts-area-dot').each(($dot) => {
-        cy.wrap($dot)
-          .trigger('mouseover', { force: true })
-          .should('have.css', 'opacity', '1')
-          .wait(500)
-          .get('.recharts-tooltip-wrapper', { timeout: 10000 })
+  // chain 1: scroll only
+  cy.get(widgetSelector).scrollIntoView();
+
+  // chain 2: all interactions
+  cy.get(widgetSelector).then(($widget) => {
+    cy.wrap($widget)
+      .find('circle.recharts-area-dot')
+      .each(($dot) => {
+        cy.wrap($dot).trigger('mouseover', { force: true });
+
+        cy.wait(500);
+
+        cy.wrap($widget)
+          .find('.recharts-tooltip-wrapper', { timeout: 10000 })
           .should('be.visible')
           .invoke('text')
-          .then((text) => actualList.push(text.trim()));
+          .then((text) => {
+            actualList.push(text.trim());
+          });
       });
-    })
-    .then(() => actualList);
+  });
+
+  return cy.then(() => actualList);
 };
+
+
 /**
  * Simulates a zoom-in interaction on a Recharts area chart by dragging
  * between two data points.
@@ -205,15 +213,17 @@ const assertRechartsDotsCount = (
   widgetSelector: string,
   expectedDotCount: number
 ) => {
-  cy.get(widgetSelector)
-    .scrollIntoView()
-    .within(() => {
-      cy.get('circle.recharts-area-dot').should(
-        'have.length',
-        expectedDotCount
-      );
-    });
+  // chain 1: scroll only
+  cy.get(widgetSelector).scrollIntoView();
+
+  // chain 2: assertion
+  cy.get(widgetSelector).then(($widget) => {
+    cy.wrap($widget)
+      .find('circle.recharts-area-dot')
+      .should('have.length', expectedDotCount);
+  });
 };
+
 
 /**
  * Asserts legend row values (Max, Avg, Last) for a widget area chart.
