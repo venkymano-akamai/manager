@@ -142,7 +142,7 @@ export const NotificationChannelAlerts = React.memo(
             label=""
             noMarginTop
             onSearch={setSearchText}
-            placeholder="Search for Associated Alerts"
+            placeholder="Search for Alerts"
             sx={{
               width: { lg: '250px', md: '300px', sm: '400px', xs: '300px' },
             }}
@@ -200,7 +200,7 @@ export const NotificationChannelAlerts = React.memo(
 
             return (
               <>
-                <Table>
+                <Table data-qa="associated-alerts-table">
                   <TableHead>
                     <TableRow>
                       <TableSortCell
