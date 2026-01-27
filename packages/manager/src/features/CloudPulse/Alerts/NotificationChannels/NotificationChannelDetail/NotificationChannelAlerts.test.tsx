@@ -45,12 +45,14 @@ describe('NotificationChannelAlerts', () => {
   const serviceTypeText = 'Service';
 
   beforeEach(() => {
-    hookMocks.useFlags.mockReturnValue({
+    const flags = {
       aclpServices: {
-        dbaas: { alerts: { enabled: true } },
-        linode: { alerts: { enabled: true } },
+        dbaas: { alerts: { beta: true, enabled: true } },
+        linode: { alerts: { beta: true, enabled: true } },
       },
-    });
+    };
+
+    hookMocks.useFlags.mockReturnValue(flags);
 
     queryMocks.useCloudPulseServiceTypes.mockReturnValue({
       data: {
@@ -313,5 +315,49 @@ describe('NotificationChannelAlerts', () => {
     expect(screen.queryByText('Database Memory Alert')).not.toBeInTheDocument();
     expect(screen.queryByText('Linode CPU Alert')).not.toBeInTheDocument();
     expect(screen.queryByText('Linode Memory Alert')).not.toBeInTheDocument();
+  });
+  test('should render the Beta flag for the services in the service column', async () => {
+    const alerts = [
+      notificationChannelAlertsFactory.build({
+        label: 'Database CPU Alert',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Database Memory Alert',
+        service_type: 'dbaas',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Linode CPU Alert',
+        service_type: 'linode',
+      }),
+      notificationChannelAlertsFactory.build({
+        label: 'Linode Memory Alert',
+        service_type: 'linode',
+      }),
+    ];
+
+    const alertsWithServiceLabel = alerts.map((alert) => ({
+      ...alert,
+      service_type_label: mockServiceTypes.find(
+        (st) => st.service_type === alert.service_type
+      )?.label,
+    }));
+
+    queryMocks.useAllAlertsByNotificationChannelIdQuery.mockReturnValue({
+      data: alerts,
+      error: undefined,
+      isError: false,
+      isLoading: false,
+    });
+
+    hookMocks.useOrderV2.mockReturnValue({
+      handleOrderChange: vi.fn(),
+      order: 'asc',
+      orderBy: 'label',
+      sortedData: alertsWithServiceLabel,
+    });
+
+    renderWithTheme(<NotificationChannelAlerts channelId={1} />);
+    expect(screen.getAllByText(/beta/i)).toHaveLength(alerts.length);
   });
 });

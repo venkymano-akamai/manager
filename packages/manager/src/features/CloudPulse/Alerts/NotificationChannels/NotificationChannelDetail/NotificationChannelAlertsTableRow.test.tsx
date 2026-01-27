@@ -5,6 +5,30 @@ import { notificationChannelAlertsFactory } from 'src/factories/cloudpulse/chann
 import { renderWithTheme, wrapWithTableBody } from 'src/utilities/testHelpers';
 
 import { NotificationChannelAlertsTableRow } from './NotificationChannelAlertsTableRow';
+import { AclpServices } from 'src/featureFlags';
+
+const queryMocks = vi.hoisted(() => ({
+  useFlags: vi.fn(),
+}));
+
+const aclpServicesFlag: Partial<AclpServices> = {
+  linode: {
+    alerts: { enabled: true, beta: true },
+    metrics: { enabled: true, beta: true },
+  },
+  dbaas: {
+    alerts: { enabled: true, beta: true },
+    metrics: { enabled: true, beta: true },
+  }
+}
+
+vi.mock('src/hooks/useFlags', () => ({
+  useFlags: queryMocks.useFlags,
+}));
+
+queryMocks.useFlags.mockReturnValue({
+  aclpServices: aclpServicesFlag,
+});
 
 describe('NotificationChannelAlertsTableRow', () => {
   it('should render alert with link', () => {
