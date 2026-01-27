@@ -3,8 +3,6 @@
 /**
  * @file Integration Tests for CloudPulse Custom and Preset Verification
  */
-import '@4tw/cypress-drag-drop';
-import 'cypress-real-events/support';
 import { profileFactory, regionFactory } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
