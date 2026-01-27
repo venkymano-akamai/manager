@@ -453,8 +453,7 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
       });
     zoomInOnChart(secondWidgetSelector, 3, 6);
     cy.wait(300);
-    getRechartsPointValues(secondWidgetSelector).as('actualValues');
-    cy.get('@actualValues').then((actualValues) => {
+    getRechartsPointValues(secondWidgetSelector).should((actualValues) => {
       expect(actualValues).to.have.length(4);
     });
     ui.buttonGroup.findButtonByTitle('Reset Zoom').should('be.visible');
