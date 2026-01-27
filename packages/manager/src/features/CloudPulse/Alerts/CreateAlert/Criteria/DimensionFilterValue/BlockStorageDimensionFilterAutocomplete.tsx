@@ -26,6 +26,7 @@ export const BlockStorageDimensionFilterAutocomplete = (
     selectedRegions,
     serviceType,
     type,
+    maxSelections,
   } = props;
 
   const { data: regions } = useRegionsQuery();
@@ -47,13 +48,45 @@ export const BlockStorageDimensionFilterAutocomplete = (
     isLoading,
   });
 
+  const maxReached = React.useMemo(() => {
+    if (!multiple || fieldValue === '' || maxSelections === undefined) {
+      return false;
+    }
+
+    const values = fieldValue?.split(',') || [];
+
+    return values.length >= maxSelections;
+  }, [fieldValue, maxSelections, multiple]);
+
   return (
     <Autocomplete
       data-qa-dimension-filter={`${name}-value`}
       data-testid="value"
       disabled={disabled}
+      disableSelectAll={
+        maxSelections !== undefined ? values.length > maxSelections : false
+      }
       errorText={
         errorText ?? (isError ? 'Failed to fetch the values.' : undefined)
+      }
+      getOptionDisabled={(option) => {
+        if (!maxReached) {
+          return false;
+        }
+
+        const values = fieldValue?.split(',') || [];
+
+        // Allow already selected options (so user can unselect)
+        if (multiple) {
+          return !values.some((selected) => selected === option.value);
+        }
+
+        return false;
+      }}
+      helperText={
+        maxSelections !== undefined && multiple
+          ? `Select up to ${maxSelections} values`
+          : undefined
       }
       isOptionEqualToValue={(option, value) => value.value === option.value}
       label="Value"
