@@ -4,7 +4,12 @@ import React from 'react';
 
 import { useBlockStorageFetchOptions } from './useBlockStorageFetchOptions';
 import { useCleanupStaleValues } from './useCleanupStaleValues';
-import { handleValueChange, resolveSelectedValues } from './utils';
+import {
+  handleValueChange,
+  isMaxSelectionsReached,
+  isOptionDisabled,
+  resolveSelectedValues,
+} from './utils';
 
 import type { DimensionFilterAutocompleteProps } from './constants';
 
@@ -49,13 +54,11 @@ export const BlockStorageDimensionFilterAutocomplete = (
   });
 
   const maxReached = React.useMemo(() => {
-    if (!multiple || fieldValue === '' || maxSelections === undefined) {
-      return false;
-    }
-
-    const values = fieldValue?.split(',') || [];
-
-    return values.length >= maxSelections;
+    return isMaxSelectionsReached(
+      multiple ?? false,
+      fieldValue ?? '',
+      maxSelections
+    );
   }, [fieldValue, maxSelections, multiple]);
 
   return (
@@ -70,18 +73,12 @@ export const BlockStorageDimensionFilterAutocomplete = (
         errorText ?? (isError ? 'Failed to fetch the values.' : undefined)
       }
       getOptionDisabled={(option) => {
-        if (!maxReached) {
-          return false;
-        }
-
-        const values = fieldValue?.split(',') || [];
-
-        // Allow already selected options (so user can unselect)
-        if (multiple) {
-          return !values.some((selected) => selected === option.value);
-        }
-
-        return false;
+        return isOptionDisabled(
+          maxReached,
+          fieldValue ?? '',
+          multiple ?? false,
+          option
+        );
       }}
       helperText={
         maxSelections !== undefined && multiple

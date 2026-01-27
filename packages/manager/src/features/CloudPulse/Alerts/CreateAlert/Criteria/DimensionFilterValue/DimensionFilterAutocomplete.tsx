@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import {
   getStaticOptions,
   handleValueChange,
+  isMaxSelectionsReached,
+  isOptionDisabled,
   resolveSelectedValues,
 } from './utils';
 
@@ -36,13 +38,11 @@ export const DimensionFilterAutocomplete = (
     [dimensionLabel, serviceType, values]
   );
   const maxReached = React.useMemo(() => {
-    if (!multiple || fieldValue === '' || maxSelections === undefined) {
-      return false;
-    }
-
-    const values = fieldValue?.split(',') || [];
-
-    return values.length >= maxSelections;
+    return isMaxSelectionsReached(
+      multiple ?? false,
+      fieldValue ?? '',
+      maxSelections
+    );
   }, [fieldValue, maxSelections, multiple]);
   return (
     <Autocomplete
@@ -54,18 +54,12 @@ export const DimensionFilterAutocomplete = (
       }
       errorText={errorText}
       getOptionDisabled={(option) => {
-        if (!maxReached) {
-          return false;
-        }
-
-        const values = fieldValue?.split(',') || [];
-
-        // Allow already selected options (so user can unselect)
-        if (multiple) {
-          return !values.some((selected) => selected === option.value);
-        }
-
-        return false;
+        return isOptionDisabled(
+          maxReached,
+          fieldValue ?? '',
+          multiple ?? false,
+          option
+        );
       }}
       helperText={
         maxSelections !== undefined && multiple

@@ -282,3 +282,52 @@ export const getBlockStorageLinodes = (
     value: String(linode.id),
   }));
 };
+
+/**
+ *
+ * @param multiple - Indicates whether multiple select is enabled
+ * @param value - The value of the field as a comma-separated string
+ * @param maxSelections - The maximum number of selections allowed
+ * @returns - Boolean indicating if the maximum selections have been reached
+ */
+export const isMaxSelectionsReached = (
+  multiple: boolean,
+  value: string,
+  maxSelections?: number
+): boolean => {
+  if (!multiple || value === '' || maxSelections === undefined) {
+    return false;
+  }
+
+  const values = value?.split(',') || [];
+
+  return values.length >= maxSelections;
+};
+
+/**
+ *
+ * @param maxReached - The boolean indicating if max selections have been reached
+ * @param fieldValue -  The current value of the field as a comma-separated string
+ * @param multiple - Indicates whether multiple select is enabled
+ * @param option - The option item to check if it should be disabled
+ * @returns - Boolean indicating if the option should be disabled
+ */
+export const isOptionDisabled = (
+  maxReached: boolean,
+  fieldValue: string | undefined,
+  multiple: boolean,
+  option: Item<string, string>
+): boolean => {
+  if (!maxReached) {
+    return false;
+  }
+
+  const values = fieldValue?.split(',') || [];
+
+  // Allow already selected options (so user can unselect)
+  if (multiple) {
+    return !values.some((selected) => selected === option.value);
+  }
+
+  return false;
+};
