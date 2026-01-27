@@ -16,6 +16,7 @@ import {
 import { AlertListNoticeMessages } from '../Utils/AlertListNoticeMessages';
 import { scrollToElement } from '../Utils/AlertResourceUtils';
 import { AlertSelectedInfoNotice } from '../Utils/AlertSelectedInfoNotice';
+import { getFilterFn } from '../Utils/utils';
 import { getFilteredRegions } from '../Utils/utils';
 import { DisplayAlertRegions } from './DisplayAlertRegions';
 

@@ -125,6 +125,10 @@ interface AclpLogsFlag extends BetaFeatureFlag {
    * This property indicates whether to bypass account capabilities check or not
    */
   bypassAccountCapabilities?: boolean;
+  /**
+   * This property indicates whether to show Custom HTTPS destination type
+   */
+  customHttpsEnabled?: boolean;
 }
 
 interface LkeEnterpriseFlag extends BaseFeatureFlag {
