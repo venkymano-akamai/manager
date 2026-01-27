@@ -31,7 +31,7 @@ export const FirewallDimensionFilterAutocomplete = (
     serviceType,
     type,
     selectedRegions,
-    maxNumber = 1,
+    maxSelections,
   } = props;
 
   const { data: regions } = useRegionsQuery();
@@ -57,21 +57,21 @@ export const FirewallDimensionFilterAutocomplete = (
   });
 
   const maxReached = React.useMemo(() => {
-    if (!multiple || fieldValue === '') {
+    if (!multiple || fieldValue === '' || maxSelections === undefined) {
       return false;
     }
 
     const values = fieldValue?.split(',') || [];
 
-    return values.length >= maxNumber;
-  }, [fieldValue, maxNumber, multiple]);
+    return values.length >= maxSelections;
+  }, [fieldValue, maxSelections, multiple]);
 
   return (
     <Autocomplete
       data-qa-dimension-filter={`${name}-value`}
       data-testid="value"
       disabled={disabled}
-      disableSelectAll={values.length > maxNumber}
+      disableSelectAll={maxReached}
       errorText={
         errorText ?? (isError ? 'Failed to fetch the values.' : undefined)
       }
@@ -89,6 +89,11 @@ export const FirewallDimensionFilterAutocomplete = (
 
         return false;
       }}
+      helperText={
+        maxSelections !== undefined
+          ? `Select up to ${maxSelections} values`
+          : undefined
+      }
       isOptionEqualToValue={(option, value) => value.value === option.value}
       label="Value"
       limitTags={1}

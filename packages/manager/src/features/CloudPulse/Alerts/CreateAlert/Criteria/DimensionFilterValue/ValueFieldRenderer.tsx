@@ -1,6 +1,8 @@
 import { TextField } from '@linode/ui';
 import React from 'react';
 
+import { useFlags } from 'src/hooks/useFlags';
+
 import { BlockStorageDimensionFilterAutocomplete } from './BlockStorageDimensionFilterAutocomplete';
 import {
   MULTISELECT_PLACEHOLDER_TEXT,
@@ -108,6 +110,12 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
     selectedRegions,
     serviceType,
   } = props;
+
+  const flags = useFlags();
+
+  const maxDimensionFiltersValues =
+    flags.aclpAlerting?.maxDimensionFiltersValues ?? undefined;
+
   // Use operator group for config lookup
   const operatorGroup = getOperatorGroup(operator);
   let dimensionConfig: Record<OperatorGroup, ValueFieldConfig>;
@@ -123,6 +131,16 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
     dimensionConfig = valueFieldConfig['*'];
   }
   const config = dimensionConfig[operatorGroup];
+  const maxReached =
+    config.type === 'textfield' &&
+    operatorGroup === 'in' &&
+    value &&
+    maxDimensionFiltersValues
+      ? value.split(',').filter(Boolean).length >= maxDimensionFiltersValues
+      : false;
+  const maxErrorText = maxReached
+    ? 'You can enter a max of 5 values'
+    : undefined;
   if (!config) return null;
 
   if (config.type === 'textfield') {
@@ -133,12 +151,36 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
         disabled={disabled}
         errorText={errorText}
         fullWidth
-        helperText={!errorText ? config.helperText : undefined}
+        helperText={
+          !errorText ? (maxErrorText ?? config.helperText) : undefined
+        }
         label="Value"
         max={config.max}
         min={config.min}
         onBlur={onBlur}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          let nextValue = e.target.value;
+
+          if (operatorGroup === 'in') {
+            const parts = nextValue
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+            if (parts.length > 5) {
+              nextValue = parts.slice(0, 5).join(',');
+            }
+          }
+
+          onChange(nextValue);
+        }}
+        onKeyDown={(e) => {
+          if (operatorGroup !== 'in') return;
+
+          if (e.key === ',' && maxReached) {
+            e.preventDefault();
+          }
+        }}
         placeholder={config.placeholder ?? TEXTFIELD_PLACEHOLDER_TEXT}
         sx={{ flex: 1 }}
         type={config.inputType}
@@ -165,6 +207,7 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
       placeholderText: config.placeholder ?? autocompletePlaceholder,
       serviceType: serviceType ?? null,
       type,
+      maxSelections: maxDimensionFiltersValues,
     };
 
     // Determine custom fetch behaviour if there are same dimension_labels across service types
