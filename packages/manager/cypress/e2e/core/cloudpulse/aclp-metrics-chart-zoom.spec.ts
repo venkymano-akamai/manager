@@ -153,9 +153,7 @@ const getRechartsPointValues = (
       .find('circle.recharts-area-dot')
       .each(($dot) => {
         cy.wrap($dot).trigger('mouseover', { force: true });
-
-        cy.wait(500);
-
+        cy.wait(250);
         cy.wrap($widget)
           .find('.recharts-tooltip-wrapper', { timeout: 10000 })
           .should('be.visible')
@@ -168,7 +166,6 @@ const getRechartsPointValues = (
 
   return cy.then(() => actualList);
 };
-
 
 /**
  * Simulates a zoom-in interaction on a Recharts area chart by dragging
@@ -188,16 +185,12 @@ const zoomInOnChart = (
   fromIndex = 3,
   toIndex = 6
 ): void => {
-  cy.get(widgetSelector)
-    .scrollIntoView()
-    .within(() => {
-      cy.get('circle.recharts-area-dot').as('rechartsDots');
-      cy.get('@rechartsDots')
-        .eq(fromIndex)
-        .trigger('mousedown', { force: true });
-      cy.get('@rechartsDots').eq(toIndex).trigger('mousemove', { force: true });
-      cy.get('@rechartsDots').eq(toIndex).trigger('mouseup', { force: true });
-    });
+  cy.get(widgetSelector).within(() => {
+    cy.get('circle.recharts-area-dot').as('rechartsDots');
+    cy.get('@rechartsDots').eq(fromIndex).trigger('mousedown', { force: true });
+    cy.get('@rechartsDots').eq(toIndex).trigger('mousemove', { force: true });
+    cy.get('@rechartsDots').eq(toIndex).trigger('mouseup', { force: true });
+  });
 };
 /**
  * Asserts the number of visible Recharts area chart dots inside a widget.
@@ -223,7 +216,6 @@ const assertRechartsDotsCount = (
       .should('have.length', expectedDotCount);
   });
 };
-
 
 /**
  * Asserts legend row values (Max, Avg, Last) for a widget area chart.
@@ -504,7 +496,10 @@ describe('Integration tests for verifying Cloudpulse Zoom in', () => {
         .should('be.visible')
         .click();
 
-      cy.findByPlaceholderText('Enter a Value').type('User').click();
+      cy.findByPlaceholderText('Enter a Value').as('input');
+
+      cy.get('@input').type('User');
+      cy.get('@input').click();
     });
     ui.button.findByAttribute('label', 'Apply').click();
     assertRechartsDotsCount(widgetSelector, 4);
