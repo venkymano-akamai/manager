@@ -71,7 +71,9 @@ export const FirewallDimensionFilterAutocomplete = (
       data-qa-dimension-filter={`${name}-value`}
       data-testid="value"
       disabled={disabled}
-      disableSelectAll={maxReached}
+      disableSelectAll={
+        maxSelections !== undefined ? values.length > maxSelections : false
+      }
       errorText={
         errorText ?? (isError ? 'Failed to fetch the values.' : undefined)
       }
@@ -90,7 +92,7 @@ export const FirewallDimensionFilterAutocomplete = (
         return false;
       }}
       helperText={
-        maxSelections !== undefined
+        maxSelections !== undefined && multiple
           ? `Select up to ${maxSelections} values`
           : undefined
       }
