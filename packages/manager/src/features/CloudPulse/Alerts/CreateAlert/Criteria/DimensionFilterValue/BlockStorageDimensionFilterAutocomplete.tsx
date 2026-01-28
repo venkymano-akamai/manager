@@ -41,7 +41,7 @@ export const BlockStorageDimensionFilterAutocomplete = (
   });
 
   React.useEffect(() => {
-    if (isError) {
+    if (isError && handleError) {
       handleError();
     }
   }, [isError, handleError]);

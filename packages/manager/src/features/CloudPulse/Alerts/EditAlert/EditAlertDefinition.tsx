@@ -71,8 +71,8 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
   const entityType =
     serviceType === 'firewall'
       ? alertDetails.rule_criteria.rules[0]?.label.includes(
-          entityLabelMap['nodebalancer']
-        )
+        entityLabelMap['nodebalancer']
+      )
         ? 'nodebalancer'
         : 'linode'
       : undefined;
@@ -184,7 +184,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
       <Breadcrumb crumbOverrides={overrides} pathname={'/Definitions/Edit'} />
       {hasAPIError && (
         <Notice
-          text="Some data could not be loaded due to API errors. The form will display existing alert data where possible."
+          text="Some alert settings couldn't be loaded. Available data is shown but editing is disabled. Try reloading the page or check back later."
           variant="warning"
         />
       )}

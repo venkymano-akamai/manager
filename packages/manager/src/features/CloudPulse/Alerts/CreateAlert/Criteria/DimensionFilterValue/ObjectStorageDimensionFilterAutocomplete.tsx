@@ -53,7 +53,7 @@ export const ObjectStorageDimensionFilterAutocomplete = (
   });
 
   React.useEffect(() => {
-    if (isError) {
+    if (isError && handleError) {
       handleError();
     }
   }, [isError, handleError]);

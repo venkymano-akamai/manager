@@ -428,7 +428,10 @@ export interface DimensionFilterAutocompleteProps {
    * Current raw string value (or null) from the form state.
    */
   fieldValue: null | string;
-  handleError: () => void;
+  /**
+   * Callback triggered when there a dependent API has error
+   */
+  handleError?: () => void;
   /**
    * To control single-select/multi-select in the Autocomplete.
    */
