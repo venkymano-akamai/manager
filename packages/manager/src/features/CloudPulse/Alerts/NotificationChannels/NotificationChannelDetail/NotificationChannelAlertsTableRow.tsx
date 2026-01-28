@@ -41,7 +41,7 @@ export const NotificationChannelAlertsTableRow = React.memo(
           </Link>
         </TableCell>
         <TableCell>
-          {serviceTypeLabel}
+          {serviceTypeLabel}{' '}
           {aclpServices?.[service_type]?.alerts?.beta && <BetaChip />}
         </TableCell>
       </TableRow>

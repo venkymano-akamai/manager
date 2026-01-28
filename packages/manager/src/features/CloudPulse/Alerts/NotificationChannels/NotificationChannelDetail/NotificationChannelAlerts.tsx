@@ -25,7 +25,10 @@ import { useAllAlertsByNotificationChannelIdQuery } from 'src/queries/cloudpulse
 import { useCloudPulseServiceTypes } from 'src/queries/cloudpulse/services';
 import { getAPIErrorOrDefault } from 'src/utilities/errorUtils';
 
-import { getServiceTypeLabel } from '../../Utils/utils';
+import {
+  alertsFromEnabledServices,
+  getServiceTypeLabel,
+} from '../../Utils/utils';
 import { getAssociatedAlerts, getServicesList } from '../Utils/utils';
 import { NotificationChannelAlertsTableRow } from './NotificationChannelAlertsTableRow';
 
@@ -62,12 +65,13 @@ export const NotificationChannelAlerts = React.memo(
     const { aclpServices } = useFlags();
     const { data: serviceTypeList } = useCloudPulseServiceTypes(true);
     const {
-      data: channelAlerts,
+      data: allAlerts,
       error,
       isError,
       isLoading,
     } = useAllAlertsByNotificationChannelIdQuery(channelId);
 
+    const channelAlerts = alertsFromEnabledServices(allAlerts, aclpServices);
     const _error = error
       ? getAPIErrorOrDefault(error, 'Error in fetching the alerts.')
       : undefined;
