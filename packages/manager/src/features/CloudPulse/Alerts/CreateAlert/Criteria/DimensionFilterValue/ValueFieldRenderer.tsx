@@ -44,7 +44,10 @@ interface ValueFieldRendererProps {
    * Error message to be displayed under the input field, if any.
    */
   errorText: string | undefined;
-  handleError: () => void;
+  /**
+   * Callback triggered when a dependent API has an error.
+   */
+  handleError?: () => void;
   /**
    * The name of the field set in the form.
    */

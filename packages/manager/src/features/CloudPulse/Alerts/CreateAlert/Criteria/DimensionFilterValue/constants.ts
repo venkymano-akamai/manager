@@ -429,7 +429,7 @@ export interface DimensionFilterAutocompleteProps {
    */
   fieldValue: null | string;
   /**
-   * Callback triggered when there a dependent API has error
+   * Callback triggered when a dependent API has an error.
    */
   handleError?: () => void;
   /**
