@@ -1040,7 +1040,8 @@ export const handlers = [
       id: 90909,
     });
     const linodes = [
-      ...linodesWithFirewalls,
+      ...linodesWithFirewall,
+      ...linodesWithAclpAlerts,
       ...mtcLinodes,
       ...aclpSupportedRegionLinodes,
       nonMTCPlanInMTCSupportedRegionsLinode,
@@ -3926,6 +3927,18 @@ export const handlers = [
       objectstorage: 'Object Storage',
       blockstorage: 'Block Storage',
       lke: 'LKE Enterprise',
+    };
+    const serviceTypeScopeMap: Record<
+      CloudPulseServiceType,
+      AlertDefinitionScope[]
+    > = {
+      linode: ['entity'],
+      dbaas: ['entity'],
+      nodebalancer: ['entity'],
+      firewall: ['entity', 'account'],
+      objectstorage: ['entity', 'account', 'region'],
+      blockstorage: ['entity', 'account', 'region'],
+      lke: ['entity'],
     };
     const response = serviceTypesFactory.build({
       service_type: `${serviceType}`,
