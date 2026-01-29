@@ -11,5 +11,4 @@ export interface CreateNotificationChannelForm
       usernames: string[];
     };
   };
-  label: string;
 }
