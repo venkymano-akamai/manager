@@ -7,7 +7,6 @@ import { DebouncedSearchTextField } from 'src/components/DebouncedSearchTextFiel
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 
 import { RESOURCE_FILTER_MAP } from '../../Utils/constants';
-import { getFilterFn } from '../../Utils/utils';
 import {
   type AlertFormMode,
   REGION_GROUP_INFO_MESSAGE,
