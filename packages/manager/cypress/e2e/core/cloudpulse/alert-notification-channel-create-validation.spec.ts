@@ -231,7 +231,7 @@ describe('CloudPulse Alerting - Notification Channel Creation Validation', () =>
 
   it('should display field-specific error message when API returns field error during channel creation', () => {
     mockCreateAlertChannelError(
-      { field: 'name', reason: 'Duplicate labels not allowed' },
+      { field: 'label', reason: 'Duplicate labels not allowed' },
       400
     ).as('createAlertChannelServerFieldError');
 
