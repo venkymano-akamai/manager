@@ -13,13 +13,15 @@ import {
 import type { FieldPath, FieldValues, UseFormSetError } from 'react-hook-form';
 import { array, object, string } from 'yup';
 
+import { filterFirewallResources } from '../../Utils/utils';
 import { aggregationTypeMap, metricOperatorTypeMap } from '../constants';
 
 import type { CloudPulseResources } from '../../shared/CloudPulseResourcesSelect';
+import type { AssociatedEntityType } from '../../shared/types';
 import type { AlertRegion } from '../AlertRegions/DisplayAlertRegions';
 import type { AlertDimensionsProp } from '../AlertsDetail/DisplayAlertDetailChips';
 import type { CreateAlertDefinitionForm } from '../CreateAlert/types';
-import type {
+import type { Firewall, Linode,
   MonitoringCapabilities,
   NotificationChannelAlerts,
 } from '@linode/api-v4';
@@ -633,5 +635,39 @@ export const alertsFromEnabledServices = <
   // Return the alerts whose service type is enabled in the aclpServices flag
   return allAlerts?.filter(
     (alert) => aclpServices?.[alert.service_type]?.alerts?.enabled ?? false
+  );
+};
+
+/**
+ * @param serviceType The service type
+ * @param entityType The entity type
+ * @returns The filter function for the service type and entity type if applicable
+ */
+export const getFilterFn = (
+  serviceType?: CloudPulseServiceType | null,
+  entityType?: AssociatedEntityType
+) => {
+  if (!serviceType) {
+    return undefined;
+  }
+  if (serviceType === 'firewall' && entityType) {
+    return (resources: Firewall[]) =>
+      filterFirewallResources(resources, entityType);
+  }
+  if (serviceType === 'linode') {
+    return (resources: Linode[]) => filterLinodeResources(resources);
+  }
+  return undefined;
+};
+
+/**
+ * @param linodes The list of linodes
+ * @returns The filtered list of linodes that have ACLP alerts
+ */
+export const filterLinodeResources = (linodes: Linode[]): Linode[] => {
+  return linodes.filter(
+    (linode) =>
+      (linode.alerts.system_alerts?.length ?? 0) > 0 ||
+      (linode.alerts.user_alerts?.length ?? 0) > 0
   );
 };
