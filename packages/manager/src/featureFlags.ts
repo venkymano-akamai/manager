@@ -198,6 +198,10 @@ interface FirewallRulesetsAndPrefixLists extends BetaFeatureFlag {
   la: boolean;
 }
 
+interface ResourceLockFlag {
+  linodes: boolean;
+}
+
 export interface Flags {
   acceleratedPlans: AcceleratedPlansFlag;
   aclp: AclpFlag;
@@ -212,6 +216,7 @@ export interface Flags {
   apl: boolean;
   aplGeneralAvailability: boolean;
   aplLkeE: boolean;
+  blockStorageContextualMetrics: boolean;
   blockStorageEncryption: boolean;
   blockStorageVolumeLimit: boolean;
   cloudManagerDesignUpdatesBanner: DesignUpdatesBannerFlag;
@@ -250,6 +255,7 @@ export interface Flags {
   networkLoadBalancer: boolean;
   nodebalancerIpv6: boolean;
   nodebalancerVpc: boolean;
+  objectStorageContextualMetrics: boolean;
   objectStorageGen2: BaseFeatureFlag;
   objMultiCluster: boolean;
   objSummaryPage: boolean;
@@ -258,6 +264,7 @@ export interface Flags {
   promos: boolean;
   promotionalOffers: PromotionalOffer[];
   referralBannerText: BannerContent;
+  resourceLock: ResourceLockFlag;
   secureVmCopy: SecureVMCopy;
   selfServeBetas: boolean;
   soldOutChips: boolean;
