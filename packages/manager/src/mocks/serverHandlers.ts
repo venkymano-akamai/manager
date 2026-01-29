@@ -3715,7 +3715,10 @@ export const handlers = [
     //temporarily return an error to verify the changes
     return HttpResponse.json(
       {
-        errors: [{ field: 'label', reason: 'Label already exists' }],
+        errors: [
+          { field: 'label', reason: 'Label already exists' },
+          { field: 'details.email.usernames', reason: 'Username 1 is invalid' },
+        ],
       },
 
       { status: 400 }
