@@ -335,7 +335,11 @@ export const isOptionDisabled = ({
   multiple,
   option,
 }: MaxSelectionControlProps): boolean => {
-  if (!maxReached) {
+  if (
+    !maxReached ||
+    option.label === 'Select All ' ||
+    option.label === 'Deselect All '
+  ) {
     return false;
   }
 
