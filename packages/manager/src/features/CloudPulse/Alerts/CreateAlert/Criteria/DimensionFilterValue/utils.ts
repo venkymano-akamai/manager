@@ -16,6 +16,25 @@ import type {
 import type { CloudPulseResources } from 'src/features/CloudPulse/shared/CloudPulseResourcesSelect';
 import type { FirewallEntity } from 'src/features/CloudPulse/shared/types';
 
+interface MaxSelectionControlProps {
+  /**
+   * Indicates if the maximum selections have been reached
+   */
+  maxReached: boolean;
+  /**
+   * Indicates whether multiple select is enabled
+   */
+  multiple: boolean;
+  /**
+   * The option item to check if it should be disabled
+   */
+  option: Item<string, string>;
+  /**
+   * The current value of the field as a comma-separated string
+   */
+  value: string | undefined;
+}
+
 /**
  * Transform a dimension value using the appropriate transform function
  * @param serviceType - The cloud pulse service type
@@ -284,7 +303,6 @@ export const getBlockStorageLinodes = (
 };
 
 /**
- *
  * @param multiple - Indicates whether multiple select is enabled
  * @param value - The value of the field as a comma-separated string
  * @param maxSelections - The maximum number of selections allowed
@@ -305,24 +323,23 @@ export const isMaxSelectionsReached = (
 };
 
 /**
- *
  * @param maxReached - The boolean indicating if max selections have been reached
- * @param fieldValue -  The current value of the field as a comma-separated string
+ * @param value -  The current value of the field as a comma-separated string
  * @param multiple - Indicates whether multiple select is enabled
  * @param option - The option item to check if it should be disabled
  * @returns - Boolean indicating if the option should be disabled
  */
-export const isOptionDisabled = (
-  maxReached: boolean,
-  fieldValue: string | undefined,
-  multiple: boolean,
-  option: Item<string, string>
-): boolean => {
+export const isOptionDisabled = ({
+  maxReached,
+  value,
+  multiple,
+  option,
+}: MaxSelectionControlProps): boolean => {
   if (!maxReached) {
     return false;
   }
 
-  const values = fieldValue?.split(',') || [];
+  const values = value?.split(',') || [];
 
   // Allow already selected options (so user can unselect)
   if (multiple) {

@@ -70,19 +70,21 @@ export const ObjectStorageDimensionFilterAutocomplete = (
       data-testid="value"
       disabled={disabled}
       disableSelectAll={
-        maxSelections !== undefined ? values.length > maxSelections : false
+        maxSelections !== undefined && multiple
+          ? values.length > maxSelections
+          : false
       }
       errorText={
         errorText ??
         (isError ? 'Failed to fetch Object Storage endpoints.' : undefined)
       }
       getOptionDisabled={(option) => {
-        return isOptionDisabled(
+        return isOptionDisabled({
           maxReached,
-          fieldValue ?? '',
-          multiple ?? false,
-          option
-        );
+          value: fieldValue ?? undefined,
+          multiple: multiple ?? false,
+          option,
+        });
       }}
       helperText={
         maxSelections !== undefined && multiple

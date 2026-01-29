@@ -50,16 +50,18 @@ export const DimensionFilterAutocomplete = (
       data-testid="value"
       disabled={disabled}
       disableSelectAll={
-        maxSelections !== undefined ? options.length > maxSelections : false
+        maxSelections !== undefined && multiple
+          ? options.length > maxSelections
+          : false
       }
       errorText={errorText}
       getOptionDisabled={(option) => {
-        return isOptionDisabled(
+        return isOptionDisabled({
           maxReached,
-          fieldValue ?? '',
-          multiple ?? false,
-          option
-        );
+          value: fieldValue ?? undefined,
+          multiple: multiple ?? false,
+          option,
+        });
       }}
       helperText={
         maxSelections !== undefined && multiple
