@@ -91,7 +91,7 @@ export const FirewallDimensionFilterAutocomplete = (
         });
       }}
       helperText={
-        maxSelections !== undefined && multiple
+        !errorText && maxSelections !== undefined && multiple
           ? `Select up to ${maxSelections} values`
           : undefined
       }
