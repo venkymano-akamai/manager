@@ -629,11 +629,9 @@ export const alertsFromEnabledServices = <
 >(
   allAlerts: T[] | undefined,
   aclpServices: Partial<AclpServices> | undefined
-): T[] => {
+): T[] | undefined => {
   // Return the alerts whose service type is enabled in the aclpServices flag
-  return (
-    allAlerts?.filter(
-      (alert) => aclpServices?.[alert.service_type]?.alerts?.enabled ?? false
-    ) ?? []
+  return allAlerts?.filter(
+    (alert) => aclpServices?.[alert.service_type]?.alerts?.enabled ?? false
   );
 };

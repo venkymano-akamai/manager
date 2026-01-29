@@ -5,7 +5,8 @@ import { notificationChannelAlertsFactory } from 'src/factories/cloudpulse/chann
 import { renderWithTheme, wrapWithTableBody } from 'src/utilities/testHelpers';
 
 import { NotificationChannelAlertsTableRow } from './NotificationChannelAlertsTableRow';
-import { AclpServices } from 'src/featureFlags';
+
+import type { AclpServices } from 'src/featureFlags';
 
 const queryMocks = vi.hoisted(() => ({
   useFlags: vi.fn(),
@@ -19,8 +20,8 @@ const aclpServicesFlag: Partial<AclpServices> = {
   dbaas: {
     alerts: { enabled: true, beta: true },
     metrics: { enabled: true, beta: true },
-  }
-}
+  },
+};
 
 vi.mock('src/hooks/useFlags', () => ({
   useFlags: queryMocks.useFlags,
