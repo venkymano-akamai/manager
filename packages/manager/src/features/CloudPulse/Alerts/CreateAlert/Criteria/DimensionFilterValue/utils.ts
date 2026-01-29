@@ -32,7 +32,7 @@ interface MaxSelectionControlProps {
   /**
    * The current value of the field as a comma-separated string
    */
-  value: string | undefined;
+  value?: string;
 }
 
 /**
