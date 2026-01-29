@@ -3786,13 +3786,13 @@ export const handlers = [
             email: {
               recipient_type: 'user',
               usernames: [
-                'user1',
+                'reallyreallylongusername1',
                 'user2',
-                'user3',
-                'user4',
+                'longusernameuser3',
+                'longusernameuser4',
                 'user5',
-                'user6',
-                'user7',
+                'longusernameuser6',
+                'longusernameuser7',
                 'user8',
                 'user9',
                 'user10',
@@ -3825,7 +3825,19 @@ export const handlers = [
         notificationChannelFactory.build({
           id: Number(params.id),
           details: {
-            email: { recipient_type: 'user', usernames: ['user1', 'user2'] },
+            email: {
+              recipient_type: 'user',
+              usernames: [
+                'user1',
+                'user2',
+                'user3',
+                'user4',
+                'user5',
+                'user6',
+                'user7',
+                'user8',
+              ],
+            },
           },
         })
       );
@@ -3839,10 +3851,14 @@ export const handlers = [
     if (params.id === '5') {
       return HttpResponse.json(makeResourcePage([]));
     }
-    const alerts = notificationChannelAlertsFactory.buildList(3);
+    const alerts = notificationChannelAlertsFactory.buildList(84);
     const dbaasalerts = notificationChannelAlertsFactory.buildList(2, {
       service_type: 'dbaas',
     });
+    const volumeAlerts = notificationChannelAlertsFactory.buildList(3, {
+      service_type: 'blockstorage',
+    });
+    alerts.push(...volumeAlerts);
     alerts.push(...dbaasalerts);
     return HttpResponse.json(makeResourcePage(alerts));
   }),
@@ -3925,7 +3941,7 @@ export const handlers = [
       nodebalancer: 'NodeBalancers',
       firewall: 'Firewalls',
       objectstorage: 'Object Storage',
-      blockstorage: 'Block Storage',
+      blockstorage: 'Volumes',
       lke: 'LKE Enterprise',
     };
     const serviceTypeScopeMap: Record<
