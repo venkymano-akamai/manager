@@ -51,26 +51,26 @@ export interface AreaProps {
 
 interface ZoomCallbacks {
   /**
-   * callback fired on mouse down event on the chart
+   * Callback fired on mouse down event on the chart
    */
   onMouseDown?: CategoricalChartFunc;
   /**
-   * callback fired on mouse move event on the chart
+   * Callback fired on mouse move event on the chart
    */
   onMouseMove?: CategoricalChartFunc;
   /**
-   * callback fired on mouse up event on the chart
+   * Callback fired on mouse up event on the chart
    */
   onMouseUp?: CategoricalChartFunc;
 }
 
 interface ReferenceAreaProps {
   /**
-   * ending x-axis value of the reference area
+   * Ending x-axis value of the reference area
    */
   referenceEnd: number;
   /**
-   * starting x-axis value of the reference area
+   * Starting x-axis value of the reference area
    */
   referenceStart: number;
 }
@@ -238,8 +238,8 @@ export const AreaChart = (props: AreaChartProps) => {
   } = props;
 
   const theme = useTheme();
-  const { onMouseDown, onMouseMove, onMouseUp } = zoomCallbacks || {};
-  const { referenceStart, referenceEnd } = referenceArea || {};
+  const { onMouseDown, onMouseMove, onMouseUp } = zoomCallbacks ?? {};
+  const { referenceStart, referenceEnd } = referenceArea ?? {};
 
   const [activeSeries, setActiveSeries] = React.useState<Array<string>>([]);
   const handleLegendClick = (dataKey: string) => {
@@ -390,7 +390,7 @@ export const AreaChart = (props: AreaChartProps) => {
               wrapperStyle={legendStyles}
             />
           )}
-          {referenceStart && referenceEnd && (
+          {referenceStart !== undefined && referenceEnd !== undefined && (
             <ReferenceArea
               strokeOpacity={0.3}
               x1={referenceStart}
