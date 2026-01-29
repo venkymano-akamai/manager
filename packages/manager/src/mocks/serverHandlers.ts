@@ -383,8 +383,57 @@ const databases = [
 
   http.get('*/databases/postgresql/instances/:id/connection-pools', () => {
     const connectionPools = databaseConnectionPoolFactory.buildList(5);
+    // For mocking error response
+    // return HttpResponse.json({ errors: [{ reason: 'Unable to retrieve connection pools' }] }, { status: 400 });
     return HttpResponse.json(makeResourcePage(connectionPools));
   }),
+
+  http.post(
+    '*/databases/postgresql/instances/:id/connection-pools',
+    async ({ request }) => {
+      const body = await request.json();
+      const payload: any = body;
+
+      const connectionPool = databaseConnectionPoolFactory.build({
+        database: payload.database,
+        label: payload.label,
+        mode: payload.mode,
+        size: payload.size,
+        username: payload.username,
+      });
+      // For mocking error response
+      // return HttpResponse.json(
+      //   {
+      //     errors: [
+      //       { field: 'label', reason: 'sample error text' },
+      //       { field: 'database', reason: 'sample error text' },
+      //       { field: 'mode', reason: 'sample error text' },
+      //       { field: 'size', reason: 'sample error text' },
+      //       { field: 'username', reason: 'sample error text' },
+      //     ],
+      //   },
+      //   { status: 400 }
+      // );
+      return HttpResponse.json(connectionPool);
+    }
+  ),
+
+  http.put(
+    '*/databases/postgresql/instances/:id/connection-pools/:label',
+    async ({ request }) => {
+      const body = await request.json();
+      const payload: any = body;
+
+      const connectionPool = databaseConnectionPoolFactory.build({
+        database: payload.database,
+        label: payload.label,
+        mode: payload.mode,
+        size: payload.size,
+        username: payload.username,
+      });
+      return HttpResponse.json(connectionPool);
+    }
+  ),
 
   http.get('*/databases/:engine/instances/:id', ({ params }) => {
     const database = makeMockDatabase(params);
@@ -3805,6 +3854,19 @@ export const handlers = [
     alerts.push(...dbaasalerts);
     return HttpResponse.json(makeResourcePage(alerts));
   }),
+  http.get('*/monitor/alert-channels/:id/alerts', ({ params }) => {
+    if (params.id === 'undefined') {
+      return HttpResponse.json({}, { status: 404 });
+    }
+    if (params.id === '5') {
+      return HttpResponse.json(makeResourcePage([]));
+    }
+    const alerts = notificationChannelAlertsFactory.buildList(3);
+    const dbaasalerts = notificationChannelAlertsFactory.buildList(2, {
+      service_type: 'dbaas',
+    });
+    return HttpResponse.json(makeResourcePage([...alerts, ...dbaasalerts]));
+  }),
   http.get('*/monitor/services', () => {
     const response: ServiceTypesList = {
       data: [
@@ -3842,7 +3904,7 @@ export const handlers = [
           }),
         }),
         serviceTypesFactory.build({
-          label: 'Volumes',
+          label: 'Block Storage',
           service_type: 'blockstorage',
           regions: 'us-iad,us-east',
           alert: serviceAlertFactory.build({
@@ -3871,8 +3933,8 @@ export const handlers = [
       nodebalancer: 'NodeBalancers',
       firewall: 'Firewalls',
       objectstorage: 'Object Storage',
-      blockstorage: 'Volumes',
-      lke: 'LKE',
+      blockstorage: 'Block Storage',
+      lke: 'LKE Enterprise',
     };
     const serviceTypeScopeMap: Record<
       CloudPulseServiceType,
