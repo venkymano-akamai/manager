@@ -3760,15 +3760,7 @@ export const handlers = [
     return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
   http.post('*/monitor/alert-channels', () => {
-    // return HttpResponse.json(notificationChannelFactory.build());
-    //temporarily return an error to verify the changes
-    return HttpResponse.json(
-      {
-        errors: [{ field: 'label', reason: 'Label already exists' }],
-      },
-
-      { status: 400 }
-    );
+    return HttpResponse.json(notificationChannelFactory.build());
   }),
   http.put('*/monitor/alert-channels/:id', () => {
     return HttpResponse.json(notificationChannelFactory.build());
