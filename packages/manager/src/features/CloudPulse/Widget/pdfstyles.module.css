@@ -1,0 +1,24 @@
+/* Hidden by default */
+.pdfFilterString {
+    display: none;
+}
+
+/* Visible only during PDF export */
+:global(.pdf-mode) .pdfFilterString {
+    display: block;
+    font-size: 10px;
+    color: #343438;
+    margin-top: 4px;
+}
+
+/* Visible only during PDF export */
+:global(.pdf-mode) .pdfFilterString {
+    display: block;
+    font-size: 10px;
+    color: #343438;
+    margin-top: 4px;
+}
+
+:global(.pdf-mode) [data-pdf-hide-stack='true'] {
+    display: none !important;
+}

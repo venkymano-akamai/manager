@@ -1,4 +1,4 @@
-import { Box, Divider } from '@linode/ui';
+import { Box, Button, Divider } from '@linode/ui';
 import { IconButton } from '@mui/material';
 import { GridLegacy } from '@mui/material';
 import * as React from 'react';
@@ -34,6 +34,7 @@ export interface GlobalFilterProperties {
     dashboard: Dashboard | undefined,
     skipReset?: boolean
   ): void;
+  handleDownloadPDF: () => void;
   handleGroupByChange: (selectedValues: string[]) => void;
   handleTimeDurationChange(timeDuration: DateTimeWithPreset): void;
   handleToggleAppliedFilter(isVisible: boolean): void;
@@ -177,6 +178,18 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
                   : undefined
               }
             />
+            <Button
+              onClick={() => {
+                handleToggleAppliedFilter(true);
+                props.handleDownloadPDF();
+              }}
+              sx={{
+                marginTop: 3,
+              }}
+              variant="outlined"
+            >
+              Download PDF
+            </Button>
           </Box>
         </Box>
       </GridLegacy>

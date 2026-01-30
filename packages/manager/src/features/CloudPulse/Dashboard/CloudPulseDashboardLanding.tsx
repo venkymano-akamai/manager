@@ -1,5 +1,5 @@
 import { useProfile } from '@linode/queries';
-import { Box, NewFeatureChip, Paper } from '@linode/ui';
+import { Box, CircleProgress, NewFeatureChip, Paper } from '@linode/ui';
 import { GridLegacy } from '@mui/material';
 import { DateTime } from 'luxon';
 import * as React from 'react';
@@ -12,6 +12,8 @@ import { useFlags } from 'src/hooks/useFlags';
 import { GlobalFilters } from '../Overview/GlobalFilters';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
 import { defaultTimeDuration } from '../Utils/CloudPulseDateTimePickerUtils';
+import { FILTER_CONFIG } from '../Utils/FilterConfig';
+import { downloadDashboardPDF } from './CloudPulseDashboardDownloader';
 import { CloudPulseDashboardRenderer } from './CloudPulseDashboardRenderer';
 
 import type { Dashboard, DateTimeWithPreset } from '@linode/api-v4';
@@ -42,6 +44,8 @@ export const CloudPulseDashboardLanding = () => {
 
   const [groupBy, setGroupBy] = React.useState<string[]>([]);
 
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+
   const [timeDuration, setTimeDuration] = React.useState<
     DateTimeWithPreset | undefined
   >();
@@ -63,6 +67,27 @@ export const CloudPulseDashboardLanding = () => {
   const onGroupByChange = React.useCallback((selectedValues: string[]) => {
     setGroupBy(selectedValues);
   }, []);
+
+  const handleDownloadPDF = React.useCallback(async () => {
+    try {
+      setIsDownloadingPdf(true);
+
+      // Placeholder for future implementation
+      const config = FILTER_CONFIG.get(dashboard?.id || 0);
+      if (timeDuration && config) {
+        await downloadDashboardPDF(
+          dashboard?.label || '',
+          timeDuration,
+          config,
+          filterData,
+          dashboard?.widgets.map((widget) => widget.label) || []
+        );
+      }
+    } catch (e) {
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  }, [dashboard, filterData, timeDuration]);
 
   const onFilterChange = React.useCallback(
     (filterKey: string, filterValue: FilterValueType, labels: string[]) => {
@@ -115,12 +140,29 @@ export const CloudPulseDashboardLanding = () => {
         docsLink="https://techdocs.akamai.com/cloud-computing/docs/akamai-cloud-pulse"
       />
       <GridLegacy container spacing={3} sx={{ width: 'inherit !important' }}>
+        {isDownloadingPdf && (
+          <Box
+            sx={(theme) => ({
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: theme.tokens.alias.Background.Overlay,
+            })}
+          >
+            <CircleProgress size="lg" />
+          </Box>
+        )}
+
         <GridLegacy item xs={12}>
           <Paper sx={{ padding: 0 }}>
             <Box display="flex" flexDirection="column">
               <GlobalFilters
                 handleAnyFilterChange={onFilterChange}
                 handleDashboardChange={onDashboardChange}
+                handleDownloadPDF={handleDownloadPDF}
                 handleGroupByChange={onGroupByChange}
                 handleTimeDurationChange={onTimeDurationChange}
                 handleToggleAppliedFilter={toggleAppliedFilter}

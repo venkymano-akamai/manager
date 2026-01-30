@@ -36,6 +36,7 @@ import { CloudPulseIntervalSelect } from './components/CloudPulseIntervalSelect'
 import { CloudPulseLineGraph } from './components/CloudPulseLineGraph';
 import { CloudPulseDimensionFiltersSelect } from './components/DimensionFilters/CloudPulseDimensionFiltersSelect';
 import { ZoomIcon } from './components/Zoomer';
+import styles from './pdfstyles.module.css';
 
 import type { FilterValueType } from '../Dashboard/CloudPulseDashboardLanding';
 import type { CloudPulseResources } from '../shared/CloudPulseResourcesSelect';
@@ -498,8 +499,32 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     vpcFetch.isLoading,
     linodeFromVolumes.isLoading,
   ]);
+
+  let filterString = '';
+  if (widget.time_granularity) {
+    filterString += `Interval: ${widget.time_granularity.value !== -1 ? widget.time_granularity.value : ''} ${widget.time_granularity.unit} `;
+  }
+  if (widget.aggregate_function) {
+    if (filterString.length > 0) {
+      filterString += '| ';
+    }
+    filterString += `Aggregation Function : ${convertStringToCamelCasesWithSpaces(widget.aggregate_function)} `;
+  }
+  if (groupBy?.length) {
+    if (filterString.length > 0) {
+      filterString += '| ';
+    }
+    filterString += `Group By: ${groupBy.join(', ')} `;
+  }
   return (
-    <GridLegacy container item lg={widget.size} xs={12}>
+    <GridLegacy
+      className={widget.label}
+      container
+      data-pdf-half={widget.size === 6}
+      item
+      lg={widget.size}
+      xs={12}
+    >
       <Stack
         spacing={2}
         sx={{
@@ -529,6 +554,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
               )
             </Typography>
             <Stack
+              data-pdf-hide-stack="true"
               direction={{ sm: 'row' }}
               sx={{
                 flex: { sm: 3, xs: 0 },
@@ -587,6 +613,9 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
               </Box>
             </Stack>
           </Stack>
+          <Box className={styles.pdfFilterString} marginLeft={2}>
+            <Typography variant="body1">{filterString}</Typography>
+          </Box>
           <CloudPulseLineGraph
             areas={areas}
             ariaLabel={ariaLabel ? ariaLabel : ''}
