@@ -33,6 +33,7 @@ interface WidgetProps {
   dashboard: Dashboard;
   duration: DateTimeWithPreset;
   groupBy: string[];
+  handleDownloadPDF?: (widgetLabel?: string) => void;
   isJweTokenFetching: boolean;
   jweToken?: JWEToken | undefined;
   linodeRegion?: string;
@@ -75,6 +76,7 @@ export const RenderWidgets = React.memo(
       groupBy,
       linodeRegion,
       region,
+      handleDownloadPDF,
     } = props;
 
     const flags = useFlags();
@@ -187,6 +189,7 @@ export const RenderWidgets = React.memo(
                 {...cloudPulseWidgetProperties}
                 authToken={jweToken?.token}
                 availableMetrics={availMetrics}
+                handleDownloadPDF={handleDownloadPDF}
                 isJweTokenFetching={isJweTokenFetching}
                 linodeRegion={linodeRegion}
                 region={region}

@@ -1,8 +1,9 @@
-import { Box, Button, Divider } from '@linode/ui';
+import { Box, Divider } from '@linode/ui';
 import { IconButton } from '@mui/material';
 import { GridLegacy } from '@mui/material';
 import * as React from 'react';
 
+import Download from 'src/assets/icons/download.svg';
 import Reload from 'src/assets/icons/refresh.svg';
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 
@@ -47,6 +48,7 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
     handleTimeDurationChange,
     handleToggleAppliedFilter,
     handleGroupByChange,
+    handleDownloadPDF,
   } = props;
 
   const { preferences, updateGlobalFilterPreference: updatePreferences } =
@@ -178,18 +180,22 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
                   : undefined
               }
             />
-            <Button
-              onClick={() => {
-                handleToggleAppliedFilter(true);
-                props.handleDownloadPDF();
-              }}
-              sx={{
-                marginTop: 3,
-              }}
-              variant="outlined"
-            >
-              Download PDF
-            </Button>
+            <CloudPulseTooltip placement="bottom-end" title="Download PDF">
+              <IconButton
+                aria-label="Download PDF"
+                color="inherit"
+                data-testid="global-download-pdf"
+                disabled={!selectedDashboard}
+                onClick={handleDownloadPDF}
+                size="small"
+                sx={(theme) => ({
+                  marginBlockEnd: 'auto',
+                  marginTop: { md: theme.spacingFunction(28) },
+                })}
+              >
+                <Download height="24px" width="24px" />
+              </IconButton>
+            </CloudPulseTooltip>
           </Box>
         </Box>
       </GridLegacy>

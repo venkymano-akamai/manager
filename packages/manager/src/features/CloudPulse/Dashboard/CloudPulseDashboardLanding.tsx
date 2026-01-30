@@ -31,6 +31,7 @@ export interface DashboardProp {
   dashboard?: Dashboard;
   filterValue: CloudPulseMetricsFilter;
   groupBy: string[];
+  handleDownloadPDF: (widgetLabel?: string) => void;
   timeDuration?: DateTimeWithPreset;
 }
 
@@ -88,6 +89,30 @@ export const CloudPulseDashboardLanding = () => {
       setIsDownloadingPdf(false);
     }
   }, [dashboard, filterData, timeDuration]);
+
+  const handleDownloadPDFForWidgets = React.useCallback(
+    async (widgetLabel?: string) => {
+      try {
+        setIsDownloadingPdf(true);
+
+        // Placeholder for future implementation
+        const config = FILTER_CONFIG.get(dashboard?.id || 0);
+        if (timeDuration && config) {
+          await downloadDashboardPDF(
+            dashboard?.label || '',
+            timeDuration,
+            config,
+            filterData,
+            widgetLabel ? [widgetLabel] : []
+          );
+        }
+      } catch (e) {
+      } finally {
+        setIsDownloadingPdf(false);
+      }
+    },
+    [dashboard, filterData, timeDuration]
+  );
 
   const onFilterChange = React.useCallback(
     (filterKey: string, filterValue: FilterValueType, labels: string[]) => {
@@ -180,6 +205,7 @@ export const CloudPulseDashboardLanding = () => {
           dashboard={dashboard}
           filterValue={filterData.id}
           groupBy={groupBy}
+          handleDownloadPDF={handleDownloadPDFForWidgets}
           timeDuration={timeDuration}
         />
       </GridLegacy>

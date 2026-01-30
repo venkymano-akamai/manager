@@ -48,6 +48,8 @@ export interface DashboardProperties {
    */
   groupBy: string[];
 
+  handleDownloadPDF?: (widgetLabel?: string) => void;
+
   /**
    * Selected linode region for the dashboard
    */
@@ -96,6 +98,7 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
     groupBy,
     linodeRegion,
     region,
+    handleDownloadPDF,
   } = props;
 
   const { preferences } = useAclpPreference();
@@ -190,6 +193,7 @@ export const CloudPulseDashboard = (props: DashboardProperties) => {
       dashboard={dashboard}
       duration={duration}
       groupBy={groupBy}
+      handleDownloadPDF={handleDownloadPDF}
       isJweTokenFetching={isJweTokenFetching}
       jweToken={jweToken}
       linodeRegion={linodeRegion}

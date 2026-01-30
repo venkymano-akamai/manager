@@ -1,15 +1,17 @@
 import { useProfile, useRegionsQuery } from '@linode/queries';
 import { Box, Paper, Typography } from '@linode/ui';
-import { GridLegacy, Stack, useTheme } from '@mui/material';
+import { GridLegacy, IconButton, Stack, useTheme } from '@mui/material';
 import { DateTime } from 'luxon';
 import React from 'react';
 
+import Download from 'src/assets/icons/download.svg';
 import { useFlags } from 'src/hooks/useFlags';
 import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
 
 import { useBlockStorageFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useBlockStorageFetchOptions';
 import { useFirewallFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useFirewallFetchOptions';
 import { WidgetFilterGroupByRenderer } from '../GroupBy/WidgetFilterGroupByRenderer';
+import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import {
   generateGraphData,
   getCloudPulseMetricRequest,
@@ -103,6 +105,8 @@ export interface CloudPulseWidgetProperties {
    */
   globalFilterGroupBy: string[];
 
+  handleDownloadPDF: (widgetLabel?: string) => void;
+
   /**
    * Jwe token fetching status check
    */
@@ -137,11 +141,11 @@ export interface CloudPulseWidgetProperties {
    * optional timestamp to pass as react query param to forcefully re-fetch data
    */
   timeStamp?: number;
-
   /**
    * this should come from dashboard, which maintains map for service types in a separate API call
    */
   unit: string;
+
   /**
    * color index to be selected from available them if not theme is provided by user
    */
@@ -194,6 +198,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     linodeRegion,
     dashboardId,
     region,
+    handleDownloadPDF,
   } = props;
   const [dimensionFilters, setDimensionFilters] = React.useState<
     MetricsDimensionFilter[] | undefined
@@ -560,7 +565,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                 flex: { sm: 3, xs: 0 },
                 justifyContent: 'end',
                 alignItems: 'center',
-                gap: 2,
+                gap: widget.size === 12 ? 2 : 1,
                 maxHeight: `calc(${theme.spacing(10)} + 5px)`,
                 overflow: 'auto',
                 width: { sm: 'inherit', xs: '100%' },
@@ -584,7 +589,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   onAggregateFuncChange={handleAggregateFunctionChange}
                 />
               )}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: widget.size === 12 ? 2 : 1 }}>
                 {flags.aclp?.showWidgetDimensionFilters && (
                   <CloudPulseDimensionFiltersSelect
                     dashboardId={dashboardId}
@@ -606,6 +611,24 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   savePreferences={savePref}
                   serviceType={serviceType}
                 />
+                <CloudPulseTooltip
+                  key="minimize-tooltip"
+                  placement="bottom-end"
+                  title="Minimize"
+                >
+                  <IconButton
+                    aria-label="Zoom Out"
+                    color="inherit"
+                    data-testid="zoom-out"
+                    onClick={() => handleDownloadPDF(widget.label)}
+                    sx={{
+                      padding: 0,
+                      visibility: { lg: 'visible', xs: 'hidden' },
+                    }}
+                  >
+                    <Download />
+                  </IconButton>
+                </CloudPulseTooltip>
                 <ZoomIcon
                   handleZoomToggle={handleZoomToggle}
                   zoomIn={widget?.size === 12}

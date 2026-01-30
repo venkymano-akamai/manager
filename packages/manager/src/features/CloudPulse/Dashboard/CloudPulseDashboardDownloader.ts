@@ -125,112 +125,6 @@ const drawFilterData = (
   return boxY + boxHeight + 12;
 };
 
-// export const downloadDashboardPDF = async (
-//   dashboardName: string,
-//   timeDuration: DateTimeWithPreset,
-//   filterConfig: CloudPulseServiceTypeFilterMap,
-//   filterData: FilterData,
-//   widgets: string[]
-// ) => {
-//   await document.fonts.ready;
-
-//   // Optional: switch to PDF-only layout
-//   document.body.classList.add('pdf-mode');
-
-//   try {
-//     /* ---------------- Header capture ---------------- */
-//     const AkamaiLogoURL = await getAkamaiLogo();
-
-//     /* ---------------- Widget capture ---------------- */
-//     const widgetImages: {
-//       height: number;
-//       img: string;
-//       width: number;
-//     }[] = [];
-
-//     for (const label of widgets) {
-//       const el = document.getElementsByClassName(label)[0] as
-//         | HTMLElement
-//         | undefined;
-
-//       if (!el) {
-//         // skip missing widgets safely
-//         continue;
-//       }
-
-//       widgetImages.push(await captureElement(el));
-//     }
-
-//     /* ---------------- PDF setup ---------------- */
-//     const pdf = new jsPDF({
-//       unit: 'px',
-//     });
-
-//     const pageWidth = pdf.internal.pageSize.getWidth();
-//     const pageHeight = pdf.internal.pageSize.getHeight();
-
-//     const contentWidth = pageWidth - MARGIN * 2;
-//     const availableHeight = pageHeight - MARGIN * 2 - HEADER_HEIGHT - GAP;
-
-//     const widgetSlotHeight = availableHeight / 2;
-
-//     /* ---------------- Render 2 widgets per page ---------------- */
-//     for (let i = 0; i < 1; i += 2) {
-//       if (i !== 0) {
-//         pdf.addPage();
-//       }
-
-//       if (AkamaiLogo) {
-//         pdf.addImage(
-//           AkamaiLogoURL,
-//           'JPEG',
-//           160,
-//           10,
-//           120,
-//           HEADER_HEIGHT,
-//           undefined,
-//           'MEDIUM'
-//         );
-//       }
-
-//       drawPdfHeader(
-//         pdf,
-//         dashboardName,
-//         timeDuration.preset ||
-//           `${timeDuration.start} - ${timeDuration.end} ${timeDuration.timeZone}`
-//       );
-
-//       if (filterData.label && Object.keys(filterData.label).length > 0) {
-//         drawFilterData(pdf, filterData, filterConfig);
-//       }
-
-//       let yCursor = MARGIN + HEADER_HEIGHT * 3 + GAP;
-
-//       for (let j = i; j < i + 2 && j < widgetImages.length; j++) {
-//         const widget = widgetImages[j];
-
-//         const scale = Math.min(
-//           contentWidth / widget.width,
-//           widgetSlotHeight / widget.height
-//         );
-
-//         const renderWidth = widget.width * scale;
-//         const renderHeight = widget.height * scale;
-
-//         const x = MARGIN + (contentWidth - renderWidth) / 2;
-
-//         pdf.addImage(widget.img, 'PNG', x, yCursor, renderWidth, renderHeight);
-
-//         yCursor += widgetSlotHeight;
-//       }
-//     }
-
-//     pdf.save('dashboard-report.pdf');
-//   } finally {
-//     document.body.classList.remove('pdf-mode');
-//   }
-// };
-
 export const downloadDashboardPDF = async (
   dashboardName: string,
   timeDuration: DateTimeWithPreset,
@@ -363,7 +257,7 @@ export const downloadDashboardPDF = async (
       currentRowHeight = Math.max(currentRowHeight, renderHeight);
     }
 
-    pdf.save('dashboard-report.pdf');
+    pdf.save(`${dashboardName}.pdf`);
   } finally {
     document.body.classList.remove('pdf-mode');
   }
