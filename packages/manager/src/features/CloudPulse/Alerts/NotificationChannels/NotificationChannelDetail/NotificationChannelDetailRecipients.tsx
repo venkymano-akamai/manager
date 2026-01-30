@@ -30,7 +30,7 @@ export const NotificationChannelRecipients = React.memo(
     return (
       <>
         <Typography marginBottom={2} variant="h2">
-          Settings
+          Details
         </Typography>
         <GridLegacy
           container
@@ -51,7 +51,6 @@ export const NotificationChannelRecipients = React.memo(
             <DisplayAlertDetailChips
               label="Recipients"
               mergeChips={false}
-              valueGridColumns={2}
               values={recipients}
             />
           ) : null}
