@@ -1,9 +1,11 @@
 import { useProfile } from '@linode/queries';
 import { Box, CircleProgress, Divider, ErrorState, Paper } from '@linode/ui';
-import { GridLegacy } from '@mui/material';
+import { GridLegacy, IconButton } from '@mui/material';
 import { DateTime } from 'luxon';
+import { useSnackbar } from 'notistack';
 import React from 'react';
 
+import Download from 'src/assets/icons/download.svg';
 import {
   useCloudPulseDashboardByIdQuery,
   useCloudPulseDashboardsQuery,
@@ -11,10 +13,12 @@ import {
 
 import { GlobalFilterGroupByRenderer } from '../GroupBy/GlobalFilterGroupByRenderer';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
+import { CloudPulseExportProvider } from '../shared/CloudPulseContextProvider';
 import { CloudPulseDashboardFilterBuilder } from '../shared/CloudPulseDashboardFilterBuilder';
 import { CloudPulseDashboardSelect } from '../shared/CloudPulseDashboardSelect';
 import { CloudPulseDateTimeRangePicker } from '../shared/CloudPulseDateTimeRangePicker';
 import { CloudPulseErrorPlaceholder } from '../shared/CloudPulseErrorPlaceholder';
+import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import {
   convertToGmt,
   defaultTimeDuration,
@@ -28,6 +32,7 @@ import {
 } from '../Utils/ReusableDashboardFilterUtils';
 import { getAllDashboards } from '../Utils/utils';
 import { CloudPulseDashboard } from './CloudPulseDashboard';
+import { downloadDashboardPDF } from './CloudPulseDashboardDownloader';
 
 import type { FilterData, FilterValueType } from './CloudPulseDashboardLanding';
 import type {
@@ -55,7 +60,7 @@ export interface CloudPulseDashboardWithFiltersProp {
   serviceType?: CloudPulseServiceType;
 }
 
-export const CloudPulseDashboardWithFilters = React.memo(
+export const CloudPulseDashboardWithFiltersRenderer = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
     const { dashboardId, resource, region, serviceType } = props;
 
@@ -67,6 +72,8 @@ export const CloudPulseDashboardWithFilters = React.memo(
       serviceType ? [serviceType] : []
     );
 
+    const { enqueueSnackbar } = useSnackbar();
+
     const { data: profile } = useProfile();
 
     const [filterData, setFilterData] = React.useState<FilterData>({
@@ -75,6 +82,8 @@ export const CloudPulseDashboardWithFilters = React.memo(
     });
 
     const [dashboard, setDashboard] = React.useState<Dashboard | undefined>();
+
+    const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
 
     // Update dashboard when dashboardsList loads
     React.useEffect(() => {
@@ -144,6 +153,55 @@ export const CloudPulseDashboardWithFilters = React.memo(
       []
     );
 
+    const handleDownloadPDF = React.useCallback(async () => {
+      try {
+        setIsDownloadingPdf(true);
+
+        // Placeholder for future implementation
+        const config = FILTER_CONFIG.get(currentDashboard?.id || 0);
+        if (timeDuration && config) {
+          const result = await downloadDashboardPDF(
+            currentDashboard?.label || '',
+            timeDuration,
+            config,
+            filterData,
+            currentDashboard?.widgets.map((widget) => widget.label) || []
+          );
+          if (!result) {
+            enqueueSnackbar('Unable to download PDF', { variant: 'error' });
+          } else {
+            enqueueSnackbar('PDF downloaded', { variant: 'success' });
+          }
+        }
+      } finally {
+        setIsDownloadingPdf(false);
+      }
+    }, [currentDashboard, enqueueSnackbar, filterData, timeDuration]);
+
+    const handleDownloadPDFForWidgets = React.useCallback(
+      async (widgetLabel?: string) => {
+        try {
+          setIsDownloadingPdf(true);
+
+          // Placeholder for future implementation
+          const config = FILTER_CONFIG.get(currentDashboard?.id || 0);
+          if (timeDuration && config) {
+            await downloadDashboardPDF(
+              currentDashboard?.label || '',
+              timeDuration,
+              config,
+              filterData,
+              widgetLabel ? [widgetLabel] : []
+            );
+          }
+        } catch (e) {
+        } finally {
+          setIsDownloadingPdf(false);
+        }
+      },
+      [currentDashboard, filterData, timeDuration]
+    );
+
     const renderPlaceHolder = (title: string) => {
       return (
         <Paper>
@@ -186,6 +244,21 @@ export const CloudPulseDashboardWithFilters = React.memo(
           }}
         >
           <GridLegacy container>
+            {isDownloadingPdf && (
+              <Box
+                sx={(theme) => ({
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 1300,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: theme.tokens.alias.Background.Overlay,
+                })}
+              >
+                <CircleProgress size="lg" />
+              </Box>
+            )}
             <GridLegacy item xs={12}>
               <Box
                 display="flex"
@@ -218,6 +291,25 @@ export const CloudPulseDashboardWithFilters = React.memo(
                     handleChange={handleGroupByChange}
                     selectedDashboard={currentDashboard}
                   />
+                  <CloudPulseTooltip
+                    placement="bottom-end"
+                    title="Download PDF"
+                  >
+                    <IconButton
+                      aria-label="Download PDF"
+                      color="inherit"
+                      data-testid="global-download-pdf"
+                      disabled={!currentDashboard}
+                      onClick={handleDownloadPDF}
+                      size="small"
+                      sx={(theme) => ({
+                        marginBlockEnd: 'auto',
+                        marginTop: { md: theme.spacingFunction(28) },
+                      })}
+                    >
+                      <Download height="24px" width="24px" />
+                    </IconButton>
+                  </CloudPulseTooltip>
                 </Box>
               </Box>
             </GridLegacy>
@@ -273,6 +365,7 @@ export const CloudPulseDashboardWithFilters = React.memo(
               timeDuration,
               groupBy,
             })}
+            handleDownloadPDF={handleDownloadPDFForWidgets}
             linodeRegion={
               filterData.id[PARENT_ENTITY_REGION]
                 ? (filterData.id[PARENT_ENTITY_REGION] as string)
@@ -283,6 +376,16 @@ export const CloudPulseDashboardWithFilters = React.memo(
           renderPlaceHolder('Select filters to visualize metrics.')
         )}
       </Box>
+    );
+  }
+);
+
+export const CloudPulseDashboardWithFilters = React.memo(
+  (props: CloudPulseDashboardWithFiltersProp) => {
+    return (
+      <CloudPulseExportProvider>
+        <CloudPulseDashboardWithFiltersRenderer {...props} />
+      </CloudPulseExportProvider>
     );
   }
 );

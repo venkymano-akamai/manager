@@ -2,6 +2,8 @@ import axios from 'axios';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
+import { reportException } from 'src/exceptionReporting';
+
 import AkamaiLogo from './akamai-logo.png';
 
 import type { CloudPulseServiceTypeFilterMap } from '../Utils/models';
@@ -131,9 +133,11 @@ export const downloadDashboardPDF = async (
   filterConfig: CloudPulseServiceTypeFilterMap,
   filterData: FilterData,
   widgets: string[]
-) => {
+): Promise<boolean> => {
   await document.fonts.ready;
   document.body.classList.add('pdf-mode');
+
+  let success = true;
 
   try {
     const AkamaiLogoURL = await getAkamaiLogo();
@@ -168,8 +172,9 @@ export const downloadDashboardPDF = async (
     drawPdfHeader(
       pdf,
       dashboardName,
-      timeDuration.preset ||
-        `${timeDuration.start} - ${timeDuration.end} ${timeDuration.timeZone}`
+      timeDuration.preset && timeDuration.preset !== 'Reset'
+        ? timeDuration.preset
+        : `${timeDuration.start} - ${timeDuration.end} ${timeDuration.timeZone}`
     );
 
     let yCursor = MARGIN + HEADER_HEIGHT + GAP;
@@ -258,9 +263,14 @@ export const downloadDashboardPDF = async (
     }
 
     pdf.save(`${dashboardName}.pdf`);
+  } catch (e) {
+    reportException(Error('Unable to download PDF.'), e);
+    success = false;
   } finally {
     document.body.classList.remove('pdf-mode');
   }
+
+  return success;
 };
 
 // M3-6177 only make one request to get the logo

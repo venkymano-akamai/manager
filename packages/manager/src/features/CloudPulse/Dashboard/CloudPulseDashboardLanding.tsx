@@ -2,6 +2,7 @@ import { useProfile } from '@linode/queries';
 import { Box, CircleProgress, NewFeatureChip, Paper } from '@linode/ui';
 import { GridLegacy } from '@mui/material';
 import { DateTime } from 'luxon';
+import { useSnackbar } from 'notistack';
 import * as React from 'react';
 
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
@@ -38,6 +39,7 @@ export interface DashboardProp {
 export const CloudPulseDashboardLanding = () => {
   const { data: profile } = useProfile();
   const flags = useFlags();
+  const { enqueueSnackbar } = useSnackbar();
   const [filterData, setFilterData] = React.useState<FilterData>({
     id: {},
     label: {},
@@ -76,19 +78,24 @@ export const CloudPulseDashboardLanding = () => {
       // Placeholder for future implementation
       const config = FILTER_CONFIG.get(dashboard?.id || 0);
       if (timeDuration && config) {
-        await downloadDashboardPDF(
+        const result = await downloadDashboardPDF(
           dashboard?.label || '',
           timeDuration,
           config,
           filterData,
           dashboard?.widgets.map((widget) => widget.label) || []
         );
+
+        if (!result) {
+          enqueueSnackbar('Unable to download PDF', { variant: 'error' });
+        } else {
+          enqueueSnackbar('PDF downloaded', { variant: 'success' });
+        }
       }
-    } catch (e) {
     } finally {
       setIsDownloadingPdf(false);
     }
-  }, [dashboard, filterData, timeDuration]);
+  }, [dashboard, filterData, enqueueSnackbar, timeDuration]);
 
   const handleDownloadPDFForWidgets = React.useCallback(
     async (widgetLabel?: string) => {
@@ -98,20 +105,25 @@ export const CloudPulseDashboardLanding = () => {
         // Placeholder for future implementation
         const config = FILTER_CONFIG.get(dashboard?.id || 0);
         if (timeDuration && config) {
-          await downloadDashboardPDF(
+          const result = await downloadDashboardPDF(
             dashboard?.label || '',
             timeDuration,
             config,
             filterData,
             widgetLabel ? [widgetLabel] : []
           );
+
+          if (!result) {
+            enqueueSnackbar('Unable to download PDF', { variant: 'error' });
+          } else {
+            enqueueSnackbar('PDF downloaded', { variant: 'success' });
+          }
         }
-      } catch (e) {
       } finally {
         setIsDownloadingPdf(false);
       }
     },
-    [dashboard, filterData, timeDuration]
+    [dashboard, enqueueSnackbar, filterData, timeDuration]
   );
 
   const onFilterChange = React.useCallback(
