@@ -11,6 +11,7 @@ import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
 import { useBlockStorageFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useBlockStorageFetchOptions';
 import { useFirewallFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useFirewallFetchOptions';
 import { WidgetFilterGroupByRenderer } from '../GroupBy/WidgetFilterGroupByRenderer';
+import { useCloudPulseExport } from '../shared/CloudPulseContextProvider';
 import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import {
   generateGraphData,
@@ -412,6 +413,8 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
   const handleZoomStateChange = React.useCallback((zoomed: boolean) => {
     setIsZoomed(zoomed);
   }, []);
+
+  const { registerWidget } = useCloudPulseExport();
   const {
     data: metricsList,
     error,
@@ -442,6 +445,12 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
       shouldRefresh: !isZoomed,
     }
   );
+
+  React.useEffect(() => {
+    if (metricsList) {
+      registerWidget(metricsList, widget.label);
+    }
+  }, [metricsList, registerWidget, widget.label]);
   let data: DataSet[] = [];
 
   let legendRows: MetricsDisplayRow[] = [];
