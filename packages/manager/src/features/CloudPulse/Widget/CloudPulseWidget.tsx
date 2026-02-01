@@ -10,8 +10,8 @@ import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
 
 import { useBlockStorageFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useBlockStorageFetchOptions';
 import { useFirewallFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useFirewallFetchOptions';
+import { useCloudPulseExport } from '../Context/useCloudPulseExport';
 import { WidgetFilterGroupByRenderer } from '../GroupBy/WidgetFilterGroupByRenderer';
-import { useCloudPulseExport } from '../shared/CloudPulseContextProvider';
 import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import {
   generateGraphData,
@@ -106,7 +106,7 @@ export interface CloudPulseWidgetProperties {
    */
   globalFilterGroupBy: string[];
 
-  handleDownloadPDF: (widgetLabel?: string) => void;
+  handleDownloadPDF?: (widgetLabel?: string) => void;
 
   /**
    * Jwe token fetching status check
@@ -629,7 +629,9 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     aria-label="Zoom Out"
                     color="inherit"
                     data-testid="zoom-out"
-                    onClick={() => handleDownloadPDF(widget.label)}
+                    onClick={() =>
+                      handleDownloadPDF && handleDownloadPDF(widget.label)
+                    }
                     sx={{
                       padding: 0,
                       visibility: { lg: 'visible', xs: 'hidden' },

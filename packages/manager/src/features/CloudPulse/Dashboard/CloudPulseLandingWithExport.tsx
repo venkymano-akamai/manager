@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { CloudPulseExportProvider } from '../shared/CloudPulseContextProvider';
+import { CloudPulseExportContextProvider } from '../Context/CloudPulseExportContextProvider';
 import { CloudPulseDashboardLanding } from './CloudPulseDashboardLanding';
 
 export const CloudPulseDashboardLandingWithExport = () => {
   return (
-    <CloudPulseExportProvider>
+    <CloudPulseExportContextProvider>
       <CloudPulseDashboardLanding />
-    </CloudPulseExportProvider>
+    </CloudPulseExportContextProvider>
   );
 };

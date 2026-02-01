@@ -1,8 +1,10 @@
 import * as React from 'react';
 
+import { CloudPulseExportContext } from './CloudPulseExportContext';
+
 import type { CloudPulseMetricsResponse } from '@linode/api-v4';
 
-export const CloudPulseExportProvider: React.FC<{
+export const CloudPulseExportContextProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const registryRef = React.useRef<Map<string, CloudPulseMetricsResponse>>(
@@ -24,38 +26,20 @@ export const CloudPulseExportProvider: React.FC<{
     return Array.from(registryRef.current.values());
   }, []);
 
+  const unregisterAll = React.useCallback(() => {
+    registryRef.current = new Map();
+  }, []);
+
   return (
     <CloudPulseExportContext.Provider
       value={{
         registerWidget,
         unregisterWidget,
         getAllWidgets,
+        unregisterAll,
       }}
     >
       {children}
     </CloudPulseExportContext.Provider>
   );
-};
-
-type ExportRegistry = {
-  getAllWidgets: () => CloudPulseMetricsResponse[];
-  registerWidget: (
-    data: CloudPulseMetricsResponse,
-    widgetLabel: string
-  ) => void;
-  unregisterWidget: (label: string) => void;
-};
-
-const CloudPulseExportContext = React.createContext<ExportRegistry | null>(
-  null
-);
-
-export const useCloudPulseExport = () => {
-  const ctx = React.useContext(CloudPulseExportContext);
-  if (!ctx) {
-    throw new Error(
-      'useCloudPulseExport must be used inside CloudPulseExportProvider'
-    );
-  }
-  return ctx;
 };

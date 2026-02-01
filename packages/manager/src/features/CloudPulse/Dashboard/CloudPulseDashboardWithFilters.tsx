@@ -11,9 +11,9 @@ import {
   useCloudPulseDashboardsQuery,
 } from 'src/queries/cloudpulse/dashboards';
 
+import { CloudPulseExportContextProvider } from '../Context/CloudPulseExportContextProvider';
 import { GlobalFilterGroupByRenderer } from '../GroupBy/GlobalFilterGroupByRenderer';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
-import { CloudPulseExportProvider } from '../shared/CloudPulseContextProvider';
 import { CloudPulseDashboardFilterBuilder } from '../shared/CloudPulseDashboardFilterBuilder';
 import { CloudPulseDashboardSelect } from '../shared/CloudPulseDashboardSelect';
 import { CloudPulseDateTimeRangePicker } from '../shared/CloudPulseDateTimeRangePicker';
@@ -186,20 +186,25 @@ export const CloudPulseDashboardWithFiltersRenderer = React.memo(
           // Placeholder for future implementation
           const config = FILTER_CONFIG.get(currentDashboard?.id || 0);
           if (timeDuration && config) {
-            await downloadDashboardPDF(
+            const result = await downloadDashboardPDF(
               currentDashboard?.label || '',
               timeDuration,
               config,
               filterData,
               widgetLabel ? [widgetLabel] : []
             );
+
+            if (!result) {
+              enqueueSnackbar('Unable to download PDF', { variant: 'error' });
+            } else {
+              enqueueSnackbar('PDF downloaded', { variant: 'success' });
+            }
           }
-        } catch (e) {
         } finally {
           setIsDownloadingPdf(false);
         }
       },
-      [currentDashboard, filterData, timeDuration]
+      [currentDashboard, enqueueSnackbar, filterData, timeDuration]
     );
 
     const renderPlaceHolder = (title: string) => {
@@ -383,9 +388,9 @@ export const CloudPulseDashboardWithFiltersRenderer = React.memo(
 export const CloudPulseDashboardWithFilters = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
     return (
-      <CloudPulseExportProvider>
+      <CloudPulseExportContextProvider>
         <CloudPulseDashboardWithFiltersRenderer {...props} />
-      </CloudPulseExportProvider>
+      </CloudPulseExportContextProvider>
     );
   }
 );
