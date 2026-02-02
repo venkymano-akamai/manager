@@ -174,8 +174,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     const filteredTypes =
       alertClass === 'shared'
         ? Object.keys(databaseTypeClassMap).filter(
-            (type) => type !== 'dedicated'
-          )
+          (type) => type !== 'dedicated'
+        )
         : [alertClass];
 
     // Apply type filter only for DBaaS user alerts with a valid alertClass based on above filtered types
@@ -385,7 +385,6 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     serviceToFiltersMap[serviceType ?? ''] ?? serviceToFiltersMap[''];
   const noticeStyles: React.CSSProperties = {
     alignItems: 'center',
-    backgroundColor: theme.tokens.alias.Background.Normal,
     borderRadius: 1,
     display: 'flex',
     flexWrap: 'nowrap',
@@ -450,8 +449,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
                     new Set(
                       regionFilteredResources
                         ? regionFilteredResources.flatMap(
-                            ({ tags }) => tags ?? []
-                          )
+                          ({ tags }) => tags ?? []
+                        )
                         : []
                     )
                   ),
