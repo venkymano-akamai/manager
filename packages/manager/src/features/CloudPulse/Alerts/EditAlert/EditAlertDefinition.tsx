@@ -184,6 +184,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
       <Breadcrumb crumbOverrides={overrides} pathname={'/Definitions/Edit'} />
       {hasAPIError && (
         <Notice
+          sx={{ marginTop: 2 }}
           text="Some alert settings couldn't be loaded. Available data is shown but editing is disabled. Try reloading the page or check back later."
           variant="warning"
         />
