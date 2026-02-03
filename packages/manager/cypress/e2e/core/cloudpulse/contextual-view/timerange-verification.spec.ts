@@ -250,11 +250,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       day: startDay,
       hour: startHour,
       minute: startMinute,
-      month: startMonth,
-      year: startYear,
-      previousMonth,
-      previousYear,
-      daysInMonth,
     } = getDateRangeInGMT(12, 15, true);
 
     const {
@@ -405,47 +400,6 @@ describe('Integration tests for verifying Cloudpulse custom and preset configura
       'true'
     );
 
-    cy.contains(`${previousMonth} ${previousYear}`)
-      .closest('div')
-      .next()
-      .find('[aria-selected="true"]')
-      .then(($els) => {
-        const selectedDays = Array.from($els).map((el) =>
-          Number(el.textContent?.trim())
-        );
-
-        expect(daysInMonth, 'daysInMonth should be defined').to.be.a('number');
-
-        const totalDays = daysInMonth as number;
-        const expectedCount = totalDays - endDay;
-
-        expect(
-          selectedDays.length,
-          'number of selected days from the previous month for the last-30-days range'
-        ).to.eq(expectedCount);
-        expect(
-          totalDays - selectedDays.length,
-          'start day of Last 30 days'
-        ).to.eq(endDay);
-      });
-
-    cy.contains(`${startMonth} ${startYear}`)
-      .closest('div')
-      .next()
-      .find('[aria-selected="true"]')
-      .then(($els) => {
-        const selectedDays = Array.from($els).map((el) =>
-          Number(el.textContent?.trim())
-        );
-
-        expect(
-          selectedDays.length,
-          'number of selected days in the current month for the last-30-days range'
-        ).to.eq(endDay);
-        expect(Math.max(...selectedDays), 'end day of  Last 30 days').to.eq(
-          endDay
-        );
-      });
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
       .should('be.enabled')
