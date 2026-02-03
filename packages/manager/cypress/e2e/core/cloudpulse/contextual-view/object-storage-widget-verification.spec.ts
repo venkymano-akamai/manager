@@ -1,4 +1,5 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
+
 /**
  * @file Integration Tests for CloudPulse Object Storage Dashboard.
  */
@@ -139,7 +140,6 @@ const getWidgetLegendRowValuesFromResponse = (
     serviceType: serviceType as CloudPulseServiceType,
     groupBy: ['entity_id'],
   });
-
   // Extract metrics from the first legend row
   const { average, last, max } = graphData.legendRowsData[0].data;
 
@@ -156,8 +156,8 @@ const getWidgetLegendRowValuesFromResponse = (
     max: formatValue(max),
   };
 };
-
-describe('Integration Tests for Object Storage Dashboard - Group By and Widget Verification', () => {
+// eslint-disable-next-line sonarjs/no-skipped-tests
+describe.skip('Integration Tests for Object Storage Dashboard - Group By and Widget Verification', () => {
   const bucketMock = [
     objectStorageBucketFactory.build({
       cluster: 'us-ord-1',

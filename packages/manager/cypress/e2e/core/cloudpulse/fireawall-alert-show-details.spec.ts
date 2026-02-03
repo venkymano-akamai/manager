@@ -284,12 +284,9 @@ const mockFirewalls = [
 const scopeActions: Record<string, () => void> = {
   // ✅ Account-level alert validations
   Account: () => {
-    cy.log('Validating Account-level alert details');
-    cy.get('[data-qa-notice="true"]').within(() => {
-      cy.get('[data-testid="alert_message_notice"]')
-        .should('be.visible')
-        .and('have.text', ACCOUNT_GROUP_INFO_MESSAGE);
-    });
+    cy.get('[data-testid="alert_message_notice"]')
+      .should('be.visible')
+      .and('have.text', ACCOUNT_GROUP_INFO_MESSAGE);
   },
 
   // ✅ Entity-level alert validations
@@ -461,11 +458,8 @@ describe('Integration Tests for Alert Show Detail Page', () => {
         // Validate the Criteria section by checking each metric rule's threshold details
         // and all related dimension filters for correct visibility and text content.
 
-        cy.log('****Validating Metric Criteria Rules Display_00000****');
-
         assertRuleBlock(rules);
 
-        cy.log('****Validating Metric Criteria Rules Display_DOne0****');
         // Validating contents of Polling Interval
         cy.get('[data-qa-item="Polling Interval"]')
           .find('[data-qa-chip]')

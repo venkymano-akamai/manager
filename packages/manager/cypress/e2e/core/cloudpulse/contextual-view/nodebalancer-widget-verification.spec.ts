@@ -176,6 +176,7 @@ describe('Integration Tests for Nodebalancer Dashboard ', () => {
     cy.scrollTo('top');
   });
   it('should apply optional filter (port) and verify API request payloads', () => {
+    cy.wait(1000);
     const randomPort = randomNumber(1, 65535).toString();
 
     cy.findByPlaceholderText('e.g., 80,443,3000')
