@@ -428,6 +428,11 @@ export interface DimensionFilterAutocompleteProps {
    * Current raw string value (or null) from the form state.
    */
   fieldValue: null | string;
+
+  /**
+   * The maximum number of selections allowed (for multi-select).
+   */
+  maxSelections?: number;
   /**
    * Callback triggered when a dependent API has an error.
    */
@@ -460,6 +465,7 @@ export interface DimensionFilterAutocompleteProps {
    * The type of monitoring to filter on.
    */
   type: 'alerts' | 'metrics';
+
   /**
    * The list of pre-defined values for static options.
    */
