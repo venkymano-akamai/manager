@@ -43,6 +43,10 @@ export const CloudPulseModifyAlertResources = React.memo(
       });
     };
 
+    const setError = React.useCallback(() => {
+      setValue('hasAPIError', true);
+    }, [setValue]);
+
     const titleRef = React.useRef<HTMLDivElement>(null);
 
     return (
@@ -71,6 +75,7 @@ export const CloudPulseModifyAlertResources = React.memo(
                 maxSelectionCount={maxSelectionCount}
                 scrollElement={titleRef.current}
                 serviceType={serviceTypeWatcher || undefined}
+                setError={setError}
               />
             </Box>
           </Box>

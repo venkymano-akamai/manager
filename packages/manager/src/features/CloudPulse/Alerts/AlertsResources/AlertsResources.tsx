@@ -104,6 +104,10 @@ export interface AlertResourcesProp {
    * The service type associated with the alerts like DBaaS, Linode etc.,
    */
   serviceType?: CloudPulseServiceType;
+  /**
+   * Callback to set the error on API Failure
+   */
+  setError?: () => void;
 }
 
 export const AlertResources = React.memo((props: AlertResourcesProp) => {
@@ -120,6 +124,7 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     maxSelectionCount,
     scrollElement,
     serviceType,
+    setError,
   } = props;
   const [searchText, setSearchText] = React.useState<string>();
   const [filteredRegions, setFilteredRegions] = React.useState<string[]>();
@@ -208,6 +213,10 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     serviceType === 'firewall' && entityType ? entityType : undefined,
     filterFn
   );
+
+  React.useEffect(() => {
+    if (isResourcesError && setError) setError();
+  }, [setError, isResourcesError]);
 
   const regionFilteredResources = React.useMemo(() => {
     if (
@@ -386,6 +395,7 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
   const noticeStyles: React.CSSProperties = {
     alignItems: 'center',
     borderRadius: 1,
+    height: '45px',
     display: 'flex',
     flexWrap: 'nowrap',
     marginBottom: 0,
