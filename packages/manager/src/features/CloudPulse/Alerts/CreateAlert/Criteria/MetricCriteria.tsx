@@ -51,9 +51,7 @@ export const MetricCriteriaField = (props: MetricCriteriaProps) => {
   const { control, setValue } = useFormContext<CreateAlertDefinitionForm>();
 
   React.useEffect(() => {
-    if (isMetricDefinitionError) {
-      setValue('hasAPIError', true);
-    }
+    setValue('hasAPIError', isMetricDefinitionError);
   }, [isMetricDefinitionError, setValue]);
 
   const metricCriteriaWatcher = useWatch({ control, name });

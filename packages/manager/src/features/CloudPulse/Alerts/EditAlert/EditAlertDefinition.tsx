@@ -71,8 +71,8 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
   const entityType =
     serviceType === 'firewall'
       ? alertDetails.rule_criteria.rules[0]?.label.includes(
-        entityLabelMap['nodebalancer']
-      )
+          entityLabelMap['nodebalancer']
+        )
         ? 'nodebalancer'
         : 'linode'
       : undefined;

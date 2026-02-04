@@ -46,7 +46,7 @@ interface AlertRegionsProps {
   /**
    * Callback to set error flag on API failure
    */
-  setError?: () => void;
+  setError?: (hasError: boolean) => void;
   /**
    * The selected regions.
    */
@@ -86,7 +86,8 @@ export const AlertRegions = React.memo((props: AlertRegionsProps) => {
   );
 
   React.useEffect(() => {
-    if ((isError || isRegionsError) && setError) setError();
+    const hasError = isError || isRegionsError;
+    if (hasError && setError) setError(hasError);
   }, [setError, isError, isRegionsError]);
 
   const titleRef = React.useRef<HTMLDivElement>(null); // Reference to the component title, used for scrolling to the title when the table's page size or page number changes.

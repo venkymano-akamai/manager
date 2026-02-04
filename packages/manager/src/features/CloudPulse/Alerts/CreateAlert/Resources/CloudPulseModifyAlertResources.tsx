@@ -43,9 +43,12 @@ export const CloudPulseModifyAlertResources = React.memo(
       });
     };
 
-    const setError = React.useCallback(() => {
-      setValue('hasAPIError', true);
-    }, [setValue]);
+    const setError = React.useCallback(
+      (hasError: boolean) => {
+        setValue('hasAPIError', hasError);
+      },
+      [setValue]
+    );
 
     const titleRef = React.useRef<HTMLDivElement>(null);
 

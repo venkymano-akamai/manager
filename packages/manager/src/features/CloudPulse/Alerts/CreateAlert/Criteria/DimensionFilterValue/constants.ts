@@ -432,7 +432,7 @@ export interface DimensionFilterAutocompleteProps {
   /**
    * Callback triggered when a dependent API has an error.
    */
-  handleError?: () => void;
+  handleError?: (hasError: boolean) => void;
   /**
    * The maximum number of selections allowed (for multi-select).
    */

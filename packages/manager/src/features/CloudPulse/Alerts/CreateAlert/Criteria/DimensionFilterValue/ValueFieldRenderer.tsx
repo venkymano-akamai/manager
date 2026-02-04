@@ -49,7 +49,7 @@ interface ValueFieldRendererProps {
   /**
    * Callback triggered when a dependent API has an error.
    */
-  handleError?: () => void;
+  handleError?: (hasError: boolean) => void;
   /**
    * The name of the field set in the form.
    */

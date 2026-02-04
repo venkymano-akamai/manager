@@ -107,7 +107,7 @@ export interface AlertResourcesProp {
   /**
    * Callback to set the error on API Failure
    */
-  setError?: () => void;
+  setError?: (hasError: boolean) => void;
 }
 
 export const AlertResources = React.memo((props: AlertResourcesProp) => {
@@ -179,8 +179,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     const filteredTypes =
       alertClass === 'shared'
         ? Object.keys(databaseTypeClassMap).filter(
-          (type) => type !== 'dedicated'
-        )
+            (type) => type !== 'dedicated'
+          )
         : [alertClass];
 
     // Apply type filter only for DBaaS user alerts with a valid alertClass based on above filtered types
@@ -215,7 +215,10 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
   );
 
   React.useEffect(() => {
-    if ((isResourcesError || isRegionsError) && setError) setError();
+    const hasError = isResourcesError || isRegionsError;
+    if (hasError && setError) {
+      setError(hasError);
+    }
   }, [setError, isResourcesError, isRegionsError]);
 
   const regionFilteredResources = React.useMemo(() => {
@@ -459,8 +462,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
                     new Set(
                       regionFilteredResources
                         ? regionFilteredResources.flatMap(
-                          ({ tags }) => tags ?? []
-                        )
+                            ({ tags }) => tags ?? []
+                          )
                         : []
                     )
                   ),

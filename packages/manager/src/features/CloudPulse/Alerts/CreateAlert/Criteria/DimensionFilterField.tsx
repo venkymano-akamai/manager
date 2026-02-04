@@ -95,9 +95,12 @@ export const DimensionFilterField = (props: DimensionFilterFieldProps) => {
         ) ?? null)
       : null;
 
-  const handleError = React.useCallback(() => {
-    setValue('hasAPIError', true);
-  }, [setValue]);
+  const handleError = React.useCallback(
+    (hasError: boolean) => {
+      setValue('hasAPIError', hasError);
+    },
+    [setValue]
+  );
 
   return (
     <GridLegacy
