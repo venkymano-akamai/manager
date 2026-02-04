@@ -242,7 +242,6 @@ export interface Flags {
   iamDelegation: BaseFeatureFlag;
   iamLimitedAvailabilityBadges: boolean;
   ipv6Sharing: boolean;
-  kubernetesBlackwellPlans: boolean;
   limitsEvolution: LimitsEvolution;
   linodeCloneFirewall: boolean;
   linodeDiskEncryption: boolean;
