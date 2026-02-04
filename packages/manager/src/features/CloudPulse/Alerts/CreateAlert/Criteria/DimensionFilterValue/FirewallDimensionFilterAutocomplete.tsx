@@ -40,7 +40,7 @@ export const FirewallDimensionFilterAutocomplete = (
     maxSelections,
   } = props;
 
-  const { data: regions } = useRegionsQuery();
+  const { data: regions, isError: isRegionsError } = useRegionsQuery();
 
   const { values, isLoading, isError } = useFirewallFetchOptions({
     associatedEntityType: entityType,
@@ -64,10 +64,10 @@ export const FirewallDimensionFilterAutocomplete = (
   });
 
   React.useEffect(() => {
-    if (isError && handleError) {
+    if ((isError || isRegionsError) && handleError) {
       handleError();
     }
-  }, [isError, handleError]);
+  }, [isError, isRegionsError, handleError]);
 
   const maxReached = React.useMemo(() => {
     return isMaxSelectionsReached(

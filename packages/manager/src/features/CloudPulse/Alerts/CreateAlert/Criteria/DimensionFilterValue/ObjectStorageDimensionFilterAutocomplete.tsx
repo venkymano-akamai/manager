@@ -38,7 +38,7 @@ export const ObjectStorageDimensionFilterAutocomplete = (
     maxSelections,
   } = props;
 
-  const { data: regions } = useRegionsQuery();
+  const { data: regions, isError: isRegionsError } = useRegionsQuery();
   const { values, isLoading, isError } = useObjectStorageFetchOptions({
     entities,
     dimensionLabel,
@@ -59,10 +59,10 @@ export const ObjectStorageDimensionFilterAutocomplete = (
   });
 
   React.useEffect(() => {
-    if (isError && handleError) {
+    if ((isError || isRegionsError) && handleError) {
       handleError();
     }
-  }, [isError, handleError]);
+  }, [isError, isRegionsError, handleError]);
 
   const maxReached = React.useMemo(() => {
     return isMaxSelectionsReached(

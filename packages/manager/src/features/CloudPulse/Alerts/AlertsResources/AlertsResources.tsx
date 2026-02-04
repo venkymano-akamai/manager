@@ -215,8 +215,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
   );
 
   React.useEffect(() => {
-    if (isResourcesError && setError) setError();
-  }, [setError, isResourcesError]);
+    if ((isResourcesError || isRegionsError) && setError) setError();
+  }, [setError, isResourcesError, isRegionsError]);
 
   const regionFilteredResources = React.useMemo(() => {
     if (

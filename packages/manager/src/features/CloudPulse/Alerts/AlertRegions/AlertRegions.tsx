@@ -64,7 +64,11 @@ export const AlertRegions = React.memo((props: AlertRegionsProps) => {
     setError,
   } = props;
   const [searchText, setSearchText] = React.useState<string>('');
-  const { data: regions, isLoading: isRegionsLoading } = useRegionsQuery();
+  const {
+    data: regions,
+    isLoading: isRegionsLoading,
+    isError: isRegionsError,
+  } = useRegionsQuery();
   const [selectedRegions, setSelectedRegions] = React.useState<string[]>(value);
   const [showSelected, setShowSelected] = React.useState<boolean>(false);
 
@@ -82,8 +86,8 @@ export const AlertRegions = React.memo((props: AlertRegionsProps) => {
   );
 
   React.useEffect(() => {
-    if (isError && setError) setError();
-  }, [setError, isError]);
+    if ((isError || isRegionsError) && setError) setError();
+  }, [setError, isError, isRegionsError]);
 
   const titleRef = React.useRef<HTMLDivElement>(null); // Reference to the component title, used for scrolling to the title when the table's page size or page number changes.
 
