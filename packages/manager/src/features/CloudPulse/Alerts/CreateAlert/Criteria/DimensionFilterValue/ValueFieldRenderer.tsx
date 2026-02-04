@@ -1,6 +1,8 @@
 import { TextField } from '@linode/ui';
 import React from 'react';
 
+import { useFlags } from 'src/hooks/useFlags';
+
 import { BlockStorageDimensionFilterAutocomplete } from './BlockStorageDimensionFilterAutocomplete';
 import {
   MULTISELECT_PLACEHOLDER_TEXT,
@@ -108,6 +110,12 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
     selectedRegions,
     serviceType,
   } = props;
+
+  const flags = useFlags();
+
+  const maxDimensionFiltersValues =
+    flags.aclpAlerting?.maxDimensionFiltersValues ?? 5;
+
   // Use operator group for config lookup
   const operatorGroup = getOperatorGroup(operator);
   let dimensionConfig: Record<OperatorGroup, ValueFieldConfig>;
@@ -165,6 +173,7 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
       placeholderText: config.placeholder ?? autocompletePlaceholder,
       serviceType: serviceType ?? null,
       type,
+      maxSelections: maxDimensionFiltersValues,
     };
 
     // Determine custom fetch behaviour if there are same dimension_labels across service types
