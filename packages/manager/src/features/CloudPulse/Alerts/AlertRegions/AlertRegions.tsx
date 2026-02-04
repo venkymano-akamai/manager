@@ -87,7 +87,9 @@ export const AlertRegions = React.memo((props: AlertRegionsProps) => {
 
   React.useEffect(() => {
     const hasError = isError || isRegionsError;
-    if (hasError && setError) setError(hasError);
+    if (setError) {
+      setError(hasError);
+    }
   }, [setError, isError, isRegionsError]);
 
   const titleRef = React.useRef<HTMLDivElement>(null); // Reference to the component title, used for scrolling to the title when the table's page size or page number changes.

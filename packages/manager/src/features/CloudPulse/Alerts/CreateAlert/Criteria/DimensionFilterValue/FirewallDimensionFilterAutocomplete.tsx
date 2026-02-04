@@ -65,7 +65,7 @@ export const FirewallDimensionFilterAutocomplete = (
 
   React.useEffect(() => {
     const hasError = isError || isRegionsError;
-    if (hasError && handleError) {
+    if (handleError) {
       handleError(hasError);
     }
   }, [isError, isRegionsError, handleError]);
