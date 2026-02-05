@@ -10,6 +10,7 @@ import {
   CONFIGS_HELPER_TEXT,
   CONFIGS_ID_PLACEHOLDER_TEXT,
   INTERFACE_ID_HELPER_TEXT,
+  IP_PLACEHOLDER_TEXT,
   PORT_HELPER_TEXT,
   PORT_PLACEHOLDER_TEXT,
   PORTS_PLACEHOLDER_TEXT,
@@ -155,6 +156,28 @@ export const valueFieldConfig: ValueFieldConfigMap = {
     '*': {
       type: 'textfield',
       inputType: 'number',
+    },
+  },
+  ip: {
+    eq_neq: {
+      type: 'textfield',
+      inputType: 'text',
+      placeholder: IP_PLACEHOLDER_TEXT,
+    },
+    startswith_endswith: {
+      type: 'textfield',
+      inputType: 'text',
+      placeholder: IP_PLACEHOLDER_TEXT,
+    },
+    in: {
+      type: 'textfield',
+      inputType: 'text',
+      placeholder: IP_PLACEHOLDER_TEXT,
+    },
+    '*': {
+      type: 'textfield',
+      inputType: 'text',
+      placeholder: IP_PLACEHOLDER_TEXT,
     },
   },
   linode_id: {

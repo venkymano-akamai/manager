@@ -249,6 +249,8 @@ export const PORTS_TRAILING_COMMA_ERROR_MESSAGE =
 
 export const PORT_HELPER_TEXT = 'Enter a port number (1-65535).';
 
+export const IP_PLACEHOLDER_TEXT = 'Enter an IP address';
+
 export const PORTS_PLACEHOLDER_TEXT = 'e.g., 80,443,3000';
 
 export const PORT_PLACEHOLDER_TEXT = 'e.g., 80';
