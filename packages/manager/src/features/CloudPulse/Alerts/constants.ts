@@ -249,7 +249,9 @@ export const PORTS_TRAILING_COMMA_ERROR_MESSAGE =
 
 export const PORT_HELPER_TEXT = 'Enter a port number (1-65535).';
 
-export const IP_PLACEHOLDER_TEXT = 'Enter an IP address';
+export const IP_PLACEHOLDER_TEXT = 'Enter VIP address';
+export const IP_HELPER_TEXT =
+  'Enter one or more VIP addresses separated by commas.';
 
 export const PORTS_PLACEHOLDER_TEXT = 'e.g., 80,443,3000';
 

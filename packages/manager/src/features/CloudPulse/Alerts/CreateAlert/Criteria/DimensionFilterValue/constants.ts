@@ -10,6 +10,7 @@ import {
   CONFIGS_HELPER_TEXT,
   CONFIGS_ID_PLACEHOLDER_TEXT,
   INTERFACE_ID_HELPER_TEXT,
+  IP_HELPER_TEXT,
   IP_PLACEHOLDER_TEXT,
   PORT_HELPER_TEXT,
   PORT_PLACEHOLDER_TEXT,
@@ -173,6 +174,7 @@ export const valueFieldConfig: ValueFieldConfigMap = {
       type: 'textfield',
       inputType: 'text',
       placeholder: IP_PLACEHOLDER_TEXT,
+      helperText: IP_HELPER_TEXT,
     },
     '*': {
       type: 'textfield',

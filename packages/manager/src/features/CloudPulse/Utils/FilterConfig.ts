@@ -298,11 +298,11 @@ export const NETLOADBALANCER_CONFIG: Readonly<CloudPulseServiceTypeFilterMap> =
           options: [
             {
               id: 'v6',
-              label: 'v6',
+              label: 'IPv6',
             },
             {
               id: 'v4',
-              label: 'v4',
+              label: 'IPv4',
             },
           ],
           placeholder: 'Select IP Versions',
