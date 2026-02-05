@@ -126,6 +126,7 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     serviceType,
     setError,
   } = props;
+
   const [searchText, setSearchText] = React.useState<string>();
   const [filteredRegions, setFilteredRegions] = React.useState<string[]>();
   const [selectedResources, setSelectedResources] =
@@ -366,10 +367,6 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     !isDataLoadingError && !isSelectionsNeeded && alertResourceIds.length === 0;
   const showEditInformation = isSelectionsNeeded && alertType === 'system';
 
-  if (isResourcesLoading || isRegionsLoading) {
-    return <CircleProgress />;
-  }
-
   if (isNoResources) {
     return (
       <Stack gap={2}>
@@ -408,22 +405,32 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     maxSelectionCount && selectedResources
       ? Math.max(0, maxSelectionCount - selectedResources.length)
       : undefined;
+  const isLoading = isRegionsLoading || isResourcesLoading;
   return (
     <Stack gap={2}>
+      {isLoading && <CircleProgress />}
       {!hideLabel && (
-        <Typography ref={titleRef} variant="h2">
+        <Typography
+          display={isLoading ? 'none' : 'block'}
+          ref={titleRef}
+          variant="h2"
+        >
           {alertLabel || 'Entities'}
           {/* It can be either the passed alert label or just Resources */}
         </Typography>
       )}
       {showEditInformation && (
-        <Typography ref={titleRef} variant="body1">
+        <Typography
+          display={isLoading ? 'none' : 'block'}
+          ref={titleRef}
+          variant="body1"
+        >
           You can enable or disable this system alert for each entities you have
           access to. Select the entities listed below you want to enable the
           alert for.
         </Typography>
       )}
-      <GridLegacy container spacing={2}>
+      <GridLegacy container display={isLoading ? 'none' : 'block'} spacing={2}>
         <GridLegacy
           columnSpacing={2}
           container
