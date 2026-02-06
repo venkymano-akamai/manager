@@ -1,10 +1,7 @@
 /**
  * @file Integration Tests for CloudPulse netloadbalancer Dashboard.
  */
-import {
-  accountAvailabilityFactory,
-  regionFactory,
-} from '@linode/utilities';
+import { accountAvailabilityFactory, regionFactory } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import {
   mockGetAccount,
@@ -19,9 +16,7 @@ import {
   mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
-import {
-  mockGetNetLoadBalancers,
-} from 'support/intercepts/nodebalancers';
+import { mockGetNetLoadBalancers } from 'support/intercepts/nodebalancers';
 import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
@@ -60,8 +55,15 @@ import type { Interception } from 'support/cypress-exports';
 const expectedGranularityArray = ['Auto', '1 day', '1 hr', '5 min'];
 const timeDurationToSelect = 'Last 24 Hours';
 const capabilities = 'Network LoadBalancer';
-const { dashboardName, metrics, serviceType, id, clusterName,region_id,region_name } =
-  widgetDetails.netloadbalancer;
+const {
+  dashboardName,
+  metrics,
+  serviceType,
+  id,
+  clusterName,
+  region_id,
+  region_name,
+} = widgetDetails.netloadbalancer;
 
 // Build a shared dimension object
 const dimensions = [
@@ -125,7 +127,6 @@ const mockAccount = accountFactory.build({
   capabilities: [capabilities],
 });
 
-
 const mockRegion = regionFactory.build({
   capabilities: [capabilities],
   id: region_id,
@@ -138,7 +139,7 @@ const mockRegion = regionFactory.build({
 const mockNetLoadBalancers = networkLoadBalancerFactory.build({
   label: 'networkLoadBalancer-1',
   region: region_id,
-  id:1
+  id: 1,
 });
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
@@ -172,7 +173,7 @@ const getWidgetLegendRowValuesFromResponse = (
       {
         id: '1',
         label: clusterName,
-        region: region_id
+        region: region_id,
       },
     ],
     status: 'success',
@@ -205,7 +206,7 @@ const validateWidgetFilters = (
   });
 };
 const mockAvailability = accountAvailabilityFactory.build({
-  region: region_id
+  region: region_id,
 });
 
 describe('Integration Tests for DBaaS Dashboard ', () => {
@@ -238,7 +239,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     );
     mockGetAccountAvailability([mockAvailability]);
     mockGetRegions([mockRegion]);
-    mockGetNetLoadBalancers(mockNetLoadBalancers);
+    mockGetNetLoadBalancers([mockNetLoadBalancers]);
     mockGetUserPreferences({});
 
     // navigate to the metrics page
