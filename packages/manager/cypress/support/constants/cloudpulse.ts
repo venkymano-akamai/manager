@@ -11,6 +11,7 @@ export const cloudPulseServiceMap: Record<string, string> = {
   objectstorage: 'Object Storage',
   blockstorage: 'Block Storage',
   lke: 'LKE',
+  netloadbalancer: 'Netloadbalancer',
 };
 /**
  * Descriptions used in the Create/Edit Alert form to guide users

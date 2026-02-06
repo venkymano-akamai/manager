@@ -6,7 +6,7 @@ import { apiMatcher } from 'support/util/intercepts';
 import { paginateResponse } from 'support/util/paginate';
 import { makeResponse } from 'support/util/response';
 
-import type { Firewall, NodeBalancer } from '@linode/api-v4';
+import type { Firewall, NetworkLoadBalancer, NodeBalancer } from '@linode/api-v4';
 
 /**
  * Intercepts GET request to mock nodeBalancer data.
@@ -84,5 +84,22 @@ export const mockCreateNodeBalancer = (
     'POST',
     apiMatcher('nodebalancers'),
     makeResponse(nodebalancer)
+  );
+};
+
+/**
+ * Intercepts GET request to create a Network Load Balancer.
+ *
+ * @param netLoadBalancer - a mock Network Load Balancer object
+ *
+ * */
+
+export const mockGetNetLoadBalancers = (
+  networkLoadBalancer: NetworkLoadBalancer
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('netloadbalancers*'),
+    makeResponse(networkLoadBalancer)
   );
 };
