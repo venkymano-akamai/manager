@@ -95,11 +95,11 @@ export const mockCreateNodeBalancer = (
  * */
 
 export const mockGetNetLoadBalancers = (
-  networkLoadBalancer: NetworkLoadBalancer
+  networkLoadBalancer: NetworkLoadBalancer[]
 ): Cypress.Chainable<null> => {
   return cy.intercept(
     'GET',
     apiMatcher('netloadbalancers*'),
-    makeResponse(networkLoadBalancer)
+    paginateResponse(networkLoadBalancer)
   );
 };
