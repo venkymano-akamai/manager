@@ -395,7 +395,6 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
   const noticeStyles: React.CSSProperties = {
     alignItems: 'center',
     borderRadius: 1,
-    height: '45px',
     display: 'flex',
     flexWrap: 'nowrap',
     marginBottom: 0,
