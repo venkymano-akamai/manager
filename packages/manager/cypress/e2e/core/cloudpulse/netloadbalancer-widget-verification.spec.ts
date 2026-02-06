@@ -3,7 +3,6 @@
  */
 import {
   accountAvailabilityFactory,
-  nodeBalancerFactory,
   regionFactory,
 } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
@@ -22,7 +21,6 @@ import {
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import {
   mockGetNetLoadBalancers,
-  mockGetNodeBalancers,
 } from 'support/intercepts/nodebalancers';
 import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
@@ -61,7 +59,8 @@ import type { Interception } from 'support/cypress-exports';
  */
 const expectedGranularityArray = ['Auto', '1 day', '1 hr', '5 min'];
 const timeDurationToSelect = 'Last 24 Hours';
-const { dashboardName, metrics, serviceType, id, clusterName } =
+const capabilities = 'Network LoadBalancer';
+const { dashboardName, metrics, serviceType, id, clusterName,region_id,region_name } =
   widgetDetails.netloadbalancer;
 
 // Build a shared dimension object
@@ -93,7 +92,6 @@ const getFiltersForMetric = (metricName: string) => {
   }));
 };
 
-// Dashboard creation
 const dashboard = dashboardFactory.build({
   label: dashboardName,
   group_by: ['entity_id'],
@@ -107,7 +105,7 @@ const dashboard = dashboardFactory.build({
       metric: name,
       unit,
       y_label: yLabel,
-      namespace_id: 5,
+      namespace_id: id,
       service_type: serviceType as CloudPulseServiceType,
     })
   ),
@@ -124,22 +122,22 @@ const metricDefinitions = metrics.map(({ name, title, unit }) =>
 );
 
 const mockAccount = accountFactory.build({
-  capabilities: ['Network LoadBalancer'],
+  capabilities: [capabilities],
 });
 
 
 const mockRegion = regionFactory.build({
-  capabilities: ['Network LoadBalancer'],
-  id: 'us-ord',
-  label: 'Chicago, IL',
+  capabilities: [capabilities],
+  id: region_id,
+  label: region_name,
   monitors: {
-    metrics: ['Network LoadBalancer'],
+    metrics: [capabilities],
     alerts: [],
   },
 });
 const mockNetLoadBalancers = networkLoadBalancerFactory.build({
   label: 'networkLoadBalancer-1',
-  region: 'us-ord',
+  region: region_id,
   id:1
 });
 
@@ -174,7 +172,7 @@ const getWidgetLegendRowValuesFromResponse = (
       {
         id: '1',
         label: clusterName,
-        region: 'us-ord',
+        region: region_id
       },
     ],
     status: 'success',
@@ -207,14 +205,14 @@ const validateWidgetFilters = (
   });
 };
 const mockAvailability = accountAvailabilityFactory.build({
-  region: 'us-ord',
+  region: region_id
 });
 
 describe('Integration Tests for DBaaS Dashboard ', () => {
   /**
    * Integration Tests for DBaaS Dashboard
    *
-   * This suite validates end-to-end functionality of the CloudPulse DBaaS Dashboard.
+   * This suite validates end-to-end functionality of the CloudPulse netloadbalancer Dashboard.
    * It covers:
    * - Loading and rendering of widgets with correct filters.
    * - Applying, clearing, and verifying "Group By" at dashboard and widget levels.

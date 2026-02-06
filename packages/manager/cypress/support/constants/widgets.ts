@@ -623,6 +623,8 @@ export const widgetDetails = {
     serviceType: 'netloadbalancer',
     clusterName: 'netloadbalancer-cluster',
     groupBy: ['entity_id'],
+    region_id: 'us-ord',
+    region_name:'Chicago, IL',
 
     metrics: [
       {
