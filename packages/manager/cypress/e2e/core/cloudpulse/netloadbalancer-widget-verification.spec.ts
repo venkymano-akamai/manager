@@ -68,13 +68,9 @@ const {
 // Build a shared dimension object
 const dimensions = [
   {
-    label: 'entity_id',
-    dimension_label: 'Entity_id',
-  },
-  {
-    label: 'protocol',
+    label: 'Protocol',
     dimension_label: 'Protocol',
-    values: ['tcp', 'udp'],
+    values: [],
   },
   {
     label: 'ip_version',
@@ -137,7 +133,7 @@ const mockRegion = regionFactory.build({
   },
 });
 const mockNetLoadBalancers = networkLoadBalancerFactory.build({
-  label: 'networkLoadBalancer-1',
+  label: clusterName,
   region: region_id,
   id: 1,
 });
@@ -281,7 +277,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
 
     // Select a resource (Database Clusters) from the autocomplete input.
     ui.autocomplete
-      .findByLabel('Database Clusters')
+      .findByLabel('Network Load Balancers')
       .should('be.visible')
       .type(clusterName);
 
@@ -292,27 +288,38 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       .should('be.visible')
       .click();
 
+    cy.findByPlaceholderText('e.g., 80,443,3000')
+      .should('be.visible')
+      .type('80');
+
+    ui.autocomplete
+      .findByLabel('IP Versions')
+      .should('be.visible')
+      .type('IPv6{enter}');
+
     // Expand the applied filters section
-    /* ui.button.findByTitle('Filters').should('be.visible').click();
+    ui.button.findByTitle('Filters').should('be.visible').click();
 
     // Verify that the applied filters
     cy.get('[data-qa-applied-filter-id="applied-filter"]').within(() => {
-      cy.get(`[data-qa-value="Database Engine ${engine}"]`)
-        .should('be.visible')
-        .should('have.text', engine);
-
       cy.get('[data-qa-value="Region US, Chicago, IL"]')
         .should('be.visible')
         .should('have.text', 'US, Chicago, IL');
 
-      cy.get(`[data-qa-value="Node Type ${nodeType}"]`)
-        .should('be.visible')
-        .should('have.text', nodeType);
-
-      cy.get(`[data-qa-value="Database Clusters ${clusterName}"]`)
+      cy.get(`[data-qa-value="Network Load Balancers ${clusterName}"]`)
         .should('be.visible')
         .should('have.text', clusterName);
-    });*/
+
+      cy.get('[data-qa-value="Ports 80"]')
+        .should('be.visible')
+        .find('.MuiChip-label')
+        .should('have.text', '80');
+
+      cy.get('[data-qa-value="IP Versions IPv6"]')
+        .should('be.visible')
+        .find('.MuiChip-label')
+        .should('have.text', 'IPv6');
+    });
     // Wait for all metrics query requests to resolve.
     cy.wait(['@getMetrics', '@getMetrics']).then((calls) => {
       const interceptions = calls as unknown as Interception[];
@@ -320,10 +327,11 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       expect(interceptions).to.have.length(2);
     });
   });
-  it.only('should apply group by at the dashboard level and verify the metrics API calls', () => {
+  it('should apply group by at the dashboard level and verify the metrics API calls', () => {
     // Stub metrics API calls for dashboard group by changes
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
       entity_id: '1',
+      Protacal: 'IPV6-1',
     }).as('refreshMetrics');
 
     // Validate legend rows (pre "Group By")
@@ -369,16 +377,16 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     cy.get('[data-testid="drawer"]')
       .find('p')
       .first()
-      .and('have.text', 'Dbaas Dashboard');
+      .and('have.text', 'Network Load Balancer');
 
-    // Type "Node Type" in Dimensions autocomplete field
+    // Type "Protocol" in Dimensions autocomplete field
     ui.autocomplete
       .findByLabel('Dimensions')
       .should('be.visible')
-      .type('Node Type');
+      .type('Protocol');
 
     // Select "Node Type" from the popper options
-    ui.autocompletePopper.findByTitle('Node Type').should('be.visible').click();
+    ui.autocompletePopper.findByTitle('Protocol').should('be.visible').click();
 
     // Close the drawer using ESC
     cy.get('body').type('{esc}');
@@ -394,26 +402,32 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
 
     // Validate all intercepted metrics API calls contain correct filters and group_by values
     cy.get('@refreshMetrics.all')
-      .should('have.length', 4)
+      .should('have.length', 2)
       .each((xhr: unknown) => {
         const interception = xhr as Interception;
         const { body: requestPayload } = interception.request;
 
         // Extract filters from payload
         const { filters } = requestPayload;
+        expect(filters).to.have.length(2);
 
-        // Ensure node_type filter is applied correctly
-        const nodeTypeFilter = filters.filter(
-          (filter: DimensionFilter) => filter.dimension_label === 'node_type'
+        const portFilter = filters.find(
+          (f: DimensionFilter) => f.dimension_label === 'port'
         );
-        expect(nodeTypeFilter).to.have.length(1);
-        expect(nodeTypeFilter[0].operator).to.equal('eq');
-        expect(nodeTypeFilter[0].value).to.equal('secondary');
+
+        expect(portFilter && portFilter.operator).to.equal('in');
+        expect(portFilter && portFilter.value).to.equal('80');
+
+        const ipVersionFilter = filters.find(
+          (f: DimensionFilter) => f.dimension_label === 'ip_version'
+        );
+        expect(ipVersionFilter && ipVersionFilter.operator).to.equal('in');
+        expect(ipVersionFilter && ipVersionFilter.value).to.equal('v6');
 
         // Ensure group_by contains entity_id and node_type in correct order
         expect(requestPayload.group_by).to.have.ordered.members([
           'entity_id',
-          'node_type',
+          'Protocol',
         ]);
       });
 
@@ -424,15 +438,16 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
         .should('be.visible')
         .within(() => {
           cy.get(
-            '[data-qa-graph-row-title="mysql-cluster | Secondary | Secondary-1"]'
+            '[data-qa-graph-row-title="netloadbalancer-cluster | IPV6-1"]'
           )
             .should('be.visible')
-            .and('have.text', 'mysql-cluster | Secondary | Secondary-1');
+            .and('have.text', 'netloadbalancer-cluster | IPV6-1');
         });
     });
   });
+  
 
-  it('should unselect all group bys and verify the metrics API calls', () => {
+  it.only('should unselect all group bys and verify the metrics API calls', () => {
     // Stub metrics API calls for dashboard group by changes
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'refreshMetrics'
@@ -466,7 +481,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
 
     // Validate all intercepted metrics API calls contain no group_by values
     cy.get('@refreshMetrics.all')
-      .should('have.length', 4)
+      .should('have.length', 2)
       .each((xhr: unknown) => {
         const interception = xhr as Interception;
         const { body: requestPayload } = interception.request;
@@ -477,17 +492,14 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
         // Extract filters from payload
         const { filters } = requestPayload;
 
-        // Ensure node_type filter is still applied correctly
-        const nodeTypeFilter = filters.filter(
-          (filter: DimensionFilter) => filter.dimension_label === 'node_type'
+        // Ensure port filter is still applied correctly
+        const portFilters = filters.filter(
+          (filter: DimensionFilter) => filter.dimension_label === 'port'
         );
-        expect(nodeTypeFilter).to.have.length(1);
-        expect(nodeTypeFilter[0].operator).to.equal('eq');
-        expect(nodeTypeFilter[0].value).to.equal('secondary');
+        expect(portFilters).to.have.length(1);
+        expect(portFilters[0].operator).to.equal('in');
+        expect(portFilters[0].value).to.equal('80');
       });
-
-    // Scroll to the top of the page to ensure consistent test behavior
-    cy.scrollTo('top');
   });
 
   it('should apply group by at widget level only  and verify the metrics API calls', () => {

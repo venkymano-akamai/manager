@@ -633,13 +633,10 @@ export const widgetDetails = {
         unit: 'Bps',
         chartType: 'line',
         widgetSize: 'large',
-
-        expectedAggregation: 'sum',
+         expectedAggregation: 'sum',
         expectedAggregationArray: ['sum'],
         expectedGranularity: '1 min',
-
         yLabel: 'nlb_ingress_traffic',
-
         filters: [
           { dimension_label: 'device', operator: 'eq', value: 'lo' },
           { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
@@ -651,14 +648,11 @@ export const widgetDetails = {
         unit: 'packets/s',
         chartType: 'line',
         widgetSize: 'large',
-
         expectedAggregation: 'sum',
         expectedAggregationArray: ['sum'],
         expectedGranularity: '1 min',
-
         yLabel: 'nlb_ingress_packets',
-
-        filters: [
+         filters: [
           { dimension_label: 'device', operator: 'eq', value: 'lo' },
           { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
         ],
