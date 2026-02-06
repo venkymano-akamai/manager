@@ -423,7 +423,7 @@ describe('Notification Channel Listing Page', () => {
     });
   });
 
-  it('Deletes a user-type email notification channel with no alerts', () => {
+  it('deletes a user-type email notification channel with no alerts', () => {
     cy.findByPlaceholderText('Search for Notification Channels').as(
       'searchInput'
     );
@@ -458,7 +458,7 @@ describe('Notification Channel Listing Page', () => {
     ui.toast.assertMessage(DELETE_CHANNEL_SUCCESS_MESSAGE);
   });
 
-  it('Disable deletion of a user-type email notification channel with alerts', () => {
+  it('disable deletion of a user-type email notification channel with alerts', () => {
     // --- Arrange: Find a channel that has at least 1 alert ---
     const { label: userChannelLabel } = findChannel(
       notificationChannels,
@@ -487,10 +487,10 @@ describe('Notification Channel Listing Page', () => {
     ui.actionMenuItem
       .findByTitle('Delete')
       .should('be.visible')
-      .should('be.disabled'); // ✅ key assertion for channels with alerts
+      .should('be.disabled');
   });
 
-  it('Ensures system-type channels never show the Delete button', () => {
+  it('ensures system-type channels never show the Delete button', () => {
     // --- User-type email channel with alerts ---
     const { label: systemChannelLabel } = findChannel(
       notificationChannels,
@@ -525,7 +525,7 @@ describe('Notification Channel Listing Page', () => {
         );
       });
   });
-  it('Displays an error when deleting a notification channel fails', () => {
+  it('displays an error when deleting a notification channel fails', () => {
     const notificationChannel = notificationChannelFactory.build({
       id: 123,
       label: 'Channel-error',
