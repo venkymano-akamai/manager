@@ -630,11 +630,11 @@ export const widgetDetails = {
       {
         name: 'nlb_ingress_traffic',
         title: 'Ingress Traffic Rate',
-        unit: 'Bps',
+        unit: 'B/s',
         chartType: 'line',
         widgetSize: 'large',
-         expectedAggregation: 'sum',
-        expectedAggregationArray: ['sum'],
+        expectedAggregation: 'max',
+        expectedAggregationArray: ['avg', 'max', 'min', 'sum'],
         expectedGranularity: '1 min',
         yLabel: 'nlb_ingress_traffic',
         filters: [
@@ -648,8 +648,8 @@ export const widgetDetails = {
         unit: 'packets/s',
         chartType: 'line',
         widgetSize: 'large',
-        expectedAggregation: 'sum',
-        expectedAggregationArray: ['sum'],
+        expectedAggregation: 'max',
+        expectedAggregationArray: ['avg', 'max', 'min', 'sum'],
         expectedGranularity: '1 min',
         yLabel: 'nlb_ingress_packets',
          filters: [
