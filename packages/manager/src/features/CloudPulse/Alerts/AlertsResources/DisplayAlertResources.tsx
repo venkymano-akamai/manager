@@ -339,7 +339,7 @@ export const DisplayAlertResources = React.memo(
                       message="Table data is unavailable. Please try again later."
                     />
                   )}
-                  {paginatedData.length === 0 && (
+                  {!isDataLoadingError && paginatedData.length === 0 && (
                     <TableRow>
                       <TableCell
                         align="center"

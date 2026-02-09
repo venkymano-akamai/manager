@@ -104,6 +104,10 @@ export interface AlertResourcesProp {
    * The service type associated with the alerts like DBaaS, Linode etc.,
    */
   serviceType?: CloudPulseServiceType;
+  /**
+   * Callback to set the error on API Failure
+   */
+  setError?: (hasError: boolean) => void;
 }
 
 export const AlertResources = React.memo((props: AlertResourcesProp) => {
@@ -120,7 +124,9 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     maxSelectionCount,
     scrollElement,
     serviceType,
+    setError,
   } = props;
+
   const [searchText, setSearchText] = React.useState<string>();
   const [filteredRegions, setFilteredRegions] = React.useState<string[]>();
   const [selectedResources, setSelectedResources] =
@@ -208,6 +214,13 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     serviceType === 'firewall' && entityType ? entityType : undefined,
     filterFn
   );
+
+  React.useEffect(() => {
+    const hasError = isResourcesError || isRegionsError;
+    if (setError) {
+      setError(hasError);
+    }
+  }, [setError, isResourcesError, isRegionsError]);
 
   const regionFilteredResources = React.useMemo(() => {
     if (
@@ -354,10 +367,6 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     !isDataLoadingError && !isSelectionsNeeded && alertResourceIds.length === 0;
   const showEditInformation = isSelectionsNeeded && alertType === 'system';
 
-  if (isResourcesLoading || isRegionsLoading) {
-    return <CircleProgress />;
-  }
-
   if (isNoResources) {
     return (
       <Stack gap={2}>
@@ -385,7 +394,6 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     serviceToFiltersMap[serviceType ?? ''] ?? serviceToFiltersMap[''];
   const noticeStyles: React.CSSProperties = {
     alignItems: 'center',
-    backgroundColor: theme.tokens.alias.Background.Normal,
     borderRadius: 1,
     display: 'flex',
     flexWrap: 'nowrap',
@@ -396,22 +404,32 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     maxSelectionCount && selectedResources
       ? Math.max(0, maxSelectionCount - selectedResources.length)
       : undefined;
+  const isLoading = isRegionsLoading || isResourcesLoading;
   return (
     <Stack gap={2}>
+      {isLoading && <CircleProgress />}
       {!hideLabel && (
-        <Typography ref={titleRef} variant="h2">
+        <Typography
+          display={isLoading ? 'none' : 'block'}
+          ref={titleRef}
+          variant="h2"
+        >
           {alertLabel || 'Entities'}
           {/* It can be either the passed alert label or just Resources */}
         </Typography>
       )}
       {showEditInformation && (
-        <Typography ref={titleRef} variant="body1">
+        <Typography
+          display={isLoading ? 'none' : 'block'}
+          ref={titleRef}
+          variant="body1"
+        >
           You can enable or disable this system alert for each entities you have
           access to. Select the entities listed below you want to enable the
           alert for.
         </Typography>
       )}
-      <GridLegacy container spacing={2}>
+      <GridLegacy container display={isLoading ? 'none' : 'block'} spacing={2}>
         <GridLegacy
           columnSpacing={2}
           container
