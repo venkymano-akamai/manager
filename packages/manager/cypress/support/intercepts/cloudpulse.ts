@@ -16,7 +16,6 @@ import type {
   CloudPulseMetricsResponse,
   Dashboard,
   MetricDefinition,
-  NetworkLoadBalancer,
   NotificationChannel,
   Service,
 } from '@linode/api-v4';
