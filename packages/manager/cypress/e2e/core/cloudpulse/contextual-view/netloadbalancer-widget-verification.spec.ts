@@ -16,7 +16,7 @@ import {
   mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
-import { mockGetNetLoadBalancers } from 'support/intercepts/nodebalancers';
+import { mockGetNetLoadBalancer, mockGetNetLoadBalancers } from 'support/intercepts/nodebalancers';
 import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
@@ -223,24 +223,11 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
     mockGetAccountAvailability([mockAvailability]);
     mockGetRegions([mockRegion]);
     mockGetNetLoadBalancers([mockNetLoadBalancers]);
+    mockGetNetLoadBalancer(mockNetLoadBalancers);
     mockGetUserPreferences({});
 
     // navigate to the metrics page
-    cy.visitWithLogin('/metrics');
-
-    // Wait for the services and dashboard API calls to complete before proceeding
-    cy.wait(['@fetchServices']);
-
-    // Selecting a dashboard from the autocomplete input.
-    ui.autocomplete
-      .findByLabel('Dashboard')
-      .should('be.visible')
-      .type(dashboardName);
-
-    ui.autocompletePopper
-      .findByTitle(dashboardName)
-      .should('be.visible')
-      .click();
+    cy.visitWithLogin('/netloadbalancers/1/listeners');
 
     // Select a time duration from the autocomplete input.
     ui.button.findByTitle('Last hour').as('timeRangeTrigger');
@@ -255,25 +242,6 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
       .should('be.enabled')
       .click();
 
-    ui.regionSelect.find().click();
-    ui.regionSelect.find().clear();
-    ui.regionSelect
-      .findItemByRegionId(mockRegion.id, [mockRegion])
-      .should('be.visible')
-      .click();
-
-    // Select a resource (Database Clusters) from the autocomplete input.
-    ui.autocomplete
-      .findByLabel('Network Load Balancers')
-      .should('be.visible')
-      .type(clusterName);
-
-    ui.autocompletePopper.findByTitle(clusterName).should('be.visible').click();
-
-    ui.button
-      .findByAttribute('aria-label', 'Close')
-      .should('be.visible')
-      .click();
 
     cy.findByPlaceholderText('e.g., 80,443,3000')
       .should('be.visible')
@@ -289,13 +257,6 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
 
     // Verify that the applied filters
     cy.get('[data-qa-applied-filter-id="applied-filter"]').within(() => {
-      cy.get('[data-qa-value="Region US, Chicago, IL"]')
-        .should('be.visible')
-        .should('have.text', 'US, Chicago, IL');
-
-      cy.get(`[data-qa-value="Network Load Balancers ${clusterName}"]`)
-        .should('be.visible')
-        .should('have.text', clusterName);
 
       cy.get('[data-qa-value="Ports 80"]')
         .should('be.visible')
@@ -608,37 +569,6 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
           });
         });
     });
-  });
-  it('should trigger the global refresh button and verify the corresponding network calls', () => {
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'refreshMetrics'
-    );
-
-    // click the global refresh button
-    cy.get('[data-testid="global-refresh"]')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
-
-    // validate the API calls are going with intended payload
-    cy.get('@refreshMetrics.all')
-      .should('have.length', 2)
-      .each((xhr: unknown) => {
-        const interception = xhr as Interception;
-        const { body: requestPayload } = interception.request;
-        const { metrics: metric, relative_time_duration: timeRange } =
-          requestPayload;
-        const metricData = metrics.find(({ name }) => name === metric[0].name);
-
-        if (!metricData) {
-          throw new Error(
-            `Unexpected metric name '${metric[0].name}' included in the outgoing refresh API request`
-          );
-        }
-        expect(metric[0].name).to.equal(metricData.name);
-        expect(timeRange).to.have.property('unit', 'days');
-        expect(timeRange).to.have.property('value', 1);
-      });
   });
 
   it('should zoom in and out of all the widgets', () => {

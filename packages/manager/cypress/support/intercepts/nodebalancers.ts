@@ -103,3 +103,13 @@ export const mockGetNetLoadBalancers = (
     paginateResponse(networkLoadBalancer)
   );
 };
+
+export const mockGetNetLoadBalancer = (
+  networkLoadBalancer: NetworkLoadBalancer
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`netloadbalancers/${networkLoadBalancer.id}`),
+    networkLoadBalancer);
+
+};
