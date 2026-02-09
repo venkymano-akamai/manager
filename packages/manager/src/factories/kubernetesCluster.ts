@@ -80,6 +80,7 @@ export const kubernetesAPIResponse =
     status: 'ready',
     tags: [],
     updated: '2020-04-08T16:58:21',
+    tier: 'enterprise',
   });
 
 export const kubernetesVersionFactory =
