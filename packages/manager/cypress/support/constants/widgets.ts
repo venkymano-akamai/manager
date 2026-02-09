@@ -624,7 +624,7 @@ export const widgetDetails = {
     clusterName: 'netloadbalancer-cluster',
     groupBy: ['entity_id'],
     region_id: 'us-ord',
-    region_name:'Chicago, IL',
+    region_name: 'Chicago, IL',
 
     metrics: [
       {
@@ -652,7 +652,7 @@ export const widgetDetails = {
         expectedAggregationArray: ['avg', 'max', 'min', 'sum'],
         expectedGranularity: '1 min',
         yLabel: 'nlb_ingress_packets',
-         filters: [
+        filters: [
           { dimension_label: 'device', operator: 'eq', value: 'lo' },
           { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
         ],

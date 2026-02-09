@@ -714,82 +714,87 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
     });
   });
 
-   it.only('Add and Remove widget level dimension filter and validate  api rewsponse', () => {
-      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-        'getFilterMetrics'
-      );
-      const widgetSelector = '[data-qa-widget="Ingress Traffic Rate"]';
-      // Add Dimension Filter
-      cy.get(widgetSelector)
-        .should('be.visible')
-        .within(() => {
-          ui.button
-            .findByAttribute('aria-label', 'Widget Dimension Filter Ingress Traffic Rate')
-            .should('be.visible')
-            .click();
-        });
-  
-      ui.button.findByTitle('Add Filter').click();
-      cy.get('[data-testid="dimension_filters.0-id"]').within(() => {
-        ui.autocomplete.findByLabel('Dimension').should('be.visible').click();
-        ui.autocomplete.findByLabel('Dimension').type('Protocol');
-  
-        ui.autocompletePopper
-          .findByTitle('Protocol')
+  it('Add and Remove widget level dimension filter and validate  api rewsponse', () => {
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getFilterMetrics'
+    );
+    const widgetSelector = '[data-qa-widget="Ingress Traffic Rate"]';
+    // Add Dimension Filter
+    cy.get(widgetSelector)
+      .should('be.visible')
+      .within(() => {
+        ui.button
+          .findByAttribute(
+            'aria-label',
+            'Widget Dimension Filter Ingress Traffic Rate'
+          )
           .should('be.visible')
           .click();
-  
-        // Select operator
-        ui.autocomplete
-          .findByLabel('Operator')
-          .should('be.visible')
-          .type('Starts with');
-  
-        ui.autocompletePopper
-          .findByTitle('Starts with')
-          .should('be.visible')
-          .click();
-  
-        cy.findByPlaceholderText('Enter a Value').as('input');
-  
-        cy.get('@input').type('User');
-        cy.get('@input').click();
-      });
-      ui.button.findByAttribute('label', 'Apply').click();
-      cy.wait('@getFilterMetrics').then((interception) => {
-        const { filters } = interception.request.body;
-      
-        const [lastFilter] = filters.slice(-1);
-      
-        expect(lastFilter).to.deep.equal({
-          dimension_label: 'Protocol',
-          operator: 'startswith',
-          value: 'User',
-        });
       });
 
-      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-        'getRemoveFilterMetrics'
-      );
-      
-      
-      // Remove Dimension Filter
-      cy.get(widgetSelector)
+    ui.button.findByTitle('Add Filter').click();
+    cy.get('[data-testid="dimension_filters.0-id"]').within(() => {
+      ui.autocomplete.findByLabel('Dimension').should('be.visible').click();
+      ui.autocomplete.findByLabel('Dimension').type('Protocol');
+
+      ui.autocompletePopper
+        .findByTitle('Protocol')
         .should('be.visible')
-        .within(() => {
-          ui.button
-            .findByAttribute('aria-label', 'Widget Dimension Filter Ingress Traffic Rate')
-            .should('be.visible')
-            .click();
-        });
-      cy.get('[data-qa-id="filter-drawer-clear-all"]').click();
-  
-      ui.button.findByAttribute('label', 'Apply').click();
+        .click();
 
-      cy.wait('@getRemoveFilterMetrics').then((interception) => {
-        const { filters } = interception.request.body;
-      
-        expect(filters).to.be.an('array').that.is.empty;
+      // Select operator
+      ui.autocomplete
+        .findByLabel('Operator')
+        .should('be.visible')
+        .type('Starts with');
+
+      ui.autocompletePopper
+        .findByTitle('Starts with')
+        .should('be.visible')
+        .click();
+
+      cy.findByPlaceholderText('Enter a Value').as('input');
+
+      cy.get('@input').type('User');
+      cy.get('@input').click();
+    });
+    ui.button.findByAttribute('label', 'Apply').click();
+    cy.wait('@getFilterMetrics').then((interception) => {
+      const { filters } = interception.request.body;
+
+      const [lastFilter] = filters.slice(-1);
+
+      expect(lastFilter).to.deep.equal({
+        dimension_label: 'Protocol',
+        operator: 'startswith',
+        value: 'User',
       });
     });
+
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getRemoveFilterMetrics'
+    );
+
+    // Remove Dimension Filter
+    cy.get(widgetSelector)
+      .should('be.visible')
+      .within(() => {
+        ui.button
+          .findByAttribute(
+            'aria-label',
+            'Widget Dimension Filter Ingress Traffic Rate'
+          )
+          .should('be.visible')
+          .click();
+      });
+    cy.get('[data-qa-id="filter-drawer-clear-all"]').click();
+
+    ui.button.findByAttribute('label', 'Apply').click();
+
+    cy.wait('@getRemoveFilterMetrics').then((interception) => {
+      const { filters } = interception.request.body;
+
+      expect(filters).to.be.an('array').that.is.empty;
+    });
+  });
 });
