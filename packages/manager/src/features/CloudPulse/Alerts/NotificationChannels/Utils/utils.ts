@@ -74,7 +74,7 @@ export const getServicesList = (
       label: service.label,
       value: service.service_type,
     }));
-}
+};
 
 /**
  * Returns a filtered list of alerts based on service filters and search text.
@@ -107,4 +107,4 @@ export const getAssociatedAlerts = (
     );
   }
   return filteredAlerts;
-}
+};
