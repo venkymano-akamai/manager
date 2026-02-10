@@ -66,7 +66,8 @@ export type QueryFunctionType =
   | Linode[]
   | NodeBalancer[]
   | ObjectStorageBucket[]
-  | Volume[];
+  | Volume[]
+  | NetworkLoadBalancer[];
 /**
  * The non array types of QueryFunctionType like DatabaseEngine|DatabaseType
  */
