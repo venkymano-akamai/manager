@@ -26,7 +26,6 @@ export type AlertStatusType =
   | 'enabled'
   | 'enabling'
   | 'failed'
-  | 'in progress'
   | 'provisioning';
 export type CriteriaConditionType = 'ALL';
 export type MetricUnitType =

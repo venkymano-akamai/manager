@@ -26,7 +26,7 @@ const mockServices: Item<string, CloudPulseServiceType>[] = [
 const flags = {
   aclpAlerting: {
     enabled: true,
-    editDisabledStatuses: ['failed', 'in progress'],
+    editDisabledStatuses: ['failed', 'disabling'],
   },
 };
 
@@ -165,7 +165,7 @@ describe('Alert Row', () => {
   });
 
   it("should disable 'Disable' action item in menu if alert has no enabled/disabled status", async () => {
-    const alert = alertFactory.build({ status: 'in progress', type: 'user' });
+    const alert = alertFactory.build({ status: 'failed', type: 'user' });
     const { getByLabelText, getByText } = renderWithTheme(
       <AlertTableRow
         alert={alert}
@@ -180,7 +180,7 @@ describe('Alert Row', () => {
     );
     const ActionMenu = getByLabelText(`Action menu for Alert ${alert.label}`);
     await userEvent.click(ActionMenu);
-    expect(getByText('In Progress')).toBeInTheDocument();
+    expect(getByText('Failed')).toBeInTheDocument();
     expect(getByText('Disable').closest('li')).toHaveAttribute(
       'aria-disabled',
       'true'
@@ -188,7 +188,7 @@ describe('Alert Row', () => {
   });
 
   it("should disable 'Edit' action item in menu if alert has no enabled/disabled status", async () => {
-    const alert = alertFactory.build({ status: 'in progress', type: 'user' });
+    const alert = alertFactory.build({ status: 'disabling', type: 'user' });
     queryMocks.useFlags.mockReturnValue(flags);
     const { getByLabelText, getByText } = renderWithTheme(
       <AlertTableRow
@@ -204,7 +204,7 @@ describe('Alert Row', () => {
       {
         flags: {
           aclpAlerting: {
-            editDisabledStatuses: ['failed', 'in progress'],
+            editDisabledStatuses: ['failed', 'disabling'],
             accountAlertLimit: 10,
             accountMetricLimit: 100,
             beta: true,
@@ -217,7 +217,7 @@ describe('Alert Row', () => {
     );
     const ActionMenu = getByLabelText(`Action menu for Alert ${alert.label}`);
     await userEvent.click(ActionMenu);
-    expect(getByText('In Progress')).toBeInTheDocument();
+    expect(getByText('Disabling')).toBeInTheDocument();
     expect(getByText('Edit').closest('li')).toHaveAttribute(
       'aria-disabled',
       'true'
