@@ -165,7 +165,6 @@ describe('CloudPulse Alerting - Notification Channel Edit Validation', () => {
     mockUpdateAlertChannelByIdError(id, 'Internal server error').as(
       'updateAlertChannelByIdError'
     );
-    cy.visitWithLogin('/alerts/notification-channels');
     // Wait for initial data load
     cy.wait('@getAlertNotificationChannels');
 

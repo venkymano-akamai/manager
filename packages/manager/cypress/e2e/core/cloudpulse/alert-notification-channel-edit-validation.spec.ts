@@ -202,7 +202,21 @@ describe('CloudPulse Alerting - Notification Channel Edit Validation', () => {
       'getAlertNotificationChannelsNew'
     );
 
-    mockUpdateAlertChannelById(id, editNotificationChannel).as(
+    const updatedNotificationChannel = {
+      ...editNotificationChannel,
+      details: {
+        email: {
+          ...(
+            editNotificationChannel.details as {
+              email: { recipient_type?: string; usernames: string[] };
+            }
+          ).email,
+          usernames: ['user1', 'user2'],
+        },
+      },
+    } as typeof editNotificationChannel;
+
+    mockUpdateAlertChannelById(id, updatedNotificationChannel).as(
       'updateAlertChannelByUsers'
     );
     mockGetAlertChannelById(id, editNotificationChannel).as(
@@ -357,7 +371,7 @@ describe('CloudPulse Alerting - Notification Channel Edit Validation', () => {
     cy.get('body').click(0, 0);
     checkErrorMessage('Recipients', 'This field is required.');
   });
-  it('should verify the prefill validation esp when recipients selected is at the few scrolls', () => {
+  it('should prefill recipients correctly when selected users are far down the list (requires scrolling)', () => {
     const editNotificationChannel = notificationChannelFactory.build({
       label: 'Test Channel Name',
       channel_type: 'email',
@@ -656,8 +670,18 @@ describe('CloudPulse Alerting - Notification Channel Edit Validation', () => {
     checkErrorMessage('Recipients', 'This field is required.');
   });
   it('should verify for wrong id in direct edit url', () => {
-    const wrongId = 9999;
+    const wrongId = 9999999;
+
+    // Stub GET request for non-existent channel to return 404
+    cy.intercept('GET', `*/monitor/alert-channels/${wrongId}`, {
+      statusCode: 404,
+      body: { errors: [{ reason: 'Not found' }] },
+    }).as('getAlertChannelByWrongId');
+
     cy.visitWithLogin('/alerts/notification-channels/edit/' + wrongId);
+
+    cy.wait('@getAlertChannelByWrongId');
+
     // Verify for error msg
     cy.get('h3[data-qa-error-msg="true"]')
       .should('be.visible')
