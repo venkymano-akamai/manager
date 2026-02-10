@@ -266,24 +266,6 @@ export const NETLOADBALANCER_CONFIG: Readonly<CloudPulseServiceTypeFilterMap> =
       },
       {
         configuration: {
-          filterKey: 'port',
-          filterType: 'string',
-          isFilterable: true,
-          isMetricsFilter: false,
-          isOptional: true,
-          name: 'Ports',
-          dimensionKey: 'port',
-          neededInViews: [
-            CloudPulseAvailableViews.central,
-            CloudPulseAvailableViews.service,
-          ],
-          placeholder: 'e.g., 80,443,3000',
-          priority: 4,
-        },
-        name: 'Ports',
-      },
-      {
-        configuration: {
           filterKey: 'ip_version',
           filterType: 'string',
           isFilterable: true,
@@ -311,6 +293,24 @@ export const NETLOADBALANCER_CONFIG: Readonly<CloudPulseServiceTypeFilterMap> =
           dimensionKey: 'ip_version',
         },
         name: 'IP Versions',
+      },
+      {
+        configuration: {
+          filterKey: 'port',
+          filterType: 'string',
+          isFilterable: true,
+          isMetricsFilter: false,
+          isOptional: true,
+          name: 'Ports',
+          dimensionKey: 'port',
+          neededInViews: [
+            CloudPulseAvailableViews.central,
+            CloudPulseAvailableViews.service,
+          ],
+          placeholder: 'e.g., 80,443,3000',
+          priority: 4,
+        },
+        name: 'Ports',
       },
       {
         configuration: {
