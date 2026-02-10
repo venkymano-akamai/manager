@@ -21,7 +21,9 @@ import type { AssociatedEntityType } from '../../shared/types';
 import type { AlertRegion } from '../AlertRegions/DisplayAlertRegions';
 import type { AlertDimensionsProp } from '../AlertsDetail/DisplayAlertDetailChips';
 import type { CreateAlertDefinitionForm } from '../CreateAlert/types';
-import type { Firewall, Linode,
+import type {
+  Firewall,
+  Linode,
   MonitoringCapabilities,
   NotificationChannelAlerts,
 } from '@linode/api-v4';
