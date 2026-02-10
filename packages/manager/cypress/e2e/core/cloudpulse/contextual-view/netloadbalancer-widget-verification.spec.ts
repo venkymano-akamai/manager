@@ -260,12 +260,10 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
 
       cy.get('[data-qa-value="Ports 80"]')
         .should('be.visible')
-        .find('.MuiChip-label')
         .should('have.text', '80');
 
       cy.get('[data-qa-value="IP Versions IPv6"]')
         .should('be.visible')
-        .find('.MuiChip-label')
         .should('have.text', 'IPv6');
     });
     // Wait for all metrics query requests to resolve.
