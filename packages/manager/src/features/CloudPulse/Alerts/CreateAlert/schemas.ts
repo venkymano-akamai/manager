@@ -73,6 +73,7 @@ export const triggerConditionSchema = triggerConditionValidation.concat(
 
 export const alertDefinitionFormSchema = createAlertDefinitionSchema.concat(
   object({
+    hasAPIError: mixed<boolean>().optional(),
     entity_ids: array().of(string().defined()).optional(),
     entity_type: mixed<AssociatedEntityType>()
       .oneOf(['linode', 'nodebalancer'])

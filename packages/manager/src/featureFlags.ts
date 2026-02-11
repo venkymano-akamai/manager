@@ -250,6 +250,7 @@ export interface Flags {
   mainContentBanner: MainContentBanner;
   marketplaceAppOverrides: MarketplaceAppOverride[];
   marketplaceV2: boolean;
+  marketplaceV2GlobalBanner: boolean;
   metadata: boolean;
   mtc: MTC;
   networkLoadBalancer: boolean;
@@ -257,6 +258,7 @@ export interface Flags {
   nodebalancerVpc: boolean;
   objectStorageContextualMetrics: boolean;
   objectStorageGen2: BaseFeatureFlag;
+  objectStorageGlobalQuotas: boolean;
   objMultiCluster: boolean;
   objSummaryPage: boolean;
   privateImageSharing: boolean;
