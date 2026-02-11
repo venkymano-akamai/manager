@@ -73,7 +73,7 @@ const alertConfigs = [
     metric: 'Network Usage',
     threshold: 90,
     type: 'system',
-    status: 'in progress',
+    status: 'provisioning',
     scope: 'entity',
     id: 4,
   },
