@@ -10,6 +10,7 @@ import { LandingHeader } from 'src/components/LandingHeader';
 import { SuspenseLoader } from 'src/components/SuspenseLoader';
 import { useFlags } from 'src/hooks/useFlags';
 
+import { useCloudPulseExport } from '../Context/useCloudPulseExport';
 import { GlobalFilters } from '../Overview/GlobalFilters';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
 import { defaultTimeDuration } from '../Utils/CloudPulseDateTimePickerUtils';
@@ -40,6 +41,7 @@ export const CloudPulseDashboardLanding = () => {
   const { data: profile } = useProfile();
   const flags = useFlags();
   const { enqueueSnackbar } = useSnackbar();
+  const { registerFilterData, registerDashboard } = useCloudPulseExport();
   const [filterData, setFilterData] = React.useState<FilterData>({
     id: {},
     label: {},
@@ -147,6 +149,7 @@ export const CloudPulseDashboardLanding = () => {
   const onDashboardChange = React.useCallback(
     (dashboardObj: Dashboard, skipReset: boolean = false) => {
       setDashboard(dashboardObj);
+      registerDashboard(dashboardObj);
       if (!skipReset) {
         setFilterData({
           id: {},
@@ -155,7 +158,7 @@ export const CloudPulseDashboardLanding = () => {
         setTimeDuration(defaultTimeDuration(timezone)); // clear time duration on dashboard change
       }
     },
-    [timezone]
+    [timezone, registerDashboard]
   );
   const onTimeDurationChange = React.useCallback(
     (timeDurationObj: DateTimeWithPreset) => {
@@ -163,6 +166,11 @@ export const CloudPulseDashboardLanding = () => {
     },
     []
   );
+
+  React.useEffect(() => {
+    registerFilterData(filterData);
+  }, [filterData, registerFilterData]);
+
   return (
     <React.Suspense fallback={<SuspenseLoader />}>
       <DocumentTitleSegment segment="Dashboards" />

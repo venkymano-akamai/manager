@@ -4,7 +4,6 @@ import { GridLegacy, IconButton, Stack, useTheme } from '@mui/material';
 import { DateTime } from 'luxon';
 import React from 'react';
 
-import Download from 'src/assets/icons/download.svg';
 import { useFlags } from 'src/hooks/useFlags';
 import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
 
@@ -39,6 +38,7 @@ import { CloudPulseIntervalSelect } from './components/CloudPulseIntervalSelect'
 import { CloudPulseLineGraph } from './components/CloudPulseLineGraph';
 import { CloudPulseDimensionFiltersSelect } from './components/DimensionFilters/CloudPulseDimensionFiltersSelect';
 import { ZoomIcon } from './components/Zoomer';
+import { CloudPulseWidgetCSVDownloader } from './csv/CloudPulseWidgetCSVDownloader';
 import styles from './pdfstyles.module.css';
 
 import type { FilterValueType } from '../Dashboard/CloudPulseDashboardLanding';
@@ -199,7 +199,6 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     linodeRegion,
     dashboardId,
     region,
-    handleDownloadPDF,
   } = props;
   const [dimensionFilters, setDimensionFilters] = React.useState<
     MetricsDimensionFilter[] | undefined
@@ -210,6 +209,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
 
   const flags = useFlags();
   const scaledWidgetUnit = React.useRef(generateCurrentUnit(unit));
+  const filterConfig = FILTER_CONFIG.get(dashboardId);
 
   const jweTokenExpiryError = 'Token expired';
   const { data: regions } = useRegionsQuery();
@@ -245,6 +245,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     scope: 'entity',
     serviceType,
   });
+  const { getRegisteredDashboard, getFilterData } = useCloudPulseExport();
   // Determine which fetch object is relevant for linodes
   const activeLinodeFetch =
     serviceType === 'blockstorage' ? linodeFromVolumes : linodesFetch;
@@ -620,26 +621,35 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   savePreferences={savePref}
                   serviceType={serviceType}
                 />
-                <CloudPulseTooltip
-                  key="minimize-tooltip"
-                  placement="bottom-end"
-                  title="Minimize"
-                >
-                  <IconButton
-                    aria-label="Zoom Out"
-                    color="inherit"
-                    data-testid="zoom-out"
-                    onClick={() =>
-                      handleDownloadPDF && handleDownloadPDF(widget.label)
-                    }
-                    sx={{
-                      padding: 0,
-                      visibility: { lg: 'visible', xs: 'hidden' },
-                    }}
+                {filterConfig && (
+                  <CloudPulseTooltip
+                    key="minimize-tooltip"
+                    placement="bottom-end"
+                    title="Minimize"
                   >
-                    <Download />
-                  </IconButton>
-                </CloudPulseTooltip>
+                    <IconButton
+                      aria-label="Zoom Out"
+                      color="inherit"
+                      data-testid="zoom-out"
+                      // onClick={() =>
+                      //   handleDownloadPDF && handleDownloadPDF(widget.label)
+                      // }
+                      sx={{
+                        padding: 0,
+                        visibility: { lg: 'visible', xs: 'hidden' },
+                      }}
+                    >
+                      <CloudPulseWidgetCSVDownloader
+                        dashboardName={getRegisteredDashboard()?.label ?? ''}
+                        data={metricsList}
+                        duration={duration}
+                        filterConfig={filterConfig}
+                        filters={getFilterData()}
+                        widget={widget}
+                      />
+                    </IconButton>
+                  </CloudPulseTooltip>
+                )}
                 <ZoomIcon
                   handleZoomToggle={handleZoomToggle}
                   zoomIn={widget?.size === 12}
