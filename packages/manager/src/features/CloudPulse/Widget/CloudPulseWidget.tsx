@@ -531,6 +531,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     }
     filterString += `Group By: ${groupBy.join(', ')} `;
   }
+  console.log('data', data);
   return (
     <GridLegacy
       className={widget.label}
@@ -641,7 +642,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     >
                       <CloudPulseWidgetCSVDownloader
                         dashboardName={getRegisteredDashboard()?.label ?? ''}
-                        data={metricsList}
+                        data={data}
                         duration={duration}
                         filterConfig={filterConfig}
                         filters={getFilterData()}
