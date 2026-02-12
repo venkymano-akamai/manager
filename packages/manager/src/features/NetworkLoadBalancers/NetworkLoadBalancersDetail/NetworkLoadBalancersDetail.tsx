@@ -1,5 +1,11 @@
 import { useNetworkLoadBalancerQuery } from '@linode/queries';
-import { Box, CircleProgress, ErrorState, IconButton } from '@linode/ui';
+import {
+  Box,
+  CircleProgress,
+  ErrorState,
+  IconButton,
+  Typography,
+} from '@linode/ui';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import { useParams } from '@tanstack/react-router';
 import * as React from 'react';
@@ -8,6 +14,7 @@ import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { EntityDetail } from 'src/components/EntityDetail/EntityDetail';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { Link } from 'src/components/Link';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 
 import { NLB_API_DOCS_LINK } from '../constants';
 import { NetworkLoadBalancerDetailBody } from './NetworkLoadBalancerDetailBody';
@@ -104,6 +111,13 @@ const NetworkLoadBalancersDetail = () => {
         noBodyBottomBorder={true}
       />
       <NetworkLoadBalancersListenerTable nlbId={nlb.id} />
+      <Box display={'flex'} flexDirection="column" marginTop={2} rowGap={2}>
+        <Typography variant="h2">Metrics</Typography>
+        <CloudPulseDashboardWithFilters
+          resource={nlb.id}
+          serviceType={'netloadbalancer'}
+        />
+      </Box>
     </>
   );
 };

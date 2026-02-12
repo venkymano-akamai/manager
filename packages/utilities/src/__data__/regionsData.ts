@@ -133,6 +133,7 @@ export const regions: Region[] = [
         'Cloud Firewall',
         'Linodes',
         'Managed Databases',
+        'Network LoadBalancer',
       ],
     },
   },
@@ -652,6 +653,7 @@ export const regions: Region[] = [
       'Block Storage Migrations',
       'Managed Databases',
       'Placement Group',
+      'Network LoadBalancer',
     ],
     country: 'us',
     id: 'us-east',
@@ -668,7 +670,7 @@ export const regions: Region[] = [
     status: 'ok',
     monitors: {
       alerts: ['Linodes', 'Block Storage'],
-      metrics: ['NodeBalancers', 'Cloud Firewall'],
+      metrics: ['NodeBalancers', 'Cloud Firewall', 'Network LoadBalancer'],
     },
   },
   {
@@ -682,6 +684,7 @@ export const regions: Region[] = [
       'VPCs',
       'Block Storage Migrations',
       'Managed Databases',
+      'Network LoadBalancer',
     ],
     country: 'gb',
     id: 'eu-west',
@@ -696,7 +699,7 @@ export const regions: Region[] = [
     },
     site_type: 'core',
     status: 'ok',
-    monitors: { alerts: [], metrics: [] },
+    monitors: { alerts: [], metrics: ['Network LoadBalancer'] },
   },
   {
     capabilities: [
