@@ -176,34 +176,40 @@ describe('CloudPulse API - Dashboards and Metric Definitions', () => {
     { type: 'firewall', id: 4 },
     { type: 'objectstorage', id: 6 },
     { type: 'linode', id: 2 },
+    { type: 'netloadbalancer', id: 5 },
   ];
 
   // -----------------------------
   // Dashboards tests
   // -----------------------------
   context('Dashboards', () => {
-    ['dbaas', 'firewall', 'nodebalancer', 'objectstorage', 'linode'].forEach(
-      (type) => {
-        it(`should fetch ${type.toUpperCase()} dashboards`, () => {
-          const url = `${apiBaseUrl}/v4beta/monitor/services/${type}/dashboards`;
-          const templatePath = `${Cypress.config('fileServerFolder')}/cypress/e2e/core/cloudpulse/api-response/${type}-dashboard-response.json`;
+    [
+      'dbaas',
+      'firewall',
+      'nodebalancer',
+      'objectstorage',
+      'linode',
+      'netloadbalancer',
+    ].forEach((type) => {
+      it(`should fetch ${type.toUpperCase()} dashboards`, () => {
+        const url = `${apiBaseUrl}/v4beta/monitor/services/${type}/dashboards`;
+        const templatePath = `${Cypress.config('fileServerFolder')}/cypress/e2e/core/cloudpulse/api-response/${type}-dashboard-response.json`;
 
-          cy.log(`Using Cloud URL*********: ${apiBaseUrl}`);
+        cy.log(`Using Cloud URL*********: ${apiBaseUrl}`);
 
-          cy.readFile(templatePath).then((templateData) => {
-            cy.request({
-              method: 'GET',
-              url,
-              headers: { Authorization: `Bearer ${token}` },
-            }).then((res) => {
-              expect(res.status).to.eq(200);
-              expect(res.body).to.have.property('data');
-              assertDeepEqual(res.body.data, templateData.data);
-            });
+        cy.readFile(templatePath).then((templateData) => {
+          cy.request({
+            method: 'GET',
+            url,
+            headers: { Authorization: `Bearer ${token}` },
+          }).then((res) => {
+            expect(res.status).to.eq(200);
+            expect(res.body).to.have.property('data');
+            assertDeepEqual(res.body.data, templateData.data);
           });
         });
-      }
-    );
+      });
+    });
 
     services.forEach(({ type, id }) => {
       it(`should fetch ${type.toUpperCase()} dashboard by ID`, () => {

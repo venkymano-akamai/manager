@@ -21,6 +21,7 @@ import { KubeSummaryPanel } from './KubeSummaryPanel';
 import { NodePoolsDisplay } from './NodePoolsDisplay/NodePoolsDisplay';
 import { UpgradeKubernetesClusterToHADialog } from './UpgradeClusterDialog';
 import UpgradeKubernetesVersionBanner from './UpgradeKubernetesVersionBanner';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 
 export const KubernetesClusterDetail = () => {
   const { data: account } = useAccount();
@@ -155,6 +156,12 @@ export const KubernetesClusterDetail = () => {
             clusterVersion={cluster.k8s_version}
             isLkeClusterRestricted={isClusterReadOnly}
           />
+          {cluster.tier === 'enterprise' && (
+            <CloudPulseDashboardWithFilters
+              resource={cluster.id}
+              serviceType="lke"
+            />
+          )}
         </Stack>
         <UpgradeKubernetesClusterToHADialog
           clusterID={cluster.id}

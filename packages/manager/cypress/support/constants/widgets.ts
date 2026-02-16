@@ -617,4 +617,46 @@ export const widgetDetails = {
     region: 'Chicago',
     serviceType: 'blockstorage',
   },
+  netloadbalancer: {
+    dashboardName: 'Network Load Balancer',
+    id: 5,
+    serviceType: 'netloadbalancer',
+    clusterName: 'netloadbalancer-cluster',
+    groupBy: ['entity_id'],
+    region_id: 'us-ord',
+    region_name: 'Chicago, IL',
+
+    metrics: [
+      {
+        name: 'nlb_ingress_traffic',
+        title: 'Ingress Traffic Rate',
+        unit: 'B/s',
+        chartType: 'line',
+        widgetSize: 'large',
+        expectedAggregation: 'max',
+        expectedAggregationArray: ['avg', 'max', 'min', 'sum'],
+        expectedGranularity: '1 min',
+        yLabel: 'nlb_ingress_traffic',
+        filters: [
+          { dimension_label: 'device', operator: 'eq', value: 'lo' },
+          { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
+        ],
+      },
+      {
+        name: 'nlb_ingress_packets',
+        title: 'Ingress Packets Rate',
+        unit: 'packets/s',
+        chartType: 'line',
+        widgetSize: 'large',
+        expectedAggregation: 'max',
+        expectedAggregationArray: ['avg', 'max', 'min', 'sum'],
+        expectedGranularity: '1 min',
+        yLabel: 'nlb_ingress_packets',
+        filters: [
+          { dimension_label: 'device', operator: 'eq', value: 'lo' },
+          { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
+        ],
+      },
+    ],
+  },
 };
