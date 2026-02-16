@@ -250,6 +250,7 @@ export const CloudPulseCustomSelect = React.memo(
     return (
       <Autocomplete
         autoHighlight
+        data-pendo-id={label} // Adding data-pendo-id for better tracking in Pendo analytics, using the label as the identifier.
         disabled={isAutoCompleteDisabled}
         errorText={staticErrorText}
         isOptionEqualToValue={(option, value) => option.label === value.label}
@@ -274,7 +275,12 @@ export const CloudPulseCustomSelect = React.memo(
             placement: 'bottom',
           },
         }}
-        textFieldProps={{ optional: isOptional }}
+        textFieldProps={{
+          optional: isOptional,
+          inputProps: {
+            'data-pendo-id': `Filter ${label} input`, // Adding data-pendo-id for better tracking in Pendo analytics, using the label-input as the identifier for the input element.
+          },
+        }}
         value={selectedResource ?? (isMultiSelect ? [] : null)}
       />
     );

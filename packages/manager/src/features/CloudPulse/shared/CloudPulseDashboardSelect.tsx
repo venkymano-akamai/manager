@@ -134,6 +134,7 @@ export const CloudPulseDashboardSelect = React.memo(
       <Autocomplete
         autoHighlight
         clearOnBlur
+        data-pendo-id="Dashboard"
         data-testid="cloudpulse-dashboard-select"
         disableClearable={!!serviceType}
         disabled={
@@ -180,6 +181,9 @@ export const CloudPulseDashboardSelect = React.memo(
         })}
         textFieldProps={{
           color: 'primary',
+          inputProps: {
+            'data-pendo-id': `Metrics Dashboard input`, // Adding data-pendo-id for better tracking in Pendo analytics, using the label-input as the identifier for the input element.
+          },
         }}
         value={selectedDashboard ?? null} // Undefined is not allowed for uncontrolled component
       />

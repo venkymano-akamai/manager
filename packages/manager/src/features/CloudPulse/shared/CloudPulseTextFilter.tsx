@@ -118,6 +118,7 @@ export const CloudPulseTextFilter = React.memo(
     return (
       <TextField
         autoComplete="off"
+        data-pendo-id={label} // Adding data-pendo-id for better tracking in Pendo analytics, using the label-input as the identifier for the input element.
         disabled={disabled}
         errorText={errorText}
         helperText={!errorText ? HELPER_TEXT[filterKey] : undefined}

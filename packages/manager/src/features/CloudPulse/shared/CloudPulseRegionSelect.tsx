@@ -161,6 +161,7 @@ export const CloudPulseRegionSelect = React.memo(
     return (
       <RegionSelect
         currentCapability={capability}
+        data-pendo-id={label} // Adding data-pendo-id for better tracking in Pendo analytics, using the label as the identifier for the autocomplete element.
         data-testid="region-select"
         disableClearable={false}
         disabled={
@@ -207,6 +208,9 @@ export const CloudPulseRegionSelect = React.memo(
               }),
             },
           }),
+          inputProps: {
+            'data-pendo-id': `Filter ${label} input`, // Adding data-pendo-id for better tracking in Pendo analytics, using the label-input as the identifier for the input element.
+          },
         }}
         value={
           supportedRegionsFromResources?.length

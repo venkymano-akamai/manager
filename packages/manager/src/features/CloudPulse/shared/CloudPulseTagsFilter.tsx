@@ -93,6 +93,7 @@ export const CloudPulseTagsSelect = React.memo(
       <Autocomplete
         autoHighlight
         clearOnBlur
+        data-pendo-id={label} // Adding data-pendo-id for better tracking in Pendo analytics, using the label as the identifier for the autocomplete element.
         data-testid="tags-select"
         disabled={disabled}
         errorText={isError ? `Failed to fetch ${label || 'Tags'}.` : ''}
@@ -133,6 +134,9 @@ export const CloudPulseTagsSelect = React.memo(
             },
           },
           optional,
+          inputProps: {
+            'data-pendo-id': `Filter ${label} input`, // Adding data-pendo-id for better tracking in Pendo analytics, using the label-input as the identifier for the input element.
+          },
         }}
         value={selectedTags ?? []}
       />

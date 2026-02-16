@@ -157,6 +157,7 @@ export const CloudPulseNodeTypeFilter = React.memo(
       <Autocomplete
         autoHighlight
         clearOnBlur
+        data-pendo-id={label}
         data-testid="node-type-select"
         disabled={disabled}
         errorText={isError ? 'Error loading node types.' : ''}
@@ -173,6 +174,11 @@ export const CloudPulseNodeTypeFilter = React.memo(
         slotProps={{
           popper: {
             placement: 'bottom',
+          },
+        }}
+        textFieldProps={{
+          inputProps: {
+            'data-pendo-id': `Filter ${label} input`, // Adding data-pendo-id for better tracking in Pendo analytics, using the label-input as the identifier for the input element.
           },
         }}
         value={selectedNodeType ?? null}
