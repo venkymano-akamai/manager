@@ -6,6 +6,7 @@ import * as React from 'react';
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 import { useAPLAvailability } from 'src/features/Kubernetes/kubeUtils';
 import { getKubeHighAvailability } from 'src/features/Kubernetes/kubeUtils';
 import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
@@ -20,7 +21,6 @@ import { KubeSummaryPanel } from './KubeSummaryPanel';
 import { NodePoolsDisplay } from './NodePoolsDisplay/NodePoolsDisplay';
 import { UpgradeKubernetesClusterToHADialog } from './UpgradeClusterDialog';
 import UpgradeKubernetesVersionBanner from './UpgradeKubernetesVersionBanner';
-import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 
 export const KubernetesClusterDetail = () => {
   const { data: account } = useAccount();
