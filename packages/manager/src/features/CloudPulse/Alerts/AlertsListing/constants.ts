@@ -29,13 +29,11 @@ export const AlertListingTableLabelMap = [
   },
 ];
 
-// TODO: remove in progress once api changes are ready
 export const statusToActionMap: Record<AlertStatusType, AlertStatusUpdateType> =
   {
     disabled: 'Enable',
     enabled: 'Disable',
     failed: 'Disable',
-    'in progress': 'Disable',
     provisioning: 'Disable',
     disabling: 'Enable',
     enabling: 'Disable',

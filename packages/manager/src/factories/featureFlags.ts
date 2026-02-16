@@ -30,13 +30,7 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
     beta: true,
     recentActivity: false,
     notificationChannels: true,
-    editDisabledStatuses: [
-      'in progress',
-      'failed',
-      'provisioning',
-      'enabling',
-      'disabling',
-    ],
+    editDisabledStatuses: ['failed', 'provisioning', 'enabling', 'disabling'],
     systemChannelSupportedServices: ['dbaas'],
   },
   aclpServices: {
