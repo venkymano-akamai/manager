@@ -478,7 +478,6 @@ export interface DimensionFilterAutocompleteProps {
    * Current raw string value (or null) from the form state.
    */
   fieldValue: null | string;
-
   /**
    * Callback triggered when a dependent API has an error.
    */

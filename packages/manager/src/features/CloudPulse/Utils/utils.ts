@@ -265,9 +265,7 @@ export const getEnabledServiceTypes = (
   return rawServiceTypes.data
     .filter(
       (obj: Service) =>
-        (obj.service_type === 'netloadbalancer' ||
-          aclpServices?.[obj.service_type]?.metrics?.enabled) ??
-        false
+        aclpServices?.[obj.service_type]?.metrics?.enabled ?? false
     )
     .map((obj: Service) => obj.service_type);
 };

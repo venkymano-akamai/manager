@@ -91,8 +91,8 @@ export const DimensionFilterField = (props: DimensionFilterFieldProps) => {
   const selectedDimension =
     dimensionOptions && dimensionFieldWatcher
       ? (dimensionOptions.find(
-          (dim) => dim.dimension_label === dimensionFieldWatcher
-        ) ?? null)
+        (dim) => dim.dimension_label === dimensionFieldWatcher
+      ) ?? null)
       : null;
 
   const handleError = React.useCallback(
