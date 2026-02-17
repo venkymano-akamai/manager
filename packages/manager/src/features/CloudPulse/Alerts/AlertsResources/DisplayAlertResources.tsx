@@ -226,7 +226,7 @@ export const DisplayAlertResources = React.memo(
                           }}
                           title={
                             maxSelectionCount !== undefined &&
-                              isRootCheckBoxDisabled ? (
+                            isRootCheckBoxDisabled ? (
                               <AlertMaxSelectionText
                                 maxSelectionCount={maxSelectionCount}
                               />
@@ -301,7 +301,7 @@ export const DisplayAlertResources = React.memo(
                                 }}
                                 title={
                                   isItemCheckboxDisabled &&
-                                    maxSelectionCount !== undefined ? (
+                                  maxSelectionCount !== undefined ? (
                                     <AlertMaxSelectionText
                                       maxSelectionCount={maxSelectionCount}
                                     />
