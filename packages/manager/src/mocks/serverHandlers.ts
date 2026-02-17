@@ -4096,61 +4096,11 @@ export const handlers = [
     }
 
     if (params.serviceType === 'netloadbalancer') {
-      const widgets = widgetFactory.buildList(1, {
-        metric: 'nlb_ingress_traffic',
-        unit: 'Bps',
-        label: 'Ingress Traffic Rate',
-        color: 'default',
-        size: 12,
-        chart_type: 'line',
-        y_label: 'nlb_ingress_traffic',
-        aggregate_function: 'sum',
-      });
-      widgets.push(
-        widgetFactory.build({
-          metric: 'nlb_ingress_packets',
-          unit: 'packets/s',
-          label: 'Ingress Packets Rate',
-          color: 'default',
-          size: 12,
-          chart_type: 'line',
-          y_label: 'nlb_ingress_packets',
-          aggregate_function: 'sum',
-        })
-      );
-      widgets.push(
-        widgetFactory.build({
-          metric: 'nlb_backend_ingress_traffic',
-          unit: 'Bps',
-          label: 'Ingress Traffic Rate Per backend',
-          color: 'default',
-          size: 12,
-          chart_type: 'line',
-          y_label: 'nlb_backend_ingress_traffic',
-          aggregate_function: 'sum',
-        })
-      );
-      widgets.push(
-        widgetFactory.build({
-          metric: 'nlb_backend_ingress_packets',
-          unit: 'packets/s',
-          label: 'Ingress Packets Rate Per backend',
-          color: 'default',
-          size: 12,
-          chart_type: 'line',
-          y_label: 'nlb_backend_ingress_packets',
-          aggregate_function: 'sum',
-        })
-      );
       response.data.push(
         dashboardFactory.build({
           id: 5,
           service_type: 'netloadbalancer',
           label: 'Network Load Balancer',
-          group_by: ['entity_id'],
-          created: '2025-06-25T01:25:37',
-          updated: '2025-11-07T07:31:09',
-          widgets,
         })
       );
     }
@@ -4229,31 +4179,6 @@ export const handlers = [
               {
                 dimension_label: 'device',
                 label: 'Device name',
-                values: ['lo', 'eth0'],
-              },
-              {
-                dimension_label: 'direction',
-                label: 'Direction of network transfer',
-                values: ['transmit', 'receive'],
-              },
-              {
-                dimension_label: 'LINODE_ID',
-                label: 'Linode ID',
-                values: null,
-              },
-            ],
-            label: 'Network Traffic',
-            metric: 'system_network_io_by_resource',
-            metric_type: 'counter',
-            scrape_interval: '30s',
-            unit: 'byte',
-          },
-          {
-            available_aggregate_functions: ['min', 'max', 'avg', 'sum'],
-            dimensions: [
-              {
-                dimension_label: 'device',
-                label: 'Device name',
                 values: ['loop0', 'sda', 'sdb'],
               },
               {
@@ -4291,6 +4216,11 @@ export const handlers = [
                 label: 'Protocol',
                 dimension_label: 'protocol',
                 values: ['ipv4', 'ipv6'],
+              },
+              {
+                label: 'Test Dimension',
+                dimension_label: 'test',
+                values: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'],
               },
             ],
           },
@@ -4584,9 +4514,8 @@ export const handlers = [
       serviceType = 'objectstorage';
       dashboardLabel = 'Endpoint Dashboard';
     } else if (id === '5') {
-      widgets = [];
-      widgets.push(
-        widgetFactory.build({
+      widgets = [
+        {
           metric: 'nlb_ingress_traffic',
           unit: 'Bps',
           label: 'Ingress Traffic Rate',
@@ -4595,10 +4524,8 @@ export const handlers = [
           chart_type: 'line',
           y_label: 'nlb_ingress_traffic',
           aggregate_function: 'sum',
-        })
-      );
-      widgets.push(
-        widgetFactory.build({
+        },
+        {
           metric: 'nlb_ingress_packets',
           unit: 'packets/s',
           label: 'Ingress Packets Rate',
@@ -4607,10 +4534,8 @@ export const handlers = [
           chart_type: 'line',
           y_label: 'nlb_ingress_packets',
           aggregate_function: 'sum',
-        })
-      );
-      widgets.push(
-        widgetFactory.build({
+        },
+        {
           metric: 'nlb_backend_ingress_traffic',
           unit: 'Bps',
           label: 'Ingress Traffic Rate Per backend',
@@ -4619,10 +4544,8 @@ export const handlers = [
           chart_type: 'line',
           y_label: 'nlb_backend_ingress_traffic',
           aggregate_function: 'sum',
-        })
-      );
-      widgets.push(
-        widgetFactory.build({
+        },
+        {
           metric: 'nlb_backend_ingress_packets',
           unit: 'packets/s',
           label: 'Ingress Packets Rate Per backend',
@@ -4631,8 +4554,8 @@ export const handlers = [
           chart_type: 'line',
           y_label: 'nlb_backend_ingress_packets',
           aggregate_function: 'sum',
-        })
-      );
+        },
+      ];
       serviceType = 'netloadbalancer';
       dashboardLabel = 'Network Load Balancer';
     } else {

@@ -20,7 +20,10 @@ import {
 } from 'src/features/Delivery/Shared/types';
 import { useFlags } from 'src/hooks/useFlags';
 
-import type { CustomHTTPSDetails, DestinationType } from '@linode/api-v4';
+import type {
+  CustomHTTPSDetailsExtended,
+  DestinationType,
+} from '@linode/api-v4';
 import type {
   AutocompleteOption,
   DestinationDetailsForm,
@@ -30,12 +33,13 @@ import type {
 /**
  * Hook to determine if the ACLP Logs feature is enabled for the current user.
 
- * @returns {{ isACLPLogsEnabled: boolean, isACLPLogsBeta: boolean }} An object indicating if the feature is enabled and if it is in beta.
+ * @returns {{ isACLPLogsEnabled: boolean, isACLPLogsBeta: boolean, isACLPLogsNew: boolean, isACLPLogsCustomHttpsEnabled: boolean }}
  */
 export const useIsACLPLogsEnabled = (): {
   isACLPLogsBeta: boolean;
   isACLPLogsCustomHttpsEnabled: boolean;
   isACLPLogsEnabled: boolean;
+  isACLPLogsNew: boolean;
 } => {
   const { data: account } = useAccount();
   const flags = useFlags();
@@ -51,6 +55,7 @@ export const useIsACLPLogsEnabled = (): {
   return {
     isACLPLogsBeta: !!flags.aclpLogs?.beta,
     isACLPLogsCustomHttpsEnabled: !!flags.aclpLogs?.customHttpsEnabled,
+    isACLPLogsNew: !!flags.aclpLogs?.new,
     isACLPLogsEnabled,
   };
 };
@@ -104,7 +109,7 @@ export const getDestinationPayloadDetails = (
 ): DestinationDetailsPayload => {
   if (type === destinationType.CustomHttps) {
     const propsToRemove: any[] = [];
-    const customHTTPSDetails = details as CustomHTTPSDetails;
+    const customHTTPSDetails = details as CustomHTTPSDetailsExtended;
 
     if (!customHTTPSDetails.content_type) {
       propsToRemove.push('content_type');
@@ -125,7 +130,10 @@ export const getDestinationPayloadDetails = (
     }
 
     if (propsToRemove.length > 0) {
-      return omitProps(customHTTPSDetails, propsToRemove) as CustomHTTPSDetails;
+      return omitProps(
+        customHTTPSDetails,
+        propsToRemove
+      ) as CustomHTTPSDetailsExtended;
     }
   } else if ('path' in details && details.path === '') {
     return omitProps(details, ['path']);

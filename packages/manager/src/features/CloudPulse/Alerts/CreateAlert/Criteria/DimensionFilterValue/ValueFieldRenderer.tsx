@@ -102,6 +102,7 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
     entities,
     entityType,
     errorText,
+    handleError,
     name,
     onBlur,
     onChange,
@@ -111,14 +112,13 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
     values,
     type = 'alerts',
     selectedRegions,
-    handleError,
     serviceType,
   } = props;
 
   const flags = useFlags();
 
   const maxDimensionFiltersValues =
-    flags.aclpAlerting?.maxDimensionFiltersValues ?? 5;
+    flags.aclpAlerting?.maxDimensionFiltersValues ?? undefined;
 
   // Use operator group for config lookup
   const operatorGroup = getOperatorGroup(operator);
@@ -169,9 +169,9 @@ export const ValueFieldRenderer = (props: ValueFieldRendererProps) => {
       dimensionLabel,
       disabled,
       errorText,
+      handleError,
       fieldOnBlur: onBlur,
       fieldOnChange: onChange,
-      handleError,
       fieldValue: value,
       multiple: config.multiple,
       name,

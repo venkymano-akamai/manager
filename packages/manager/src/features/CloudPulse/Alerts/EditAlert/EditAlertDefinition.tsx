@@ -71,8 +71,8 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
   const entityType =
     serviceType === 'firewall'
       ? alertDetails.rule_criteria.rules[0]?.label.includes(
-          entityLabelMap['nodebalancer']
-        )
+        entityLabelMap['nodebalancer']
+      )
         ? 'nodebalancer'
         : 'linode'
       : undefined;
@@ -86,6 +86,10 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
       entity_type: entityType,
     },
     mode: 'onBlur',
+    context: {
+      maxDimensionFilterValues:
+        flags.aclpAlerting?.maxDimensionFiltersValues ?? undefined,
+    },
     resolver: yupResolver(
       getSchemaWithEntityIdValidation({
         aclpAlertServiceTypeConfig: flags.aclpAlertServiceTypeConfig ?? [],
@@ -110,11 +114,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
     error: serviceMetadataError,
   } = useCloudPulseServiceByServiceType(serviceType ?? '', !!serviceType);
 
-  const hasAPIError = useWatch({
-    control,
-    name: 'hasAPIError',
-  });
-
+  const hasAPIError = useWatch({ control, name: 'hasAPIError' });
   const onSubmit = handleSubmit(async (values) => {
     const editPayload: EditAlertPayloadWithService = filterEditFormValues(
       values,
