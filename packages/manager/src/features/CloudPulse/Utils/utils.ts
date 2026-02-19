@@ -20,6 +20,7 @@ import {
   PORTS_LEADING_ZERO_ERROR_MESSAGE,
   PORTS_LIMIT_ERROR_MESSAGE,
   PORTS_RANGE_ERROR_MESSAGE,
+  STATUS_CODE,
 } from './constants';
 
 import type { FetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/constants';
@@ -391,6 +392,31 @@ export const areValidInterfaceIds = (
   return undefined;
 };
 
+export const areValidStatusCodes = (
+  statusCodes: string
+): string | undefined => {
+  if (statusCodes === '') {
+    return undefined;
+  }
+
+  if (statusCodes.length > 100) {
+    return PORTS_LIMIT_ERROR_MESSAGE;
+  }
+  if (statusCodes.startsWith(',')) {
+    return PORTS_LEADING_COMMA_ERROR_MESSAGE;
+  }
+
+  if (statusCodes.includes(',,')) {
+    return PORTS_CONSECUTIVE_COMMAS_ERROR_MESSAGE;
+  }
+
+  if (!/^[\d,]+$/.test(statusCodes)) {
+    return PORTS_ERROR_MESSAGE;
+  }
+
+  return undefined;
+};
+
 /**
  * @param filterKey
  * @returns validation function for the filter key
@@ -401,6 +427,7 @@ export const validationFunction: Record<
 > = {
   [PORT]: arePortsValid,
   [INTERFACE_ID]: areValidInterfaceIds,
+  [STATUS_CODE]: arePortsValid,
 };
 
 /**

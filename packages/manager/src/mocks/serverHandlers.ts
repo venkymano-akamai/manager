@@ -85,6 +85,7 @@ import {
   lkeEnterpriseTypeFactory,
   lkeHighAvailabilityTypeFactory,
   lkeStandardAvailabilityTypeFactory,
+  logsMetricCriteria,
   longviewActivePlanFactory,
   longviewClientFactory,
   longviewSubscriptionFactory,
@@ -124,6 +125,7 @@ import {
   serviceTypesFactory,
   stackScriptFactory,
   staticObjects,
+  streamFactory,
   subnetFactory,
   supportReplyFactory,
   supportTicketFactory,
@@ -154,6 +156,8 @@ import { userAccountPermissionsFactory } from 'src/factories/userAccountPermissi
 import { userEntityPermissionsFactory } from 'src/factories/userEntityPermissions';
 import { userRolesFactory } from 'src/factories/userRoles';
 import { SPECIAL_PREFIX_LIST_NAMES } from 'src/features/Firewalls/FirewallDetail/Rules/shared';
+
+import { mswDB } from './indexedDB';
 
 import type {
   AccountMaintenance,
@@ -3738,6 +3742,9 @@ export const handlers = [
   http.put('*/monitor/alert-channels/:id', () => {
     return HttpResponse.json(notificationChannelFactory.build());
   }),
+  http.get('*/v4beta/monitor/streams', ({ params }) => {
+    return HttpResponse.json(makeResourcePage(streamFactory.buildList(5)));
+  }),
   http.get('*/monitor/alert-channels/:id', ({ params }) => {
     if (params.id === undefined) {
       return HttpResponse.json({}, { status: 404 });
@@ -3911,6 +3918,12 @@ export const handlers = [
           regions: 'us-iad,us-east,eu-west',
           alert: serviceAlertFactory.build({ scope: ['entity'] }),
         }),
+        serviceTypesFactory.build({
+          label: 'Logs',
+          service_type: 'logs',
+          regions: 'us-iad,us-east,eu-west,us-ord,us-west,ca-central',
+          alert: serviceAlertFactory.build({ scope: ['entity'] }),
+        }),
       ],
     };
 
@@ -3928,6 +3941,7 @@ export const handlers = [
       blockstorage: 'Volumes',
       lke: 'LKE Enterprise',
       netloadbalancer: 'Network Load Balancers',
+      logs: 'Logs',
     };
     const serviceTypeScopeMap: Record<
       CloudPulseServiceType,
@@ -3941,6 +3955,7 @@ export const handlers = [
       blockstorage: ['entity', 'account', 'region'],
       lke: ['entity'],
       netloadbalancer: ['entity'],
+      logs: ['entity'],
     };
     const response = serviceTypesFactory.build({
       service_type: `${serviceType}`,
@@ -4067,6 +4082,16 @@ export const handlers = [
           id: 5,
           service_type: 'netloadbalancer',
           label: 'Network Load Balancer',
+        })
+      );
+    }
+
+    if (params.serviceType === 'logs') {
+      response.data.push(
+        dashboardFactory.build({
+          id: 11,
+          service_type: 'logs',
+          label: 'Log Delivery Status',
         })
       );
     }
@@ -4342,6 +4367,9 @@ export const handlers = [
       if (params.serviceType === 'netloadbalancer') {
         return HttpResponse.json({ data: networkLoadBalancerMetricCriteria });
       }
+      if (params.serviceType === 'logs') {
+        return HttpResponse.json({ data: logsMetricCriteria });
+      }
       return HttpResponse.json(response);
     }
   ),
@@ -4524,6 +4552,41 @@ export const handlers = [
       ];
       serviceType = 'netloadbalancer';
       dashboardLabel = 'Network Load Balancer';
+    } else if (id === '11') {
+      serviceType = 'logs';
+      dashboardLabel = 'Log Delivery Status';
+      widgets = [
+        {
+          metric: 'success_upload_count',
+          unit: 'Count',
+          label: 'Success Upload',
+          color: 'default',
+          size: 6,
+          chart_type: 'area',
+          y_label: 'success_upload_count',
+          aggregate_function: 'sum',
+        },
+        {
+          metric: 'error_upload_count',
+          unit: 'Count',
+          label: 'Error Upload',
+          color: 'default',
+          size: 6,
+          chart_type: 'area',
+          y_label: 'error_upload_count',
+          aggregate_function: 'sum',
+        },
+        {
+          metric: 'error_upload_rate',
+          unit: '%',
+          label: 'Error Rate',
+          color: 'default',
+          size: 12,
+          chart_type: 'area',
+          y_label: 'error_upload_rate',
+          aggregate_function: 'avg',
+        },
+      ];
     } else {
       serviceType = 'linode';
       dashboardLabel = 'Linode Service I/O Statistics';

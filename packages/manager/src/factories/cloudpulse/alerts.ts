@@ -880,3 +880,44 @@ export const networkLoadBalancerMetricCriteria: MetricDefinition[] = [
     ],
   },
 ];
+
+const logsDimensions: Dimension[] = [
+  {
+    label: 'Status Code',
+    dimension_label: 'status_code',
+    values: [],
+  },
+];
+
+export const logsMetricCriteria: MetricDefinition[] = [
+  {
+    label: 'Successful Upload Count',
+    metric: 'success_upload_count',
+    unit: 'Count',
+    metric_type: 'gauge',
+    scrape_interval: '300s',
+    is_alertable: true,
+    available_aggregate_functions: ['sum'],
+    dimensions: logsDimensions,
+  },
+  {
+    label: 'Error Upload Count',
+    metric: 'error_upload_count',
+    unit: 'Count',
+    metric_type: 'gauge',
+    scrape_interval: '300s',
+    is_alertable: true,
+    available_aggregate_functions: ['sum'],
+    dimensions: logsDimensions,
+  },
+  {
+    label: 'Error Upload Rate',
+    metric: 'error_upload_rate',
+    unit: '%',
+    metric_type: 'gauge',
+    scrape_interval: '300s',
+    is_alertable: true,
+    available_aggregate_functions: ['avg'],
+    dimensions: logsDimensions,
+  },
+];

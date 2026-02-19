@@ -47,6 +47,8 @@ export const WIDGETS = 'widgets';
 
 export const PORT = 'port';
 
+export const STATUS_CODE = 'status_code';
+
 export const INTERFACE_ID = 'interface_id';
 
 export const FIREWALL = 'Firewall';
@@ -73,6 +75,27 @@ export const PORTS_LIMIT_ERROR_MESSAGE =
   'Port list must be 100 characters or less.';
 
 export const PORTS_PLACEHOLDER_TEXT = 'e.g., 80,443,3000';
+
+export const STATUS_CODE_HELPER_TEXT =
+  'Enter one or more status codes separated by commas.';
+
+export const STATUS_CODE_ERROR_MESSAGE =
+  'Enter valid status codes as integers separated by commas without spaces.';
+export const STATUS_CODE_RANGE_ERROR_MESSAGE =
+  'Status codes must be between 1 and 65535.';
+
+export const STATUS_CODE_LEADING_ZERO_ERROR_MESSAGE =
+  'Leading zeros are not allowed.';
+
+export const STATUS_CODE_CONSECUTIVE_COMMAS_ERROR_MESSAGE =
+  'Use a single comma to separate status codes.';
+export const STATUS_CODE_LEADING_COMMA_ERROR_MESSAGE =
+  'First character must be an integer.';
+
+export const STATUS_CODE_LIMIT_ERROR_MESSAGE =
+  'Status code list must be 100 characters or less.';
+
+export const STATUS_CODE_PLACEHOLDER_TEXT = 'e.g., 200,404,500';
 
 export const INTERFACE_IDS_HELPER_TEXT =
   'Enter one or more interface IDs separated by commas.';
@@ -109,6 +132,7 @@ export const NO_REGION_MESSAGE: Record<number, string> = {
 export const HELPER_TEXT: Record<string, string> = {
   [PORT]: PORTS_HELPER_TEXT,
   [INTERFACE_ID]: INTERFACE_IDS_HELPER_TEXT,
+  [STATUS_CODE]: STATUS_CODE_HELPER_TEXT,
 };
 
 export const PLACEHOLDER_TEXT: Record<string, string> = {
