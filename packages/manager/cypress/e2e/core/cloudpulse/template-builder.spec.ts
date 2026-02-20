@@ -95,16 +95,19 @@ function parseDimensionValues(raw: string): string[] {
     .filter(Boolean);
 }
 
+const safeString = (value: unknown): string =>
+  String(value ?? '').trim();
+
 function buildDimMap(dimsRows: string[][]): Record<string, Dimension[]> {
   const dimMap: Record<string, Dimension[]> = {};
   let currentLabels: string[] = [];
 
   dimsRows.forEach((row) => {
-    const col0 = String(row[0] ?? '').trim();
-    const col1 = String(row[1] ?? '').trim();
-    const col3 = String(row[3] ?? '').trim();
-    const col4 = String(row[4] ?? '').trim();
-    const col5 = String(row[5] ?? '').trim();
+    const col0 = safeString(row[0]);
+   const col1 = safeString(row[1]);
+   const col3 = safeString(row[3]);
+  const col4 = safeString(row[4]);
+  const col5 = safeString(row[5]);
 
     if (
       col0 &&
@@ -202,7 +205,7 @@ function buildMetricDefinitionResponse(
     .map((row) => ({
       label: String(row[0]).trim(),
       metric: String(row[1]).trim(),
-      unit: String(row[2]).trim(),
+      unit: normaliseUnit(String(row[2])),
       metric_type: String(row[3]).trim().toLowerCase(),
       scrape_interval: normaliseScrapeInterval(String(row[5])),
       is_alertable:
@@ -263,10 +266,10 @@ function buildDashboardResponse(workbook: XLSX.WorkBook): DashboardResponse {
       return !isExcluded;
     })
     .map((row) => {
-      const metricName = String(row[0]).trim();
-      const widgetLabel = String(row[1]).trim();
-      const chartType = mapChartType(String(row[3]).trim());
-      const size = mapWidgetSize(String(row[5]).trim());
+      const metricName  = safeString(row[0]);
+      const widgetLabel = safeString(row[1]);
+      const chartType   = mapChartType(safeString(row[3]));
+      const size        = mapWidgetSize(safeString(row[5]));
     
       const looked =
         metricLookup[normLabel(metricName)] ??

@@ -47,7 +47,7 @@
     {
       "label": "Ingress Packets Rate",
       "metric": "nlb_ingress_packets",
-      "unit": "Packets per second",
+      "unit": "packets/s",
       "metric_type": "gauge",
       "scrape_interval": "60s",
       "is_alertable": false,
@@ -147,7 +147,7 @@
     {
       "label": "Ingress Packets Rate Per backend",
       "metric": "nlb_backend_ingress_packets",
-      "unit": "Packets per second",
+      "unit": "packets/s",
       "metric_type": "gauge",
       "scrape_interval": "60s",
       "is_alertable": false,
