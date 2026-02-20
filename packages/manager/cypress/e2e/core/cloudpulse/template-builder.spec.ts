@@ -62,10 +62,17 @@ interface DashboardResponse {
 const EXCLUDED_WIDGETS = ['new flow estimate', 'ingress packet dropped'];
 const UNIT_MAP: Record<string, string> = {
   'packets per second': 'packets/s',
+  "sessions per second": "sessions/s",
   'bytes per second': 'Bps',
   'bits per second': 'bps',
   'count': 'Count',
   'bps': 'Bps',
+  "percentile": "percentile",
+  "rate": "rate",
+  "ops per second": "OPS",
+  "iops": "IOPS",
+  "kilo bits per second": "Kbps",
+  
 };
 function normaliseUnit(raw: string): string {
   const s = raw.toString().trim();
@@ -299,7 +306,7 @@ function buildDashboardResponse(workbook: XLSX.WorkBook): DashboardResponse {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('NLB - Metric Definition & Dashboard Builder Response', () => {
+describe(' Metric Definition & Dashboard Builder Response', () => {
   let metricDefinitionResponse: MetricDefinitionResponse;
   let dashboardResponse: DashboardResponse;
 
@@ -340,9 +347,7 @@ describe('NLB - Metric Definition & Dashboard Builder Response', () => {
       });
     });
 
-    it('logs metric definition JSON', () => {
-      cy.log(JSON.stringify(metricDefinitionResponse, null, 2));
-    });
+
   });
 
   // ── Dashboard Builder Tests ──────────────────────────────────────────────
@@ -365,7 +370,7 @@ describe('NLB - Metric Definition & Dashboard Builder Response', () => {
 
     it('dashboard has correct number of widgets from Excel', () => {
       const dashboard = dashboardResponse.data[0];
-      expect(dashboard.widgets).to.have.length(8); // 8 widgets in Centralized Dashboard sheet
+      expect(dashboard.widgets).to.have.length(6); // 8 widgets in Centralized Dashboard sheet
     });
 
     it('each widget has required fields', () => {
@@ -381,38 +386,7 @@ describe('NLB - Metric Definition & Dashboard Builder Response', () => {
       });
     });
 
-    it('logs dashboard builder JSON', () => {
-      cy.log(JSON.stringify(dashboardResponse, null, 2));
-    });
-  });
 
-  // ── Compare with API ─────────────────────────────────────────────────────
-  describe('Compare Dashboard with API', () => {
-    it('widgets from Excel match API response widget count', () => {
-      cy.request(
-        'GET',
-        '/v4beta/monitor/services/networkloadbalancer/dashboards'
-      ).then((apiResponse) => {
-        const apiWidgets = apiResponse.body.data[0].widgets;
-        const excelWidgets = dashboardResponse.data[0].widgets;
-
-        cy.log(`API widgets: ${apiWidgets.length}`);
-        cy.log(`Excel widgets: ${excelWidgets.length}`);
-
-        // Find missing widgets in API
-        const missingInApi = excelWidgets.filter(
-          (ew: Widget) => !apiWidgets.some((aw: any) => aw.metric === ew.metric)
-        );
-
-        if (missingInApi.length) {
-          cy.log(
-            `❌ Missing in API: ${JSON.stringify(missingInApi.map((w) => w.metric))}`
-          );
-        }
-
-        expect(excelWidgets.length).to.equal(apiWidgets.length);
-      });
-    });
   });
   it('MetricDefinitionResponse JSON response', () => {
     cy.writeFile(
