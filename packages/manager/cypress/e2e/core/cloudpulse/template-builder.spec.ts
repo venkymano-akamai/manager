@@ -317,7 +317,7 @@ describe(' Metric Definition & Dashboard Builder Response', () => {
         const workbook = XLSX.read(buffer.buffer, { type: 'array' });
 
         metricDefinitionResponse = buildMetricDefinitionResponse(workbook);
-        dashboardResponse = buildDashboardResponse(workbook); // ✅ remove second arg
+        dashboardResponse = buildDashboardResponse(workbook);
       }
     );
   });
