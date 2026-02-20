@@ -409,13 +409,13 @@ describe('Metric Definition & Dashboard Builder Response', () => {
 
 
   });
-  it('MetricDefinitionResponse JSON response', () => {
+  it.skip('MetricDefinitionResponse JSON response', () => {
     cy.writeFile(
       'cypress/e2e/core/cloudpulse/api-response/netloadbalancer-metric-definition.json',
       metricDefinitionResponse
     );
   });
-  it('dashboardResponse JSON response', () => {
+  it.skip('dashboardResponse JSON response', () => {
     cy.writeFile(
       'cypress/e2e/core/cloudpulse/api-response/netloadbalancer-dashboard-response.json',
       dashboardResponse

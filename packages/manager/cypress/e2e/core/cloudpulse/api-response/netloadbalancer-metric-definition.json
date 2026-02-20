@@ -1,273 +1,85 @@
 {
-  "data": [
-    {
-      "label": "Ingress Traffic Rate",
-      "metric": "nlb_ingress_traffic",
-      "unit": "Bps",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": true,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": [
+    "data": [
         {
-          "label": "Network Load Balancer",
-          "dimension_label": "entity_id",
-          "values": []
+            "label": "Ingress Traffic Rate",
+            "metric": "nlb_ingress_traffic",
+            "unit": "Bps",
+            "metric_type": "gauge",
+            "scrape_interval": "60s",
+            "is_alertable": true,
+            "available_aggregate_functions": [
+                "sum"
+            ],
+            "dimensions": [
+                {
+                    "label": "Port",
+                    "dimension_label": "port",
+                    "values": []
+                },
+                {
+                    "label": "Protocol",
+                    "dimension_label": "protocol",
+                    "values": [
+                        "tcp",
+                        "udp"
+                    ]
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v6",
+                        "v4"
+                    ]
+                },
+                {
+                    "label": "VIP",
+                    "dimension_label": "ip",
+                    "values": []
+                }
+            ]
         },
         {
-          "label": "VIP",
-          "dimension_label": "ip",
-          "values": []
-        },
-        {
-          "label": "IP Version",
-          "dimension_label": "ip_version",
-          "values": [
-            "v6",
-            "v4"
-          ]
-        },
-        {
-          "label": "Port",
-          "dimension_label": "port",
-          "values": []
-        },
-        {
-          "label": "Protocol",
-          "dimension_label": "protocol",
-          "values": [
-            "tcp",
-            "udp"
-          ]
+            "label": "Ingress Packets Rate",
+            "metric": "nlb_ingress_packets",
+            "unit": "packets/s",
+            "metric_type": "gauge",
+            "scrape_interval": "60s",
+            "is_alertable": true,
+            "available_aggregate_functions": [
+                "sum"
+            ],
+            "dimensions": [
+                {
+                    "label": "Port",
+                    "dimension_label": "port",
+                    "values": []
+                },
+                {
+                    "label": "Protocol",
+                    "dimension_label": "protocol",
+                    "values": [
+                        "tcp",
+                        "udp"
+                    ]
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v6",
+                        "v4"
+                    ]
+                },
+                {
+                    "label": "VIP",
+                    "dimension_label": "ip",
+                    "values": []
+                }
+            ]
         }
-      ]
-    },
-    {
-      "label": "Ingress Packets Rate",
-      "metric": "nlb_ingress_packets",
-      "unit": "packets/s",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": [
-        {
-          "label": "Network Load Balancer",
-          "dimension_label": "entity_id",
-          "values": []
-        },
-        {
-          "label": "VIP",
-          "dimension_label": "ip",
-          "values": []
-        },
-        {
-          "label": "IP Version",
-          "dimension_label": "ip_version",
-          "values": [
-            "v6",
-            "v4"
-          ]
-        },
-        {
-          "label": "Port",
-          "dimension_label": "port",
-          "values": []
-        },
-        {
-          "label": "Protocol",
-          "dimension_label": "protocol",
-          "values": [
-            "tcp",
-            "udp"
-          ]
-        }
-      ]
-    },
-    {
-      "label": "New flow Estimates",
-      "metric": "nlb_new_flow_estimates",
-      "unit": "Count",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": []
-    },
-    {
-      "label": "Ingress Traffic Rate Per backend",
-      "metric": "nlb_backend_ingress_traffic",
-      "unit": "Bps",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": [
-        {
-          "label": "Network Load Balancer",
-          "dimension_label": "entity_id",
-          "values": []
-        },
-        {
-          "label": "VIP",
-          "dimension_label": "ip",
-          "values": []
-        },
-        {
-          "label": "IP Version",
-          "dimension_label": "ip_version",
-          "values": [
-            "v6",
-            "v4"
-          ]
-        },
-        {
-          "label": "Port",
-          "dimension_label": "port",
-          "values": []
-        },
-        {
-          "label": "Protocol",
-          "dimension_label": "protocol",
-          "values": [
-            "tcp",
-            "udp"
-          ]
-        }
-      ]
-    },
-    {
-      "label": "Ingress Packets Rate Per backend",
-      "metric": "nlb_backend_ingress_packets",
-      "unit": "packets/s",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": [
-        {
-          "label": "Network Load Balancer",
-          "dimension_label": "entity_id",
-          "values": []
-        },
-        {
-          "label": "VIP",
-          "dimension_label": "ip",
-          "values": []
-        },
-        {
-          "label": "IP Version",
-          "dimension_label": "ip_version",
-          "values": [
-            "v6",
-            "v4"
-          ]
-        },
-        {
-          "label": "Port",
-          "dimension_label": "port",
-          "values": []
-        },
-        {
-          "label": "Protocol",
-          "dimension_label": "protocol",
-          "values": [
-            "tcp",
-            "udp"
-          ]
-        }
-      ]
-    },
-    {
-      "label": "Ingress TCP SYN",
-      "metric": "nlb_ingress_tcp_syn_total",
-      "unit": "Count",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": [
-        {
-          "label": "entity_id",
-          "dimension_label": "entity_id",
-          "values": []
-        },
-        {
-          "label": "ip",
-          "dimension_label": "ip",
-          "values": []
-        },
-        {
-          "label": "ip_version",
-          "dimension_label": "ip_version",
-          "values": []
-        },
-        {
-          "label": "port",
-          "dimension_label": "port",
-          "values": []
-        }
-      ]
-    },
-    {
-      "label": "Ingress TCP RST",
-      "metric": "nlb_ingress_tcp_rst_total",
-      "unit": "Count",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": [
-        {
-          "label": "entity_id",
-          "dimension_label": "entity_id",
-          "values": []
-        },
-        {
-          "label": "ip",
-          "dimension_label": "ip",
-          "values": []
-        },
-        {
-          "label": "ip_version",
-          "dimension_label": "ip_version",
-          "values": []
-        },
-        {
-          "label": "port",
-          "dimension_label": "port",
-          "values": []
-        }
-      ]
-    },
-    {
-      "label": "Ingress Packet dropped",
-      "metric": "nlb_ingress_packets_dropped_total",
-      "unit": "Count",
-      "metric_type": "gauge",
-      "scrape_interval": "60s",
-      "is_alertable": false,
-      "available_aggregate_functions": [
-        "sum"
-      ],
-      "dimensions": []
-    }
-  ],
-  "page": 1,
-  "pages": 1,
-  "results": 8
+    ],
+    "page": 1,
+    "pages": 1,
+    "results": 2
 }
