@@ -189,7 +189,7 @@ describe('Alert Row', () => {
 
   it("should disable 'Edit' action item in menu if alert has no enabled/disabled status", async () => {
     const alert = alertFactory.build({ status: 'disabling', type: 'user' });
-    queryMocks.useFlags.mockReturnValue(flags);
+
     const { getByLabelText, getByText } = renderWithTheme(
       <AlertTableRow
         alert={alert}
