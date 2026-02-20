@@ -1,40 +1,80 @@
 {
-    "data": [
+  "data": [
+    {
+      "id": 5,
+      "type": "standard",
+      "service_type": "netloadbalancer",
+      "label": "Network Load Balancer",
+      "group_by": [
+        "entity_id"
+      ],
+      "created": "2025-06-25T01:25:37",
+      "updated": "2025-11-07T07:31:09",
+      "widgets": [
         {
-            "id": 5,
-            "type": "standard",
-            "service_type": "netloadbalancer",
-            "label": "Network Load Balancer",
-            "group_by": [
-                "entity_id"
-            ],
-            "created": "2025-06-25T01:25:37",
-            "updated": "2025-11-07T07:31:09",
-            "widgets": [
-                {
-                    "metric": "nlb_ingress_traffic",
-                    "unit": "Bps",
-                    "label": "Ingress Traffic Rate",
-                    "color": "default",
-                    "size": 12,
-                    "chart_type": "line",
-                    "y_label": "nlb_ingress_traffic",
-                    "aggregate_function": "sum"
-                },
-                {
-                    "metric": "nlb_ingress_packets",
-                    "unit": "packets/s",
-                    "label": "Ingress Packets Rate",
-                    "color": "default",
-                    "size": 12,
-                    "chart_type": "line",
-                    "y_label": "nlb_ingress_packets",
-                    "aggregate_function": "sum"
-                }
-            ]
+          "metric": "nlb_ingress_traffic",
+          "unit": "Bps",
+          "label": "Ingress Traffic Rate",
+          "color": "default",
+          "size": 12,
+          "chart_type": "line",
+          "y_label": "nlb_ingress_traffic",
+          "aggregate_function": "sum"
+        },
+        {
+          "metric": "nlb_ingress_packets",
+          "unit": "packets/s",
+          "label": "Ingress Packets Rate",
+          "color": "default",
+          "size": 12,
+          "chart_type": "line",
+          "y_label": "nlb_ingress_packets",
+          "aggregate_function": "sum"
+        },
+        {
+          "metric": "nlb_backend_ingress_traffic",
+          "unit": "Bps",
+          "label": "Ingress Traffic Rate Per Backend Node",
+          "color": "default",
+          "size": 12,
+          "chart_type": "line",
+          "y_label": "nlb_backend_ingress_traffic",
+          "aggregate_function": "sum"
+        },
+        {
+          "metric": "nlb_backend_ingress_packets",
+          "unit": "packets/s",
+          "label": "Ingress Packets Rate Per Backend Node",
+          "color": "default",
+          "size": 12,
+          "chart_type": "line",
+          "y_label": "nlb_backend_ingress_packets",
+          "aggregate_function": "sum"
+        },
+        {
+          "metric": "nlb_ingress_tcp_syn_total",
+          "unit": "Count",
+          "label": "Ingress SYN TCP / VIP",
+          "color": "default",
+          "size": 12,
+          "chart_type": "line",
+          "y_label": "nlb_ingress_tcp_syn_total",
+          "aggregate_function": "sum"
+        },
+        {
+          "metric": "nlb_ingress_tcp_rst_total",
+          "unit": "Count",
+          "label": "Ingress RST TCP / VIP",
+          "color": "default",
+          "size": 12,
+          "chart_type": "line",
+          "y_label": "nlb_ingress_tcp_rst_total",
+          "aggregate_function": "sum"
         }
-    ],
-    "page": 1,
-    "pages": 1,
-    "results": 1
+      ]
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 1
 }
