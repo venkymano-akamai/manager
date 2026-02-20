@@ -9,10 +9,10 @@ export type CloudPulseServiceType =
   | 'firewall'
   | 'linode'
   | 'lke'
+  | 'logs'
   | 'netloadbalancer'
   | 'nodebalancer'
-  | 'objectstorage'
-  | 'logs';
+  | 'objectstorage';
 export type AlertClass = 'dedicated' | 'shared';
 export type DimensionFilterOperatorType =
   | 'endswith'
