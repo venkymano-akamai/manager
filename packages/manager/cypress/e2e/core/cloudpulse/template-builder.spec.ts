@@ -417,7 +417,7 @@ describe('Metric Definition & Dashboard Builder Response', () => {
   });
   it('dashboardResponse JSON response', () => {
     cy.writeFile(
-      '/Users/agorthi/Downloads/repo/manager/packages/manager/cypress/e2e/core/cloudpulse/api-response/netloadbalancer-dashboard-response.json',
+      'cypress/e2e/core/cloudpulse/api-response/netloadbalancer-dashboard-response.json',
       dashboardResponse
     );
   });
