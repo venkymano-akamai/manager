@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-skipped-tests */
 (window as any).process = { env: {}, argv: [], exit: () => {} };
 
 import * as XLSX from 'xlsx';
@@ -371,7 +372,8 @@ describe('Metric Definition & Dashboard Builder Response', () => {
 
   });
 
-  // ── Dashboard Builder Tests ──────────────────────────────────────────────
+  // eslint-disable-next-line sonarjs/no-skipped-tests
+
   describe('Dashboard Builder Response', () => {
     it('has correct top-level structure', () => {
       expect(dashboardResponse.page).to.equal(1);
@@ -409,12 +411,16 @@ describe('Metric Definition & Dashboard Builder Response', () => {
 
 
   });
+  // eslint-disable-next-line sonarjs/no-skipped-tests
+
   it.skip('MetricDefinitionResponse JSON response', () => {
     cy.writeFile(
       'cypress/e2e/core/cloudpulse/api-response/netloadbalancer-metric-definition.json',
       metricDefinitionResponse
     );
   });
+// eslint-disable-next-line sonarjs/no-skipped-tests
+
   it.skip('dashboardResponse JSON response', () => {
     cy.writeFile(
       'cypress/e2e/core/cloudpulse/api-response/netloadbalancer-dashboard-response.json',
