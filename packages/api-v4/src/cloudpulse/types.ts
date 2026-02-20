@@ -11,7 +11,8 @@ export type CloudPulseServiceType =
   | 'lke'
   | 'netloadbalancer'
   | 'nodebalancer'
-  | 'objectstorage';
+  | 'objectstorage'
+  | 'logs';
 export type AlertClass = 'dedicated' | 'shared';
 export type DimensionFilterOperatorType =
   | 'endswith'
@@ -430,6 +431,7 @@ export const capabilityServiceTypeMapping: Record<
   blockstorage: 'Block Storage',
   lke: 'Kubernetes',
   netloadbalancer: 'Network LoadBalancer',
+  logs: 'Akamai Cloud Pulse Logs',
 };
 
 /**
