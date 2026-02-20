@@ -23,13 +23,6 @@ const mockServices: Item<string, CloudPulseServiceType>[] = [
   },
 ];
 
-const flags = {
-  aclpAlerting: {
-    enabled: true,
-    editDisabledStatuses: ['failed', 'disabling'],
-  },
-};
-
 const queryMocks = vi.hoisted(() => ({
   useFlags: vi.fn().mockReturnValue({}),
 }));
