@@ -312,6 +312,24 @@ function buildDashboardResponse(workbook: XLSX.WorkBook): DashboardResponse {
 describe('Metric Definition & Dashboard Builder Response', () => {
   let metricDefinitionResponse: MetricDefinitionResponse;
   let dashboardResponse: DashboardResponse;
+  /**
+ * SECURITY NOTICE - Excel File Parsing
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The xlsx library can execute formulas and macros embedded in Excel files,
+ * which poses a security risk with untrusted sources.
+ *
+ * ✅ SAFE   - This code only processes known, trusted fixture files
+ *             stored in cypress/fixtures/ under version control.
+ *
+ * ❌ UNSAFE - Do NOT reuse this pattern for:
+ *             - User-uploaded Excel files
+ *             - Files from external/unknown sources
+ *             - Files received over a network at runtime
+ *
+ * If Excel parsing is needed for untrusted sources in the future, use a
+ * server-side solution with sandboxing instead of parsing in the browser.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 
   before(() => {
     cy.readFile('cypress/fixtures/NetworkLoadBalancer.xlsx', 'binary').then(
