@@ -23,15 +23,6 @@ const mockServices: Item<string, CloudPulseServiceType>[] = [
   },
 ];
 
-const queryMocks = vi.hoisted(() => ({
-  useFlags: vi.fn().mockReturnValue({}),
-}));
-
-vi.mock('src/hooks/useFlags', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useFlags: queryMocks.useFlags,
-}));
-
 describe('Alert Row', () => {
   it('should render an alert row', async () => {
     const alert = alertFactory.build();
