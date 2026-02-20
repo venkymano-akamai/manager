@@ -306,7 +306,7 @@ function buildDashboardResponse(workbook: XLSX.WorkBook): DashboardResponse {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe(' Metric Definition & Dashboard Builder Response', () => {
+describe('Metric Definition & Dashboard Builder Response', () => {
   let metricDefinitionResponse: MetricDefinitionResponse;
   let dashboardResponse: DashboardResponse;
 
