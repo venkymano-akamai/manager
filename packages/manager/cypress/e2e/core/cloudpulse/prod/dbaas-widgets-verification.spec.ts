@@ -112,7 +112,6 @@ const getWidgetLegendRowValuesFromResponse = (
     status: 'success',
     unit,
     serviceType: serviceType as CloudPulseServiceType,
-    groupBy: ['entity_id'],
   });
 
   // Destructure metrics data from the first legend row
@@ -304,7 +303,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     });
   });
 
-  it.only('should unselect all group bys and verify the metrics API calls', () => {
+  it('should unselect all group bys and verify the metrics API calls', () => {
     // Locate the Dashboard Group By button and alias it
     ui.button
       .findByAttribute('aria-label', 'Group By Dashboard Metrics')
