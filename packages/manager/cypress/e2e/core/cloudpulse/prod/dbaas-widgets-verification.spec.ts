@@ -46,14 +46,10 @@ const interceptMetricDefinitions = (serviceType: string) => {
   );
 };
 
-const getAllMetricDefinitionWidgets = (
-  serviceName: CloudPulseServiceType
-) => {
+const getAllMetricDefinitionWidgets = (serviceName: CloudPulseServiceType) => {
   return cy.wait('@getMetricDefinitions').then(({ response }) => {
     if (!response?.body?.data || !Array.isArray(response.body.data)) {
-      throw new Error(
-        `Metric definitions response invalid for ${serviceName}`
-      );
+      throw new Error(`Metric definitions response invalid for ${serviceName}`);
     }
 
     return (response.body.data as MetricDefinition[]).map(
@@ -226,11 +222,10 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     });
   });
   it('should apply group by at the dashboard level and verify the metrics API calls', () => {
-  
     // Validate legend rows (pre "Group By")
     metrics.forEach((testData) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
-    
+
       cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
@@ -297,24 +292,19 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     // Validate legend rows (post "Group By")
     metrics.forEach((testData) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
-    
+
       cy.get(widgetSelector)
-      .should('be.visible')
-      .within(() => {
-        cy.contains(
-          '[data-qa-graph-row-title]',
-          `${clusterName} | ${nodeType} | ${nodeType.toLowerCase()}`
-        ).should('be.visible');
-      });
+        .should('be.visible')
+        .within(() => {
+          cy.contains(
+            '[data-qa-graph-row-title]',
+            `${clusterName} | ${nodeType} | ${nodeType.toLowerCase()}`
+          ).should('be.visible');
+        });
     });
   });
 
-  it('should unselect all group bys and verify the metrics API calls', () => {
-    // Stub metrics API calls for dashboard group by changes
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'refreshMetrics'
-    );
-
+  it.only('should unselect all group bys and verify the metrics API calls', () => {
     // Locate the Dashboard Group By button and alias it
     ui.button
       .findByAttribute('aria-label', 'Group By Dashboard Metrics')
@@ -350,10 +340,10 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     metrics.forEach((testData) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
       cy.get(widgetSelector)
-      .should('be.visible')
-      .find('h2')
-      .should('contain.text', testData.label);
-      
+        .should('be.visible')
+        .find('h2')
+        .should('contain.text', testData.label);
+
       cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
@@ -376,7 +366,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
           ui.autocomplete
             .findByLabel('Select an Interval')
             .should('be.visible')
-            .type('1 min{enter}'); // type expected granularity
+            .type('5 min{enter}'); // type expected granularity
 
           // validate the widget areachart is present
           cy.get('.recharts-responsive-container').within(() => {
@@ -385,10 +375,9 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
               testData.label,
               testData.unit
             );
-            cy.contains(
-              '[data-qa-graph-row-title]',
-              testData.label
-            ).should('be.visible');
+            cy.contains('[data-qa-graph-row-title]', testData.label).should(
+              'be.visible'
+            );
 
             cy.get('[data-qa-graph-column-title="Max"]')
               .should('be.visible')
@@ -407,7 +396,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
   });
   it('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="1 min"]`;
+      const widgetSelector = `[data-qa-widget="${testData.label}"]`;
       cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
@@ -420,7 +409,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
           ui.autocomplete
             .findByLabel('Select an Aggregate Function')
             .should('be.visible')
-            .type('1 min {enter}'); // type expected granularity
+            .type('5 min {enter}'); // type expected granularity
 
           // validate the widget areachart is present
           cy.get('.recharts-responsive-container').within(() => {
