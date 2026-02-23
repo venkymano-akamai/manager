@@ -85,6 +85,7 @@ import {
   lkeEnterpriseTypeFactory,
   lkeHighAvailabilityTypeFactory,
   lkeStandardAvailabilityTypeFactory,
+  logsMetricCriteria,
   longviewActivePlanFactory,
   longviewClientFactory,
   longviewSubscriptionFactory,
@@ -4350,6 +4351,9 @@ export const handlers = [
       }
       if (params.serviceType === 'netloadbalancer') {
         return HttpResponse.json({ data: networkLoadBalancerMetricCriteria });
+      }
+      if (params.serviceType === 'logs') {
+        return HttpResponse.json({ data: logsMetricCriteria });
       }
       return HttpResponse.json(response);
     }
