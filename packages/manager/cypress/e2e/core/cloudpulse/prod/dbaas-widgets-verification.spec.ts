@@ -63,7 +63,7 @@ const getAllMetricDefinitionWidgets = (serviceName: CloudPulseServiceType) => {
         namespace_id: 0,
         region_id: 0,
         service_type: serviceName,
-        serviceType: serviceName, // ← YOU WERE MISSING THIS
+        serviceType: serviceName,
         size: 12,
         time_duration: { unit: 'hour', value: 24 },
         time_granularity: { unit: 'minute', value: 5 },
