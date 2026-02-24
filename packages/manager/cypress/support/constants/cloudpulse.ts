@@ -13,6 +13,16 @@ export const cloudPulseServiceMap: Record<string, string> = {
   lke: 'LKE',
   netloadbalancer: 'Netloadbalancer',
 };
+
+export const cloudPulseServiceMapNotificationChannel: Record<string, string> = {
+  dbaas: 'Databases',
+  linode: 'Linodes',
+  nodebalancer: 'Nodebalancers',
+  firewall: 'Firewalls',
+  objectstorage: 'ObjectStorage',
+  blockstorage: 'Volumes',
+  lke: 'Kubernetes',
+};
 /**
  * Descriptions used in the Create/Edit Alert form to guide users
  * in configuring alert conditions effectively.
