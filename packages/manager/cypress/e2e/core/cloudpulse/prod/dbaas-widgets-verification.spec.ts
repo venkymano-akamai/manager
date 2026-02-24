@@ -552,41 +552,34 @@ describe('DBaaS Dashboard Integration Tests (Live API)', () => {
     );
   });
   it('should trigger the global refresh button and verify the corresponding network calls', () => {
-    // Click the global refresh button
     cy.get('[data-testid="global-refresh"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
 
-    // Wait for ALL requests to complete (one per widget)
-    cy.wait(new Array(metrics.length).fill('@metricData'));
+    // Wait until the number of intercepted requests matches metrics length
+    cy.get('@metricData.all').should((xhrs: unknown) => {
+      const interceptions = xhrs as Interception[];
+      expect(interceptions.length).to.equal(metrics.length);
+    });
 
-    // Store all expected metric names from definitions
-    const metricNames: string[] = metrics.map((testData) => testData.metric);
-
-    // Now validate all request details
+    // Now safely work with all captured requests
     cy.get('@metricData.all').then((xhrs: unknown) => {
       const interceptions = xhrs as Interception[];
-
-      // Collect all request metric names
+      const metricNames = metrics.map((m) => m.metric);
       const requestedMetricNames = interceptions.map(
-        (interception) => interception?.request?.body?.metrics?.[0]?.name
+        (i) => i?.request?.body?.metrics?.[0]?.name
       );
-
-      // Assert counts match
-      expect(interceptions.length).to.equal(metricNames.length);
 
       interceptions.forEach((interception) => {
         const requestBody = interception?.request?.body;
         const metricName = requestBody?.metrics?.[0]?.name;
 
-        // Assert each requested metric exists in expected metric names
         expect(
           metricNames,
           `Metric '${metricName}' should be in definitions`
         ).to.include(metricName);
 
-        // Assert time range
         expect(requestBody.relative_time_duration).to.have.property(
           'unit',
           'days'
@@ -594,7 +587,6 @@ describe('DBaaS Dashboard Integration Tests (Live API)', () => {
         expect(requestBody.relative_time_duration).to.have.property('value', 1);
       });
 
-      // Assert all expected metrics were actually requested
       metricNames.forEach((expectedMetric) => {
         expect(
           requestedMetricNames,
