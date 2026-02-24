@@ -1,4 +1,3 @@
-import { Widget } from '@linode/design-language-system';
 /**
  * @file Integration Tests for CloudPulse Dbass Dashboard.
  */
@@ -22,16 +21,6 @@ import type {
 } from '@linode/api-v4';
 import type { Interception } from 'cypress/types/net-stubbing';
 
-/**
- * This test ensures that widget titles are displayed correctly on the dashboard.
- * This test suite is dedicated to verifying the functionality and display of widgets on the Cloudpulse dashboard.
- *  It includes:
- * Validating that widgets are correctly loaded and displayed.
- * Ensuring that widget titles and data match the expected values.
- * Verifying that widget settings, such as granularity and aggregation, are applied correctly.
- * Testing widget interactions, including zooming and filtering, to ensure proper behavior.
- * Each test ensures that widgets on the dashboard operate correctly and display accurate information.
- */
 const expectedGranularityArray = ['Auto', '1 day', '1 hr', '5 min'];
 const timeDurationToSelect = 'Last 24 Hours';
 
@@ -680,5 +669,4 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       });
     });
   });
-
 });
