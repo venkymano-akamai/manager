@@ -18,6 +18,7 @@ import type {
   MetricDefinition,
   NotificationChannel,
   Service,
+  Stream,
 } from '@linode/api-v4';
 
 /**
@@ -790,5 +791,22 @@ export const mockUpdateAlertChannelByIdError = (
     'PUT',
     apiMatcher(`/monitor/alert-channels/${id}`),
     makeErrorResponse(errorPayload, statusCode)
+  );
+};
+
+/**
+ * Mocks the API response for the '/monitor/streams' endpoint.
+ *
+ * Intercepts the GET request to '/monitor/streams?page_size=500'
+ * and returns a mocked paginated response containing the provided streams.
+ *
+ * @param {Stream[]} streams - Array of stream objects to return.
+ * @returns {Cypress.Chainable<null>}
+ */
+export const mockGetStreams = (streams: Stream[]): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('/monitor/streams?page_size=500'),
+    paginateResponse(streams)
   );
 };

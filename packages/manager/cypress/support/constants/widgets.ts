@@ -140,6 +140,54 @@ export const widgetDetails = {
     resource: 'Dbaas-resource',
     serviceType: 'dbaas',
   },
+  logs: {
+    streamName: 'logs-stream-1',
+    statusCode: 200,
+    dashboardName: 'Log Delivery Status',
+    id: 9,
+    metrics: [
+      {
+        expectedAggregation: 'sum',
+        expectedAggregationArray: ['sum'],
+        expectedGranularity: '5 min',
+        name: 'success_upload_count',
+        title: 'Success Upload Count',
+        unit: 'Count',
+        yLabel: 'success_upload_count',
+        filters: [
+          { dimension_label: 'entity_id', operator: 'eq', value: 'stream-1' },
+          { dimension_label: 'status_code', operator: 'eq', value: '200' },
+        ],
+      },
+      {
+        expectedAggregation: 'sum',
+        expectedAggregationArray: ['sum'],
+        expectedGranularity: '5 min',
+        name: 'error_upload_count',
+        title: 'Error Upload Count',
+        unit: 'Count',
+        yLabel: 'error_upload_count',
+        filters: [
+          { dimension_label: 'entity_id', operator: 'eq', value: 'stream-1' },
+          { dimension_label: 'status_code', operator: 'eq', value: '500' },
+        ],
+      },
+      {
+        expectedAggregation: 'avg',
+        expectedAggregationArray: ['avg'],
+        expectedGranularity: '5 min',
+        name: 'error_upload_rate',
+        title: 'Error Rate',
+        unit: '%',
+        yLabel: 'error_upload_rate',
+        filters: [
+          { dimension_label: 'entity_id', operator: 'eq', value: 'stream-1' },
+          { dimension_label: 'status_code', operator: 'eq', value: '500' },
+        ],
+      },
+    ],
+    serviceType: 'logs',
+  },
 
   linode: {
     dashboardName: 'Linode Dashboard',

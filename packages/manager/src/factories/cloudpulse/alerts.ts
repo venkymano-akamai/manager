@@ -51,6 +51,36 @@ export const cpuRulesFactory = Factory.Sync.makeFactory<MetricCriteria>({
   threshold: 1000,
 });
 
+export const errorUploadRulesFactory = Factory.Sync.makeFactory<MetricCriteria>(
+  {
+    aggregate_function: 'avg',
+    dimension_filters: [
+      {
+        dimension_label: 'status_code',
+        operator: 'eq',
+        value: '200',
+      },
+    ],
+    metric: 'error_upload_count',
+    operator: 'eq',
+    threshold: 1000,
+  }
+);
+export const successUploadRulesFactory =
+  Factory.Sync.makeFactory<MetricCriteria>({
+    aggregate_function: 'avg',
+    dimension_filters: [
+      {
+        dimension_label: 'status_code',
+        operator: 'eq',
+        value: '200',
+      },
+    ],
+    metric: 'success_upload_count',
+    operator: 'eq',
+    threshold: 1000,
+  });
+
 export const ingressTrafficRateRulesFactory =
   Factory.Sync.makeFactory<MetricCriteria>({
     aggregate_function: 'avg',
