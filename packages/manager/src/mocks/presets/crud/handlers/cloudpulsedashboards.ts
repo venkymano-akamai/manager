@@ -1,5 +1,6 @@
 // This file will be maintained only in our aclp repo to work with CRUD handlers.
 import { pickRandom } from '@linode/utilities';
+import { group } from 'console';
 import { http, HttpResponse } from 'msw';
 
 import {
@@ -738,6 +739,7 @@ export const cloudPulseDashboardById = () => [
           size: 6,
           chart_type: 'area',
           y_label: 'success_upload_count',
+          group_by: ['entity_id'],
           aggregate_function: 'sum',
         },
         {
@@ -748,6 +750,7 @@ export const cloudPulseDashboardById = () => [
           size: 6,
           chart_type: 'area',
           y_label: 'error_upload_count',
+          group_by: ['entity_id'],
           aggregate_function: 'sum',
         },
         {
@@ -758,6 +761,7 @@ export const cloudPulseDashboardById = () => [
           size: 12,
           chart_type: 'area',
           y_label: 'error_upload_rate',
+          group_by: ['entity_id'],
           aggregate_function: 'avg',
         },
       ];
@@ -815,6 +819,7 @@ export const cloudPulseDashboardById = () => [
       service_type: serviceType,
       type: 'standard',
       updated: null,
+      group_by: id==='11'? ['entity_id']: undefined,
       widgets: widgets || [
         {
           aggregate_function: 'avg',
