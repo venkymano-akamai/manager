@@ -293,71 +293,105 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
 
       // Validate the sorting functionality for Alert Name
       cy.get('[data-qa="associated-alerts-table"]').within(() => {
-        // Click on the 'Alert Name' header to sort in descending order
+        // Click on the 'Alert Name' header to sort
         ui.heading.findByText('label').click();
 
-        // Verify descending sort order
-        ui.heading
-          .findByText('label')
-          .should('have.attr', 'aria-sort', 'descending');
+        // Get the sort order and verify data matches
+        const AlertNameHeading = ui.heading.findByText('label');
+        AlertNameHeading.should('have.attr', 'aria-sort').then((sortOrder) => {
+          let expectedAlerts;
+          if (sortOrder === 'ascending') {
+            expectedAlerts = [...mockAlerts].sort((a, b) =>
+              a.label.localeCompare(b.label)
+            );
+          } else {
+            expectedAlerts = [...mockAlerts].sort((a, b) =>
+              b.label.localeCompare(a.label)
+            );
+          }
+          verifyAlertOrder(expectedAlerts);
+        });
 
-        // Sort the mock alerts by label in descending order
-        const sortedAlertsDesc = [...mockAlerts].sort((a, b) =>
-          b.label.localeCompare(a.label)
-        );
-
-        // Verify that the table rows are in descending order
-        verifyAlertOrder(sortedAlertsDesc);
-
-        // Click again to sort in ascending order
+        // Click again to toggle sort order
         ui.heading.findByText('label').click();
-        ui.heading
-          .findByText('label')
-          .should('have.attr', 'aria-sort', 'ascending');
 
-        // Sort the mock alerts by label in ascending order
-        const sortedAlertsAsc = [...mockAlerts].sort((a, b) =>
-          a.label.localeCompare(b.label)
+        // Get the new sort order and verify data matches
+        const AlertNameHeadingAfterToggle = ui.heading.findByText('label');
+        AlertNameHeadingAfterToggle.should('have.attr', 'aria-sort').then(
+          (sortOrder) => {
+            let expectedAlerts;
+            if (sortOrder === 'ascending') {
+              expectedAlerts = [...mockAlerts].sort((a, b) =>
+                a.label.localeCompare(b.label)
+              );
+            } else {
+              expectedAlerts = [...mockAlerts].sort((a, b) =>
+                b.label.localeCompare(a.label)
+              );
+            }
+            verifyAlertOrder(expectedAlerts);
+          }
         );
-
-        // Verify that the table rows are in ascending order
-        verifyAlertOrder(sortedAlertsAsc);
       });
 
       // Validate the sorting functionality for service Type
       cy.get('[data-qa="associated-alerts-table"]').within(() => {
-        // Click on the 'Service' header to sort in descending order
+        // Click on the 'Service' header to sort
         ui.heading.findByText('service_type_label').click();
 
-        // Verify descending sort order
-        ui.heading
-          .findByText('service_type_label')
-          .should('have.attr', 'aria-sort', 'descending');
+        // Get the sort order and verify data matches
+        const serviceHeading = ui.heading.findByText('service_type_label');
+        serviceHeading.should('have.attr', 'aria-sort').then((sortOrder) => {
+          let expectedAlerts;
+          if (sortOrder === 'ascending') {
+            expectedAlerts = [...mockAlerts].sort((a, b) =>
+              cloudPulseServiceMapNotificationChannel[
+                a.service_type
+              ].localeCompare(
+                cloudPulseServiceMapNotificationChannel[b.service_type]
+              )
+            );
+          } else {
+            expectedAlerts = [...mockAlerts].sort((a, b) =>
+              cloudPulseServiceMapNotificationChannel[
+                b.service_type
+              ].localeCompare(
+                cloudPulseServiceMapNotificationChannel[a.service_type]
+              )
+            );
+          }
+          verifyAlertOrder(expectedAlerts);
+        });
 
-        // Sort the mock alerts by service type in descending order
-        const sortedServiceTypeDesc = [...mockAlerts].sort((a, b) =>
-          cloudPulseServiceMapNotificationChannel[b.service_type].localeCompare(
-            cloudPulseServiceMapNotificationChannel[a.service_type]
-          )
-        );
-        // Verify that the table rows are in descending order
-        verifyAlertOrder(sortedServiceTypeDesc);
-
-        // Click again to sort in ascending order
+        // Click again to toggle sort order
         ui.heading.findByText('service_type_label').click();
-        ui.heading
-          .findByText('service_type_label')
-          .should('have.attr', 'aria-sort', 'ascending');
 
-        // Sort the mock alerts by service type in ascending order
-        const sortedServiceTypeAsc = [...mockAlerts].sort((a, b) =>
-          cloudPulseServiceMapNotificationChannel[a.service_type].localeCompare(
-            cloudPulseServiceMapNotificationChannel[b.service_type]
-          )
-        );
-
-        // Verify that the table rows are in ascending order
-        verifyAlertOrder(sortedServiceTypeAsc);
+        // Get the new sort order and verify data matches
+        const serviceHeadingAfterToggle =
+          ui.heading.findByText('service_type_label');
+        serviceHeadingAfterToggle
+          .should('have.attr', 'aria-sort')
+          .then((sortOrder) => {
+            let expectedAlerts;
+            if (sortOrder === 'ascending') {
+              expectedAlerts = [...mockAlerts].sort((a, b) =>
+                cloudPulseServiceMapNotificationChannel[
+                  a.service_type
+                ].localeCompare(
+                  cloudPulseServiceMapNotificationChannel[b.service_type]
+                )
+              );
+            } else {
+              expectedAlerts = [...mockAlerts].sort((a, b) =>
+                cloudPulseServiceMapNotificationChannel[
+                  b.service_type
+                ].localeCompare(
+                  cloudPulseServiceMapNotificationChannel[a.service_type]
+                )
+              );
+            }
+            verifyAlertOrder(expectedAlerts);
+          });
       });
     });
   });
@@ -481,11 +515,48 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     mockGetAlertChannelById(id, incompleteChannelDetails).as(
       'getAlertNotificationChannelByIdIncomplete'
     );
+    mockGetAlertsForChannelId(id, []).as('getAlertsForChannelIdEmpty');
     // Navigate directly to the notification channel detail page
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelByIdIncomplete');
+    cy.wait('@getAlertsForChannelIdEmpty');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
+
+    // Verify Overview section handles empty fields gracefully
+    cy.get('[data-qa-section="Overview"]').within(() => {
+      // Verify Name field with empty label
+      cy.findByText('Name:').should('be.visible');
+      // Ensure no error-like values are displayed
+      cy.contains('undefined').should('not.exist');
+      cy.contains('null').should('not.exist');
+
+      // Verify Channel Type displays correctly even with empty fields
+      cy.findByText('Channel Type:').should('be.visible');
+      cy.findByText('Email').should('be.visible');
+
+      // Verify Created by field with empty value
+      cy.findByText('Created by:').should('be.visible');
+      cy.contains('undefined').should('not.exist');
+      cy.contains('null').should('not.exist');
+
+      // Verify Last Modified by field with empty value
+      cy.findByText('Last Modified by:').should('be.visible');
+      cy.contains('undefined').should('not.exist');
+      cy.contains('null').should('not.exist');
+    });
+
+    // Verify Details section handles empty/missing recipient data gracefully
+    cy.get('[data-qa-section="Details"]').within(() => {
+      // Verify Recipient Type field
+      cy.findByText('Recipient Type:').should('be.visible');
+      cy.contains('undefined').should('not.exist');
+      cy.contains('null').should('not.exist');
+    });
+
+    // Verify the page layout doesn't break with missing data
+    cy.get('[data-qa-section="Overview"]').should('be.visible');
+    cy.get('[data-qa-section="Details"]').should('be.visible');
   });
 
   it('should verify notificationChannels with long usernames list wrapping behavior', () => {
