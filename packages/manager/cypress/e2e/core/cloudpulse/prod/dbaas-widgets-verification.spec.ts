@@ -1,3 +1,4 @@
+import { Widget } from '@linode/design-language-system';
 /**
  * @file Integration Tests for CloudPulse Dbass Dashboard.
  */
@@ -20,7 +21,6 @@ import type {
   Widgets,
 } from '@linode/api-v4';
 import type { Interception } from 'cypress/types/net-stubbing';
-import { Widget } from '@linode/design-language-system';
 
 /**
  * This test ensures that widget titles are displayed correctly on the dashboard.
@@ -41,6 +41,7 @@ const engine = 'MySQL';
 const nodeType = 'Primary';
 const serviceType = 'dbaas';
 let metrics: Widgets[] = [];
+let dashboard: Dashboard;
 
 const interceptMetricDefinitions = (serviceType: string) => {
   return cy.intercept(
@@ -180,10 +181,11 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
 
     cy.visitWithLogin('/metrics');
 
-    initializeDashboardMetrics().then((dashboard) => {
-      metrics = dashboard.widgets;
+    initializeDashboardMetrics().then((data) => {
+      dashboard = data;
+      metrics = data.widgets;
       metricToLabelMap = Object.fromEntries(
-        dashboard.widgets.map((w) => [w.metric, w.label])
+        data.widgets.map((w) => [w.metric, w.label])
       );
     });
 
@@ -632,17 +634,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     });
   });
 
-  it.only('should print widget size info', () => {
-    cy.then(() => {
-      Widget.forEach((w) => {
-        cy.log(
-          `📋 Widget: ${w.label} | size: ${w.size} | action: ${w.size === 6 ? '🔼 Zoom Out' : '🔽 Zoom In'}`
-        );
-      });
-    });
-  });
-
-  it.skip('should zoom in and out of all the widgets', () => {
+  it('should zoom in and out of all the widgets', () => {
     // Locate the Dashboard Group By button and alias it
     ui.button
       .findByAttribute('aria-label', 'Group By Dashboard Metrics')
@@ -663,32 +655,30 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
 
     // Click Apply to confirm unselection
     cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
-    // do zoom in and zoom out test on all the widgets
-    metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.label}"]`;
+    cy.then(() => {
+      dashboard.widgets.forEach((w) => {
+        const widgetSelector = `[data-qa-widget="${w.label}"]`;
 
-      cy.get(widgetSelector)
-        .should('be.visible')
-        .as('widget')
-
-        .within(() => {
-          ui.button
-            .findByAttribute('aria-label', 'Zoom Out')
-            .should('be.visible')
-            .should('be.enabled')
-            .scrollIntoView()
-            .click({ force: true });
-          cy.get('@widget').should('be.visible');
-
-          // click zoom out and validate the same
-          ui.button
-            .findByAttribute('aria-label', 'Zoom In')
-            .should('be.visible')
-            .should('be.enabled')
-            .scrollIntoView()
-            .click({ force: true });
-          cy.get('@widget').should('be.visible');
-        });
+        cy.get(widgetSelector)
+          .should('be.visible')
+          .as('widget')
+          .within(() => {
+            if (w.size === 12) {
+              ui.button
+                .findByAttribute('aria-label', 'Zoom Out')
+                .should('be.visible')
+                .should('be.enabled')
+                .click({ force: true });
+            } else {
+              ui.button
+                .findByAttribute('aria-label', 'Zoom In')
+                .should('be.visible')
+                .should('be.enabled')
+                .click({ force: true });
+            }
+          });
+      });
     });
   });
+
 });
