@@ -10,6 +10,8 @@ import {
   verifyDestination,
 } from 'src/mocks/presets/crud/handlers/delivery';
 
+import { allCloudPulseHandlers } from './handlers/cloudpulsedashboards';
+
 import type { MockPresetCrud } from 'src/mocks/types';
 
 export const deliveryCrudPreset: MockPresetCrud = {
@@ -24,6 +26,7 @@ export const deliveryCrudPreset: MockPresetCrud = {
     deleteDestination,
     updateDestination,
     verifyDestination,
+    ...allCloudPulseHandlers,
   ],
   id: 'delivery:crud',
   label: 'Delivery CRUD',
