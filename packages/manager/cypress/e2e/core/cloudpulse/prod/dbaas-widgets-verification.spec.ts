@@ -552,9 +552,6 @@ describe('DBaaS Dashboard Integration Tests (Live API)', () => {
     );
   });
   it('should trigger the global refresh button and verify the corresponding network calls', () => {
-    // Setup intercept BEFORE clicking
-    interceptMetricData(serviceType).as('refreshMetrics');
-
     // Click the global refresh button
     cy.get('[data-testid="global-refresh"]')
       .should('be.visible')
@@ -562,13 +559,13 @@ describe('DBaaS Dashboard Integration Tests (Live API)', () => {
       .click();
 
     // Wait for ALL requests to complete (one per widget)
-    cy.wait(new Array(metrics.length).fill('@refreshMetrics'));
+    cy.wait(new Array(metrics.length).fill('@metricData'));
 
     // Store all expected metric names from definitions
     const metricNames: string[] = metrics.map((testData) => testData.metric);
 
     // Now validate all request details
-    cy.get('@refreshMetrics.all').then((xhrs: unknown) => {
+    cy.get('@metricData.all').then((xhrs: unknown) => {
       const interceptions = xhrs as Interception[];
 
       // Collect all request metric names
