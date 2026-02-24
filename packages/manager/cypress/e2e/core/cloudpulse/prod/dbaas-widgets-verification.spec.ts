@@ -145,22 +145,7 @@ const initializeDashboardMetrics = (): Cypress.Chainable<Dashboard> => {
   });
 };
 
-describe('Integration Tests for DBaaS Dashboard ', () => {
-  /**
-   * Integration Tests for DBaaS Dashboard
-   *
-   * This suite validates end-to-end functionality of the CloudPulse DBaaS Dashboard.
-   * It covers:
-   * - Loading and rendering of widgets with correct filters.
-   * - Applying, clearing, and verifying "Group By" at dashboard and widget levels.
-   * - Selecting time ranges, granularities, and aggregation functions.
-   * - Triggering dashboard refresh and validating API calls.
-   * - Performing widget interactions (zoom in/out) and verifying graph data.
-   *
-   * Actions focus on user flows (selecting dashboards, filters, group by, zoom, etc.)
-   * and Verifications ensure correct API payloads, widget states, applied filters,
-   * and accurate graph/legend values.
-   */
+describe('DBaaS Dashboard Integration Tests (Live API)', () => {
   let metricToLabelMap: Record<string, string> = {};
 
   beforeEach(() => {
@@ -485,8 +470,6 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       .should('be.visible')
       .should('have.text', expectedWidgetValues.last);
   };
-
-  // ─── Tests ──────────────────────────────────────────────────────────────────
 
   it('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
     const metricValuesStore: Record<string, MetricValues> = {};
