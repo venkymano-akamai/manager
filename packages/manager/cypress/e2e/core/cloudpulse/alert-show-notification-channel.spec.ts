@@ -92,11 +92,7 @@ const verifyAlertOrder = (expectedAlerts: { id: number }[]): void => {
   cy.get('[data-qa-alert-cell]').then(($cells) => {
     const alertRowIds = $cells
       .map((_, cell) =>
-        parseInt(
-          cell.getAttribute('data-qa-alert-cell')?.replace('table-row-', '') ||
-            '0',
-          10
-        )
+        parseInt(cell.getAttribute('data-qa-alert-cell') || '0', 10)
       )
       .get();
     expectedAlerts.forEach((alert, index) => {
@@ -290,7 +286,6 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       });
 
       // Clear the service filter
-      // cy.get('@searchServiceType').clear();
       ui.button
         .findByAttribute('aria-label', 'Clear')
         .should('be.visible')
@@ -368,13 +363,14 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
   });
 
   it('should verify the pagination functionality in Associated Alerts table', () => {
-    // Push additional alerts for pagination testing
-    mockAlerts.push(
-      ...notificationChannelAlertsFactory.buildList(25, {
+    // Add additional alerts for pagination testing without mutating shared data
+    const paginationAlerts = [
+      ...mockAlerts,
+      ...notificationChannelAlertsFactory.buildList(36, {
         service_type: 'linode',
-      })
-    );
-    mockGetAlertsForChannelId(id, mockAlerts).as('getAlertsForChannelId');
+      }),
+    ];
+    mockGetAlertsForChannelId(id, paginationAlerts).as('getAlertsForChannelId');
     // Navigate directly to the notification channel detail page
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
@@ -397,12 +393,12 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       );
       ui.pagination.findControls().contains('3').should('not.exist');
 
-      // Validate pagination from length of mockAlerts (26 total: page 1 has 25, page 2 has 1)
+      // Validate pagination from length of paginationAlerts (ex : 26 total: page 1 has 25, page 2 has 1)
       pages.forEach((page: number) => {
         const pageSize = 25;
         const startIndex = pageSize * (page - 1);
-        const endIndex = Math.min(pageSize * page, mockAlerts.length);
-        const alertSubset = mockAlerts.slice(startIndex, endIndex);
+        const endIndex = Math.min(pageSize * page, paginationAlerts.length);
+        const alertSubset = paginationAlerts.slice(startIndex, endIndex);
         const expectedRowCount = alertSubset.length + 1; // +1 for header row
 
         ui.pagination
