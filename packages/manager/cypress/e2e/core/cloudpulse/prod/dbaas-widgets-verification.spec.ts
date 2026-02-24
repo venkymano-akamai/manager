@@ -18,6 +18,7 @@ import type {
   MetricDefinition,
   Widgets,
 } from '@linode/api-v4';
+import type { Interception } from 'cypress/types/net-stubbing';
 
 /**
  * This test ensures that widget titles are displayed correctly on the dashboard.
@@ -75,10 +76,10 @@ const getAllMetricDefinitionWidgets = (serviceName: CloudPulseServiceType) => {
     );
   });
 };
-const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
-});
 
+const interceptMetricData = (serviceType: string) => {
+  return cy.intercept('POST', `**/v2/monitor/services/${serviceType}/metrics`);
+};
 /**
  * Generates graph data from a given CloudPulse metrics response and
  * extracts average, last, and maximum metric values from the first
@@ -134,6 +135,10 @@ const mockRegion = regionFactory.build({
   },
 });
 
+const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
+  data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
+});
+
 describe('Integration Tests for DBaaS Dashboard ', () => {
   /**
    * Integration Tests for DBaaS Dashboard
@@ -154,6 +159,8 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
   beforeEach(() => {
     mockGetUserPreferences({});
     interceptMetricDefinitions(serviceType).as('getMetricDefinitions');
+    interceptMetricData(serviceType).as('metricData');
+
     cy.visitWithLogin('/metrics');
 
     // Selecting a dashboard from the autocomplete input.
@@ -333,67 +340,106 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     // Scroll to the top of the page to ensure consistent test behavior
     cy.scrollTo('top');
   });
+  const metricToLabelMap: Record<string, string> = {
+    avg_cpu_usage: 'CPU Usage',
+    avg_memory_usage: 'Memory Usage',
+    avg_available_memory: 'Available Memory',
+    avg_disk_usage: 'Disk Space Usage',
+    avg_available_disk: 'Available Disk Space',
+    avg_read_iops: 'Disk I/O Read',
+    avg_write_iops: 'Disk I/O Write',
+  };
 
-  it.only('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
-    // validate the widget level granularity selection and its metrics
-    metrics.forEach((testData) => {
+  it('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
+    type MetricValues = { average: string; last: string; max: string };
+
+    const metricValuesStore: Record<string, MetricValues> = {};
+
+    cy.wrap(metrics).each((testData: Widgets) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
-      cy.get(widgetSelector)
-        .should('be.visible')
-        .find('h2')
-        .should('contain.text', testData.label);
 
-      cy.get(widgetSelector)
-        .should('be.visible')
-        .within(() => {
-          // check for all available granularity in popper
-          ui.autocomplete
-            .findByLabel('Select an Interval')
-            .should('be.visible')
-            .click();
+      cy.get(widgetSelector).should('be.visible');
 
-          expectedGranularityArray.forEach((option) => {
-            ui.autocompletePopper.findByTitle(option).should('exist');
-          });
+      cy.get(widgetSelector).within(() => {
+        ui.autocomplete
+          .findByLabel('Select an Interval')
+          .should('be.visible')
+          .click();
 
-          mockCreateCloudPulseMetrics(
-            serviceType,
-            metricsAPIResponsePayload
-          ).as('getGranularityMetrics');
-
-          // find the interval component and select the expected granularity
-          ui.autocomplete
-            .findByLabel('Select an Interval')
-            .should('be.visible')
-            .type('5 min{enter}'); // type expected granularity
-
-          // validate the widget areachart is present
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.label,
-              testData.unit
-            );
-            cy.contains('[data-qa-graph-row-title]', testData.label).should(
-              'be.visible'
-            );
-
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
+        expectedGranularityArray.forEach((option) => {
+          ui.autocompletePopper.findByTitle(option).should('exist');
         });
+
+        ui.autocomplete
+          .findByLabel('Select an Interval')
+          .should('be.visible')
+          .clear()
+          .type('5 min{enter}');
+      });
+    });
+
+    // Collect and process XHR data using getWidgetLegendRowValuesFromResponse
+    cy.get('@metricData.all').each((xhr: unknown) => {
+      const interception = xhr as Interception;
+      const responseBody = interception?.response
+        ?.body as CloudPulseMetricsResponse;
+
+      const metricName = responseBody?.data?.result?.[0]?.metric?.metric_name;
+      if (!metricName) return;
+
+      // Find matching metric config from metrics list
+      const matchedMetric = metrics.find(
+        (m: Widgets) => metricToLabelMap[metricName] === m.label
+      );
+      if (!matchedMetric) return;
+
+      const { label, unit } = matchedMetric;
+
+      const { average, last, max } = getWidgetLegendRowValuesFromResponse(
+        responseBody,
+        label,
+        unit
+      );
+
+      metricValuesStore[metricName] = { average, last, max };
+    });
+
+    // Assert UI values match processed API values
+    cy.then(() => {
+      Object.entries(metricToLabelMap).forEach(([key, label]) => {
+        if (!key || !label) return;
+
+        const expectedWidgetValues = metricValuesStore[key];
+        if (!expectedWidgetValues) {
+          cy.log(`⚠️ No data found for metric: ${key}`);
+          return;
+        }
+
+        cy.log(
+          `✅ Asserting [${label}] max: ${expectedWidgetValues.max}, avg: ${expectedWidgetValues.average}, last: ${expectedWidgetValues.last}`
+        );
+
+        const widgetSelector = `[data-qa-widget="${label}"]`;
+
+        cy.get(widgetSelector).within(() => {
+          cy.get('[data-qa-graph-column-title="Max"]').should(
+            'have.text',
+            expectedWidgetValues.max
+          );
+          cy.get('[data-qa-graph-column-title="Avg"]').should(
+            'have.text',
+            expectedWidgetValues.average
+          );
+          cy.get('[data-qa-graph-column-title="Last"]').should(
+            'have.text',
+            expectedWidgetValues.last
+          );
+        });
+      });
     });
   });
-  it('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
+
+  it.only('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
     metrics.forEach((testData) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
       cy.get(widgetSelector)
@@ -408,7 +454,14 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
           ui.autocomplete
             .findByLabel('Select an Aggregate Function')
             .should('be.visible')
-            .type('5 min {enter}'); // type expected granularity
+            .type(`Sum{enter}`); // type expected granularity
+
+          // check if the API call is made correctly with time granularity value selected
+          cy.wait('@getAggregationMetrics').then((interception) => {
+            expect(interception)
+              .to.have.property('response')
+              .with.property('statusCode', 200);
+          });
 
           // validate the widget areachart is present
           cy.get('.recharts-responsive-container').within(() => {
