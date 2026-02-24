@@ -91,7 +91,7 @@ export interface AlertResourcesProp {
   isSelectionsNeeded?: boolean;
 
   /**
-   * The maximum number of elements that can be selected
+   * The maximum number of elements that can be selected, if left undefined we can select any number of elements
    */
   maxSelectionCount?: number;
 
@@ -126,6 +126,7 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     serviceType,
     setError,
   } = props;
+
   const [searchText, setSearchText] = React.useState<string>();
   const [filteredRegions, setFilteredRegions] = React.useState<string[]>();
   const [selectedResources, setSelectedResources] =
@@ -179,8 +180,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     const filteredTypes =
       alertClass === 'shared'
         ? Object.keys(databaseTypeClassMap).filter(
-          (type) => type !== 'dedicated'
-        )
+            (type) => type !== 'dedicated'
+          )
         : [alertClass];
 
     // Apply type filter only for DBaaS user alerts with a valid alertClass based on above filtered types
@@ -403,7 +404,6 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     maxSelectionCount && selectedResources
       ? Math.max(0, maxSelectionCount - selectedResources.length)
       : undefined;
-
   const isLoading = isRegionsLoading || isResourcesLoading;
   return (
     <Stack gap={2}>
@@ -468,8 +468,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
                     new Set(
                       regionFilteredResources
                         ? regionFilteredResources.flatMap(
-                          ({ tags }) => tags ?? []
-                        )
+                            ({ tags }) => tags ?? []
+                          )
                         : []
                     )
                   ),

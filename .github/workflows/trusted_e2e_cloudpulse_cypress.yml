@@ -1,0 +1,171 @@
+name: Trusted Cloudpulse E2E on PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to run E2E against"
+        required: true
+        type: number
+      run_type:
+        description: "Type of Cypress run"
+        required: true
+        type: choice
+        default: run_cypress
+        options:
+          - run_cypress
+          - run_cypress_metrics
+          - run_cypress_alerts
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  cloudpulse-e2e:
+    runs-on: ubuntu-latest
+
+    env:
+      # Cypress secret
+      CYPRESS_MANAGER_OAUTH: ${{ secrets.MANAGER_OAUTH_SECRET }}
+      MANAGER_OAUTH: ${{secrets.MANAGER_OAUTH_SECRET}}
+
+      # App env
+      REACT_APP_LOGIN_ROOT: https://login.linode.com
+      REACT_APP_API_ROOT: https://api.linode.com/v4
+      REACT_APP_CLIENT_ID: ${{ secrets.REACT_APP_CLIENT_ID }}
+      REACT_APP_APP_ROOT: http://localhost:3000
+      REACT_APP_LAUNCH_DARKLY_ID: ${{ secrets.REACT_APP_LAUNCH_DARKLY_ID }}
+      REACT_APP_LKE_HIGH_AVAILABILITY_PRICE: "60"
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+           python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+      - name: Get PR info
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = parseInt('${{ github.event.inputs.pr_number }}', 10);
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            core.setOutput('sha', pr.head.sha);
+
+      - name: Set Cloudpulse E2E status to pending
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const sha = '${{ steps.pr.outputs.sha }}';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state: 'pending',
+              context: 'cloudpulse-e2e', // 👈 status check name
+              description: 'Cloudpulse E2E started',
+              target_url: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            });
+
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.17"
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile && pnpm bootstrap
+      - name: Start app
+        run: pnpm dev &
+
+      - name: Wait for app
+        run: npx wait-on http://localhost:3000
+
+      - name: Install Cypress
+        run: |
+          cd packages/manager
+          pnpm exec cypress install
+          
+      - name: Determine Cypress spec to run
+        id: cypress_spec
+        run: |
+          if [ "${{ github.event.inputs.run_type }}" = "run_cypress" ]; then
+            echo "spec=cypress/e2e/core/cloudpulse/**/*.spec.ts" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.run_type }}" = "run_cypress_alerts" ]; then
+            echo "spec=cypress/e2e/core/cloudpulse/alerts/*.spec.ts" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.run_type }}" = "run_cypress_metrics" ]; then
+            echo "spec=cypress/e2e/core/cloudpulse/*.spec.ts" >> $GITHUB_OUTPUT
+          else
+            # Fallback to original full Cloudpulse run
+            echo "spec=cypress/e2e/core/cloudpulse/**/*.spec.ts" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Cloudpulse Cypress tests
+        run: |
+          cd packages/manager
+          pnpm cy:run -s '${{ steps.cypress_spec.outputs.spec }}'
+      
+      - name: Set Cloudpulse E2E final status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const sha = '${{ steps.pr.outputs.sha }}';
+            const state = '${{ job.status }}' === 'success' ? 'success' : 'failure';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state,
+              context: 'cloudpulse-e2e',
+              description: `Cloudpulse E2E ${state}`,
+              target_url: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            });
+      - name: Fetch PR details
+        id: pr_details
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = parseInt('${{ github.event.inputs.pr_number }}', 10);
+      
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+      
+            core.setOutput('url', pr.html_url);
+            core.setOutput('title', pr.title);
+            core.setOutput('author', pr.user.login);
+            
+      - name: Notify Webex (Cloudpulse E2E result)
+        env:
+          status: ${{ job.status }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ROOM_ID: ${{ secrets.CYPRESS_ROOM_ID }}
+          url: ${{ steps.pr_details.outputs.url }}
+          title: ${{ steps.pr_details.outputs.title }}
+          author: ${{ steps.pr_details.outputs.author }}
+        if: always()
+        run: |
+                cd scripts
+                python3 cypress_status_notifier.py

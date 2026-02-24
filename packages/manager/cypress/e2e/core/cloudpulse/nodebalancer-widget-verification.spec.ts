@@ -210,6 +210,19 @@ describe('Integration Tests for Nodebalancer Dashboard ', () => {
     // Expand the applied filters section
     ui.button.findByTitle('Filters').should('be.visible').click();
 
+    // Verify that the applied filters
+    cy.get('[data-qa-applied-filter-id="applied-filter"]')
+      .should('be.visible')
+      .within(() => {
+        cy.get(`[data-qa-value="Region US, Newark, NJ, USA"]`)
+          .should('be.visible')
+          .should('have.text', 'US, Newark, NJ, USA');
+
+        cy.get(`[data-qa-value="Nodebalancers ${resource}"]`)
+          .should('be.visible')
+          .should('have.text', resource);
+      });
+
     // Wait for all metrics query requests to resolve.
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics', '@getMetrics']);
 

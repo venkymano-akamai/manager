@@ -12,7 +12,6 @@ const serviceTypes = serviceTypesFactory.buildList(1, {
   label: 'Databases',
   service_type: 'dbaas',
 });
-
 const alertDetails = alertFactory.build({
   description: 'This is test description',
   label: 'Test alert',
@@ -46,13 +45,12 @@ describe('AlertDetailOverview component tests', () => {
     const { description, label, severity, type } = alertDetails;
 
     expect(getByText(description)).toBeInTheDocument();
-    expect(getByText(severityMap[severity])).toBeInTheDocument();
+    expect(getByText(String(severityMap[severity]))).toBeInTheDocument();
     expect(getByText(label)).toBeInTheDocument();
     expect(
       getByText(convertStringToCamelCasesWithSpaces(type))
     ).toBeInTheDocument();
   });
-
   it('should render circle progress if the service types call is fetching', () => {
     queryMocks.useCloudPulseServiceTypes.mockReturnValue({
       data: { data: serviceTypes },

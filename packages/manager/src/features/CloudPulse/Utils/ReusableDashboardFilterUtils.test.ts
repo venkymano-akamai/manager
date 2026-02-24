@@ -17,7 +17,9 @@ const preset = '30minutes';
 it('test getDashboardProperties method', () => {
   const result = getDashboardProperties({
     dashboardObj: mockDashboard,
-    filterValue: { region: 'us-east' },
+    filterValue: {
+      region: 'us-east',
+    },
     resource: 1,
     groupBy: [],
     region: 'us-east',

@@ -104,6 +104,12 @@ export const DatabaseDetail = () => {
       title: 'Advanced Configuration',
       hide: !isAdvancedConfigEnabled,
     },
+    {
+      to: `/databases/$engine/$databaseId/alerts`,
+      title: 'Alerts',
+      hide: false,
+      chip: flags.dbaasV2MonitorMetrics?.beta ? <BetaChip /> : null,
+    },
   ]);
 
   if (error) {

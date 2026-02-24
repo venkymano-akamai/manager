@@ -1,7 +1,10 @@
-import { type Service } from '@linode/api-v4';
-import { Factory } from '@linode/utilities';
+import { Factory, regionFactory } from '@linode/utilities';
 
-import type { CloudPulseServiceType, ServiceAlert } from '@linode/api-v4';
+import type {
+  CloudPulseServiceType,
+  Service,
+  ServiceAlert,
+} from '@linode/api-v4';
 
 const serviceTypes: CloudPulseServiceType[] = [
   'linode',
@@ -14,12 +17,15 @@ const serviceTypes: CloudPulseServiceType[] = [
 export const serviceAlertFactory = Factory.Sync.makeFactory<ServiceAlert>({
   evaluation_period_seconds: [300, 900, 1800, 3600],
   polling_interval_seconds: [300, 900, 1800, 3600],
-  scope: ['entity', 'region', 'account'],
+  scope: ['account', 'entity', 'region'],
 });
 
 export const serviceTypesFactory = Factory.Sync.makeFactory<Service>({
   label: Factory.each((i) => `Factory ServiceType-${i}`),
   service_type: Factory.each((i) => serviceTypes[i % 4]),
-  regions: '*',
+  regions: regionFactory
+    .buildList(3)
+    .map(({ id }) => id)
+    .join(','),
   alert: serviceAlertFactory.build(),
 });

@@ -276,7 +276,6 @@ export const AlertsListTable = React.memo((props: AlertsListTableProps) => {
               handlePageChange,
               order
             );
-
           return (
             <>
               <GridLegacy sx={{ marginTop: 2 }}>

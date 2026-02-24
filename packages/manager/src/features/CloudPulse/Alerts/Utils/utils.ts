@@ -199,8 +199,7 @@ export const getAlertBoxStyles = (theme: Theme) => ({
   backgroundColor: theme.tokens.alias.Background.Neutral,
   padding: theme.spacing(3),
 });
-/**
- * Converts seconds into a human-readable minutes and seconds format.
+/* Converts seconds into a human-readable minutes and seconds format.
  * @param seconds The seconds that need to be converted into minutes.
  * @returns A string representing the time in minutes and seconds.
  */
@@ -210,14 +209,17 @@ export const convertSecondsToMinutes = (seconds: number): string => {
   }
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
+
   const minuteString =
     minutes > 0 ? `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}` : '';
   const secondString =
     remainingSeconds > 0
       ? `${remainingSeconds} ${remainingSeconds === 1 ? 'second' : 'seconds'}`
       : '';
+
   return [minuteString, secondString].filter(Boolean).join(' and ');
 };
+
 /**
  * @param props The props/parameters needed to determine the alert chip's border
  * @returns The border radius to be applied on chips based on the parameters
@@ -297,8 +299,8 @@ export const getChipLabels = (
  * @param alerts list of alerts to be filtered
  * @param searchText text to be searched in alert name
  * @param selectedType selecte alert type
- * @param region region of the entity
- * @returns list of filtered alerts based on searchText, selectedType, and region
+ * @param regionId regionId of the entity
+ * @returns list of filtered alerts based on searchText, selectedType, and regionId
  */
 export const filterAlerts = (props: FilterAlertsProps): Alert[] => {
   const { alerts, regionId, searchText, selectedType } = props;
@@ -341,27 +343,27 @@ export const convertAlertsToTypeSet = (
  */
 export const convertAlertDefinitionValues = (
   {
-    alert_channels,
+    alert_channels: alertChannels,
     description,
-    entity_ids,
+    entity_ids: entityIds,
     id,
     label,
-    rule_criteria,
+    rule_criteria: ruleCriteria,
     severity,
     tags,
-    trigger_conditions,
+    trigger_conditions: triggerConditions,
     regions,
   }: Alert,
   serviceType: CloudPulseServiceType
 ): EditAlertPayloadWithService => {
   return {
     alertId: id,
-    channel_ids: alert_channels.map((channel) => channel.id),
+    channel_ids: alertChannels.map((channel) => channel.id),
     description: description || undefined,
-    entity_ids,
+    entity_ids: entityIds,
     label,
     rule_criteria: {
-      rules: rule_criteria.rules.map((rule) => ({
+      rules: ruleCriteria.rules.map((rule) => ({
         ...rule,
         dimension_filters:
           rule.dimension_filters?.map(({ label, ...filter }) => filter) ?? [],
@@ -370,7 +372,7 @@ export const convertAlertDefinitionValues = (
     serviceType,
     severity,
     tags,
-    trigger_conditions,
+    trigger_conditions: triggerConditions,
     regions,
   };
 };
@@ -384,10 +386,16 @@ export const processMetricCriteria = (
   criterias: AlertDefinitionMetricCriteria[]
 ): ProcessedCriteria[] => {
   return criterias.map(
-    ({ aggregate_function, label, operator, threshold, unit }) => {
+    ({
+      aggregate_function: aggregateFunction,
+      label,
+      operator,
+      threshold,
+      unit,
+    }) => {
       return {
         label,
-        metricAggregationType: aggregationTypeMap[aggregate_function],
+        metricAggregationType: aggregationTypeMap[aggregateFunction],
         metricOperator: metricOperatorTypeMap[operator],
         threshold,
         unit,
@@ -405,7 +413,6 @@ export const getSchemaWithEntityIdValidation = (
   props: AlertValidationSchemaProps
 ): ObjectSchema<CreateAlertDefinitionForm> => {
   const { aclpAlertServiceTypeConfig, baseSchema, serviceTypeObj } = props;
-
   if (!serviceTypeObj || !aclpAlertServiceTypeConfig?.length) {
     return baseSchema;
   }
@@ -413,7 +420,6 @@ export const getSchemaWithEntityIdValidation = (
   const maxSelectionCount = aclpAlertServiceTypeConfig.find(
     (config) => config && serviceTypeObj === config.serviceType
   )?.maxResourceSelectionCount;
-
   return maxSelectionCount
     ? baseSchema.concat(getEntityIdWithMax(maxSelectionCount))
     : baseSchema;
@@ -480,9 +486,11 @@ export const handleMultipleError = <T extends FieldValues>(
     // Extract the root field name
     const errorField = error.field.split('.')[0];
 
+    // Ensure error reason ends with a period for consistent formatting
     const errorFieldToSet: FieldPath<T> =
       errorFieldMap[errorField] ?? error.field;
 
+    // Ensure error reason ends with a period for consistent formatting
     const formattedReason = error.reason.endsWith('.')
       ? error.reason
       : `${error.reason}.`;
@@ -504,7 +512,7 @@ export const handleMultipleError = <T extends FieldValues>(
     } else {
       errorMap.set(errorFieldToSet, formattedReason);
     }
-
+    // Apply the consolidated error message to the form field
     setError(errorFieldToSet, { message: errorMap.get(errorFieldToSet) });
   }
 };

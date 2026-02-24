@@ -110,6 +110,15 @@ const databasesDetailMetricsRoute = createRoute({
   ).then((m) => m.databaseMonitorLazyRoute)
 );
 
+const databasesDetailAlertsRoute = createRoute({
+  getParentRoute: () => databasesDetailRoute,
+  path: 'alerts',
+}).lazy(() =>
+  import(
+    'src/features/Databases/DatabaseDetail/DatabaseAlerts/DatabaseAlertsLazyRoute'
+  ).then((m) => m.databaseAlertsLazyRoute)
+);
+
 const databasesDetailNetworkingRoute = createRoute({
   getParentRoute: () => databasesDetailRoute,
   path: 'networking',
@@ -129,6 +138,7 @@ export const databasesRouteTree = databasesRoute.addChildren([
     databasesDetailSettingsRoute,
     databasesDetailConfigsRoute,
     databasesDetailMetricsRoute,
+    databasesDetailAlertsRoute,
     databasesDetailNetworkingRoute,
   ]),
 ]);

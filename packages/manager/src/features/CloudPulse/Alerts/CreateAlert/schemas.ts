@@ -34,6 +34,7 @@ export const dimensionFiltersSchema = dimensionFilters.concat(
     }),
   })
 );
+
 export const metricCriteriaSchema = metricCriteria.concat(
   object({
     aggregate_function: string()

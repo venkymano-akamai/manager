@@ -45,7 +45,6 @@ interface NotificationChannelAlertsProps {
    */
   channelId: number;
 }
-
 export const NotificationChannelAlerts = React.memo(
   (props: NotificationChannelAlertsProps) => {
     const { channelId } = props;

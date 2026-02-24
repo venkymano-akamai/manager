@@ -59,6 +59,7 @@ export interface EditAlertProps {
 export const EditAlertDefinition = (props: EditAlertProps) => {
   const { alertDetails, serviceType } = props;
   const navigate = useNavigate();
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -189,7 +190,7 @@ export const EditAlertDefinition = (props: EditAlertProps) => {
         />
       )}
       <FormProvider {...formMethods}>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={onSubmit} ref={formRef}>
           <Typography marginTop={2} variant="h2">
             1. General Information
           </Typography>

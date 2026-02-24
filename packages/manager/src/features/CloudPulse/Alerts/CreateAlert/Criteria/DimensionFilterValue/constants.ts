@@ -514,6 +514,7 @@ export interface DimensionFilterAutocompleteProps {
    * The type of monitoring to filter on.
    */
   type: 'alerts' | 'metrics';
+
   /**
    * The list of pre-defined values for static options.
    */

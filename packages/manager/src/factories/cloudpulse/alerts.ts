@@ -188,6 +188,61 @@ export const newEgressConnectionsRulesFactory = {
   metric: 'new_egress_connections',
 };
 
+// Example endpoints list (for the 'in' operator)
+const endpoints = [
+  'endpoint_type-E2-us-sea-2.linodeobjects.com',
+  'endpoint_type-E3-us-sea-3.linodeobjects.com',
+  'endpoint_type-E2-us-sea-4.linodeobjects.com',
+];
+/**
+ * Factory for a single Object Storage dimension filter
+ */
+export const objectStorageDimensionFactory =
+  Factory.Sync.makeFactory<AlertDefinitionDimensionFilter>({
+    dimension_label: 'region',
+    label: 'Object Storage Region',
+    operator: 'eq',
+    value: 'Chicago, IL',
+  });
+
+/**
+ * Base Object Storage rule factory (like your baseObjectStorageRuleFactory)
+ */
+export const baseObjectStorageRuleFactory =
+  Factory.Sync.makeFactory<MetricCriteria>({
+    aggregate_function: 'avg',
+    operator: 'eq',
+    threshold: 1000,
+    metric: '',
+    dimension_filters: [
+      {
+        dimension_label: 'endpoint',
+        operator: 'eq',
+        value: 'endpoint_type-E2-us-sea-4.linodeobjects.com',
+      },
+      {
+        dimension_label: 'endpoint',
+        operator: 'in',
+        value: endpoints.join(','), // joined list of endpoints
+      },
+    ],
+  });
+export const metricBuilder =
+  Factory.Sync.makeFactory<AlertDefinitionMetricCriteria>({
+    ...baseObjectStorageRuleFactory.build(),
+    label: 'Total bucket size',
+    unit: 'Bytes',
+    metric: 'obj_bucket_size',
+    dimension_filters: [
+      {
+        dimension_label: 'region',
+        label: 'Region',
+        operator: 'eq',
+        value: 'us-east',
+      },
+    ],
+  });
+
 export const alertDefinitionFactory =
   Factory.Sync.makeFactory<CreateAlertDefinitionPayload>({
     channel_ids: [1, 2, 3],
@@ -265,16 +320,15 @@ const firewallNodebalancerDimensions: Dimension[] = [
 
 export const firewallMetricDefinitionFactory =
   Factory.Sync.makeFactory<MetricDefinition>({
-    label: 'Current connections (Linode)',
-    metric: 'fw_active_connections',
-    unit: 'Count',
+    label: 'Firewall Metric',
+    metric: 'firewall_metric',
+    unit: 'metric_unit',
     metric_type: 'gauge',
     scrape_interval: '60s',
     is_alertable: true,
-    available_aggregate_functions: ['avg', 'max', 'min'],
-    dimensions: firewallLinodeDimensions,
+    available_aggregate_functions: ['avg', 'sum', 'max', 'min', 'count'],
+    dimensions: [],
   });
-
 export const firewallMetricDefinitionsResponse: MetricDefinition[] = [
   firewallMetricDefinitionFactory.build({
     label: 'Current connections (Linode)',
@@ -340,7 +394,7 @@ export const firewallMetricDefinitionsResponse: MetricDefinition[] = [
 
 export const firewallMetricRulesFactory =
   Factory.Sync.makeFactory<AlertDefinitionMetricCriteria>({
-    label: 'Current connections',
+    label: 'Current connections (Linode)',
     metric: 'fw_active_connections',
     unit: 'count',
     aggregate_function: 'avg',
@@ -351,13 +405,13 @@ export const firewallMetricRulesFactory =
         label: 'VPC-Subnet',
         dimension_label: 'vpc_subnet_id',
         operator: 'in',
-        value: '1,2',
+        value: '1',
       },
       {
         label: 'Linode',
         dimension_label: 'linode_id',
         operator: 'in',
-        value: '1,2',
+        value: '1',
       },
       {
         label: 'Linode Region',
@@ -617,23 +671,118 @@ export const blockStorageMetricCriteria =
     metric: 'volume_read_ops',
     unit: 'Count',
     aggregate_function: 'avg',
-    operator: 'gt',
+    operator: 'eq',
     threshold: 1000,
     dimension_filters: [
       {
         label: 'linode_id',
         dimension_label: 'linode_id',
         operator: 'in',
-        value: '1,2,3',
+        value: '1',
       },
       {
-        label: 'linode_id',
-        dimension_label: 'linode_id',
+        label: 'region',
+        dimension_label: 'region',
         operator: 'eq',
-        value: '5',
+        value: 'us-east',
       },
     ],
   });
+
+// --- Additional Metrics (Examples) ---
+
+export const blockStorageMetricCriteriaList = [
+  blockStorageMetricCriteria.build({
+    label: 'Volume Write Operations',
+    metric: 'volume_write_ops',
+    unit: 'Count',
+    aggregate_function: 'avg',
+    operator: 'gt',
+    threshold: 2000,
+    dimension_filters: [
+      {
+        label: 'region',
+        dimension_label: 'region',
+        operator: 'eq',
+        value: 'us-west',
+      },
+      {
+        label: 'entity_id',
+        dimension_label: 'entity_id',
+        operator: 'eq',
+        value: 'vol-1',
+      },
+    ],
+  }),
+
+  blockStorageMetricCriteria.build({
+    label: 'Volume Read Bytes',
+    metric: 'volume_read_bytes',
+    unit: 'Bytes',
+    aggregate_function: 'sum',
+    operator: 'gte',
+    threshold: 500000,
+    dimension_filters: [
+      {
+        label: 'region',
+        dimension_label: 'region',
+        operator: 'eq',
+        value: 'ap-south',
+      },
+    ],
+  }),
+
+  blockStorageMetricCriteria.build({
+    label: 'Volume Write Bytes',
+    metric: 'volume_write_bytes',
+    unit: 'Bytes',
+    aggregate_function: 'sum',
+    operator: 'lt',
+    threshold: 1000000,
+    dimension_filters: [
+      {
+        label: 'response_type',
+        dimension_label: 'response_type',
+        operator: 'in',
+        value: '200,400,500',
+      },
+    ],
+  }),
+
+  blockStorageMetricCriteria.build({
+    label: 'Volume Read IOPS',
+    metric: 'volume_read_iops',
+    unit: 'Count',
+    aggregate_function: 'max',
+    operator: 'lte',
+    threshold: 1500,
+    dimension_filters: [
+      {
+        label: 'entity_id',
+        dimension_label: 'entity_id',
+        operator: 'eq',
+        value: 'block-01',
+      },
+    ],
+  }),
+
+  blockStorageMetricCriteria.build({
+    label: 'Volume Write IOPS',
+    metric: 'volume_write_iops',
+    unit: 'Count',
+    aggregate_function: 'max',
+    operator: 'gt',
+    threshold: 2500,
+    dimension_filters: [
+      {
+        label: 'region',
+        dimension_label: 'region',
+        operator: 'eq',
+        value: 'us-central',
+      },
+    ],
+  }),
+];
 
 export const firewallNodebalancerMetricCriteria =
   Factory.Sync.makeFactory<AlertDefinitionMetricCriteria>({

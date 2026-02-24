@@ -6,9 +6,6 @@ import NullComponent from 'src/components/NullComponent';
 import type { AlertResourceFiltersProps } from './types';
 
 export interface AlertResourcesFilterRendererProps {
-  /**
-   * The filter component to be rendered (e.g., `AlertsEngineTypeFilter`, `AlertsRegionFilter`).
-   */
   component?: MemoExoticComponent<
     React.ComponentType<AlertResourceFiltersProps>
   >;

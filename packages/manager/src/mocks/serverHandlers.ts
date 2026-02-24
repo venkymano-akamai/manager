@@ -157,6 +157,7 @@ import { SPECIAL_PREFIX_LIST_NAMES } from 'src/features/Firewalls/FirewallDetail
 
 import type {
   AccountMaintenance,
+  AlertDefinitionScope,
   AlertDefinitionType,
   AlertSeverityType,
   AlertStatusType,
@@ -918,7 +919,7 @@ export const handlers = [
   }),
   http.get('*/linode/instances', async ({ request }) => {
     linodeFactory.resetSequenceNumber();
-    const linodesWithFirewalls = linodeFactory.buildList(10, {
+    const linodesWithFirewall = linodeFactory.buildList(10, {
       region: 'ap-west',
     });
     const linodesWithAclpAlerts = linodeFactory.buildList(10, {
@@ -1014,7 +1015,7 @@ export const handlers = [
       id: 90909,
     });
     const linodes = [
-      ...linodesWithFirewalls,
+      ...linodesWithFirewall,
       ...linodesWithAclpAlerts,
       ...mtcLinodes,
       ...aclpSupportedRegionLinodes,
@@ -1417,7 +1418,7 @@ export const handlers = [
           }),
           firewallEntityfactory.build({
             type: 'linode',
-            label: 'Linode-firewall-test',
+            label: 'Linode-fireall-test',
             parent_entity: null,
             id: 90909,
           }),
@@ -3334,6 +3335,7 @@ export const handlers = [
           ...alertFactory.buildList(6, {
             service_type: serviceType === 'dbaas' ? 'dbaas' : 'linode',
             type: 'user',
+            regions: ['us-ord'],
             scope: 'account',
           }),
           ...alertFactory.buildList(6, {
@@ -3360,6 +3362,7 @@ export const handlers = [
       type: 'user',
       updated: '2021-10-16T04:00:00',
       updated_by: 'user1',
+      scope: pickRandom(['account', 'entity', 'region']),
     });
     const customAlertsWithServiceType = alertFactory.buildList(10, {
       created_by: 'user1',
@@ -3367,11 +3370,13 @@ export const handlers = [
       severity: 1,
       type: 'user',
       updated_by: 'user1',
+      scope: pickRandom(['account', 'entity', 'region']),
     });
     const defaultAlerts = alertFactory.buildList(15);
     const defaultAlertsWithServiceType = alertFactory.buildList(7, {
       service_type: 'dbaas',
       severity: 3,
+      scope: pickRandom(['account', 'entity', 'region']),
     });
     const alerts = [
       ...defaultAlerts,
@@ -3604,12 +3609,26 @@ export const handlers = [
         return HttpResponse.json(
           alertFactory.build({
             id: 999,
+            scope: 'account',
             label: 'Firewall - testing',
             service_type: 'firewall',
             type: 'user',
-            scope: 'account',
             rule_criteria: {
               rules: [firewallMetricRulesFactory.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '650' && params.serviceType === 'firewall') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 650,
+            label: 'Firewall - nodebalancer',
+            type: 'user',
+            service_type: 'firewall',
+            entity_ids: ['25'],
+            rule_criteria: {
+              rules: [firewallNodebalancerMetricCriteria.build()],
             },
           })
         );
@@ -3674,7 +3693,14 @@ export const handlers = [
     return HttpResponse.json({});
   }),
   http.get('*/monitor/alert-channels', () => {
-    const notificationChannels = notificationChannelFactory.buildList(3);
+    const notificationChannels = notificationChannelFactory.buildList(3, {
+      details: {
+        email: {
+          recipient_type: 'user',
+          usernames: ['user1', 'user2'],
+        },
+      },
+    });
     notificationChannels.push(
       notificationChannelFactory.build({
         id: 5,
@@ -3688,23 +3714,22 @@ export const handlers = [
             recipient_type: 'user',
           },
         },
-        alerts: {
-          alert_count: 0,
-          type: 'alerts-definitions',
-          url: 'monitor/alert-channels/{id}/alerts',
-        },
+        alerts: { alert_count: 0 },
       })
     );
     notificationChannels.push(
       notificationChannelFactory.build({
+        id: 4,
         label: 'System channel',
         updated: '2023-11-05T04:00:00',
-        updated_by: 'user5',
-        created_by: 'admin',
+        updated_by: 'system',
+        created_by: 'system',
         type: 'system',
       })
     );
-    notificationChannels.push(...notificationChannelFactory.buildList(3));
+    notificationChannels.push(
+      ...notificationChannelFactory.buildList(3, { details: undefined })
+    );
     return HttpResponse.json(makeResourcePage(notificationChannels));
   }),
   http.post('*/monitor/alert-channels', () => {
@@ -3721,7 +3746,10 @@ export const handlers = [
       return HttpResponse.json(
         notificationChannelFactory.build({
           id: 5,
-          label: 'Email test channel',
+          alerts: {
+            alert_count: 0,
+          },
+          label: 'No-alerts-channel',
           updated: '2023-11-05T04:00:00',
           updated_by: 'user3',
           created_by: 'admin',
@@ -3747,24 +3775,65 @@ export const handlers = [
         })
       );
     }
-    return HttpResponse.json(
-      notificationChannelFactory.build({
-        label: 'Test channel',
-        updated: '2023-11-05T04:00:00',
-        updated_by: 'user3',
-        created_by: 'admin',
-        type: 'user',
-        channel_type: 'email',
-        details: {
-          email: {
-            usernames: ['ChildUser', 'NonAdminUser'],
+    if (params.id === '4') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({
+          id: 4,
+          label: 'System channel',
+          updated: '2023-11-05T04:00:00',
+          updated_by: 'system',
+          created_by: 'system',
+          type: 'system',
+          channel_type: 'email',
+          content: {
+            email: {
+              email_addresses: ['Users-with-read-write-access-to-resources'],
+            },
           },
-        },
-      })
-    );
+        })
+      );
+    }
+    if (params.id !== 'undefined') {
+      return HttpResponse.json(
+        notificationChannelFactory.build({
+          id: Number(params.id),
+          details: {
+            email: {
+              recipient_type: 'user',
+              usernames: [
+                'user1',
+                'user2',
+                'longusernameuser3',
+                'longusernameuser4',
+                'user5',
+                'longusernameuser6',
+                'longusernameuser7',
+                'user8',
+              ],
+            },
+          },
+        })
+      );
+    }
+    return HttpResponse.json({}, { status: 404 });
   }),
-  http.delete('*/v4beta/monitor/alert-channels/:channelId', () => {
-    return HttpResponse.json({});
+  http.get('*/monitor/alert-channels/:id/alerts', ({ params }) => {
+    if (params.id === 'undefined') {
+      return HttpResponse.json({}, { status: 404 });
+    }
+    if (params.id === '5') {
+      return HttpResponse.json(makeResourcePage([]));
+    }
+    const alerts = notificationChannelAlertsFactory.buildList(84);
+    const dbaasalerts = notificationChannelAlertsFactory.buildList(2, {
+      service_type: 'dbaas',
+    });
+    const volumeAlerts = notificationChannelAlertsFactory.buildList(3, {
+      service_type: 'blockstorage',
+    });
+    alerts.push(...volumeAlerts);
+    alerts.push(...dbaasalerts);
+    return HttpResponse.json(makeResourcePage(alerts));
   }),
   http.get('*/monitor/alert-channels/:id/alerts', ({ params }) => {
     if (params.id === 'undefined') {
@@ -3824,7 +3893,9 @@ export const handlers = [
           label: 'Volumes',
           service_type: 'blockstorage',
           regions: 'us-iad,us-east',
-          alert: serviceAlertFactory.build({ scope: ['entity'] }),
+          alert: serviceAlertFactory.build({
+            scope: ['entity', 'account', 'region'],
+          }),
         }),
         serviceTypesFactory.build({
           label: 'LKE Enterprise',
@@ -3845,6 +3916,7 @@ export const handlers = [
 
     return HttpResponse.json(response);
   }),
+
   http.get('*/monitor/services/:serviceType', ({ params }) => {
     const serviceType = params.serviceType as CloudPulseServiceType;
     const serviceTypesMap: Record<CloudPulseServiceType, string> = {
@@ -3857,16 +3929,26 @@ export const handlers = [
       lke: 'LKE Enterprise',
       netloadbalancer: 'Network Load Balancers',
     };
+    const serviceTypeScopeMap: Record<
+      CloudPulseServiceType,
+      AlertDefinitionScope[]
+    > = {
+      linode: ['entity'],
+      dbaas: ['entity'],
+      nodebalancer: ['entity'],
+      firewall: ['entity', 'account'],
+      objectstorage: ['entity', 'account', 'region'],
+      blockstorage: ['entity', 'account', 'region'],
+      lke: ['entity'],
+      netloadbalancer: ['entity'],
+    };
     const response = serviceTypesFactory.build({
       service_type: `${serviceType}`,
       label: serviceTypesMap[serviceType],
       alert: serviceAlertFactory.build({
         evaluation_period_seconds: [300],
         polling_interval_seconds: [300],
-        scope:
-          serviceType === 'objectstorage' || serviceType === 'blockstorage'
-            ? ['entity', 'account', 'region']
-            : ['entity'],
+        scope: serviceTypeScopeMap[serviceType],
       }),
     });
 

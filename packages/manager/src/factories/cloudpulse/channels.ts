@@ -16,8 +16,8 @@ export const notificationChannelFactory =
     content: {
       email: {
         email_addresses: ['test@test.com', 'test2@test.com'],
-        message: 'You have a new Alert',
-        subject: 'Sample Alert',
+        message: 'Alert notification',
+        subject: 'Alert',
       },
     },
     created: new Date().toISOString(),

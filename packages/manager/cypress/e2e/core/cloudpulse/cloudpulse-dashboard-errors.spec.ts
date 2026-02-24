@@ -384,6 +384,10 @@ describe('Tests for API error handling', () => {
   });
 
   it('displays error message when instance API fails', () => {
+    // simulate an error on instances call before changing the region again
+    mockGetDatabasesError('Internal Server Error').as(
+      'getDatabaseInstancesError'
+    );
     cy.visitWithLogin('/metrics');
 
     // Wait for the API calls .

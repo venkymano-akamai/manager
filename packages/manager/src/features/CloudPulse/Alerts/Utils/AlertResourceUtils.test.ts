@@ -87,9 +87,14 @@ describe('getFilteredResources', () => {
   const regions = regionFactory.buildList(10);
   const regionsIdToRegionMap = getRegionsIdRegionMap(regions);
   const data: CloudPulseResources[] = [
-    { id: '1', label: 'Test', region: regions[0].id },
-    { id: '2', label: 'Test2', region: regions[1].id },
-    { id: '3', label: 'Test3', region: regions[2].id },
+    { engineType: 'mysql', id: '1', label: 'Test', region: regions[0].id },
+    { engineType: 'mysql', id: '2', label: 'Test2', region: regions[1].id },
+    {
+      engineType: 'postgresql',
+      id: '3',
+      label: 'Test3',
+      region: regions[2].id,
+    },
   ];
   it('should return correct filtered instances on only filtered regions', () => {
     const result = getFilteredResources({
@@ -179,6 +184,34 @@ describe('getFilteredResources', () => {
         selectedResources: ['1'],
       });
     expect(result.length).toBe(data.length);
+  });
+  it('should return correct results on additional filters', () => {
+    const result = getFilteredResources({
+      additionalFilters: {
+        engineType: 'postgresql',
+        endpoint: undefined,
+        tags: undefined,
+      },
+      data,
+      filteredRegions: [],
+      regionsIdToRegionMap,
+      resourceIds: ['1', '2', '3'],
+    });
+    expect(result.length).toBe(1);
+  });
+  it('should return correct results if additional filters key value is undefined', () => {
+    const result = getFilteredResources({
+      additionalFilters: {
+        engineType: undefined,
+        endpoint: undefined,
+        tags: undefined,
+      },
+      data,
+      filteredRegions: [],
+      regionsIdToRegionMap,
+      resourceIds: ['1', '2', '3'],
+    });
+    expect(result.length).toBe(3);
   });
 });
 

@@ -55,6 +55,7 @@ export const getAlertDefinitionByServiceTypeAndId = (
   Request<Alert>(
     setURL(
       `${API_ROOT}/monitor/services/${encodeURIComponent(
+        // updating only here as this is the only API ready
         serviceType,
       )}/alert-definitions/${encodeURIComponent(alertId)}`,
     ),

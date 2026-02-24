@@ -128,21 +128,22 @@ export const serviceToFiltersMap: Partial<
     { component: AlertsRegionFilter, filterKey: 'region' },
   ],
   linode: [{ component: AlertsRegionFilter, filterKey: 'region' }],
-  firewall: [],
   nodebalancer: [
     { component: AlertsRegionFilter, filterKey: 'region' },
     { component: AlertsTagFilter, filterKey: 'tags' },
   ],
+  firewall: [],
   objectstorage: [
     { component: AlertsRegionFilter, filterKey: 'region' },
     { component: AlertsEndpointFilter, filterKey: 'endpoint' },
   ],
   blockstorage: [{ component: AlertsRegionFilter, filterKey: 'region' }],
 };
+
 export const applicableAdditionalFilterKeys: AlertAdditionalFilterKey[] = [
+  'endpoint',
   'engineType', // Extendable in future for filter keys like 'tags', 'plan', etc.
   'tags',
-  'endpoint',
 ];
 
 export const alertAdditionalFilterKeyMap: Record<

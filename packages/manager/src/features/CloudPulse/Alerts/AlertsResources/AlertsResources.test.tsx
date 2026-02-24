@@ -36,6 +36,11 @@ const linodes = linodeFactory.buildList(3).map((value, index) => {
 
 const searchPlaceholder = 'Search for a Region or Entity';
 const regionPlaceholder = 'Select Regions';
+const alertResourcesProp: AlertResourcesProp = {
+  alertResourceIds: ['1', '2', '3'],
+  alertType: 'system',
+  serviceType: 'linode',
+};
 const checkedAttribute = 'data-qa-checked';
 const cloudPulseResources: CloudPulseResources[] = linodes.map((linode) => {
   return {
@@ -44,12 +49,6 @@ const cloudPulseResources: CloudPulseResources[] = linodes.map((linode) => {
     region: linode.region,
   };
 });
-
-const alertResourcesProp: AlertResourcesProp = {
-  alertResourceIds: ['1', '2', '3'],
-  alertType: 'system',
-  serviceType: 'linode',
-};
 
 beforeAll(() => {
   window.scrollTo = vi.fn(); // mock for scrollTo and scroll
@@ -201,6 +200,7 @@ describe('AlertResources component tests', () => {
       <AlertResources
         {...alertResourcesProp}
         alertResourceIds={['1', '2']}
+        alertType="system"
         handleResourcesSelection={handleResourcesSelection}
         isSelectionsNeeded
       />

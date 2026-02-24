@@ -3,6 +3,7 @@ import { linodeFactory, nodeBalancerFactory } from '@linode/utilities';
 import {
   getFilteredFirewallParentEntities,
   getFirewallLinodes,
+  getFirewallNodebalancers,
   getLinodeRegions,
   getNodebalancerRegions,
   getOperatorGroup,
@@ -15,7 +16,7 @@ import {
   transformDimensionValue,
 } from './utils';
 
-import type { Linode } from '@linode/api-v4';
+import type { Linode, NodeBalancer } from '@linode/api-v4';
 import type { CloudPulseResources } from 'src/features/CloudPulse/shared/CloudPulseResourcesSelect';
 
 describe('Utils', () => {
@@ -179,6 +180,28 @@ describe('Utils', () => {
     });
   });
 
+  describe('getFirewallNodeBalancers', () => {
+    const nodebalancers: NodeBalancer[] = nodeBalancerFactory.buildList(2);
+
+    it('should return nodebalancer options with transformed labels', () => {
+      // checking for same label as nodebalancer_id dimension filter should not have any transformation
+      expect(getFirewallNodebalancers(nodebalancers)).toEqual([
+        {
+          label: nodebalancers[0].label,
+          value: nodebalancers[0].id.toString(),
+        },
+        {
+          label: nodebalancers[1].label,
+          value: nodebalancers[1].id.toString(),
+        },
+      ]);
+    });
+
+    it('should handle empty nodebalancer list', () => {
+      expect(getFirewallNodebalancers([])).toEqual([]);
+    });
+  });
+
   describe('getLinodeRegions', () => {
     it('should extract and deduplicate regions', () => {
       const linodes = linodeFactory.buildList(3, {
@@ -324,6 +347,121 @@ describe('Utils', () => {
         resources: buckets,
       });
       expect(result).toEqual(buckets);
+    });
+  });
+  describe('isMaxSelectionsReached', () => {
+    it('returns false when multiple is false', () => {
+      expect(isMaxSelectionsReached(false, 'a,b,c', 2)).toBe(false);
+    });
+
+    it('returns false when value is empty string', () => {
+      expect(isMaxSelectionsReached(true, '', 2)).toBe(false);
+    });
+
+    it('returns false when maxSelections is undefined', () => {
+      expect(isMaxSelectionsReached(true, 'a,b,c', undefined)).toBe(false);
+    });
+
+    it('returns false when selections are less than maxSelections', () => {
+      expect(isMaxSelectionsReached(true, 'a,b', 3)).toBe(false);
+    });
+
+    it('returns true when selections equal maxSelections', () => {
+      expect(isMaxSelectionsReached(true, 'a,b,c', 3)).toBe(true);
+    });
+
+    it('returns true when selections exceed maxSelections', () => {
+      expect(isMaxSelectionsReached(true, 'a,b,c,d', 3)).toBe(true);
+    });
+
+    it('counts single value correctly', () => {
+      expect(isMaxSelectionsReached(true, 'a', 1)).toBe(true);
+    });
+
+    it('handles trailing comma as an extra value (current behavior)', () => {
+      expect(isMaxSelectionsReached(true, 'a,b,', 3)).toBe(true);
+    });
+  });
+
+  describe('isOptionDisabled', () => {
+    const optionA = { label: 'A', value: 'a' };
+    const optionB = { label: 'B', value: 'b' };
+
+    it('returns false when maxReached is false', () => {
+      expect(
+        isOptionDisabled({
+          maxReached: false,
+          multiple: true,
+          value: 'a,b',
+          option: optionA,
+        })
+      ).toBe(false);
+    });
+
+    it('returns false when multiple is false even if maxReached is true', () => {
+      expect(
+        isOptionDisabled({
+          maxReached: true,
+          multiple: false,
+          value: 'a,b',
+          option: optionA,
+        })
+      ).toBe(false);
+    });
+
+    it('disables option when maxReached is true and option is NOT selected', () => {
+      expect(
+        isOptionDisabled({
+          maxReached: true,
+          multiple: true,
+          value: 'a',
+          option: optionB, // already selected? NO
+        })
+      ).toBe(true);
+    });
+
+    it('does NOT disable option when maxReached is true and option IS selected', () => {
+      expect(
+        isOptionDisabled({
+          maxReached: true,
+          multiple: true,
+          value: 'a,b',
+          option: optionA, // already selected
+        })
+      ).toBe(false);
+    });
+
+    it('handles undefined value safely', () => {
+      expect(
+        isOptionDisabled({
+          maxReached: true,
+          multiple: true,
+          option: optionA,
+        })
+      ).toBe(true);
+    });
+
+    it('handles empty value string', () => {
+      expect(
+        isOptionDisabled({
+          maxReached: true,
+          multiple: true,
+          value: '',
+          option: optionA,
+        })
+      ).toBe(true);
+    });
+
+    it('handles trailing comma in value (current behavior)', () => {
+      // 'a,b,' → ['a', 'b', '']
+      expect(
+        isOptionDisabled({
+          maxReached: true,
+          multiple: true,
+          value: 'a,b,',
+          option: optionA,
+        })
+      ).toBe(false);
     });
   });
 });

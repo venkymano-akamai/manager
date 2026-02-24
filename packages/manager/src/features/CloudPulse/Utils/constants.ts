@@ -75,13 +75,13 @@ export const PORTS_LIMIT_ERROR_MESSAGE =
 export const PORTS_PLACEHOLDER_TEXT = 'e.g., 80,443,3000';
 
 export const INTERFACE_IDS_HELPER_TEXT =
-  'Enter one or more interface ID numbers separated by commas.';
+  'Enter one or more interface IDs separated by commas.';
 
 export const INTERFACE_IDS_ERROR_MESSAGE =
-  'Enter valid interface ID numbers as integers separated by commas without spaces.';
+  'Enter valid interface ID numbers as integers separated by commas.';
 
 export const INTERFACE_IDS_CONSECUTIVE_COMMAS_ERROR_MESSAGE =
-  'Use a single comma to separate interface ID numbers.';
+  'Use a single comma to separate interface IDs.';
 
 export const INTERFACE_IDS_LEADING_COMMA_ERROR_MESSAGE =
   'First character must be an integer.';

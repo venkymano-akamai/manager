@@ -94,7 +94,7 @@ export const AlertDetail = () => {
           <StyledPlaceholder
             icon={AlertsIcon}
             isEntity
-            title="No data to display."
+            title="No Data to display."
           />
         </Box>
       </>

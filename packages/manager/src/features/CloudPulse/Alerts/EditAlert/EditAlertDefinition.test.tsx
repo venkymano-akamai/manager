@@ -45,6 +45,7 @@ beforeEach(() => {
   queryMocks.useAllAlertNotificationChannelsQuery.mockReturnValue(
     notificationChannelFactory.build()
   );
+  HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 
 const alertDetails = alertFactory.build({

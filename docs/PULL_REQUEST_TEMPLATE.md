@@ -61,18 +61,21 @@ Please specify a release date (and environment, if applicable) to guarantee time
 
 ## As an Author, to speed up the review process, I considered 🤔
 
-👀 Doing a self review
-❔ Our [contribution guidelines](https://github.com/linode/manager/blob/develop/docs/CONTRIBUTING.md)
-🤏 Splitting feature into small PRs
-➕ Adding a [changeset](https://github.com/linode/manager/blob/develop/docs/CONTRIBUTING.md#writing-a-changeset)
-🧪 Providing/improving test coverage
- 🔐 Removing all sensitive information from the code and PR description
-🚩 Using a feature flag to protect the release
-👣 Providing comprehensive reproduction steps
-📑 Providing or updating our documentation
-🕛 Scheduling a pair reviewing session
-📱 Providing mobile support
-♿  Providing accessibility support
+*Check all that apply*
+
+- [ ] Use React components instead of HTML Tags
+- [ ] Proper naming conventions like cameCase for variables & Function & snake_case for constants
+- [ ] Use appropriate types & avoid using "any"
+- [ ] No type casting & non-null assertions
+- [ ] Adding a [changeset](https://github.com/linode/manager/blob/develop/docs/CONTRIBUTING.md#writing-a-changeset)
+- [ ] Providing/Improving test coverage
+- [ ] Use sx props to pass styles instead of style prop
+- [ ] Add JSDoc comments for interface properties & functions
+- [ ] Use strict equality (===) instead of double equal (==)
+- [ ] Use of named arguments (interfaces) if function argument list exceeds size 2
+- [ ] Destructure the props
+- [ ] Keep component size small & move big computing functions to separate utility
+- [ ] 📱 Providing mobile support
 
 <br/>
 

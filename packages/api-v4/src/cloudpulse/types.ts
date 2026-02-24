@@ -300,7 +300,7 @@ interface NotificationChannelBase {
   updated_by: string;
 }
 
-interface NotificationChannelEmail extends NotificationChannelBase {
+export interface NotificationChannelEmail extends NotificationChannelBase {
   channel_type: AlertNotificationEmail;
   content?: {
     email: {
@@ -403,6 +403,7 @@ export interface EditAlertPayloadWithService
   extends EditAlertDefinitionPayload {
   alertId: number;
   serviceType: CloudPulseServiceType;
+  type?: AlertDefinitionType | null;
 }
 
 export type AlertStatusUpdateType = 'Disable' | 'Enable';
@@ -497,7 +498,6 @@ export interface DeleteChannelPayload {
    */
   channelId: number;
 }
-
 export interface NotificationChannelAlerts {
   id: number;
   label: string;

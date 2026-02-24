@@ -80,6 +80,7 @@ const overrides: CrumbOverridesProps[] = [
 export const CreateAlertDefinition = () => {
   const navigate = useNavigate();
   const alertCreateExit = () => navigate({ to: '/alerts/definitions' });
+  const formRef = React.useRef<HTMLFormElement>(null);
   const flags = useFlags();
 
   // Default resolver
@@ -146,7 +147,6 @@ export const CreateAlertDefinition = () => {
       }
     }
   });
-
   const previousSubmitCount = React.useRef<number>(0);
   React.useEffect(() => {
     if (!isEmpty(errors) && submitCount > previousSubmitCount.current) {
@@ -191,7 +191,7 @@ export const CreateAlertDefinition = () => {
       <Paper sx={{ paddingLeft: 1, paddingRight: 1, paddingTop: 2 }}>
         <Breadcrumb crumbOverrides={overrides} pathname="/Definitions/Create" />
         <FormProvider {...formMethods}>
-          <form onSubmit={onSubmit}>
+          <form onSubmit={onSubmit} ref={formRef}>
             <Typography marginTop={2} variant="h2">
               1. General Information
             </Typography>

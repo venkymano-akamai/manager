@@ -36,6 +36,7 @@ export const regions: Region[] = [
         'Linodes',
         'Managed Databases',
         'Block Storage',
+        'NodeBalancers',
         'Kubernetes',
         'NodeBalancers',
       ],
@@ -685,6 +686,7 @@ export const regions: Region[] = [
       'VPCs',
       'Block Storage Migrations',
       'Managed Databases',
+      'Network LoadBalancer',
     ],
     country: 'gb',
     id: 'eu-west',
@@ -699,7 +701,7 @@ export const regions: Region[] = [
     },
     site_type: 'core',
     status: 'ok',
-    monitors: { alerts: [], metrics: [] },
+    monitors: { alerts: [], metrics: ['Network LoadBalancer'] },
   },
   {
     capabilities: [

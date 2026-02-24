@@ -1,19 +1,19 @@
+import {
+  type APIError,
+  type Filter,
+  type JWEToken,
+  type JWETokenPayLoad,
+  type MetricDefinition,
+  type Params,
+  type ResourcePage,
+  type ServiceTypesList,
+} from '@linode/api-v4';
 import { queryPresets } from '@linode/queries';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { queryFactory } from './queries';
 
-import type {
-  APIError,
-  Filter,
-  JWEToken,
-  JWETokenPayLoad,
-  MetricDefinition,
-  ResourcePage,
-  Service,
-  ServiceTypesList,
-} from '@linode/api-v4';
-import type { Params } from '@linode/api-v4';
+import type { Service } from '@linode/api-v4';
 
 export const useGetCloudPulseMetricDefinitionsByServiceType = (
   serviceType: string | undefined,

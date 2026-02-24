@@ -98,6 +98,18 @@ describe('Alert Resuable Component for contextual view', () => {
     const alert = alerts[alerts.length - 1];
     expect(getByText(alert.label)).toBeInTheDocument();
   });
+  it('Should not show header for create mode', async () => {
+    const componentWithoutEntityData = (
+      <AlertReusableComponent
+        onToggleAlert={onToggleAlert}
+        regionId={region}
+        serviceType={serviceType}
+      />
+    );
+    renderWithTheme(componentWithoutEntityData);
+    expect(screen.queryByText('Manage Alerts')).toBeNull();
+    expect(screen.queryByText('Alerts')).toBeNull();
+  });
 
   it('Should hide manage alerts button for undefined entityId', () => {
     renderWithTheme(<AlertReusableComponent serviceType={serviceType} />);

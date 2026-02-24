@@ -1,4 +1,5 @@
 import { capitalize } from '@linode/utilities';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryHistory } from 'history';
 import * as React from 'react';
@@ -205,5 +206,26 @@ describe('Alert Row', () => {
       'aria-disabled',
       'true'
     );
+  });
+
+  it('should show the delete action item for the user alert', async () => {
+    const alert = alertFactory.build({ type: 'user' });
+    renderWithTheme(
+      <AlertTableRow
+        alert={alert}
+        handlers={{
+          handleDelete: vi.fn(),
+          handleDetails: vi.fn(),
+          handleEdit: vi.fn(),
+          handleStatusChange: vi.fn(),
+        }}
+        services={mockServices}
+      />
+    );
+    const ActionMenu = screen.getByLabelText(
+      `Action menu for Alert ${alert.label}`
+    );
+    await userEvent.click(ActionMenu);
+    expect(screen.getByText('Delete')).toBeVisible();
   });
 });

@@ -8,6 +8,7 @@ import type { Action } from 'src/components/ActionMenu/ActionMenu';
  * @param onClickHandlers The list of handlers required to be called on click of an action
  * @returns The actions based on the type of the alert
  */
+
 export const getAlertTypeToActionsList = (
   {
     handleDelete,

@@ -32,10 +32,12 @@ export interface AlertInstance {
    * The region associated with the instance
    */
   engineType?: string;
+
   /**
    * The id of the instance
    */
   id: string;
+
   /**
    * The label of the instance
    */
@@ -45,7 +47,6 @@ export interface AlertInstance {
    * The region associated with the instance
    */
   region: string;
-
   /**
    * The list of tags associated with the instance
    */
@@ -64,10 +65,9 @@ export interface DisplayAlertResourceProp {
   handleSelection?: (id: string[], isSelectAction: boolean) => void;
 
   /**
-   * A flag indicating if there was an error loading the data. If true, the error message
-   * (specified by `errorText`) will be displayed in the table.
+   * Indicates, there is an error in loading the data, if it is passed true, error message will be displayed
    */
-  isDataLoadingError?: boolean;
+  isDataLoadingError: boolean;
 
   /**
    * This controls whether to show the selection check box or not
@@ -226,7 +226,7 @@ export const DisplayAlertResources = React.memo(
                           }}
                           title={
                             maxSelectionCount !== undefined &&
-                              isRootCheckBoxDisabled ? (
+                            isRootCheckBoxDisabled ? (
                               <AlertMaxSelectionText
                                 maxSelectionCount={maxSelectionCount}
                               />
@@ -301,7 +301,7 @@ export const DisplayAlertResources = React.memo(
                                 }}
                                 title={
                                   isItemCheckboxDisabled &&
-                                    maxSelectionCount !== undefined ? (
+                                  maxSelectionCount !== undefined ? (
                                     <AlertMaxSelectionText
                                       maxSelectionCount={maxSelectionCount}
                                     />

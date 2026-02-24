@@ -12,6 +12,8 @@ import { SafeTabPanel } from 'src/components/Tabs/SafeTabPanel';
 import { TabPanels } from 'src/components/Tabs/TabPanels';
 import { Tabs } from 'src/components/Tabs/Tabs';
 import { TanStackTabLinkList } from 'src/components/Tabs/TanStackTabLinkList';
+import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 import { usePermissions } from 'src/features/IAM/hooks/usePermissions';
 import { useTabs } from 'src/hooks/useTabs';
 import { getErrorMap } from 'src/utilities/errorUtils';
@@ -56,6 +58,10 @@ export const NodeBalancerDetail = () => {
       title: 'Settings',
       to: '/nodebalancers/$id/settings',
     },
+    {
+      title: 'Metrics',
+      to: '/nodebalancers/$id/metrics',
+    },
   ]);
 
   if (isLoading) {
@@ -96,6 +102,14 @@ export const NodeBalancerDetail = () => {
         title={nodebalancer.label}
       />
       {errorMap.none && <Notice text={errorMap.none} variant="error" />}
+      {!permissions.update_nodebalancer && (
+        <Notice
+          text={getRestrictedResourceText({
+            resourceType: 'NodeBalancers',
+          })}
+          variant="warning"
+        />
+      )}
       <Tabs index={tabIndex} onChange={handleTabChange}>
         <TanStackTabLinkList tabs={tabs} />
         <React.Suspense fallback={<SuspenseLoader />}>
@@ -108,6 +122,12 @@ export const NodeBalancerDetail = () => {
             </SafeTabPanel>
             <SafeTabPanel index={2}>
               <NodeBalancerSettings />
+            </SafeTabPanel>
+            <SafeTabPanel index={3}>
+              <CloudPulseDashboardWithFilters
+                dashboardId={3}
+                resource={nodebalancer.id}
+              />
             </SafeTabPanel>
           </TabPanels>
         </React.Suspense>

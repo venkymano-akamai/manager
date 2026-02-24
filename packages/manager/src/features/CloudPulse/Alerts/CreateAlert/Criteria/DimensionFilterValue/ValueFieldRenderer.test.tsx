@@ -101,9 +101,9 @@ describe('<ValueFieldRenderer />', () => {
   it('renders FirewallDimensionFilterAutocomplete if config.useCustomFetch = firewall', () => {
     const props = {
       ...defaultProps,
+      serviceType: CF,
       dimensionLabel: 'linode_id', // assume this is configured with useCustomFetch: 'firewall'
       operator: IN,
-      serviceType: CF,
     };
 
     renderWithTheme(<ValueFieldRenderer {...props} />);
@@ -113,9 +113,9 @@ describe('<ValueFieldRenderer />', () => {
   it('renders ObjectStorageDimensionFilterAutocomplete if config.useCustomFetch = objectstorage', () => {
     const props = {
       ...defaultProps,
+      serviceType: OS,
       dimensionLabel: 'endpoint', // assume this is configured with useCustomFetch: 'objectstorage'
       operator: IN,
-      serviceType: OS,
     };
 
     renderWithTheme(<ValueFieldRenderer {...props} />);

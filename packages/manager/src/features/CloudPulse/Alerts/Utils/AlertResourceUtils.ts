@@ -27,7 +27,7 @@ interface FilterResourceProps {
    */
   data?: CloudPulseResources[];
   /**
-   * The selected regions on which the data needs to be filtered and it is in format US, Newark, NJ (us-east)
+   * The selected regions on which the data needs to be filtered
    */
   filteredRegions?: string[];
   /**
@@ -70,7 +70,6 @@ interface FilterRendererProps {
    * The filter to which the props needs to built for
    */
   filterKey: AlertFilterKey;
-
   /**
    * Callback to publish the selected engine type
    */
@@ -82,7 +81,6 @@ interface FilterRendererProps {
    * Callback for publishing the IDs of the selected regions.
    */
   handleFilteredRegionsChange: (regions: string[]) => void;
-
   /**
    * The regions to be displayed according to the resources associated with alerts
    */
@@ -166,7 +164,6 @@ export const getEndpointOptions = (
   });
   return Array.from(uniqueEndpoints);
 };
-
 /**
  * Filters regions based on service type and returns their IDs.
  * @param regions List of regions to filter

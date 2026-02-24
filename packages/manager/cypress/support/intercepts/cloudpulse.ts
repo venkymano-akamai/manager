@@ -393,6 +393,23 @@ export const mockGetAlertChannels = (
     paginateResponse(channel)
   );
 };
+
+/**
+ * Mocks an error response for the GET request to retrieve alert channels in CloudPulse.
+ *
+ * Intercepts the GET request to CloudPulse alert channels and simulates a 404 error.
+ *
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable object indicating the interception.
+ */
+export const mockGetAlertChannelsTypeError = (
+  errorMessage: string
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('/monitor/alert-channels*'),
+    makeErrorResponse(errorMessage, 400)
+  );
+};
 /**
  * Mocks the API response for creating a new alert definition in the monitoring service.
  * This function intercepts a POST request to create alert definitions and returns a mock
@@ -617,6 +634,50 @@ export const mockGetCloudPulseServiceByType = (
 };
 
 /**
+ * Mocks successful creation of an alert channel (200).
+ * Intercepts POST requests to create alert channels and returns the provided channel object.
+ *
+ * @param {NotificationChannel} channel - The notification channel object to return in the response.
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
+ */
+export const mockCreateAlertChannelSuccess = (
+  channel: NotificationChannel
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher('/monitor/alert-channels'),
+    makeResponse(channel) // defaults to 200
+  );
+};
+
+/**
+ * Mocks error responses when creating alert channels.
+ * Intercepts POST requests to create alert channels and returns an error response.
+ *
+ * @param {Object | string} errorPayload - Either an object with field and reason properties for validation errors,
+ *                                         or a string error message for server errors.
+ * @param {number} statusCode - The HTTP status code for the error response (default is 400).
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
+ *
+ * @example
+ * // Mock a validation error (400)
+ * mockCreateAlertChannelError({ field: 'name', reason: 'Required' }, 400);
+ *
+ * @example
+ * // Mock a server error (500)
+ * mockCreateAlertChannelError('Internal server error', 500);
+ */
+export const mockCreateAlertChannelError = (
+  errorPayload: string | { field: string; reason: string },
+  statusCode: number = 400
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    apiMatcher('/monitor/alert-channels'),
+    makeErrorResponse(errorPayload, statusCode)
+  );
+};
+/**
  * Intercepts a DELETE request for a specific notification channel and mocks the backend response.
  *
  * This helper uses Cypress `cy.intercept()` to stub a DELETE API call to the
@@ -666,26 +727,47 @@ export const mockDeleteChannelError = (
 };
 
 /**
- * Mocks successful creation of an alert channel (200).
- * Intercepts POST requests to create alert channels and returns the provided channel object.
+ * Mocks get call for a specific alert channel by ID.
  *
+ * @param {number} id - The ID of the alert channel to retrieve.
  * @param {NotificationChannel} channel - The notification channel object to return in the response.
  * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
  */
-export const mockCreateAlertChannelSuccess = (
+export const mockGetAlertChannelById = (
+  id: number,
   channel: NotificationChannel
 ): Cypress.Chainable<null> => {
   return cy.intercept(
-    'POST',
-    apiMatcher('/monitor/alert-channels'),
-    makeResponse(channel) // defaults to 200
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${id}`),
+    makeResponse(channel)
   );
 };
 
 /**
- * Mocks error responses when creating alert channels.
- * Intercepts POST requests to create alert channels and returns an error response.
+ * Mocks put call to update a specific alert channel by ID.
+ * Intercepts PUT requests to update alert channels and returns the provided channel object.
  *
+ * @param {number} id - The ID of the alert channel to update.
+ * @param {NotificationChannel} channel - The notification channel object to return in the response.
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
+ */
+export const mockUpdateAlertChannelById = (
+  id: number,
+  channel: NotificationChannel
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'PUT',
+    apiMatcher(`/monitor/alert-channels/${id}`),
+    makeResponse(channel)
+  );
+};
+
+/**
+ * Mocks error responses when updating a specific alert channel by ID.
+ * Intercepts PUT requests to update alert channels and returns an error response.
+ *
+ * @param {number} id - The ID of the alert channel to update.
  * @param {Object | string} errorPayload - Either an object with field and reason properties for validation errors,
  *                                         or a string error message for server errors.
  * @param {number} statusCode - The HTTP status code for the error response (default is 400).
@@ -693,19 +775,20 @@ export const mockCreateAlertChannelSuccess = (
  *
  * @example
  * // Mock a validation error (400)
- * mockCreateAlertChannelError({ field: 'name', reason: 'Required' }, 400);
+ * mockUpdateAlertChannelByIdError(123, { field: 'name', reason: 'Required' }, 400);
  *
  * @example
  * // Mock a server error (500)
- * mockCreateAlertChannelError('Internal server error', 500);
+ * mockUpdateAlertChannelByIdError(123, 'Internal server error', 500);
  */
-export const mockCreateAlertChannelError = (
+export const mockUpdateAlertChannelByIdError = (
+  id: number,
   errorPayload: string | { field: string; reason: string },
   statusCode: number = 400
 ): Cypress.Chainable<null> => {
   return cy.intercept(
-    'POST',
-    apiMatcher('/monitor/alert-channels'),
+    'PUT',
+    apiMatcher(`/monitor/alert-channels/${id}`),
     makeErrorResponse(errorPayload, statusCode)
   );
 };

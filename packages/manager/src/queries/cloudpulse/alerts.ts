@@ -312,6 +312,12 @@ export const useCreateNotificationChannel = () => {
           newChannel,
         ]);
       }
+
+      queryClient.setQueryData(
+        queryFactory.notificationChannels._ctx.channelById(newChannel.id)
+          .queryKey,
+        newChannel
+      );
     },
   });
 };

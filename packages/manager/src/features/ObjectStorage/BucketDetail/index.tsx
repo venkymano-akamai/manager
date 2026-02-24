@@ -159,3 +159,5 @@ export const BucketDetailLanding = React.memo(() => {
 });
 
 export default BucketDetailLanding;
+
+BucketDetailLanding.displayName = 'BucketDetailLanding';

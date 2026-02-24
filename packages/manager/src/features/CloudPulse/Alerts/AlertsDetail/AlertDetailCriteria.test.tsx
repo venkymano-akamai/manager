@@ -40,10 +40,10 @@ describe('AlertDetailCriteria component tests', () => {
       alertDetails.trigger_conditions;
     expect(
       getByText(convertSecondsToOptions(polling_interval_seconds))
-    ).toBeInTheDocument();
+    ).toBeVisible();
     expect(
       getByText(convertSecondsToOptions(evaluation_period_seconds))
-    ).toBeInTheDocument();
+    ).toBeVisible();
   });
 
   it('should render the alert detail criteria even if rules are empty', () => {

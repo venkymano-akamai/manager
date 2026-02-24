@@ -6,6 +6,7 @@ import * as React from 'react';
 import { DocumentTitleSegment } from 'src/components/DocumentTitle';
 import { LandingHeader } from 'src/components/LandingHeader';
 import { getRestrictedResourceText } from 'src/features/Account/utils';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 import { useAPLAvailability } from 'src/features/Kubernetes/kubeUtils';
 import { getKubeHighAvailability } from 'src/features/Kubernetes/kubeUtils';
 import { useIsResourceRestricted } from 'src/hooks/useIsResourceRestricted';
@@ -154,6 +155,12 @@ export const KubernetesClusterDetail = () => {
             clusterVersion={cluster.k8s_version}
             isLkeClusterRestricted={isClusterReadOnly}
           />
+          {cluster.tier === 'enterprise' && (
+            <CloudPulseDashboardWithFilters
+              resource={cluster.id}
+              serviceType="lke"
+            />
+          )}
         </Stack>
         <UpgradeKubernetesClusterToHADialog
           clusterID={cluster.id}

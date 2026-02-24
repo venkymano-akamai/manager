@@ -13,9 +13,6 @@ import {
 } from '../../constants';
 import { NotificationChannelListTable } from './NotificationChannelListTable';
 
-const ALERT_TYPE = 'alerts-definitions';
-const ALERT_URL = 'monitor/alert-channels/{id}/alerts';
-
 const mockScrollToElement = vi.fn();
 
 const queryMocks = vi.hoisted(() => ({
@@ -198,12 +195,7 @@ describe('NotificationChannelListTable', () => {
 
   it('should disable delete if the user channel has alerts and show tooltip', async () => {
     const channel = notificationChannelFactory.build({
-      alerts: {
-        type: ALERT_TYPE,
-        alert_count: 3,
-        url: ALERT_URL,
-      },
-      type: 'user',
+      alerts: { alert_count: 3 },
     });
 
     renderWithTheme(
@@ -232,11 +224,7 @@ describe('NotificationChannelListTable', () => {
     const user = userEvent.setup();
     const channel = notificationChannelFactory.build({
       label: 'test_channel',
-      alerts: {
-        type: ALERT_TYPE,
-        alert_count: 0,
-        url: ALERT_URL,
-      },
+      alerts: { alert_count: 0 },
     });
 
     renderWithTheme(
@@ -262,11 +250,7 @@ describe('NotificationChannelListTable', () => {
     const user = userEvent.setup();
     const channel = notificationChannelFactory.build({
       label: 'Channel to be deleted',
-      alerts: {
-        type: ALERT_TYPE,
-        alert_count: 0,
-        url: ALERT_URL,
-      },
+      alerts: { alert_count: 0 },
     });
 
     renderWithTheme(
@@ -297,11 +281,7 @@ describe('NotificationChannelListTable', () => {
     const user = userEvent.setup();
     const channel = notificationChannelFactory.build({
       label: 'Channel to be deleted',
-      alerts: {
-        alert_count: 0,
-        url: ALERT_URL,
-        type: ALERT_TYPE,
-      },
+      alerts: { alert_count: 0 },
     });
 
     queryMocks.mutateAsync.mockRejectedValue([

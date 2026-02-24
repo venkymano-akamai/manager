@@ -1,8 +1,8 @@
-import { profileFactory } from '@linode/utilities';
 /**
  * @file Integration Tests for the CloudPulse Alerts Listing Page.
  * This file verifies the UI, functionality, and sorting/filtering of the CloudPulse Alerts Listing Page.
  */
+import { profileFactory } from '@linode/utilities';
 import { cloudPulseServiceMap } from 'support/constants/cloudpulse';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
@@ -227,6 +227,7 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
     cy.visitWithLogin(alertDefinitionsUrl);
     cy.wait('@getAlertDefinitionsList');
     mockDeleteAlert('dbaas', 1).as('deleteAlert');
+    mockDeleteAlert('linode', 0).as('deleteAlert2');
   });
 
   it('should verify sorting functionality for multiple columns in ascending and descending order', () => {
@@ -257,6 +258,83 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
 
       // Verify ascending order
       verifyTableSorting(column, 'ascending', ascending);
+    });
+  });
+  it('should verify action menu items for enabling and disabling alerts', () => {
+    const mockAlerts = [
+      alertFactory.build({
+        id: 1,
+        label: 'Alert-1',
+        service_type: 'dbaas',
+        status: 'enabling',
+        type: 'user',
+      }),
+      alertFactory.build({
+        id: 2,
+        label: 'Alert-2',
+        service_type: 'dbaas',
+        status: 'disabling',
+        type: 'user',
+      }),
+    ];
+
+    mockGetAllAlertDefinitions(mockAlerts).as('getAlertDefinitionsList');
+    cy.visitWithLogin(alertDefinitionsUrl);
+    cy.wait('@getAlertDefinitionsList');
+
+    interface VerifyMenuOptions {
+      alertLabel: string;
+      disabledItems: string[];
+      enabledItems: string[];
+    }
+
+    const verifyMenu = ({
+      alertLabel,
+      enabledItems,
+      disabledItems,
+    }: VerifyMenuOptions): void => {
+      cy.findByPlaceholderText('Search for Alerts').as('searchInput');
+      cy.get('@searchInput').clear();
+      cy.get('@searchInput').type(alertLabel);
+
+      cy.findByText(alertLabel)
+        .should('be.visible')
+        .closest('tr')
+        .within(() => {
+          ui.actionMenu
+            .findByTitle(`Action menu for Alert ${alertLabel}`)
+            .should('be.visible')
+            .click();
+        });
+
+      cy.get('[data-qa-action-menu="true"]').as('menu');
+
+      // Enabled items
+      enabledItems.forEach((item: string) => {
+        cy.get('@menu')
+          .find(`[data-qa-action-menu-item="${item}"]`)
+          .and('not.have.attr', 'aria-disabled');
+      });
+
+      // Disabled items
+      disabledItems.forEach((item: string) => {
+        cy.get('@menu')
+          .find(`[data-qa-action-menu-item="${item}"]`)
+          .and('have.attr', 'aria-disabled', 'true');
+      });
+
+      cy.get('[data-qa-action-menu="true"]').click();
+    };
+    verifyMenu({
+      alertLabel: 'Alert-1',
+      enabledItems: ['Show Details'],
+      disabledItems: ['Edit', 'Disable', 'Delete'],
+    });
+
+    verifyMenu({
+      alertLabel: 'Alert-2',
+      enabledItems: ['Show Details'],
+      disabledItems: ['Edit', 'Enable', 'Delete'],
     });
   });
 
@@ -359,6 +437,16 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
   });
 
   it('should disable and enable user alerts successfully', () => {
+    mockUpdateAlertDefinitions('dbaas', 1, {
+      ...mockAlerts[0],
+      status: 'disabling',
+    }).as('getFirstAlertDefinitions');
+    mockUpdateAlertDefinitions('dbaas', 2, {
+      ...mockAlerts[1],
+      status: 'enabling',
+    }).as('getSecondAlertDefinitions');
+    cy.visitWithLogin(alertDefinitionsUrl);
+
     // Function to search for an alert
     const searchAlert = (alertName: string) => {
       cy.findByPlaceholderText('Search for Alerts')
@@ -386,6 +474,7 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
             .findByTitle(`Action menu for Alert ${alertName}`)
             .should('be.visible')
             .click();
+
           ui.actionMenuItem.findByTitle(action).should('be.visible').click();
         });
 
@@ -395,17 +484,49 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
         .should('be.visible')
         .within(() => {
           cy.findByText(confirmationText).should('be.visible');
-          ui.button
-            .findByTitle(action)
-            .should('be.visible')
-            .should('be.enabled')
-            .click();
+
+          ui.button.findByTitle(action).should('be.enabled').click();
         });
 
-      cy.wait(alias).then(() => {
+      cy.wait(alias).then(({ request, response }) => {
+        const resp = response?.body;
+        const req = request?.body;
+
+        // Alias → expected statuses
+        const expectations: Record<
+          string,
+          { backend: string; request: string }
+        > = {
+          '@getFirstAlertDefinitions': {
+            backend: 'disabling',
+            request: 'disabled',
+          },
+          '@getSecondAlertDefinitions': {
+            backend: 'enabling',
+            request: 'enabled',
+          },
+        };
+
+        // pick expectations for this alias
+        const exp = expectations[alias];
+
+        // ---- Assertions ----
+        expect(resp.status, `Backend status mismatch for ${alias}`).to.equal(
+          exp.backend
+        );
+
+        expect(req.status, `Request status mismatch for ${alias}`).to.equal(
+          exp.request
+        );
+
+        expect(resp.label, `Alert label mismatch for ${alias}`).to.equal(
+          alertName
+        );
+
         ui.toast.assertMessage(successMessage);
       });
     };
+
     // Disable "Alert-1"
     const actions: Array<AlertActionOptions> = [
       {
@@ -434,6 +555,7 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
       });
     });
   });
+
   it('should allow creating alerts even if system alert count exceeds threshold', () => {
     const mockAlerts = alertFactory.buildList(105, {
       type: 'system',
@@ -730,5 +852,61 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
         .should('exist')
         .and('be.visible');
     });
+  });
+  it('should disable Create Alert when two alerts together use all 10 available metrics, and re-enable it after one is deleted', () => {
+    const mockAlerts = Array.from({ length: 2 }, (_, index) =>
+      alertFactory.build({
+        label: `Alert-${index}`,
+        service_type: serviceTypes[index % serviceTypes.length],
+        status: statusList[index % statusList.length],
+        type: 'user',
+        id: index,
+        created_by: `create_user-${index}`,
+        updated_by: `updated_user-${index}`,
+        ...(index % 2 !== 0 && {
+          rule_criteria: {
+            rules: alertRulesFactory.buildList(10),
+          },
+        }),
+      })
+    );
+    mockGetAllAlertDefinitions(mockAlerts).as('getAlertDefinitionsList');
+
+    cy.visitWithLogin(alertDefinitionsUrl);
+    cy.wait('@getAlertDefinitionsList');
+
+    ui.buttonGroup.findButtonByTitle('Create Alert').should('be.disabled');
+
+    cy.get('[data-alert-notice="true"]')
+      .should('be.visible')
+      .and('have.text', metricLimitMessage);
+
+    ui.tooltip.findByText(alertToolTipText).should('be.visible');
+
+    ui.actionMenu
+      .findByTitle(`Action menu for Alert ${mockAlerts[1].label}`)
+      .should('be.visible')
+      .click();
+
+    ui.actionMenuItem.findByTitle('Delete').should('be.visible').click();
+
+    ui.dialog
+      .findByTitle(`Delete ${mockAlerts[1].label}? `)
+      .should('be.visible')
+      .within(() => {
+        // Focus the "Alert Label" confirmation input
+        cy.findByLabelText('Alert Label').click();
+
+        // Type the alert label to enable the Delete button
+        cy.focused().type(mockAlerts[1].label);
+
+        // Click the Delete button to confirm
+        ui.buttonGroup
+          .findButtonByTitle('Delete')
+          .should('be.enabled')
+          .should('be.visible')
+          .click();
+      });
+    ui.buttonGroup.findButtonByTitle('Create Alert').should('be.enabled');
   });
 });
