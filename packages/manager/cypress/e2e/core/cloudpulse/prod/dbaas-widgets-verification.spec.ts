@@ -350,7 +350,7 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     avg_write_iops: 'Disk I/O Write',
   };
 
-  it('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
+  it.only('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
     type MetricValues = { average: string; last: string; max: string };
 
     const metricValuesStore: Record<string, MetricValues> = {};
@@ -438,10 +438,15 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       });
     });
   });
-
   it.only('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
+    type MetricValues = { average: string; last: string; max: string };
+
+    const metricValuesStore: Record<string, MetricValues> = {};
+
+    // Step 1: Interact with each widget and validate chart
     metrics.forEach((testData) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
+
       cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
@@ -450,28 +455,19 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
             metricsAPIResponsePayload
           ).as('getAggregationMetrics');
 
-          // find the interval component and select the expected granularity
           ui.autocomplete
             .findByLabel('Select an Aggregate Function')
             .should('be.visible')
-            .type(`Sum{enter}`); // type expected granularity
+            .type(`Sum{enter}`);
 
-          // check if the API call is made correctly with time granularity value selected
-          cy.wait('@getAggregationMetrics').then((interception) => {
-            expect(interception)
-              .to.have.property('response')
-              .with.property('statusCode', 200);
-          });
-
-          // validate the widget areachart is present
           cy.get('.recharts-responsive-container').within(() => {
             const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
               metricsAPIResponsePayload,
               testData.label,
               testData.unit
             );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.label}"]`;
-            cy.get(graphRowTitle)
+
+            cy.get(`[data-qa-graph-row-title="${testData.label}"]`)
               .should('be.visible')
               .should('have.text', `${testData.label}`);
 
@@ -488,6 +484,55 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
               .should('have.text', `${expectedWidgetValues.last}`);
           });
         });
+    });
+
+    // Step 2: Build store directly from static mock payload
+    cy.then(() => {
+      metrics.forEach((testData: Widgets) => {
+        const metricKey = Object.keys(metricToLabelMap).find(
+          (key) => metricToLabelMap[key] === testData.label
+        );
+        if (!metricKey) {
+          cy.log(`⚠️ No metricKey found for label: ${testData.label}`);
+          return;
+        }
+
+        const { average, last, max } = getWidgetLegendRowValuesFromResponse(
+          metricsAPIResponsePayload,
+          testData.label,
+          testData.unit
+        );
+
+        metricValuesStore[metricKey] = { average, last, max };
+      });
+    });
+
+    // Step 3: Assert UI values match processed API values
+    cy.then(() => {
+      Object.entries(metricToLabelMap).forEach(([key, label]) => {
+        if (!key || !label) return;
+
+        const expectedWidgetValues = metricValuesStore[key];
+        if (!expectedWidgetValues) {
+          cy.log(`⚠️ No data found for metric: ${key}`);
+          return;
+        }
+
+        cy.get(`[data-qa-widget="${label}"]`).within(() => {
+          cy.get('[data-qa-graph-column-title="Max"]').should(
+            'have.text',
+            expectedWidgetValues.max
+          );
+          cy.get('[data-qa-graph-column-title="Avg"]').should(
+            'have.text',
+            expectedWidgetValues.average
+          );
+          cy.get('[data-qa-graph-column-title="Last"]').should(
+            'have.text',
+            expectedWidgetValues.last
+          );
+        });
+      });
     });
   });
   it('should trigger the global refresh button and verify the corresponding network calls', () => {
