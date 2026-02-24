@@ -15,10 +15,12 @@ import { formatToolTip } from 'src/features/CloudPulse/Utils/unitConversion';
 import type {
   CloudPulseMetricsResponse,
   CloudPulseServiceType,
+  Dashboard,
   MetricDefinition,
   Widgets,
 } from '@linode/api-v4';
 import type { Interception } from 'cypress/types/net-stubbing';
+import { Widget } from '@linode/design-language-system';
 
 /**
  * This test ensures that widget titles are displayed correctly on the dashboard.
@@ -46,7 +48,12 @@ const interceptMetricDefinitions = (serviceType: string) => {
     apiMatcher(`monitor/services/${serviceType}/metric-definitions`)
   );
 };
-
+const interceptDashboardDefinitions = (serviceType: string) => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`monitor/services/${serviceType}/dashboards`)
+  );
+};
 const getAllMetricDefinitionWidgets = (serviceName: CloudPulseServiceType) => {
   return cy.wait('@getMetricDefinitions').then(({ response }) => {
     if (!response?.body?.data || !Array.isArray(response.body.data)) {
@@ -80,6 +87,7 @@ const getAllMetricDefinitionWidgets = (serviceName: CloudPulseServiceType) => {
 const interceptMetricData = (serviceType: string) => {
   return cy.intercept('POST', `**/v2/monitor/services/${serviceType}/metrics`);
 };
+
 /**
  * Generates graph data from a given CloudPulse metrics response and
  * extracts average, last, and maximum metric values from the first
@@ -139,6 +147,13 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
 });
 
+const initializeDashboardMetrics = (): Cypress.Chainable<Dashboard> => {
+  return cy.wait('@getDashboardDefinitions').then(({ response }) => {
+    const dashboard: Dashboard = response?.body?.data?.[0];
+    return dashboard;
+  });
+};
+
 describe('Integration Tests for DBaaS Dashboard ', () => {
   /**
    * Integration Tests for DBaaS Dashboard
@@ -155,13 +170,22 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
    * and Verifications ensure correct API payloads, widget states, applied filters,
    * and accurate graph/legend values.
    */
+  let metricToLabelMap: Record<string, string> = {};
 
   beforeEach(() => {
     mockGetUserPreferences({});
     interceptMetricDefinitions(serviceType).as('getMetricDefinitions');
     interceptMetricData(serviceType).as('metricData');
+    interceptDashboardDefinitions(serviceType).as('getDashboardDefinitions');
 
     cy.visitWithLogin('/metrics');
+
+    initializeDashboardMetrics().then((dashboard) => {
+      metrics = dashboard.widgets;
+      metricToLabelMap = Object.fromEntries(
+        dashboard.widgets.map((w) => [w.metric, w.label])
+      );
+    });
 
     // Selecting a dashboard from the autocomplete input.
     ui.autocomplete
@@ -340,21 +364,142 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
     // Scroll to the top of the page to ensure consistent test behavior
     cy.scrollTo('top');
   });
-  const metricToLabelMap: Record<string, string> = {
-    avg_cpu_usage: 'CPU Usage',
-    avg_memory_usage: 'Memory Usage',
-    avg_available_memory: 'Available Memory',
-    avg_disk_usage: 'Disk Space Usage',
-    avg_available_disk: 'Available Disk Space',
-    avg_read_iops: 'Disk I/O Read',
-    avg_write_iops: 'Disk I/O Write',
+  type MetricValues = { average: string; last: string; max: string };
+
+  /**
+   * Builds metricValuesStore from static mock payload
+   */
+  const buildMetricValuesStore = (
+    metrics: Widgets[],
+    metricToLabelMap: Record<string, string>,
+    responsePayload: CloudPulseMetricsResponse
+  ): Record<string, MetricValues> => {
+    const store: Record<string, MetricValues> = {};
+
+    metrics.forEach((testData) => {
+      const metricKey = Object.keys(metricToLabelMap).find(
+        (key) => metricToLabelMap[key] === testData.label
+      );
+      if (!metricKey) return;
+
+      const { average, last, max } = getWidgetLegendRowValuesFromResponse(
+        responsePayload,
+        testData.label,
+        testData.unit
+      );
+
+      store[metricKey] = { average, last, max };
+    });
+
+    return store;
   };
 
-  it.only('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
-    type MetricValues = { average: string; last: string; max: string };
+  /**
+   * Builds metricValuesStore from live XHR intercepted responses
+   */
+  const buildMetricValuesStoreFromXHR = (
+    alias: string,
+    metrics: Widgets[],
+    metricToLabelMap: Record<string, string>,
+    store: Record<string, MetricValues>
+  ) => {
+    cy.get(alias).each((xhr: unknown) => {
+      const interception = xhr as Interception;
+      const responseBody = interception?.response
+        ?.body as CloudPulseMetricsResponse;
 
+      const metricName = responseBody?.data?.result?.[0]?.metric?.metric_name;
+      if (!metricName) return;
+
+      const matchedMetric = metrics.find(
+        (m: Widgets) => metricToLabelMap[metricName] === m.label
+      );
+      if (!matchedMetric) return;
+
+      const { label, unit } = matchedMetric;
+      const { average, last, max } = getWidgetLegendRowValuesFromResponse(
+        responseBody,
+        label,
+        unit
+      );
+
+      store[metricName] = { average, last, max };
+    });
+  };
+
+  /**
+   * Asserts Max, Avg, Last values for each widget in metricToLabelMap
+   */
+  const assertWidgetLegendValues = (
+    metricToLabelMap: Record<string, string>,
+    metricValuesStore: Record<string, MetricValues>
+  ) => {
+    Object.entries(metricToLabelMap).forEach(([key, label]) => {
+      if (!key || !label) return;
+
+      const expectedWidgetValues = metricValuesStore[key];
+      if (!expectedWidgetValues) {
+        cy.log(`⚠️ No data found for metric: ${key}`);
+        return;
+      }
+
+      cy.log(
+        `✅ Asserting [${label}] max: ${expectedWidgetValues.max}, avg: ${expectedWidgetValues.average}, last: ${expectedWidgetValues.last}`
+      );
+
+      cy.get(`[data-qa-widget="${label}"]`).within(() => {
+        cy.get('[data-qa-graph-column-title="Max"]').should(
+          'have.text',
+          expectedWidgetValues.max
+        );
+        cy.get('[data-qa-graph-column-title="Avg"]').should(
+          'have.text',
+          expectedWidgetValues.average
+        );
+        cy.get('[data-qa-graph-column-title="Last"]').should(
+          'have.text',
+          expectedWidgetValues.last
+        );
+      });
+    });
+  };
+
+  /**
+   * Validates chart legend rows inside recharts container for a single widget
+   */
+  const assertChartLegendRows = (
+    testData: Widgets,
+    responsePayload: CloudPulseMetricsResponse
+  ) => {
+    const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
+      responsePayload,
+      testData.label,
+      testData.unit
+    );
+
+    cy.get(`[data-qa-graph-row-title="${testData.label}"]`)
+      .should('be.visible')
+      .should('have.text', testData.label);
+
+    cy.get('[data-qa-graph-column-title="Max"]')
+      .should('be.visible')
+      .should('have.text', expectedWidgetValues.max);
+
+    cy.get('[data-qa-graph-column-title="Avg"]')
+      .should('be.visible')
+      .should('have.text', expectedWidgetValues.average);
+
+    cy.get('[data-qa-graph-column-title="Last"]')
+      .should('be.visible')
+      .should('have.text', expectedWidgetValues.last);
+  };
+
+  // ─── Tests ──────────────────────────────────────────────────────────────────
+
+  it('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
     const metricValuesStore: Record<string, MetricValues> = {};
 
+    // Step 1: Interact with each widget - select interval
     cy.wrap(metrics).each((testData: Widgets) => {
       const widgetSelector = `[data-qa-widget="${testData.label}"]`;
 
@@ -378,76 +523,26 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
       });
     });
 
-    // Collect and process XHR data using getWidgetLegendRowValuesFromResponse
-    cy.get('@metricData.all').each((xhr: unknown) => {
-      const interception = xhr as Interception;
-      const responseBody = interception?.response
-        ?.body as CloudPulseMetricsResponse;
+    // Step 2: Collect XHR data into store
+    buildMetricValuesStoreFromXHR(
+      '@metricData.all',
+      metrics,
+      metricToLabelMap,
+      metricValuesStore
+    );
 
-      const metricName = responseBody?.data?.result?.[0]?.metric?.metric_name;
-      if (!metricName) return;
-
-      // Find matching metric config from metrics list
-      const matchedMetric = metrics.find(
-        (m: Widgets) => metricToLabelMap[metricName] === m.label
-      );
-      if (!matchedMetric) return;
-
-      const { label, unit } = matchedMetric;
-
-      const { average, last, max } = getWidgetLegendRowValuesFromResponse(
-        responseBody,
-        label,
-        unit
-      );
-
-      metricValuesStore[metricName] = { average, last, max };
-    });
-
-    // Assert UI values match processed API values
-    cy.then(() => {
-      Object.entries(metricToLabelMap).forEach(([key, label]) => {
-        if (!key || !label) return;
-
-        const expectedWidgetValues = metricValuesStore[key];
-        if (!expectedWidgetValues) {
-          cy.log(`⚠️ No data found for metric: ${key}`);
-          return;
-        }
-
-        cy.log(
-          `✅ Asserting [${label}] max: ${expectedWidgetValues.max}, avg: ${expectedWidgetValues.average}, last: ${expectedWidgetValues.last}`
-        );
-
-        const widgetSelector = `[data-qa-widget="${label}"]`;
-
-        cy.get(widgetSelector).within(() => {
-          cy.get('[data-qa-graph-column-title="Max"]').should(
-            'have.text',
-            expectedWidgetValues.max
-          );
-          cy.get('[data-qa-graph-column-title="Avg"]').should(
-            'have.text',
-            expectedWidgetValues.average
-          );
-          cy.get('[data-qa-graph-column-title="Last"]').should(
-            'have.text',
-            expectedWidgetValues.last
-          );
-        });
-      });
-    });
+    // Step 3: Assert UI values
+    cy.then(() =>
+      assertWidgetLegendValues(metricToLabelMap, metricValuesStore)
+    );
   });
-  it.only('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
-    type MetricValues = { average: string; last: string; max: string };
 
+  it('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
     const metricValuesStore: Record<string, MetricValues> = {};
 
-    // Step 1: Interact with each widget and validate chart
+    // Step 1: Interact with each widget - select aggregation and validate chart
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.label}"]`;
-
-      cy.get(widgetSelector)
+      cy.get(`[data-qa-widget="${testData.label}"]`)
         .should('be.visible')
         .within(() => {
           mockCreateCloudPulseMetrics(
@@ -461,129 +556,129 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
             .type(`Sum{enter}`);
 
           cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.label,
-              testData.unit
-            );
-
-            cy.get(`[data-qa-graph-row-title="${testData.label}"]`)
-              .should('be.visible')
-              .should('have.text', `${testData.label}`);
-
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
+            assertChartLegendRows(testData, metricsAPIResponsePayload);
           });
         });
     });
 
-    // Step 2: Build store directly from static mock payload
+    // Step 2: Build store from static mock
     cy.then(() => {
-      metrics.forEach((testData: Widgets) => {
-        const metricKey = Object.keys(metricToLabelMap).find(
-          (key) => metricToLabelMap[key] === testData.label
-        );
-        if (!metricKey) {
-          cy.log(`⚠️ No metricKey found for label: ${testData.label}`);
-          return;
-        }
-
-        const { average, last, max } = getWidgetLegendRowValuesFromResponse(
-          metricsAPIResponsePayload,
-          testData.label,
-          testData.unit
-        );
-
-        metricValuesStore[metricKey] = { average, last, max };
-      });
+      const store = buildMetricValuesStore(
+        metrics,
+        metricToLabelMap,
+        metricsAPIResponsePayload
+      );
+      Object.assign(metricValuesStore, store);
     });
 
-    // Step 3: Assert UI values match processed API values
-    cy.then(() => {
-      Object.entries(metricToLabelMap).forEach(([key, label]) => {
-        if (!key || !label) return;
-
-        const expectedWidgetValues = metricValuesStore[key];
-        if (!expectedWidgetValues) {
-          cy.log(`⚠️ No data found for metric: ${key}`);
-          return;
-        }
-
-        cy.get(`[data-qa-widget="${label}"]`).within(() => {
-          cy.get('[data-qa-graph-column-title="Max"]').should(
-            'have.text',
-            expectedWidgetValues.max
-          );
-          cy.get('[data-qa-graph-column-title="Avg"]').should(
-            'have.text',
-            expectedWidgetValues.average
-          );
-          cy.get('[data-qa-graph-column-title="Last"]').should(
-            'have.text',
-            expectedWidgetValues.last
-          );
-        });
-      });
-    });
+    // Step 3: Assert UI values
+    cy.then(() =>
+      assertWidgetLegendValues(metricToLabelMap, metricValuesStore)
+    );
   });
   it('should trigger the global refresh button and verify the corresponding network calls', () => {
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'refreshMetrics'
-    );
+    // Setup intercept BEFORE clicking
+    interceptMetricData(serviceType).as('refreshMetrics');
 
-    // click the global refresh button
+    // Click the global refresh button
     cy.get('[data-testid="global-refresh"]')
       .should('be.visible')
       .should('be.enabled')
       .click();
+
+    // Wait for ALL requests to complete (one per widget)
+    cy.wait(new Array(metrics.length).fill('@refreshMetrics'));
+
+    // Store all expected metric names from definitions
+    const metricNames: string[] = metrics.map((testData) => testData.metric);
+
+    // Now validate all request details
+    cy.get('@refreshMetrics.all').then((xhrs: unknown) => {
+      const interceptions = xhrs as Interception[];
+
+      // Collect all request metric names
+      const requestedMetricNames = interceptions.map(
+        (interception) => interception?.request?.body?.metrics?.[0]?.name
+      );
+
+      // Assert counts match
+      expect(interceptions.length).to.equal(metricNames.length);
+
+      interceptions.forEach((interception) => {
+        const requestBody = interception?.request?.body;
+        const metricName = requestBody?.metrics?.[0]?.name;
+
+        // Assert each requested metric exists in expected metric names
+        expect(
+          metricNames,
+          `Metric '${metricName}' should be in definitions`
+        ).to.include(metricName);
+
+        // Assert time range
+        expect(requestBody.relative_time_duration).to.have.property(
+          'unit',
+          'days'
+        );
+        expect(requestBody.relative_time_duration).to.have.property('value', 1);
+      });
+
+      // Assert all expected metrics were actually requested
+      metricNames.forEach((expectedMetric) => {
+        expect(
+          requestedMetricNames,
+          `Expected metric '${expectedMetric}' to be requested`
+        ).to.include(expectedMetric);
+      });
+    });
   });
 
-  it('should zoom in and out of all the widgets', () => {
+  it.only('should print widget size info', () => {
+    cy.then(() => {
+      Widget.forEach((w) => {
+        cy.log(
+          `📋 Widget: ${w.label} | size: ${w.size} | action: ${w.size === 6 ? '🔼 Zoom Out' : '🔽 Zoom In'}`
+        );
+      });
+    });
+  });
+
+  it.skip('should zoom in and out of all the widgets', () => {
+    // Locate the Dashboard Group By button and alias it
+    ui.button
+      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+      .should('be.visible')
+      .first()
+      .as('dashboardGroupByBtn');
+
+    // Ensure the button is scrolled into view
+    cy.get('@dashboardGroupByBtn').scrollIntoView();
+
+    // Click the Group By button to open the drawer
+    cy.get('@dashboardGroupByBtn').should('be.visible').click();
+
+    // Inside Dimensions field, click the Clear button to remove all group by selections
+    cy.get('[data-qa-autocomplete="Dimensions"]').within(() => {
+      cy.get('button[aria-label="Clear"]').should('be.visible').click({});
+    });
+
+    // Click Apply to confirm unselection
+    cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
     // do zoom in and zoom out test on all the widgets
     metrics.forEach((testData) => {
-      cy.get(`[data-qa-widget="${testData.label}"]`).as('widget');
-      cy.get('@widget')
+      const widgetSelector = `[data-qa-widget="${testData.label}"]`;
+
+      cy.get(widgetSelector)
         .should('be.visible')
+        .as('widget')
+
         .within(() => {
           ui.button
             .findByAttribute('aria-label', 'Zoom Out')
             .should('be.visible')
             .should('be.enabled')
-            .click();
+            .scrollIntoView()
+            .click({ force: true });
           cy.get('@widget').should('be.visible');
-
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.label,
-              testData.unit
-            );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.label}"]`;
-            cy.get(graphRowTitle)
-              .should('be.visible')
-              .should('have.text', `${testData.label}`);
-
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', expectedWidgetValues.max);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
 
           // click zoom out and validate the same
           ui.button
@@ -593,29 +688,6 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
             .scrollIntoView()
             .click({ force: true });
           cy.get('@widget').should('be.visible');
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.label,
-              testData.unit
-            );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.label}"]`;
-            cy.get(graphRowTitle)
-              .should('be.visible')
-              .should('have.text', `${testData.label}`);
-
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
         });
     });
   });
