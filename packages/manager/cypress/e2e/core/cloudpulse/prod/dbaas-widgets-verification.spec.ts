@@ -88,8 +88,9 @@ const interceptMetricData = (serviceType: string) => {
  *                          the necessary data for graph generation.
  * @param label - The label for the graph, used for display purposes.
  *
- * @returns An object containing rounded values for max average, last,
- *
+ * @returns An object containing the formatted metric values from the first
+ *          legend row, including `average`, `last`, and `max`, each rounded
+ *          for display using the provided unit.
  */
 
 const getWidgetLegendRowValuesFromResponse = (
