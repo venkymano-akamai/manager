@@ -157,8 +157,6 @@ import { userEntityPermissionsFactory } from 'src/factories/userEntityPermission
 import { userRolesFactory } from 'src/factories/userRoles';
 import { SPECIAL_PREFIX_LIST_NAMES } from 'src/features/Firewalls/FirewallDetail/Rules/shared';
 
-import { mswDB } from './indexedDB';
-
 import type {
   AccountMaintenance,
   AlertDefinitionScope,
