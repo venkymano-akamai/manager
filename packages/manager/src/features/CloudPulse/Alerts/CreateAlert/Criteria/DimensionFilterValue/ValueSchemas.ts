@@ -246,7 +246,7 @@ const multipleInterfacesSchema = string()
 const singleStatusCodeSchema = string()
   .max(100, LENGTH_ERROR_MESSAGE)
   .test(
-    'validate-single-interface-schema',
+    'validate-single-status-code-schema',
     STATUS_CODE_ERROR_MESSAGE,
     function (value) {
       if (!value || typeof value !== 'string') {
@@ -264,7 +264,7 @@ const singleStatusCodeSchema = string()
 const multipleStatusCodeSchema = string()
   .max(100, LENGTH_ERROR_MESSAGE)
   .test(
-    'validate-multi-status-code',
+    'validate-multi-status-code-schema',
     STATUS_CODES_ERROR_MESSAGE,
     function (value) {
       if (!value || typeof value !== 'string') {
