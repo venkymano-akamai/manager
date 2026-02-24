@@ -81,8 +81,6 @@ export const STATUS_CODE_HELPER_TEXT =
 
 export const STATUS_CODE_ERROR_MESSAGE =
   'Enter valid status codes as integers separated by commas without spaces.';
-export const STATUS_CODE_RANGE_ERROR_MESSAGE =
-  'Status codes must be between 1 and 65535.';
 
 export const STATUS_CODE_LEADING_ZERO_ERROR_MESSAGE =
   'Leading zeros are not allowed.';
@@ -163,6 +161,9 @@ export const RESOURCE_FILTER_MAP: Record<string, Filter> = {
     ...ORDER_BY_LABLE_ASC,
   },
   blockstorage: {
+    ...ORDER_BY_LABLE_ASC,
+  },
+  logs: {
     ...ORDER_BY_LABLE_ASC,
   },
 };

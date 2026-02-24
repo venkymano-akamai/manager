@@ -684,6 +684,7 @@ export const LOGS_CONFIG: Readonly<CloudPulseServiceTypeFilterMap> = {
         isFilterable: true,
         isMetricsFilter: false,
         name: 'Status Code',
+        dimensionKey: 'status_code',
         neededInViews: [
           CloudPulseAvailableViews.central,
           CloudPulseAvailableViews.service,

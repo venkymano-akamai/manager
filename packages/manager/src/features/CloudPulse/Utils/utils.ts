@@ -21,6 +21,10 @@ import {
   PORTS_LIMIT_ERROR_MESSAGE,
   PORTS_RANGE_ERROR_MESSAGE,
   STATUS_CODE,
+  STATUS_CODE_CONSECUTIVE_COMMAS_ERROR_MESSAGE,
+  STATUS_CODE_ERROR_MESSAGE,
+  STATUS_CODE_LEADING_COMMA_ERROR_MESSAGE,
+  STATUS_CODE_LIMIT_ERROR_MESSAGE,
 } from './constants';
 
 import type { FetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/constants';
@@ -400,18 +404,18 @@ export const areValidStatusCodes = (
   }
 
   if (statusCodes.length > 100) {
-    return PORTS_LIMIT_ERROR_MESSAGE;
+    return STATUS_CODE_LIMIT_ERROR_MESSAGE;
   }
   if (statusCodes.startsWith(',')) {
-    return PORTS_LEADING_COMMA_ERROR_MESSAGE;
+    return STATUS_CODE_LEADING_COMMA_ERROR_MESSAGE;
   }
 
   if (statusCodes.includes(',,')) {
-    return PORTS_CONSECUTIVE_COMMAS_ERROR_MESSAGE;
+    return STATUS_CODE_CONSECUTIVE_COMMAS_ERROR_MESSAGE;
   }
 
   if (!/^[\d,]+$/.test(statusCodes)) {
-    return PORTS_ERROR_MESSAGE;
+    return STATUS_CODE_ERROR_MESSAGE;
   }
 
   return undefined;
@@ -427,7 +431,7 @@ export const validationFunction: Record<
 > = {
   [PORT]: arePortsValid,
   [INTERFACE_ID]: areValidInterfaceIds,
-  [STATUS_CODE]: arePortsValid,
+  [STATUS_CODE]: areValidStatusCodes,
 };
 
 /**
