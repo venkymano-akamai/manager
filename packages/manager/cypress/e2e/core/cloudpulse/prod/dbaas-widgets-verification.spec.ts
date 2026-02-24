@@ -124,7 +124,7 @@ const getWidgetLegendRowValuesFromResponse = (
   // Return the rounded values in an object
   return { average: roundedAverage, last: roundedLast, max: roundedMax };
 };
-const mockRegion = regionFactory.build({
+const Region = regionFactory.build({
   capabilities: ['Managed Databases'],
   id: 'us-ord',
   label: 'Chicago, IL',
@@ -198,7 +198,7 @@ describe('DBaaS Dashboard Integration Tests (Live API)', () => {
     ui.regionSelect.find().click();
     ui.regionSelect.find().clear();
     ui.regionSelect
-      .findItemByRegionId('us-ord', [mockRegion])
+      .findItemByRegionId('us-ord', [Region])
       .should('be.visible')
       .click();
 
