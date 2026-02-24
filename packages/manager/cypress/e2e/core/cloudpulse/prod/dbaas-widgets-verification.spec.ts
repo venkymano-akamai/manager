@@ -1,5 +1,5 @@
 /**
- * @file Integration Tests for CloudPulse Dbass Dashboard.
+ * @file Integration Tests for CloudPulse DBaaS Dashboard.
  */
 import { regionFactory } from '@linode/utilities';
 import { mockCreateCloudPulseMetrics } from 'support/intercepts/cloudpulse';
