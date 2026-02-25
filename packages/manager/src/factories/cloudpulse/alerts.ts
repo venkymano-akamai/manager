@@ -37,7 +37,7 @@ export const alertRulesFactory =
     threshold: 60,
     unit: 'Bytes',
   });
-export const LogAlertRulesFactory =
+export const logAlertRulesFactory =
   Factory.Sync.makeFactory<AlertDefinitionMetricCriteria>({
     aggregate_function: 'avg',
     dimension_filters: logAlertDimensionsFactory.buildList(1),

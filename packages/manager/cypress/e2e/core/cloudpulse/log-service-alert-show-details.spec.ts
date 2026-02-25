@@ -25,7 +25,7 @@ import {
   accountFactory,
   alertFactory,
   flagsFactory,
-  LogAlertRulesFactory,
+  logAlertRulesFactory,
   notificationChannelFactory,
 } from 'src/factories';
 import {
@@ -43,7 +43,7 @@ const mockAccount = accountFactory.build();
 
 const alertDetails = alertFactory.build({
   entity_ids: ['1', '2', '3', '4'],
-  rule_criteria: { rules: LogAlertRulesFactory.buildList(2) },
+  rule_criteria: { rules: logAlertRulesFactory.buildList(2) },
   service_type: 'logs',
   severity: 1,
   status: 'enabled',
@@ -261,7 +261,7 @@ describe('Log Service Integration Tests for Alert Show Detail Page', () => {
         id: 2,
         label: 'Alert-1',
         entity_ids: ['1', '2', '3', '4'],
-        rule_criteria: { rules: LogAlertRulesFactory.buildList(2) },
+        rule_criteria: { rules: logAlertRulesFactory.buildList(2) },
         service_type: 'logs',
         severity: 1,
         status: 'enabled',
