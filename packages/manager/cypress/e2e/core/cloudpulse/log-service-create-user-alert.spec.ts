@@ -1,5 +1,5 @@
 /**
- * @fileoverview Cypress test suite for the "Create Alert" functionality for Log Serivce.
+ * @fileoverview Cypress test suite for the "Create Alert" functionality for Log Service.
  */
 import { profileFactory } from '@linode/utilities';
 import { statusMap } from 'support/constants/alert';
