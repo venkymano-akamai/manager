@@ -222,7 +222,7 @@ describe('Creates a log service alert with valid configuration', () => {
    * - Confirms that the UI displays a success message after creating an alert.
    */
 
-  it('should successfully create a new alert for Enity level', () => {
+  it('should successfully create a new alert for Entity level', () => {
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetProfile(mockProfile);
