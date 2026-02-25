@@ -806,7 +806,7 @@ export const mockUpdateAlertChannelByIdError = (
 export const mockGetStreams = (streams: Stream[]): Cypress.Chainable<null> => {
   return cy.intercept(
     'GET',
-    apiMatcher('/monitor/streams?page_size=500'),
+    apiMatcher('monitor/streams?page_size=500'),
     paginateResponse(streams)
   );
 };
