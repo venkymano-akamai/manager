@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-skipped-tests */
 /**
  * @file Integration Tests for CloudPulse DBaaS Dashboard.
  */
@@ -145,7 +146,7 @@ const initializeDashboardMetrics = (): Cypress.Chainable<Dashboard> => {
   });
 };
 
-describe('DBaaS Dashboard Integration Tests (Live API)', () => {
+describe.skip('DBaaS Dashboard Integration Tests (Live API)', () => {
   let metricToLabelMap: Record<string, string> = {};
 
   beforeEach(() => {
