@@ -5,7 +5,7 @@ import { profileFactory } from '@linode/utilities';
  * This file contains Cypress tests that validate the display and content of the  Alerts Notification channel Show Detail Page in the CloudPulse application.
  * It ensures that all alert details, criteria, and entity information are displayed correctly.
  */
-import { cloudPulseServiceMapNotificationChannel } from 'support/constants/cloudpulse';
+import { cloudPulseServiceMap } from 'support/constants/cloudpulse';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
   mockGetAlertChannelById,
@@ -13,6 +13,7 @@ import {
   mockGetAlertChannels,
   mockGetAlertsForChannelId,
   mockGetAlertsForChannelIdError,
+  mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetProfile } from 'support/intercepts/profile';
@@ -119,6 +120,9 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       'getAlertNotificationChannelById'
     );
     mockGetAlertsForChannelId(id, mockAlerts).as('getAlertsForChannelId');
+    mockGetCloudPulseServices(Object.keys(cloudPulseServiceMap)).as(
+      'getCloudPulseServices'
+    );
   });
 
   it('should navigate to the Show Details page from the notification channels list page', () => {
@@ -153,7 +157,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelId');
-
+    cy.wait('@getCloudPulseServices');
     // Verify breadcrumb heading
     ui.breadcrumb.find().within(() => {
       cy.contains('Notification Channels').should('be.visible');
@@ -237,12 +241,9 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       // Validate alert details
       mockAlerts.forEach((alert) => {
         cy.get(`[data-qa-alert-cell="${alert.id}"]`)
-          .contains(cloudPulseServiceMapNotificationChannel[alert.service_type])
+          .contains(cloudPulseServiceMap[alert.service_type])
           .should('be.visible')
-          .and(
-            'have.text',
-            `${cloudPulseServiceMapNotificationChannel[alert.service_type]} beta`
-          );
+          .and('have.text', `${cloudPulseServiceMap[alert.service_type]} beta`);
       });
     });
   });
@@ -252,6 +253,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelId');
+    cy.wait('@getCloudPulseServices');
     cy.get('[data-qa-section="Associated Alerts"]').within(() => {
       cy.findByPlaceholderText('Search for Alerts').as('searchInput');
       cy.get('@searchInput').clear();
@@ -345,18 +347,14 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
           let expectedAlerts;
           if (sortOrder === 'ascending') {
             expectedAlerts = [...mockAlerts].sort((a, b) =>
-              cloudPulseServiceMapNotificationChannel[
-                a.service_type
-              ].localeCompare(
-                cloudPulseServiceMapNotificationChannel[b.service_type]
+              cloudPulseServiceMap[a.service_type].localeCompare(
+                cloudPulseServiceMap[b.service_type]
               )
             );
           } else {
             expectedAlerts = [...mockAlerts].sort((a, b) =>
-              cloudPulseServiceMapNotificationChannel[
-                b.service_type
-              ].localeCompare(
-                cloudPulseServiceMapNotificationChannel[a.service_type]
+              cloudPulseServiceMap[b.service_type].localeCompare(
+                cloudPulseServiceMap[a.service_type]
               )
             );
           }
@@ -375,18 +373,14 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
             let expectedAlerts;
             if (sortOrder === 'ascending') {
               expectedAlerts = [...mockAlerts].sort((a, b) =>
-                cloudPulseServiceMapNotificationChannel[
-                  a.service_type
-                ].localeCompare(
-                  cloudPulseServiceMapNotificationChannel[b.service_type]
+                cloudPulseServiceMap[a.service_type].localeCompare(
+                  cloudPulseServiceMap[b.service_type]
                 )
               );
             } else {
               expectedAlerts = [...mockAlerts].sort((a, b) =>
-                cloudPulseServiceMapNotificationChannel[
-                  b.service_type
-                ].localeCompare(
-                  cloudPulseServiceMapNotificationChannel[a.service_type]
+                cloudPulseServiceMap[b.service_type].localeCompare(
+                  cloudPulseServiceMap[a.service_type]
                 )
               );
             }
@@ -409,6 +403,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelId');
+    cy.wait('@getCloudPulseServices');
     cy.get('[data-qa-section="Associated Alerts"]').within(() => {
       // Verify the initial state of the page size
       ui.pagination.findPageSizeSelect().click();
@@ -464,6 +459,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelIdError500');
+    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Verify that the appropriate message is displayed
@@ -479,6 +475,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelIdEmpty');
+    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Verify that the appropriate message is displayed
@@ -495,6 +492,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     // Navigate directly to the notification channel detail page
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelByIdError');
+    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Verify that the appropriate error message is displayed
@@ -520,6 +518,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelByIdIncomplete');
     cy.wait('@getAlertsForChannelIdEmpty');
+    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
 
@@ -597,6 +596,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelByIdLongUsernames');
     cy.wait('@getLargeAlertNamesForChannelId');
+    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Validate that the long label is displayed correctly
@@ -625,7 +625,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelId');
-
+    cy.wait('@getCloudPulseServices');
     // Get the first visible alert's ID from the table, then click it
     cy.get('[data-qa-alert-cell]')
       .first()

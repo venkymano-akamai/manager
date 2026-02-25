@@ -5,24 +5,15 @@
 
 export const cloudPulseServiceMap: Record<string, string> = {
   dbaas: 'Databases',
-  linode: 'Linode',
-  nodebalancer: 'NodeBalancer',
-  firewall: 'Firewall',
+  linode: 'Linodes',
+  nodebalancer: 'NodeBalancers',
+  firewall: 'Firewalls',
   objectstorage: 'Object Storage',
-  blockstorage: 'Block Storage',
-  lke: 'LKE',
+  blockstorage: 'Volumes',
+  lke: 'Kubernetes',
   netloadbalancer: 'Netloadbalancer',
 };
 
-export const cloudPulseServiceMapNotificationChannel: Record<string, string> = {
-  dbaas: 'Databases',
-  linode: 'Linodes',
-  nodebalancer: 'Nodebalancers',
-  firewall: 'Firewalls',
-  objectstorage: 'ObjectStorage',
-  blockstorage: 'Volumes',
-  lke: 'Kubernetes',
-};
 /**
  * Descriptions used in the Create/Edit Alert form to guide users
  * in configuring alert conditions effectively.
