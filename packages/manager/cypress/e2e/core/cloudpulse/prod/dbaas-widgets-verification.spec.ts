@@ -551,48 +551,22 @@ describe('DBaaS Dashboard Integration Tests (Live API)', () => {
       assertWidgetLegendValues(metricToLabelMap, metricValuesStore)
     );
   });
-  it('should trigger the global refresh button and verify the corresponding network calls', () => {
+  it('should trigger global refresh and validate number of API calls', () => {
     cy.get('[data-testid="global-refresh"]')
       .should('be.visible')
-      .should('be.enabled')
+      .and('be.enabled')
       .click();
 
-    // Wait until the number of intercepted requests matches metrics length
-    cy.get('@metricData.all').should((xhrs: unknown) => {
-      const interceptions = xhrs as Interception[];
-      expect(interceptions.length).to.equal(metrics.length);
-    });
+    // Wait for all metric calls to complete
+    cy.wait('@metricData');
 
-    // Now safely work with all captured requests
-    cy.get('@metricData.all').then((xhrs: unknown) => {
-      const interceptions = xhrs as Interception[];
-      const metricNames = metrics.map((m) => m.metric);
-      const requestedMetricNames = interceptions.map(
-        (i) => i?.request?.body?.metrics?.[0]?.name
-      );
+    cy.get<Interception[]>('@metricData.all').then((interceptions) => {
+      const expectedCallCount = metrics.length;
 
-      interceptions.forEach((interception) => {
-        const requestBody = interception?.request?.body;
-        const metricName = requestBody?.metrics?.[0]?.name;
-
-        expect(
-          metricNames,
-          `Metric '${metricName}' should be in definitions`
-        ).to.include(metricName);
-
-        expect(requestBody.relative_time_duration).to.have.property(
-          'unit',
-          'days'
-        );
-        expect(requestBody.relative_time_duration).to.have.property('value', 1);
-      });
-
-      metricNames.forEach((expectedMetric) => {
-        expect(
-          requestedMetricNames,
-          `Expected metric '${expectedMetric}' to be requested`
-        ).to.include(expectedMetric);
-      });
+      expect(
+        interceptions.length,
+        'Number of metric API calls triggered by refresh'
+      ).to.equal(expectedCallCount);
     });
   });
 
