@@ -23,22 +23,6 @@ const mockServices: Item<string, CloudPulseServiceType>[] = [
   },
 ];
 
-const flags = {
-  aclpAlerting: {
-    enabled: true,
-    editDisabledStatuses: ['failed', 'disabling'],
-  },
-};
-
-const queryMocks = vi.hoisted(() => ({
-  useFlags: vi.fn().mockReturnValue({}),
-}));
-
-vi.mock('src/hooks/useFlags', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useFlags: queryMocks.useFlags,
-}));
-
 describe('Alert Row', () => {
   it('should render an alert row', async () => {
     const alert = alertFactory.build();
@@ -189,7 +173,7 @@ describe('Alert Row', () => {
 
   it("should disable 'Edit' action item in menu if alert has no enabled/disabled status", async () => {
     const alert = alertFactory.build({ status: 'disabling', type: 'user' });
-    queryMocks.useFlags.mockReturnValue(flags);
+
     const { getByLabelText, getByText } = renderWithTheme(
       <AlertTableRow
         alert={alert}
