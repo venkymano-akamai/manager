@@ -264,7 +264,6 @@ describe('Integration Tests for Edit Alert', () => {
     mockCreateAlertDefinition(service_type, alertDetails).as(
       'createAlertDefinition'
     );
-
     cy.visitWithLogin(`/alerts/definitions/edit/${service_type}/${alertId}`);
     cy.wait('@getAlertDefinitions');
 

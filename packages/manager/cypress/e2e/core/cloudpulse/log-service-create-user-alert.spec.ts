@@ -231,6 +231,7 @@ describe('Creates a log service alert with valid configuration', () => {
     mockGetAllAlertDefinitions([mockAlerts]).as('getAlertDefinitionsList');
     mockGetAlertChannels(notificationChannels);
     mockGetStreams(streams);
+    mockGetCloudPulseServices([serviceType]);
     const alerts = alertFactory.build({
       alert_channels: [{ id: 1 }],
       created_by: 'user1',

@@ -16,6 +16,7 @@ import {
   mockGetAlertChannels,
   mockGetAlertDefinitions,
   mockGetAllAlertDefinitions,
+  mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetProfile } from 'support/intercepts/profile';
@@ -160,6 +161,7 @@ describe('Log Service Integration Tests for Alert Show Detail Page', () => {
     mockGetAllAlertDefinitions([alertDetails]).as('getAlertDefinitionsList');
     mockGetAlertDefinitions(service_type, id, alertDetails);
     mockGetAlertChannels([notificationChannels]);
+    mockGetCloudPulseServices([service_type]);
   });
 
   it('navigates to the Show Details page from the list page', () => {
@@ -309,7 +311,7 @@ describe('Log Service Integration Tests for Alert Show Detail Page', () => {
 
         // Validate Service field
         cy.findByText('Service:').should('be.visible');
-        cy.findByText('logs').should('be.visible');
+        cy.findByText('Logs').should('be.visible');
 
         // Validate Type field
         cy.findByText('Type:').should('be.visible');
