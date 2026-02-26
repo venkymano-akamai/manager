@@ -1,5 +1,5 @@
 /**
- * @file Integration Tests for CloudPulse Logs Dashboard.
+ * @file Integration Tests for CloudPulse Logs Service Contexual view .
  */
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
@@ -10,11 +10,10 @@ import {
   mockGetCloudPulseDashboards,
   mockGetCloudPulseMetricDefinitions,
   mockGetCloudPulseServices,
-  mockGetStreamById,
   mockGetStreams,
+  mockGetStreamsPaginated,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
-import { mockGetUserPreferences } from 'support/intercepts/profile';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
 
@@ -150,7 +149,7 @@ const metricDefinitions = metrics.map(({ name, title, unit }) =>
   })
 );
 
-const streams = streamFactory.build({ label: streamName });
+const streams = streamFactory.build({ label: streamName, id: 1 });
 describe('Integration Tests for Logs Dashboard ', () => {
   /**
    * Integration Tests for Logs Dashboard
@@ -179,13 +178,10 @@ describe('Integration Tests for Logs Dashboard ', () => {
       'getMetrics'
     );
     mockGetStreams([streams]);
-    mockGetUserPreferences({});
-    mockGetStreamById(1, streams);
+    mockGetStreamsPaginated([streams]);
 
     // navigate to the metrics page
-    cy.visitWithLogin('/metrics');
-
-    // Wait for the services and dashboard API calls to complete before proceeding
+    cy.visitWithLogin('logs/delivery/streams/1/edit');
     cy.wait(['@fetchServices']);
     cy.wait('@fetchDashboard').then((interception: Interception) => {
       const dashboards = interception.response?.body?.data as Dashboard[];
@@ -205,13 +201,6 @@ describe('Integration Tests for Logs Dashboard ', () => {
       .click();
 
     cy.findByPlaceholderText('e.g., 200,404,500').type(String(statusCode));
-
-    ui.autocomplete
-      .findByLabel('Stream Names')
-      .should('be.visible')
-      .type(streamName);
-
-    ui.autocompletePopper.findByTitle(streamName).should('be.visible').click();
 
     // Select a time duration from the autocomplete input.
     ui.button.findByTitle('Last hour').as('timeRangeTrigger');
