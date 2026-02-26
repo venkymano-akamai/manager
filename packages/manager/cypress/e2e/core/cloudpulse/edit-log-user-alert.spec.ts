@@ -208,7 +208,7 @@ describe('Integration Tests for Edit Alert', () => {
     });
   };
 
-  it.only('should correctly display the details of the alert in the Edit Alert page', () => {
+  it('should correctly display the details of the alert in the Edit Alert page', () => {
     mockGetCloudPulseServices([alertDetails.service_type]);
     mockGetAllAlertDefinitions([alertDetails]).as('getAlertDefinitionsList');
     mockGetAlertDefinitions(service_type, id, alertDetails).as(
