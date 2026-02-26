@@ -1,5 +1,5 @@
 /**
- * @file Integration Tests for CloudPulse Volume(blockstorage) Dashboard.
+ * @file Integration Tests for CloudPulse Logs Dashboard.
  */
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
