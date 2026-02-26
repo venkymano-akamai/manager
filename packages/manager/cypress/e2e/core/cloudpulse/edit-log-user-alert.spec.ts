@@ -44,6 +44,11 @@ import {
 import { UPDATE_ALERT_SUCCESS_MESSAGE } from 'src/features/CloudPulse/Alerts/constants';
 import { formatDate } from 'src/utilities/formatDate';
 
+import type {
+  AlertDefinitionDimensionFilter,
+  DimensionFilterOperatorType,
+} from '@linode/api-v4';
+
 const mockAccount = accountFactory.build();
 
 const serviceType = 'logs';
@@ -51,7 +56,16 @@ const now = new Date();
 
 const updated = `${now.toISOString().substring(0, 11)}10:41:00.000Z`;
 
-// Mock alert details
+const statusCodeFilter = (
+  operator: DimensionFilterOperatorType,
+  value: string
+) => ({
+  dimension_label: 'status_code',
+  label: 'Status Code',
+  operator,
+  value,
+});
+
 const alertDetails = alertFactory.build({
   alert_channels: [{ id: 1 }],
   created_by: 'user1',
@@ -60,19 +74,19 @@ const alertDetails = alertFactory.build({
   label: 'Alert-2',
   rule_criteria: {
     rules: [
+      logAlertRulesFactory.build(),
       logAlertRulesFactory.build({
         dimension_filters: [
-          {
-            label: 'Status Code',          // REQUIRED
-            dimension_label: 'status_code',
-            operator: 'eq',
-            value: '500',
-          },
+          statusCodeFilter('in', '200,500'),
+          statusCodeFilter('eq', '200'),
+          statusCodeFilter('neq', '20'),
+          statusCodeFilter('endswith', '200'),
+          statusCodeFilter('startswith', '179'),
         ],
       }),
     ],
   },
-  service_type: 'logs',  // make sure this is logs
+  service_type: 'logs',
   severity: 0,
   tags: [],
   trigger_conditions: triggerConditionFactory.build(),
@@ -85,7 +99,18 @@ const { description, id, label, service_type } = alertDetails;
 // Mock metric definitions
 const { metrics } = widgetDetails.logs;
 const metricDefinitions = metrics.map(({ name, title, unit }) =>
-  dashboardMetricFactory.build({ label: title, metric: name, unit })
+  dashboardMetricFactory.build({
+    label: title,
+    metric: name,
+    unit,
+    dimensions: [
+      {
+        dimension_label: 'status_code',
+        label: 'StatusCode',
+        values: ['200', '500'],
+      },
+    ],
+  })
 );
 
 // Mock notification channels
@@ -183,7 +208,7 @@ describe('Integration Tests for Edit Alert', () => {
     });
   };
 
-  it('should correctly display the details of the alert in the Edit Alert page', () => {
+  it.only('should correctly display the details of the alert in the Edit Alert page', () => {
     mockGetCloudPulseServices([alertDetails.service_type]);
     mockGetAllAlertDefinitions([alertDetails]).as('getAlertDefinitionsList');
     mockGetAlertDefinitions(service_type, id, alertDetails).as(
@@ -237,9 +262,16 @@ describe('Integration Tests for Edit Alert', () => {
     ui.tooltip.findByText(EVALUATION_PERIOD_DESCRIPTION).should('be.visible');
     ui.tooltip.findByText(POLLING_INTERVAL_DESCRIPTION).should('be.visible');
 
-    // Assert dimension filters
     const dimensionFilters = [
-      { field: 'Status Code', operator: 'Equal', value: '500' },
+      { field: 'StatusCode', operator: 'Equal', value: '200' },
+    ];
+
+    const dimensionFiltersForRule1 = [
+      { field: 'StatusCode', operator: 'In', value: '200,500' },
+      { field: 'StatusCode', operator: 'Equal', value: '200' },
+      { field: 'StatusCode', operator: 'Not Equal', value: '20' },
+      { field: 'StatusCode', operator: 'Ends with', value: '200' },
+      { field: 'StatusCode', operator: 'Starts with', value: '179' },
     ];
 
     dimensionFilters.forEach((filter, index) => {
@@ -265,6 +297,28 @@ describe('Integration Tests for Edit Alert', () => {
         .should('have.value', filter.value);
     });
 
+    dimensionFiltersForRule1.forEach((filter, index) => {
+      cy.get(
+        `[data-qa-dimension-filter="rule_criteria.rules.1.dimension_filters.${index}-data-field"]`
+      )
+        .should('be.visible')
+        .find('input')
+        .should('have.value', filter.field);
+
+      cy.get(
+        `[data-qa-dimension-filter="rule_criteria.rules.1.dimension_filters.${index}-operator"]`
+      )
+        .should('be.visible')
+        .find('input')
+        .should('have.value', filter.operator);
+
+      cy.get(
+        `[data-qa-dimension-filter="rule_criteria.rules.1.dimension_filters.${index}-value"]`
+      )
+        .should('be.visible')
+        .find('input')
+        .should('have.value', filter.value);
+    });
     // Verify notification details
     cy.get('[data-qa-notification="notification-channel-0"]').within(() => {
       cy.get('[data-qa-channel]').should('have.text', 'Channel-1');
@@ -276,7 +330,7 @@ describe('Integration Tests for Edit Alert', () => {
     });
   });
 
-  it.only('successfully updates alert details and verifies the API request matches the expected data for the Enity group', () => {
+  it('successfully updates alert details and verifies the API request matches the expected data for the Enity group', () => {
     const alertDetails = alertFactory.build({
       alert_channels: [{ id: 1 }],
       created_by: 'user1',
@@ -288,7 +342,7 @@ describe('Integration Tests for Edit Alert', () => {
           logAlertRulesFactory.build({
             dimension_filters: [
               {
-                label: 'Status Code',        
+                label: 'Status Code',
                 dimension_label: 'status_code',
                 operator: 'eq',
                 value: '500',
