@@ -127,18 +127,6 @@ const waitForDashboardToLoad = () => {
   cy.get('[data-qa-widget]', { timeout: 30000 }).should('be.visible');
 };
 
-const waitForFiltersToLoad = () => {
-  // Wait for Stream Names autocomplete to be ready
-  cy.get('[data-qa-autocomplete="Stream Names"]', { timeout: 30000 }).should(
-    'be.visible'
-  );
-
-  // Wait for Status Code input to be ready
-  cy.get('[data-testid="status_code-input"]', { timeout: 30000 }).should(
-    'be.visible'
-  );
-};
-
 describe('Integration Tests for Logs Dashboard', () => {
   beforeEach(() => {
     mockAppendFeatureFlags(flagsFactory.build());
