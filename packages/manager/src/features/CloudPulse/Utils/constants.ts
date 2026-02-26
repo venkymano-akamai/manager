@@ -77,7 +77,7 @@ export const PORTS_LIMIT_ERROR_MESSAGE =
 export const PORTS_PLACEHOLDER_TEXT = 'e.g., 80,443,3000';
 
 export const STATUS_CODE_HELPER_TEXT =
-  'Enter one or more status codes separated by commas.';
+  'Enter one or more Status Codes separated by commas.';
 
 export const STATUS_CODE_ERROR_MESSAGE =
   'Enter valid status codes as integers separated by commas without spaces.';
