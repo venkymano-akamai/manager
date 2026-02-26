@@ -98,8 +98,9 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
  *                          the necessary data for graph generation.
  * @param label - The label for the graph, used for display purposes.
  *
- * @returns An object containing rounded values for max average, last,
- *
+ * @returns An object containing formatted metric values for the first legend
+ *          row, with `average`, `last`, and `max` properties representing the
+ *          rounded values as human-readable strings.
  */
 
 const getWidgetLegendRowValuesFromResponse = (

@@ -1,6 +1,5 @@
 // This file will be maintained only in our aclp repo to work with CRUD handlers.
 import { pickRandom } from '@linode/utilities';
-import { group } from 'console';
 import { http, HttpResponse } from 'msw';
 
 import {
@@ -819,7 +818,7 @@ export const cloudPulseDashboardById = () => [
       service_type: serviceType,
       type: 'standard',
       updated: null,
-      group_by: id==='11'? ['entity_id']: undefined,
+      group_by: id === '11' ? ['entity_id'] : undefined,
       widgets: widgets || [
         {
           aggregate_function: 'avg',
