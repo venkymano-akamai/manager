@@ -470,26 +470,6 @@ describe('Integration Tests for Logs Dashboard', () => {
     });
   });
 
-  // ─── Test: Global Refresh (Skipped) ──────────────────────────────────────────
-
-  // FIXME: Global refresh button has a race condition. Unskip after resolving CLOUD-XXXX.
-  it.skip('should trigger the global refresh button and verify the corresponding network calls', () => {
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'refreshMetrics'
-    );
-
-    ui.button
-      .findByAttribute('aria-label', 'Refresh Dashboard Metrics')
-      .should('be.visible')
-      .click();
-
-    cy.get('@refreshMetrics.all')
-      .should('have.length', 3)
-      .each((interception: Interception) => {
-        verifyRefreshInterception(interception);
-      });
-  });
-
   // ─── Test: Widget Zoom In / Out ───────────────────────────────────────────────
 
   it('should zoom in and out of all the widgets', () => {
