@@ -72,6 +72,10 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       alerts: { beta: true, enabled: true },
       metrics: { beta: true, enabled: true },
     },
+    logs: {
+      alerts: { beta: true, enabled: true },
+      metrics: { beta: true, enabled: true },
+    },
   },
   aclpResourceTypeMap: [
     {
