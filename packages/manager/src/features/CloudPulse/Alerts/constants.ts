@@ -276,6 +276,17 @@ export const CONFIGS_ID_PLACEHOLDER_TEXT = 'e.g., 1234,5678';
 export const INTERFACE_ID_ERROR_MESSAGE = 'Enter a valid interface ID number.';
 export const INTERFACE_ID_HELPER_TEXT = 'Enter an interface ID number.';
 
+export const STATUS_CODE_PLACEHOLDER_TEXT = 'e.g., 200';
+export const STATUS_CODES_PLACEHOLDER_TEXT = 'e.g., 200,403,500';
+
+export const STATUS_CODE_HELPER_TEXT = 'Enter a status code number.';
+export const STATUS_CODES_HELPER_TEXT =
+  'Enter one or more status codes separated by commas.';
+
+export const STATUS_CODE_ERROR_MESSAGE = 'Enter a valid status code number.';
+export const STATUS_CODES_ERROR_MESSAGE =
+  'Enter valid status codes as integers separated by commas.';
+
 export const entityLabelMap = {
   linode: 'Linode',
   nodebalancer: 'Node Balancer',

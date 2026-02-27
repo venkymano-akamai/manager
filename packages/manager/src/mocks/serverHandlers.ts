@@ -4806,6 +4806,9 @@ export const handlers = [
       },
     });
   }),
+  http.get('*/monitor/streams', () => {
+    return HttpResponse.json(makeResourcePage(streamFactory.buildList(10)));
+  }),
   ...entityTransfers,
   ...statusPage,
   ...databases,
