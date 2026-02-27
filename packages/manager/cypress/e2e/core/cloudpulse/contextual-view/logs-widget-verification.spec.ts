@@ -157,26 +157,6 @@ const verifyAggregationInterception = (
     interception.request.body.metrics[0].aggregate_function
   );
 };
-
-/**
- * Verifies refresh interception response and request payload.
- */
-const verifyRefreshInterception = (interception: Interception) => {
-  const { metrics: metric, relative_time_duration: timeRange } =
-    interception.request.body;
-  const metricData = metrics.find(({ name }) => name === metric[0].name);
-
-  if (!metricData) {
-    throw new Error(
-      `Unexpected metric name '${metric[0].name}' in refresh API request`
-    );
-  }
-
-  expect(metric[0].name).to.equal(metricData.name);
-  expect(timeRange).to.have.property('unit', 'days');
-  expect(timeRange).to.have.property('value', 1);
-};
-
 // ─── Factories ────────────────────────────────────────────────────────────────
 
 const dashboard = dashboardFactory.build({
