@@ -459,7 +459,6 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelIdError500');
-    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Verify that the appropriate message is displayed
@@ -475,7 +474,6 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelById');
     cy.wait('@getAlertsForChannelIdEmpty');
-    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Verify that the appropriate message is displayed
@@ -492,7 +490,6 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     // Navigate directly to the notification channel detail page
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
     cy.wait('@getAlertNotificationChannelByIdError');
-    cy.wait('@getCloudPulseServices');
     // Verify that the URL is correct
     cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
     // Verify that the appropriate error message is displayed
