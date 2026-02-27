@@ -147,8 +147,6 @@ describe('Integration Tests for Logs Dashboard', () => {
     cy.visitWithLogin('/metrics');
     cy.wait(['@fetchServices', '@fetchDashboard', '@fetchPreferences']);
     waitForDashboardToLoad();
-    waitForFiltersToLoad();
-
     ui.button.findByTitle('Filters').click();
 
     cy.get('[data-qa-applied-filter-id="applied-filter"]')
