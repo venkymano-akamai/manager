@@ -3919,7 +3919,7 @@ export const handlers = [
         serviceTypesFactory.build({
           label: 'Logs',
           service_type: 'logs',
-          regions: 'us-iad,us-east,eu-west,us-ord,us-west,ca-central',
+          regions: 'us-iad,us-east,ap-west',
           alert: serviceAlertFactory.build({ scope: ['entity'] }),
         }),
       ],
@@ -4805,6 +4805,9 @@ export const handlers = [
         'Content-Type': 'application/javascript',
       },
     });
+  }),
+  http.get('*/monitor/streams', () => {
+    return HttpResponse.json(makeResourcePage(streamFactory.buildList(10)));
   }),
   ...entityTransfers,
   ...statusPage,
