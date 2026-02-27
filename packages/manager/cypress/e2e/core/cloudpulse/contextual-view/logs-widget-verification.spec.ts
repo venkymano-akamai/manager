@@ -1,5 +1,5 @@
 /**
- * @file Integration Tests for CloudPulse Logs Service Contexual view .
+ * @file Integration Tests for CloudPulse Logs Service Contextual view.
  */
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
@@ -34,23 +34,34 @@ import { humanizeLargeData } from 'src/features/CloudPulse/Utils/utils';
 import type { CloudPulseMetricsResponse, Dashboard } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
-/**
- * This test ensures that widget titles are displayed correctly on the dashboard.
- * This test suite is dedicated to verifying the functionality and display of widgets on the Cloudpulse dashboard.
- *  It includes:
- * Validating that widgets are correctly loaded and displayed.
- * Ensuring that widget titles and data match the expected values.
- * Verifying that widget settings, such as granularity and aggregation, are applied correctly.
- * Testing widget interactions, including zooming and filtering, to ensure proper behavior.
- * Each test ensures that widgets on the dashboard operate correctly and display accurate information.
- */
+// ─── Selector / Attribute Constants ──────────────────────────────────────────
+
+const RECHARTS_CONTAINER = '.recharts-responsive-container';
+const DATA_QA_WIDGET = 'data-qa-widget';
+const DATA_QA_GRAPH_ROW_TITLE = 'data-qa-graph-row-title';
+const GROUP_BY_ARIA_LABEL = 'Group By Dashboard Metrics';
+const DRAWER_TITLE_TESTID = '[data-testid="drawer-title"]';
+const DRAWER_TESTID = '[data-testid="drawer"]';
+const DIMENSIONS_AUTOCOMPLETE = '[data-qa-autocomplete="Dimensions"]';
+const ZOOM_OUT_ARIA = 'Zoom Out';
+const ZOOM_IN_ARIA = 'Zoom In';
+const COL_MAX = '[data-qa-graph-column-title="Max"]';
+const COL_AVG = '[data-qa-graph-column-title="Avg"]';
+const COL_LAST = '[data-qa-graph-column-title="Last"]';
+
+// ─── Suite Constants ──────────────────────────────────────────────────────────
+
 const expectedGranularityArray = ['Auto', '1 day', '1 hr'];
 const timeDurationToSelect = 'Last 24 Hours';
 const { dashboardName, id, metrics, statusCode, streamName } =
   widgetDetails.logs;
 const serviceType = 'logs';
 
-// Convert widget filters to dashboard filters
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Converts widget-level filters into dashboard-compatible filter objects.
+ */
 const getFiltersForMetric = (metricName: string) => {
   const metric = metrics.find((m) => m.name === metricName);
   if (!metric) return [];
@@ -66,7 +77,108 @@ const getFiltersForMetric = (metricName: string) => {
   }));
 };
 
-// Dashboard creation
+/**
+ * Generates and returns formatted legend row values (max, avg, last)
+ * from a CloudPulse metrics API response payload.
+ */
+const getWidgetLegendRowValuesFromResponse = (
+  responsePayload: CloudPulseMetricsResponse,
+  label: string,
+  unit: string
+) => {
+  const graphData = generateGraphData({
+    label,
+    metricsList: responsePayload,
+    resources: [{ id: '1', label: 'us-ord-1', region: 'us-ord' }],
+    status: 'success',
+    unit,
+    serviceType,
+    groupBy: ['entity_id'],
+  });
+
+  const { average, last, max } = graphData.legendRowsData[0].data;
+
+  const formatValue = (value: number) =>
+    unit === 'Count'
+      ? `${humanizeLargeData(value)} ${unit}`
+      : formatToolTip(value, unit);
+
+  return {
+    average: formatValue(average),
+    last: formatValue(last),
+    max: formatValue(max),
+  };
+};
+
+/**
+ * Reusable helper to validate legend row values (Max, Avg, Last)
+ * inside a recharts container for a given widget's test data.
+ */
+const validateLegendRows = (testData: (typeof metrics)[0]) => {
+  cy.get(RECHARTS_CONTAINER).within(() => {
+    const expected = getWidgetLegendRowValuesFromResponse(
+      metricsAPIResponsePayload,
+      testData.title,
+      testData.unit
+    );
+
+    cy.get(`[${DATA_QA_GRAPH_ROW_TITLE}="${testData.title}"]`)
+      .should('be.visible')
+      .and('have.text', testData.title);
+
+    cy.get(COL_MAX).should('be.visible').and('have.text', expected.max);
+    cy.get(COL_AVG).should('be.visible').and('have.text', expected.average);
+    cy.get(COL_LAST).should('be.visible').and('have.text', expected.last);
+  });
+};
+
+/**
+ * Verifies granularity interception response and request payload.
+ */
+const verifyGranularityInterception = (
+  interception: Interception,
+  expectedGranularity: string
+) => {
+  expect(interception.response?.statusCode).to.equal(200);
+  expect(expectedGranularity).to.include(
+    interception.request.body.time_granularity.value
+  );
+};
+
+/**
+ * Verifies aggregation interception response and request payload.
+ */
+const verifyAggregationInterception = (
+  interception: Interception,
+  expectedAggregation: string
+) => {
+  expect(interception.response?.statusCode).to.equal(200);
+  expect(expectedAggregation).to.equal(
+    interception.request.body.metrics[0].aggregate_function
+  );
+};
+
+/**
+ * Verifies refresh interception response and request payload.
+ */
+const verifyRefreshInterception = (interception: Interception) => {
+  const { metrics: metric, relative_time_duration: timeRange } =
+    interception.request.body;
+  const metricData = metrics.find(({ name }) => name === metric[0].name);
+
+  if (!metricData) {
+    throw new Error(
+      `Unexpected metric name '${metric[0].name}' in refresh API request`
+    );
+  }
+
+  expect(metric[0].name).to.equal(metricData.name);
+  expect(timeRange).to.have.property('unit', 'days');
+  expect(timeRange).to.have.property('value', 1);
+};
+
+// ─── Factories ────────────────────────────────────────────────────────────────
+
 const dashboard = dashboardFactory.build({
   label: dashboardName,
   group_by: ['entity_id'],
@@ -88,59 +200,6 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
 });
 
-/**
- * Generates graph data from a given CloudPulse metrics response and
- * extracts average, last, and maximum metric values from the first
- * legend row. The values are rounded to two decimal places for
- * better readability.
- *
- * @param responsePayload - The metrics response blockstorage containing
- *                          the necessary data for graph generation.
- * @param label - The label for the graph, used for display purposes.
- *
- * @returns An object containing rounded values for max average, last,
- *
- */
-
-const getWidgetLegendRowValuesFromResponse = (
-  responsePayload: CloudPulseMetricsResponse,
-  label: string,
-  unit: string
-) => {
-  // Generate graph data using the provided parameters
-  const graphData = generateGraphData({
-    label,
-    metricsList: responsePayload,
-    resources: [
-      {
-        id: '1',
-        label: 'us-ord-1',
-        region: 'us-ord',
-      },
-    ],
-    status: 'success',
-    unit,
-    serviceType,
-    groupBy: ['entity_id'],
-  });
-
-  // Extract metrics from the first legend row
-  const { average, last, max } = graphData.legendRowsData[0].data;
-
-  // Helper function to format value based on unit
-  const formatValue = (value: number) =>
-    unit === 'Count'
-      ? `${humanizeLargeData(value)} ${unit}`
-      : formatToolTip(value, unit);
-
-  // Return formatted metrics
-  return {
-    average: formatValue(average),
-    last: formatValue(last),
-    max: formatValue(max),
-  };
-};
-
 const metricDefinitions = metrics.map(({ name, title, unit }) =>
   dashboardMetricFactory.build({
     label: title,
@@ -151,29 +210,18 @@ const metricDefinitions = metrics.map(({ name, title, unit }) =>
 );
 
 const streams = streamFactory.build({ label: streamName, id: 1 });
-describe('Integration Tests for Logs Dashboard ', () => {
-  /**
-   * Integration Tests for Logs Dashboard
-   *
-   * This suite validates end-to-end functionality of the CloudPulse  Logs Dashboard.
-   * It covers:
-   * - Loading and rendering of widgets with correct filters.
-   * - Applying, clearing, and verifying "Group By" at dashboard and widget levels.
-   * - Selecting time ranges, granularities, and aggregation functions.
-   * - Triggering dashboard refresh and validating API calls.
-   * - Performing widget interactions (zoom in/out) and verifying graph data.
-   *
-   * Actions focus on user flows (selecting dashboards, filters, group by, zoom, etc.)
-   * and Verifications ensure correct API payloads, widget states, applied filters,
-   * and accurate graph/legend values.
-   */
+
+// ─── Suite ────────────────────────────────────────────────────────────────────
+
+describe('Integration Tests for Logs Dashboard', () => {
   beforeEach(() => {
+    // ── Mocks ──
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(accountFactory.build());
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
-    mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
     mockGetCloudPulseServices([serviceType]).as('fetchServices');
-    mockGetCloudPulseDashboard(id, dashboard).as('fetchDashboard');
+    mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboards');
+    mockGetCloudPulseDashboard(id, dashboard).as('fetchDashboardById');
     mockCreateCloudPulseJWEToken(serviceType);
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
@@ -182,414 +230,291 @@ describe('Integration Tests for Logs Dashboard ', () => {
     mockGetStreamsPaginated([streams]);
     mockGetStreamById(streams.id, streams).as('fetchStream');
 
-    // navigate to the metrics page
+    // ── Navigation ──
     cy.visitWithLogin(`logs/delivery/streams/${streams.id}/edit`);
-    cy.wait(['@fetchStream']);
-    cy.wait('@fetchDashboard').then((interception: Interception) => {
+    cy.wait('@fetchStream');
+    cy.wait('@fetchDashboards').then((interception: Interception) => {
       const dashboards = interception.response?.body?.data as Dashboard[];
-      const dashboard = dashboards[0];
-      expect(dashboard.widgets).to.have.length(3);
+      expect(dashboards[0].widgets).to.have.length(3);
     });
 
+    // ── Verify Dashboard autocomplete is disabled and pre-filled ──
     ui.autocomplete
       .findByLabel('Dashboard')
       .should('be.disabled')
       .should('have.value', dashboardName);
 
-    cy.findByPlaceholderText('e.g., 200,404,500').type(String(statusCode));
+    // ── Apply status code filter ──
+    cy.findByPlaceholderText('e.g., 200,404,500').type(`${statusCode}`);
 
-    // Select a time duration from the autocomplete input.
-    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
-    cy.get('@timeRangeTrigger').click();
-
-    // select a different preset but cancel
+    // ── Select time range ──
+    ui.button.findByTitle('Last hour').click();
     ui.button.findByTitle('Last day').click();
-
     cy.get('[data-qa-buttons="apply"]')
       .should('be.visible')
-      .should('be.enabled')
+      .and('be.enabled')
       .click();
 
-    // Wait for all metrics query requests to resolve.
+    // ── Wait for initial metrics load ──
     cy.wait(['@getMetrics', '@getMetrics', '@getMetrics']);
   });
+
+  // ─── Test: Group By at Dashboard Level ──────────────────────────────────────
+
   it('should apply group by at the dashboard level and verify the metrics API calls', () => {
-    // Stub metrics API calls for dashboard group by changes
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
       entity_id: '1',
     }).as('refreshMetrics');
 
-    // Validate legend rows (pre "Group By")
+    // Validate legend rows before applying Group By
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.title}"]`;
-      cy.get(widgetSelector)
+      cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
         .within(() => {
-          const graphRowTitle = `[data-qa-graph-row-title="${testData.title}"]`;
-          cy.get(graphRowTitle)
+          cy.get(`[${DATA_QA_GRAPH_ROW_TITLE}="${testData.title}"]`)
             .should('be.visible')
-            .and('have.text', `${testData.title}`);
+            .and('have.text', testData.title);
         });
     });
 
-    // Locate the Dashboard Group By button and alias it
+    // Open Group By drawer
     ui.button
-      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+      .findByAttribute('aria-label', GROUP_BY_ARIA_LABEL)
       .should('be.visible')
       .first()
       .as('dashboardGroupByBtn');
 
-    // Ensure the button is scrolled into view
     cy.get('@dashboardGroupByBtn').scrollIntoView();
-
-    // Verify tooltip "Group By" is present
     ui.tooltip.findByText('Group By');
 
-    // Assert that the button has attribute data-qa-selected="true"
-    cy.get('@dashboardGroupByBtn')
-      .invoke('attr', 'data-qa-selected')
-      .should('eq', 'true');
+    cy.get('@dashboardGroupByBtn').should(
+      'have.attr',
+      'data-qa-selected',
+      'true'
+    );
 
-    // Click the Group By button to open the drawer
-    cy.get('@dashboardGroupByBtn').should('be.visible').click();
+    cy.get('@dashboardGroupByBtn').click();
 
-    // Verify the drawer title is "Global Group By"
-    cy.get('[data-testid="drawer-title"]')
+    cy.get(DRAWER_TITLE_TESTID)
       .should('be.visible')
       .and('have.text', 'Global Group By');
 
-    // Verify the drawer body contains "Object Storage Dashboard"
-    cy.get('[data-testid="drawer"]')
-      .find('p')
-      .first()
-      .and('have.text', dashboardName);
+    cy.get(DRAWER_TESTID).find('p').first().and('have.text', dashboardName);
 
+    // Select dimension
     ui.autocomplete
       .findByLabel('Dimensions')
       .should('be.visible')
       .type('status_code');
 
-    // Select "Node Type" from the popper options
     ui.autocompletePopper
       .findByTitle('status_code')
       .should('be.visible')
       .click();
 
-    // Close the drawer using ESC
     cy.get('body').type('{esc}');
-
-    // Click Apply to confirm the Group By selection
     cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
 
-    // Verify the Group By button reflects the selection
-    ui.button
-      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-      .should('have.attr', 'aria-label', 'Group By Dashboard Metrics')
+    cy.get('@dashboardGroupByBtn')
+      .should('have.attr', 'aria-label', GROUP_BY_ARIA_LABEL)
       .and('have.attr', 'data-qa-selected', 'true');
 
-    // Validate all intercepted metrics API calls contain correct filters and group_by values
+    // Verify API calls contain correct group_by values
     cy.get('@refreshMetrics.all')
       .should('have.length', 3)
       .each((interception: Interception) => {
-        const { body: requestPayload } = interception.request;
-
-        // Ensure group_by contains entity_id and node_type in correct order
-        expect(requestPayload.group_by).to.have.ordered.members([
+        expect(interception.request.body.group_by).to.have.ordered.members([
           'entity_id',
           'status_code',
         ]);
       });
 
-    // Validate legend rows (post "Group By")
+    // Validate legend rows after Group By
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.title}"]`;
-      cy.get(widgetSelector)
+      cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
         .within(() => {
-          cy.get(`[data-qa-graph-row-title='${streamName}']`)
+          cy.get(`[${DATA_QA_GRAPH_ROW_TITLE}="${streamName}"]`)
             .should('be.visible')
             .and('have.text', streamName);
         });
     });
   });
 
+  // ─── Test: Unselect All Group Bys ───────────────────────────────────────────
+
   it('should unselect all group bys and verify the metrics API calls', () => {
-    // Stub metrics API calls for dashboard group by changes
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'refreshMetrics'
     );
 
-    // Locate the Dashboard Group By button and alias it
     ui.button
-      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+      .findByAttribute('aria-label', GROUP_BY_ARIA_LABEL)
       .should('be.visible')
       .first()
       .as('dashboardGroupByBtn');
 
-    // Ensure the button is scrolled into view
     cy.get('@dashboardGroupByBtn').scrollIntoView();
+    cy.get('@dashboardGroupByBtn').click();
 
-    // Click the Group By button to open the drawer
-    cy.get('@dashboardGroupByBtn').should('be.visible').click();
-
-    // Inside Dimensions field, click the Clear button to remove all group by selections
-    cy.get('[data-qa-autocomplete="Dimensions"]').within(() => {
-      cy.get('button[aria-label="Clear"]').should('be.visible').click({});
+    // Clear all dimensions
+    cy.get(DIMENSIONS_AUTOCOMPLETE).within(() => {
+      cy.get('button[aria-label="Clear"]').should('be.visible').click();
     });
 
-    // Click Apply to confirm unselection
     cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
 
-    // Verify the Group By button now has data-qa-selected="false"
-    ui.button
-      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-      .and('have.attr', 'data-qa-selected', 'false');
+    cy.get('@dashboardGroupByBtn').should(
+      'have.attr',
+      'data-qa-selected',
+      'false'
+    );
 
-    // Validate all intercepted metrics API calls contain no group_by values
+    // Correctly validate empty/null group_by
     cy.get('@refreshMetrics.all')
       .should('have.length', 3)
       .each((interception: Interception) => {
-        const { body: requestPayload } = interception.request;
-
-        // Ensure group_by is cleared (null, undefined, or empty array)
-        expect(requestPayload.group_by).to.be.oneOf([null, undefined, []]);
+        const { group_by } = interception.request.body;
+        expect(
+          group_by === null ||
+            group_by === undefined ||
+            (Array.isArray(group_by) && group_by.length === 0),
+          'group_by should be null, undefined, or empty array'
+        ).to.be.true;
       });
-    // Validate legend rows (post "Group By")
+
+    // Validate legend rows after clearing Group By
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.title}"]`;
-      cy.get(widgetSelector)
+      cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
         .within(() => {
-          cy.get(`[data-qa-graph-row-title="${testData.title}"]`)
+          cy.get(`[${DATA_QA_GRAPH_ROW_TITLE}="${testData.title}"]`)
             .should('be.visible')
             .and('have.text', testData.title);
         });
     });
   });
 
+  // ─── Test: Granularity Selection ────────────────────────────────────────────
+
   it('should allow users to select their desired granularity and see the most recent data from the API reflected in the graph', () => {
-    // validate the widget level granularity selection and its metrics
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.title}"]`;
+      const widgetSelector = `[${DATA_QA_WIDGET}="${testData.title}"]`;
+
       cy.get(widgetSelector)
         .should('be.visible')
         .find('h2')
         .should('have.text', `${testData.title} (${testData.unit})`);
-      cy.get(widgetSelector)
-        .should('be.visible')
-        .within(() => {
-          // check for all available granularity in popper
-          ui.autocomplete
-            .findByLabel('Select an Interval')
-            .should('be.visible')
-            .click();
 
-          expectedGranularityArray.forEach((option) => {
-            ui.autocompletePopper.findByTitle(option).should('exist');
-          });
+      cy.get(widgetSelector).within(() => {
+        // Verify all granularity options exist in popper
+        ui.autocomplete
+          .findByLabel('Select an Interval')
+          .should('be.visible')
+          .click();
 
-          mockCreateCloudPulseMetrics(
-            serviceType,
-            metricsAPIResponsePayload
-          ).as('getGranularityMetrics');
-
-          // find the interval component and select the expected granularity
-          ui.autocomplete
-            .findByLabel('Select an Interval')
-            .should('be.visible')
-            .type(`${testData.expectedGranularity}{enter}`); // type expected granularity
-
-          // check if the API call is made correctly with time granularity value selected
-          cy.wait('@getGranularityMetrics').then((interception) => {
-            expect(interception)
-              .to.have.property('response')
-              .with.property('statusCode', 200);
-            expect(testData.expectedGranularity).to.include(
-              interception.request.body.time_granularity.value
-            );
-          });
-
-          // validate the widget areachart is present
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.title,
-              testData.unit
-            );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.title}"]`;
-            cy.get(graphRowTitle)
-              .should('be.visible')
-              .should('have.text', `${testData.title}`);
-
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
+        expectedGranularityArray.forEach((option) => {
+          ui.autocompletePopper.findByTitle(option).should('exist');
         });
+
+        // Register mock once per widget
+        mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+          'getGranularityMetrics'
+        );
+
+        ui.autocomplete
+          .findByLabel('Select an Interval')
+          .should('be.visible')
+          .type(`${testData.expectedGranularity}{enter}`);
+
+        cy.wait('@getGranularityMetrics').then((interception: Interception) => {
+          verifyGranularityInterception(
+            interception,
+            testData.expectedGranularity
+          );
+        });
+
+        validateLegendRows(testData);
+      });
     });
   });
+
+  // ─── Test: Aggregation Selection ────────────────────────────────────────────
+
   it('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
-    // Register mock ONCE before the loop
+    // Register mock once before the loop
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getAggregationMetrics'
     );
 
     metrics.forEach((testData) => {
-      const widgetSelector = `[data-qa-widget="${testData.title}"]`;
-      cy.get(widgetSelector)
+      cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
         .within(() => {
-          // find the interval component and select the expected granularity
           ui.autocomplete
             .findByLabel('Select an Aggregate Function')
             .should('be.visible')
             .type(`${testData.expectedAggregation}{enter}`);
 
-          // check if the API call is made correctly with aggregation value selected
-          cy.wait('@getAggregationMetrics').then((interception) => {
-            expect(interception)
-              .to.have.property('response')
-              .with.property('statusCode', 200);
-            expect(testData.expectedAggregation).to.equal(
-              interception.request.body.metrics[0].aggregate_function
-            );
-          });
+          cy.wait('@getAggregationMetrics').then(
+            (interception: Interception) => {
+              verifyAggregationInterception(
+                interception,
+                testData.expectedAggregation
+              );
+            }
+          );
 
-          // validate the widget areachart is present
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.title,
-              testData.unit
-            );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.title}"]`;
-            cy.get(graphRowTitle)
-              .should('be.visible')
-              .should('have.text', `${testData.title}`);
-
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
+          validateLegendRows(testData);
         });
     });
   });
+
+  // ─── Test: Global Refresh (Skipped) ──────────────────────────────────────────
+
+  // FIXME: Global refresh button has a race condition. Unskip after resolving CLOUD-XXXX.
   it.skip('should trigger the global refresh button and verify the corresponding network calls', () => {
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'refreshMetrics'
     );
 
-    // click the global refresh button
     ui.button
       .findByAttribute('aria-label', 'Refresh Dashboard Metrics')
       .should('be.visible')
       .click();
 
-    // validate the API calls are going with intended payload
     cy.get('@refreshMetrics.all')
       .should('have.length', 3)
       .each((interception: Interception) => {
-        const { body: requestPayload } = interception.request;
-        const { metrics: metric, relative_time_duration: timeRange } =
-          requestPayload;
-        const metricData = metrics.find(({ name }) => name === metric[0].name);
-
-        if (!metricData) {
-          throw new Error(
-            `Unexpected metric name '${metric[0].name}' included in the outgoing refresh API request`
-          );
-        }
-        expect(metric[0].name).to.equal(metricData.name);
-        expect(timeRange).to.have.property('unit', 'days');
-        expect(timeRange).to.have.property('value', 1);
+        verifyRefreshInterception(interception);
       });
   });
 
+  // ─── Test: Widget Zoom In / Out ───────────────────────────────────────────────
+
   it('should zoom in and out of all the widgets', () => {
-    // do zoom in and zoom out test on all the widgets
     metrics.forEach((testData) => {
-      cy.get(`[data-qa-widget="${testData.title}"]`).as('widget');
-      cy.get('@widget')
+      cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
         .within(() => {
+          // Zoom Out
           ui.button
-            .findByAttribute('aria-label', 'Zoom Out')
+            .findByAttribute('aria-label', ZOOM_OUT_ARIA)
             .should('be.visible')
-            .should('be.enabled')
+            .and('be.enabled')
             .click();
-          cy.get('@widget').should('be.visible');
 
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.title,
-              testData.unit
-            );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.title}"]`;
-            cy.get(graphRowTitle)
-              .should('be.visible')
-              .should('have.text', `${testData.title}`);
+          validateLegendRows(testData);
 
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', expectedWidgetValues.max);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
-
-          // click zoom out and validate the same
+          // Zoom In
           ui.button
-            .findByAttribute('aria-label', 'Zoom In')
+            .findByAttribute('aria-label', ZOOM_IN_ARIA)
             .should('be.visible')
-            .should('be.enabled')
+            .and('be.enabled')
             .scrollIntoView()
             .click({ force: true });
-          cy.get('@widget').should('be.visible');
-          cy.get('.recharts-responsive-container').within(() => {
-            const expectedWidgetValues = getWidgetLegendRowValuesFromResponse(
-              metricsAPIResponsePayload,
-              testData.title,
-              testData.unit
-            );
-            const graphRowTitle = `[data-qa-graph-row-title="${testData.title}"]`;
-            cy.get(graphRowTitle)
-              .should('be.visible')
-              .should('have.text', `${testData.title}`);
 
-            cy.get('[data-qa-graph-column-title="Max"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.max}`);
-
-            cy.get('[data-qa-graph-column-title="Avg"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.average}`);
-
-            cy.get('[data-qa-graph-column-title="Last"]')
-              .should('be.visible')
-              .should('have.text', `${expectedWidgetValues.last}`);
-          });
+          validateLegendRows(testData);
         });
     });
   });
