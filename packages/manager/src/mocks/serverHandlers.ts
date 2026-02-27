@@ -85,6 +85,7 @@ import {
   lkeEnterpriseTypeFactory,
   lkeHighAvailabilityTypeFactory,
   lkeStandardAvailabilityTypeFactory,
+  logsMetricCriteria,
   longviewActivePlanFactory,
   longviewClientFactory,
   longviewSubscriptionFactory,
@@ -124,6 +125,7 @@ import {
   serviceTypesFactory,
   stackScriptFactory,
   staticObjects,
+  streamFactory,
   subnetFactory,
   supportReplyFactory,
   supportTicketFactory,
@@ -3911,6 +3913,12 @@ export const handlers = [
           regions: 'us-iad,us-east,eu-west',
           alert: serviceAlertFactory.build({ scope: ['entity'] }),
         }),
+        serviceTypesFactory.build({
+          label: 'Logs',
+          service_type: 'logs',
+          regions: 'us-iad,us-east,ap-west',
+          alert: serviceAlertFactory.build({ scope: ['entity'] }),
+        }),
       ],
     };
 
@@ -3928,6 +3936,7 @@ export const handlers = [
       blockstorage: 'Volumes',
       lke: 'LKE Enterprise',
       netloadbalancer: 'Network Load Balancers',
+      logs: 'Logs',
     };
     const serviceTypeScopeMap: Record<
       CloudPulseServiceType,
@@ -3941,6 +3950,7 @@ export const handlers = [
       blockstorage: ['entity', 'account', 'region'],
       lke: ['entity'],
       netloadbalancer: ['entity'],
+      logs: ['entity'],
     };
     const response = serviceTypesFactory.build({
       service_type: `${serviceType}`,
@@ -4341,6 +4351,9 @@ export const handlers = [
       }
       if (params.serviceType === 'netloadbalancer') {
         return HttpResponse.json({ data: networkLoadBalancerMetricCriteria });
+      }
+      if (params.serviceType === 'logs') {
+        return HttpResponse.json({ data: logsMetricCriteria });
       }
       return HttpResponse.json(response);
     }
@@ -4744,6 +4757,9 @@ export const handlers = [
         'Content-Type': 'application/javascript',
       },
     });
+  }),
+  http.get('*/monitor/streams', () => {
+    return HttpResponse.json(makeResourcePage(streamFactory.buildList(10)));
   }),
   ...entityTransfers,
   ...statusPage,
