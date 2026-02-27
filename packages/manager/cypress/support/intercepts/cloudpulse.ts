@@ -838,6 +838,6 @@ export const mockGetStreamById = (
   return cy.intercept(
     'GET',
     apiMatcher(`monitor/streams/${id}`),
-    paginateResponse(stream)
+    makeResponse(stream)
   );
 };

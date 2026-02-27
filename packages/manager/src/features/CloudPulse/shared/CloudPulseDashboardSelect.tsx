@@ -58,12 +58,15 @@ export const CloudPulseDashboardSelect = React.memo(
     } = useCloudPulseServiceTypes(!!savePreferences);
 
     const { aclpServices } = useFlags();
-    // Check if the integration service type is enabled
-    const serviceType =
-      integrationServiceType &&
-      aclpServices?.[integrationServiceType]?.metrics?.enabled
-        ? integrationServiceType
-        : undefined;
+   // Check if the integration service type is enabled
+   const serviceType =
+   integrationServiceType === 'logs'
+     ? integrationServiceType
+     : integrationServiceType &&
+         aclpServices?.[integrationServiceType]?.metrics?.enabled
+       ? integrationServiceType
+       : undefined;
+
 
     // Get formatted enabled service types based on the LD flag
     const serviceTypes: CloudPulseServiceType[] = serviceType
