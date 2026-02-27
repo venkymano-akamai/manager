@@ -93,7 +93,7 @@ export const STATUS_CODE_LEADING_COMMA_ERROR_MESSAGE =
 export const STATUS_CODE_LIMIT_ERROR_MESSAGE =
   'Status code list must be 100 characters or less.';
 
-export const STATUS_CODE_PLACEHOLDER_TEXT = 'e.g., 200,404,500';
+export const STATUS_CODE_PLACEHOLDER_TEXT = 'e.g., 200,400';
 
 export const INTERFACE_IDS_HELPER_TEXT =
   'Enter one or more interface IDs separated by commas.';
