@@ -313,7 +313,7 @@ const verifyAlertRow = (
       cy.wrap($row).within(() => {
         cy.findByText(label).should('be.visible');
         cy.findByText(statusMap[status]).should('be.visible');
-        cy.findByText('Firewall').should('be.visible');
+        cy.findByText('Firewalls').should('be.visible');
         cy.findByText(createdBy).should('be.visible');
         cy.findByText(
           formatDate(updated, {
@@ -427,8 +427,8 @@ describe('Firewall alert configured successfully', () => {
           });
 
           // Fill in Service and Severity
-          ui.autocomplete.findByLabel('Service').type('Firewall');
-          ui.autocompletePopper.findByTitle('Firewall').click();
+          ui.autocomplete.findByLabel('Service').type('Firewalls');
+          ui.autocompletePopper.findByTitle('Firewalls').click();
           ui.tooltip.findByText(
             'Define a severity level associated with the alert to help you prioritize and manage alerts in the Recent activity tab.'
           );

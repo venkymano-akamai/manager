@@ -207,7 +207,7 @@ const verifyAlertRow = (
       cy.wrap($row).within(() => {
         cy.findByText(label).should('be.visible');
         cy.findByText(statusMap[status]).should('be.visible');
-        cy.findByText('Linode').should('be.visible');
+        cy.findByText('Linodes').should('be.visible');
         cy.findByText(createdBy).should('be.visible');
         cy.findByText(
           formatDate(updated, {
@@ -352,8 +352,8 @@ describe('Create Alert', () => {
       ui.autocomplete
         .findByLabel('Service')
         .should('be.visible')
-        .type('Linode');
-      ui.autocompletePopper.findByTitle('Linode').should('be.visible').click();
+        .type('Linodes');
+      ui.autocompletePopper.findByTitle('Linodes').should('be.visible').click();
       // Select Severity
       ui.autocomplete
         .findByLabel('Severity')
