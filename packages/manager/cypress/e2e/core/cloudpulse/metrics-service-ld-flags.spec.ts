@@ -102,7 +102,7 @@ describe('Linode ACLP Metrics and Alerts Flag Behavior', () => {
     cy.get('@dashboardInput').click();
 
     cy.get('[data-qa-id="linode"]') // Selects the Linode label
-      .should('have.text', 'Linode')
+      .should('have.text', 'Linodes')
       .parent() // Moves up to the <li> containing both label and chip
       .as('linodeBetaServiceOption'); // Alias for reuse
 
@@ -145,7 +145,7 @@ describe('Linode ACLP Metrics and Alerts Flag Behavior', () => {
 
     // Verify "Linode" is present without a beta chip
     ui.autocompletePopper
-      .findByTitle('Linode')
+      .findByTitle('Linodes')
       .should('be.visible')
       .within(() => {
         cy.get('[data-testid="betaChip"]').should('not.exist');
