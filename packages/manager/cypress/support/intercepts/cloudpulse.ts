@@ -812,6 +812,38 @@ export const mockUpdateAlertChannelByIdError = (
   );
 };
 /**
+ * Intercepts GET request to retrieve alerts associated with a notification channel
+ *
+ * @param channelId - The ID of the notification channel
+ * @param alerts - Mock alert data to return
+ * @returns Cypress chainable
+ */
+export const mockGetAlertsForChannelId = (
+  channelId: number,
+  alerts: NotificationChannelAlerts[]
+) => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${channelId}/alerts*`),
+    paginateResponse(alerts)
+  );
+};
+
+/**
+ *  Intercepts GET request for alerts associated with a notification channel and
+ * mocks an error response instead of returning alert data.
+ *
+ * @param channelId - The ID of the notification channel for which to mock an error.
+ * @returns Cypress chainable that yields an error response for the alerts request.
+ */
+export const mockGetAlertsForChannelIdError = (channelId: number) => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${channelId}/alerts*`),
+    makeErrorResponse('Error in fetching the alerts.', 500)
+  );
+};
+/**
  * Mocks the API response for the '/monitor/streams' endpoint.
  *
  * Intercepts the GET request to '/monitor/streams?page_size=500'
