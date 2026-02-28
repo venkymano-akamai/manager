@@ -247,7 +247,7 @@ describe('Integration Tests for Edit Alert', () => {
       .within(() => {
         cy.findByText(label).should('be.visible');
         cy.findByText('Enabled').should('be.visible');
-        cy.findByText('Firewall').should('be.visible');
+        cy.findByText('Firewalls').should('be.visible');
         cy.findByText('user1').should('be.visible');
         cy.findByText(formattedDate).should('be.visible');
       });
@@ -327,7 +327,7 @@ describe('Integration Tests for Edit Alert', () => {
     );
     cy.findByLabelText('Service')
       .should('be.disabled')
-      .should('have.value', 'Firewall');
+      .should('have.value', 'Firewalls');
 
     cy.findByLabelText('Severity').should('have.value', 'Severe');
     cy.findByLabelText('Scope').should('have.value', 'Entity');

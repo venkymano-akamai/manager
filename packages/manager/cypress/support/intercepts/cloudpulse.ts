@@ -17,6 +17,7 @@ import type {
   Dashboard,
   MetricDefinition,
   NotificationChannel,
+  NotificationChannelAlerts,
   Service,
   Stream,
 } from '@linode/api-v4';
@@ -742,6 +743,23 @@ export const mockGetAlertChannelById = (
     'GET',
     apiMatcher(`/monitor/alert-channels/${id}`),
     makeResponse(channel)
+  );
+};
+
+/**
+ * Mocks an error response for getting a specific alert channel by ID.
+ *
+ * @param {number} id - The ID of the alert channel for which to mock an error response.
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
+ *
+ */
+export const mockGetAlertChannelByIdError = (
+  id: number
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${id}`),
+    makeErrorResponse('Error fetching alerts for channel', 500)
   );
 };
 

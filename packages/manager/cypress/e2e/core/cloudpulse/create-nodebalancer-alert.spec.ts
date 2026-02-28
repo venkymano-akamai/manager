@@ -250,7 +250,7 @@ const verifyAlertRow = (
       cy.wrap($row).within(() => {
         cy.findByText(label).should('be.visible');
         cy.findByText(statusMap[status]).should('be.visible');
-        cy.findByText('NodeBalancer').should('be.visible');
+        cy.findByText('NodeBalancers').should('be.visible');
         cy.findByText(createdBy).should('be.visible');
         cy.findByText(
           formatDate(updated, {
@@ -329,8 +329,8 @@ describe('Create Alert', () => {
       );
 
       // Fill in Service and Severity
-      ui.autocomplete.findByLabel('Service').type('NodeBalancer');
-      ui.autocompletePopper.findByTitle('NodeBalancer').click();
+      ui.autocomplete.findByLabel('Service').type('NodeBalancers');
+      ui.autocompletePopper.findByTitle('NodeBalancers').click();
       ui.tooltip.findByText(
         'Define a severity level associated with the alert to help you prioritize and manage alerts in the Recent activity tab.'
       );
