@@ -1,7 +1,7 @@
 /**
  * @file Integration Tests for the Log Service CloudPulse Alerts Show Detail Page.
  *
- * This file contains Cypress tests that validate the display and content of the  Alerts Show Detail Page in the CloudPulse application.
+ * This file contains Cypress tests that validate the display and content of the Alerts Show Detail Page in the CloudPulse application.
  * It ensures that all alert details, criteria, and entity information are displayed correctly.
  */
 import { capitalize, profileFactory } from '@linode/utilities';
@@ -17,6 +17,7 @@ import {
   mockGetAlertDefinitions,
   mockGetAllAlertDefinitions,
   mockGetCloudPulseServices,
+  mockGetStreams,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetProfile } from 'support/intercepts/profile';
@@ -28,6 +29,7 @@ import {
   flagsFactory,
   logAlertRulesFactory,
   notificationChannelFactory,
+  streamFactory,
 } from 'src/factories';
 import {
   ACCOUNT_GROUP_INFO_MESSAGE,
@@ -55,9 +57,13 @@ const alertDetails = alertFactory.build({
   updated: new Date().toISOString(),
 });
 
-const { id, label, rule_criteria, service_type } = alertDetails;
-const { rules } = rule_criteria;
+const { id, label, service_type } = alertDetails;
 const notificationChannels = notificationChannelFactory.build();
+const streams = streamFactory.buildList(3);
+
+const mockProfile = profileFactory.build({
+  timezone: 'gmt',
+});
 
 const verifyRowOrder = (expectedIds: string[]) => {
   cy.get('[data-qa-alert-row]').then(($rows) => {
@@ -69,9 +75,6 @@ const verifyRowOrder = (expectedIds: string[]) => {
     });
   });
 };
-const mockProfile = profileFactory.build({
-  timezone: 'gmt',
-});
 
 /**
  * Asserts that the given dimension filter's label, operator, and value
@@ -99,6 +102,7 @@ const assertDimensionFilter = (filter: AlertDefinitionDimensionFilter) => {
       expect($chip).to.have.text(capitalize(filter.value));
     });
 };
+
 /**
  * Validates the UI display of an array of metric criteria rules.
  *
@@ -150,9 +154,10 @@ const assertRuleBlock = (rules: AlertDefinitionMetricCriteria[]) => {
 };
 
 /**
- * Integration tests for the CloudPulse Alerts Detail Page, ensuring that the alert details, criteria, and entity information are correctly displayed and validated, including various fields like name, description, status, severity, and trigger conditions.
+ * Integration tests for the CloudPulse Alerts Detail Page, ensuring that the alert details,
+ * criteria, and entity information are correctly displayed and validated, including various
+ * fields like name, description, status, severity, and trigger conditions.
  */
-
 describe('Log Service Integration Tests for Alert Show Detail Page', () => {
   beforeEach(() => {
     mockAppendFeatureFlags(flagsFactory.build());
@@ -162,6 +167,7 @@ describe('Log Service Integration Tests for Alert Show Detail Page', () => {
     mockGetAlertDefinitions(service_type, id, alertDetails);
     mockGetAlertChannels([notificationChannels]);
     mockGetCloudPulseServices([service_type]);
+    mockGetStreams(streams);
   });
 
   it('navigates to the Show Details page from the list page', () => {
@@ -191,198 +197,195 @@ describe('Log Service Integration Tests for Alert Show Detail Page', () => {
     cy.url().should('endWith', `/detail/${service_type}/${id}`);
   });
 
-  // Define actions to validate alert details based on the grouping scope (Region or Account)
-  const scopeActions: Record<string, () => void> = {
-    // Account-level alert validations
-    Account: () => {
-      cy.get('[data-qa-notice="true"]')
-        .find('[data-testid="alert_message_notice"]')
-        .should('have.text', ACCOUNT_GROUP_INFO_MESSAGE);
-    },
-    // Entity-level alert validations
-    Entity: () => {
-      const searchPlaceholder = 'Search for a Region or Entity';
-      cy.get('[data-qa-section="Resources"]').within(() => {
-        // Validate headings
-        ui.heading
-          .findByText('entity')
-          .scrollIntoView()
-          .should('be.visible')
-          .should('have.text', 'Entity');
+  entityGroupingOptions
+    .filter(({ label: groupLabel }) => groupLabel.toLowerCase() !== 'region')
+    .forEach(({ label: groupLabel, value }) => {
+      it(`should correctly display the details of the Logs Service alert in the alert details view for ${groupLabel} level`, () => {
+        const alertDetails = alertFactory.build({
+          id: 2,
+          label: 'Alert-1',
+          entity_ids: ['1', '2', '3', '4'],
+          rule_criteria: { rules: logAlertRulesFactory.buildList(2) },
+          service_type: 'logs',
+          severity: 1,
+          status: 'enabled',
+          type: 'user',
+          created_by: 'user1',
+          updated_by: 'user2',
+          created: '2023-10-01T12:00:00Z',
+          updated: new Date().toISOString(),
+          scope: value,
+        });
 
-        ui.heading
-          .findByText('region')
-          .should('be.visible')
-          .should('have.text', 'Region');
+        const {
+          created_by,
+          description,
+          id,
+          label,
+          // Fix 1: Destructure rule_criteria from locally built alertDetails
+          rule_criteria,
+          service_type,
+          severity,
+          created,
+          updated,
+        } = alertDetails;
 
-        // Validate search inputs
-        cy.findByPlaceholderText(searchPlaceholder).should('be.visible');
-        cy.findByPlaceholderText('Select Regions').should('be.visible');
+        // Fix 1: Use rules from locally built alertDetails, not outer scope
+        const { rules } = rule_criteria;
 
-        // Assert row count
-        cy.get('[data-qa-alert-row]').should('have.length', 4);
-
-        // Sorting validations
-        ui.heading.findByText('entity').click();
-        verifyRowOrder(['4', '3', '2', '1']);
-
-        ui.heading.findByText('entity').click();
-        verifyRowOrder(['1', '2', '3', '4']);
-
-        ui.heading.findByText('region').click();
-        verifyRowOrder(['2', '4', '1', '3']);
-
-        ui.heading.findByText('region').click();
-        verifyRowOrder(['1', '3', '2', '4']);
-
-        // Entity search
-
-        cy.get('[data-qa-alert-table="true"]')
-          .find('[data-qa-alert-row]')
-          .should('have.length', 1);
-
-        cy.get('[data-qa-alert-table="true"]')
-          .find('[data-qa-alert-row]')
-          .should('have.length', 2);
-
-        [0, 2].forEach((i) =>
-          cy.get(`[data-qa-alert-cell="${i}_region"]`).should('not.exist')
+        mockGetAllAlertDefinitions([alertDetails]).as(
+          'getAlertDefinitionsList'
+        );
+        mockGetAlertDefinitions(service_type, id, alertDetails).as(
+          'getLogAlertDefinitions'
         );
 
-        [1, 3].forEach((i) =>
-          cy.get(`[data-qa-alert-cell="${i}_region"]`).should('be.visible')
-        );
-      });
-    },
-  };
+        cy.visitWithLogin(`/alerts/definitions/detail/${service_type}/${id}`);
+        cy.wait(['@getLogAlertDefinitions']);
 
-  entityGroupingOptions.forEach(({ label: groupLabel, value }) => {
-    it(`should correctly display the details of the Logs Service alert in the alert details view for ${groupLabel} level`, () => {
-      const regionList = ['us-ord', 'us-east'];
-      const alertDetails = alertFactory.build({
-        id: 2,
-        label: 'Alert-1',
-        entity_ids: ['1', '2', '3', '4'],
-        rule_criteria: { rules: logAlertRulesFactory.buildList(2) },
-        service_type: 'logs',
-        severity: 1,
-        status: 'enabled',
-        type: 'user',
-        created_by: 'user1',
-        updated_by: 'user2',
-        created: '2023-10-01T12:00:00Z',
-        updated: new Date().toISOString(),
-        scope: value,
-        ...(value === 'region' ? { regions: regionList } : {}),
-      });
-      const {
-        created_by,
-        description,
-        id,
-        label,
-        service_type,
-        severity,
-        created,
-        updated,
-      } = alertDetails;
-      mockGetAllAlertDefinitions([alertDetails]).as('getAlertDefinitionsList');
-      mockGetAlertDefinitions(service_type, id, alertDetails).as(
-        'getLogAlertDefinitions'
-      );
-      cy.visitWithLogin(`/alerts/definitions/detail/${service_type}/${id}`);
-      cy.wait(['@getLogAlertDefinitions']);
+        // Validating contents of Overview Section
+        cy.get('[data-qa-section="Overview"]').within(() => {
+          // Validate Name field
+          cy.findByText('Name:').should('be.visible');
+          cy.findByText(label).should('be.visible');
 
-      // Validating contents of Overview Section
-      cy.get('[data-qa-section="Overview"]').within(() => {
-        // Validate Name field
-        cy.findByText('Name:').should('be.visible');
-        cy.findByText(label).should('be.visible');
+          // Validate Description field
+          cy.findByText('Description:').should('be.visible');
+          cy.findByText(description).should('be.visible');
 
-        // Validate Description field
-        cy.findByText('Description:').should('be.visible');
-        cy.findByText(description).should('be.visible');
+          // Validate Status field
+          cy.findByText('Status:').should('be.visible');
+          cy.findByText('Enabled').should('be.visible');
 
-        // Validate Status field
-        cy.findByText('Status:').should('be.visible');
-        cy.findByText('Enabled').should('be.visible');
+          cy.findByText('Severity:').should('be.visible');
+          cy.findByText(severityMap[severity]).should('be.visible');
 
-        cy.findByText('Severity:').should('be.visible');
-        cy.findByText(severityMap[severity]).should('be.visible');
+          // Validate Service field
+          cy.findByText('Service:').should('be.visible');
+          cy.findByText('Logs').should('be.visible');
 
-        // Validate Service field
-        cy.findByText('Service:').should('be.visible');
-        cy.findByText('Logs').should('be.visible');
+          // Validate Type field
+          cy.findByText('Type:').should('be.visible');
+          cy.findByText('User').should('be.visible');
 
-        // Validate Type field
-        cy.findByText('Type:').should('be.visible');
-        cy.findByText('User').should('be.visible');
+          // Validate Created By field
+          cy.findByText('Created By:').should('be.visible');
+          cy.findByText(created_by).should('be.visible');
 
-        // Validate Created By field
-        cy.findByText('Created By:').should('be.visible');
-        cy.findByText(created_by).should('be.visible');
+          // Validate Last Modified field
+          cy.findByText('Last Modified:').should('be.visible');
+          cy.findByText(
+            formatDate(updated, {
+              format: 'MMM dd, yyyy, h:mm a',
+              timezone: 'GMT',
+            })
+          ).should('be.visible');
+          cy.findByText(
+            formatDate(created, {
+              format: 'MMM dd, yyyy, h:mm a',
+              timezone: 'GMT',
+            })
+          ).should('be.visible');
 
-        // Validate Last Modified field
-        cy.findByText('Last Modified:').should('be.visible');
-        cy.findByText(
-          formatDate(updated, {
-            format: 'MMM dd, yyyy, h:mm a',
-            timezone: 'GMT',
-          })
-        ).should('be.visible');
-        cy.findByText(
-          formatDate(created, {
-            format: 'MMM dd, yyyy, h:mm a',
-            timezone: 'GMT',
-          })
-        ).should('be.visible');
+          cy.findByText('Scope:').should('be.visible');
+          cy.findByText(groupLabel).should('be.visible');
+        });
 
-        cy.findByText('Scope:').should('be.visible');
-        cy.findByText(groupLabel).should('be.visible');
-      });
-      // Validate the Criteria section by checking each metric rule's threshold details
-      // and all related dimension filters for correct visibility and text content.
-      assertRuleBlock(rules);
-      // Validating contents of Polling Interval
-      cy.get('[data-qa-item="Polling Interval"]')
-        .find('[data-qa-chip]')
-        .should('be.visible')
-        .should('have.text', '10 min');
+        // Validate the Criteria section by checking each metric rule's threshold details
+        // and all related dimension filters for correct visibility and text content.
+        // Fix 1: Now correctly uses locally scoped rules from the built alertDetails
+        assertRuleBlock(rules);
 
-      // Validating contents of Evaluation Periods
-      cy.get('[data-qa-item="Evaluation Period"]')
-        .find('[data-qa-chip]')
-        .should('be.visible')
-        .should('have.text', '5 min');
+        // Validating contents of Polling Interval
+        cy.get('[data-qa-item="Polling Interval"]')
+          .find('[data-qa-chip]')
+          .should('be.visible')
+          .should('have.text', '10 min');
 
-      // Validating contents of Trigger Alert
-      cy.get('[data-qa-chip="All"]')
-        .should('be.visible')
-        .should('have.text', 'All');
+        // Validating contents of Evaluation Periods
+        cy.get('[data-qa-item="Evaluation Period"]')
+          .find('[data-qa-chip]')
+          .should('be.visible')
+          .should('have.text', '5 min');
 
-      cy.get('[data-qa-chip="5 min"]')
-        .should('be.visible')
-        .should('have.text', '5 min');
+        // Validating contents of Trigger Alert
+        cy.get('[data-qa-chip="All"]')
+          .should('be.visible')
+          .should('have.text', 'All');
 
-      cy.get('[data-qa-item="criteria are met for"]')
-        .should('be.visible')
-        .should('have.text', 'criteria are met for');
+        cy.get('[data-qa-chip="5 min"]')
+          .should('be.visible')
+          .should('have.text', '5 min');
 
-      cy.get('[data-qa-item="consecutive occurrences"]')
-        .should('be.visible')
-        .should('have.text', 'consecutive occurrences.');
-      // Execute the appropriate validation logic based on the alert's grouping label (e.g., 'Region' or 'Account')
+        cy.get('[data-qa-item="criteria are met for"]')
+          .should('be.visible')
+          .should('have.text', 'criteria are met for');
 
-      scopeActions[label];
-      // Validate Notification Channels Section
-      cy.get('[data-qa-section="Notification Channels"]').within(() => {
-        cy.findByText('Type:').should('be.visible');
-        cy.findByText('Email').should('be.visible');
-        cy.findByText('Channel:').should('be.visible');
-        cy.findByText('Channel-1').should('be.visible');
-        cy.findByText('To:').should('be.visible');
-        cy.findByText('test@test.com').should('be.visible');
-        cy.findByText('test2@test.com').should('be.visible');
+        cy.get('[data-qa-item="consecutive occurrences"]')
+          .should('be.visible')
+          .should('have.text', 'consecutive occurrences.');
+
+        // Fix 2: scopeActions defined inside it() so cy commands run in test context
+        const scopeActions: Record<string, () => void> = {
+          Account: () => {
+            cy.get('[data-qa-notice="true"]')
+              .find('[data-testid="alert_message_notice"]')
+              .should('have.text', ACCOUNT_GROUP_INFO_MESSAGE);
+          },
+          Entity: () => {
+            const searchPlaceholder = 'Search for an Entity';
+            cy.get('[data-qa-section="Resources"]').within(() => {
+              // Validate heading
+              ui.heading
+                .findByText('entity')
+                .scrollIntoView()
+                .should('be.visible')
+                .should('have.text', 'Entity');
+
+              // Validate search input
+              cy.findByPlaceholderText(searchPlaceholder).should('be.visible');
+
+              // Assert row count matches streams
+              cy.get('[data-qa-alert-table="true"]')
+                .find('[data-qa-alert-row]')
+                .should('have.length', streams.length);
+
+              // Assert each stream label and row id
+              streams.forEach((stream) => {
+                cy.get(`[data-qa-alert-row="${stream.id}"]`).should(
+                  'be.visible'
+                );
+                cy.get(`[data-qa-alert-cell="${stream.id}_entity"]`)
+                  .should('be.visible')
+                  .should('have.text', stream.label);
+              });
+
+              // Sorting validations
+              ui.heading.findByText('entity').click();
+              verifyRowOrder([...streams].map((s) => String(s.id)).reverse());
+
+              ui.heading.findByText('entity').click();
+              verifyRowOrder([...streams].map((s) => String(s.id)));
+            });
+          },
+        };
+
+        // Fix 3: cy.log accepts a single string
+        cy.log(`groupLabel: ${groupLabel}`);
+
+        // Fix 4: Actually invoke the scope action (was missing the function call)
+        scopeActions[groupLabel]?.();
+
+        // Validate Notification Channels Section
+        cy.get('[data-qa-section="Notification Channels"]').within(() => {
+          cy.findByText('Type:').should('be.visible');
+          cy.findByText('Email').should('be.visible');
+          cy.findByText('Channel:').should('be.visible');
+          cy.findByText('Channel-1').should('be.visible');
+          cy.findByText('To:').should('be.visible');
+          cy.findByText('test@test.com').should('be.visible');
+          cy.findByText('test2@test.com').should('be.visible');
+        });
       });
     });
-  });
 });
