@@ -3919,7 +3919,7 @@ export const handlers = [
         serviceTypesFactory.build({
           label: 'Logs',
           service_type: 'logs',
-          regions: 'us-iad,us-east,ap-west',
+          regions: 'us-iad,us-east,eu-west,us-ord,us-west,ca-central',
           alert: serviceAlertFactory.build({ scope: ['entity'] }),
         }),
       ],
