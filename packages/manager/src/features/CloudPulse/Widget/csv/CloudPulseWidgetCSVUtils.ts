@@ -11,6 +11,7 @@ export interface CSVDataProps {
   duration: DateTimeWithPreset;
   filterConfig: CloudPulseServiceTypeFilterMap;
   filters: FilterData | undefined;
+  isDataLoading: boolean;
   widget: Widgets;
 }
 

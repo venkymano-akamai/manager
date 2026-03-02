@@ -242,7 +242,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     scope: 'entity',
     serviceType,
   });
-  const { getRegisteredDashboard, getFilterData } = useCloudPulseExport();
+  const { getSelectedDashboard, getGlobalFilterData } = useCloudPulseExport();
   // Determine which fetch object is relevant for linodes
   const activeLinodeFetch =
     serviceType === 'blockstorage' ? linodeFromVolumes : linodesFetch;
@@ -591,11 +591,12 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                       }}
                     >
                       <CloudPulseWidgetCSVDownloader
-                        dashboardName={getRegisteredDashboard()?.label ?? ''}
+                        dashboardName={getSelectedDashboard()?.label ?? ''}
                         data={data}
                         duration={duration}
                         filterConfig={filterConfig}
-                        filters={getFilterData()}
+                        filters={getGlobalFilterData()}
+                        isDataLoading={isLoading || isJweTokenFetching}
                         widget={widget}
                       />
                     </IconButton>

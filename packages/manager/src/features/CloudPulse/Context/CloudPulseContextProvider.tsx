@@ -5,36 +5,40 @@ import { CloudPulseContext } from './CloudPulseContext';
 import type { FilterData } from '../Dashboard/CloudPulseDashboardLanding';
 import type { Dashboard } from '@linode/api-v4';
 
-export const CloudPulseExportContextProvider: React.FC<{
+interface CloudPulseProviderProps {
   children: React.ReactNode;
-}> = ({ children }) => {
-  const filterRegistryRef = React.useRef<FilterData | undefined>(undefined);
-  const dashboardRegistryRef = React.useRef<Dashboard | undefined>(undefined);
+}
 
-  const registerFilterData = React.useCallback((filterData: FilterData) => {
-    filterRegistryRef.current = filterData;
+export const CloudPulseContextProvider = ({
+  children,
+}: CloudPulseProviderProps) => {
+  const globalFilterData = React.useRef<FilterData | undefined>(undefined);
+  const selectedDashboard = React.useRef<Dashboard | undefined>(undefined);
+
+  const setGlobalFilterData = React.useCallback((filterData: FilterData) => {
+    globalFilterData.current = filterData;
   }, []);
 
-  const getFilterData = React.useCallback(() => {
-    return filterRegistryRef.current;
+  const getGlobalFilterData = React.useCallback(() => {
+    return globalFilterData.current;
   }, []);
 
-  const registerDashboard = React.useCallback((dashboard: Dashboard) => {
+  const setSelectedDashboard = React.useCallback((dashboard: Dashboard) => {
     // Placeholder for potential future use if we need to register dashboard-level data
-    dashboardRegistryRef.current = dashboard;
+    selectedDashboard.current = dashboard;
   }, []);
 
-  const getRegisteredDashboard = React.useCallback(() => {
-    return dashboardRegistryRef.current;
+  const getSelectedDashboard = React.useCallback(() => {
+    return selectedDashboard.current;
   }, []);
 
   return (
     <CloudPulseContext.Provider
       value={{
-        registerFilterData,
-        getFilterData,
-        registerDashboard,
-        getRegisteredDashboard,
+        setGlobalFilterData,
+        getGlobalFilterData,
+        setSelectedDashboard,
+        getSelectedDashboard,
       }}
     >
       {children}

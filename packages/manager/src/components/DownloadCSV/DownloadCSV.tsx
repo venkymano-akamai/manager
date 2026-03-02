@@ -16,7 +16,7 @@ interface DownloadCSVProps {
   disabled?: boolean;
   filename: string;
   headers: { key: string; label: string }[];
-  icon?: React.ComponentClass;
+  iconStyles?: React.CSSProperties;
   onClick: (() => void) | ((e: React.MouseEvent<HTMLButtonElement>) => void);
   sx?: SxProps<Theme>;
   text?: string;
@@ -41,13 +41,13 @@ export const DownloadCSV = ({
   onClick,
   sx,
   text = 'Download CSV',
-  icon: Icon = DownloadIcon,
   disabled = false,
+  iconStyles,
 }: DownloadCSVProps) => {
   const renderButton =
     buttonType === 'styledLink' ? (
       <LinkButton disabled={disabled} onClick={onClick} sx={sx}>
-        <Icon />
+        <DownloadIcon style={iconStyles} />
         {text}
       </LinkButton>
     ) : (
