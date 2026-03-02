@@ -46,57 +46,27 @@ const mockProfile = profileFactory.build({
 });
 const mockAccount = accountFactory.build();
 const now = new Date();
-const mockAlerts = [
-  alertFactory.build({
-    created_by: 'user1',
-    id: 1,
-    entity_ids: ['1', '2', '3', '4', '5'],
-    label: 'Alert-1',
-    service_type: 'dbaas',
-    severity: 1,
-    status: 'enabled',
-    type: 'user',
-    updated: new Date(now.getTime() - 86400).toISOString(),
-    updated_by: 'updated1',
-  }),
-  alertFactory.build({
-    created_by: 'user4',
-    id: 2,
-    updated_by: 'updated4',
-    entity_ids: ['1', '2', '3', '4', '5'],
-    label: 'Alert-2',
-    service_type: 'dbaas',
-    severity: 0,
-    status: 'disabled',
-    type: 'user',
-    updated: new Date(now.getTime() - 10 * 86400).toISOString(),
-  }),
-  alertFactory.build({
-    created_by: 'user2',
-    id: 3,
-    updated_by: 'updated2',
-    entity_ids: ['1', '2', '3', '4', '5'],
-    label: 'Alert-3',
-    service_type: 'linode',
-    severity: 2,
-    status: 'enabled',
-    type: 'user',
-    updated: new Date(now.getTime() - 6 * 86400).toISOString(),
-  }),
-  alertFactory.build({
-    created_by: 'user3',
-    id: 4,
-    updated_by: 'updated3',
-    entity_ids: ['1', '2', '3', '4', '5'],
-    label: 'Alert-4',
-    service_type: 'linode',
-    severity: 3,
-    status: 'disabled',
-    type: 'user',
-    updated: new Date(now.getTime() - 4 * 86400).toISOString(),
-  }),
-];
+const daysAgo = (days: number) =>
+  new Date(now.getTime() - days * 86400000).toISOString();
 
+const serviceType: CloudPulseServiceType[] = ['dbaas', 'linode', 'logs'];
+const statuses: AlertStatusType[] = ['enabled', 'disabled'];
+
+const mockAlerts = serviceType.flatMap((serviceType, i) =>
+  statuses.map((status, j) =>
+    alertFactory.build({
+      created_by: `user${i * 2 + j + 1}`,
+      entity_ids: ['1', '2', '3', '4', '5'],
+      id: i * 2 + j + 1,
+      label: `Alert-${i * 2 + j + 1}`,
+      service_type: serviceType,
+      status,
+      type: 'user',
+      updated: daysAgo(i * 2 + j),
+      updated_by: `updated${i * 2 + j + 1}`,
+    })
+  )
+);
 interface AlertActionOptions {
   action: 'Disable' | 'Enable';
   alertName: string;
@@ -149,9 +119,17 @@ const verifyTableSorting = (
   sortOrder: 'ascending' | 'descending',
   expectedValues: number[]
 ) => {
-  ui.heading.findByText(header).click();
-  ui.heading.findByText(header).should('have.attr', 'aria-sort', sortOrder);
+  // Click the th using data-qa-header attribute
+  cy.get(`[data-qa-header="${header}"]`).click();
 
+  // Assert aria-sort on the th element itself
+  cy.get(`[data-qa-header="${header}"]`).should(
+    'have.attr',
+    'aria-sort',
+    sortOrder
+  );
+
+  // Assert row order
   cy.get('[data-qa="alert-table"]').within(() => {
     cy.get('[data-qa-alert-cell]').should(($cells) => {
       const actualOrder = $cells
@@ -165,7 +143,6 @@ const verifyTableSorting = (
     });
   });
 };
-
 /**
  * @param {Alert} alert - The alert object to validate.
  */
@@ -216,7 +193,7 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetProfile(mockProfile);
-    mockGetCloudPulseServices(['linode', 'dbaas']);
+    mockGetCloudPulseServices(['linode', 'dbaas', 'logs']);
     mockGetAllAlertDefinitions(mockAlerts).as('getAlertDefinitionsList');
     mockUpdateAlertDefinitions('dbaas', 1, mockAlerts[0]).as(
       'getFirstAlertDefinitions'
@@ -231,33 +208,77 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
   });
 
   it('should verify sorting functionality for multiple columns in ascending and descending order', () => {
+    const alerts = [...mockAlerts];
+
     const sortCases = [
-      { ascending: [1, 2, 3, 4], column: 'label', descending: [4, 3, 2, 1] },
-      { ascending: [2, 4, 1, 3], column: 'status', descending: [1, 3, 2, 4] },
       {
-        ascending: [1, 2, 3, 4],
-        column: 'service_type_label',
-        descending: [3, 4, 1, 2],
+        column: 'label',
+        ascending: [...alerts]
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .map((a) => a.id),
+        descending: [...alerts]
+          .sort((a, b) => b.label.localeCompare(a.label))
+          .map((a) => a.id),
       },
       {
-        ascending: [1, 3, 4, 2],
+        column: 'status',
+        ascending: [...alerts]
+          .sort((a, b) => a.status.localeCompare(b.status))
+          .map((a) => a.id),
+        descending: [...alerts]
+          .sort((a, b) => b.status.localeCompare(a.status))
+          .map((a) => a.id),
+      },
+      {
+        column: 'service_type_label', // ← fixed: matches data-qa-header in HTML
+        ascending: [...alerts]
+          .sort((a, b) => a.service_type.localeCompare(b.service_type))
+          .map((a) => a.id),
+        descending: [...alerts]
+          .sort((a, b) => b.service_type.localeCompare(a.service_type))
+          .map((a) => a.id),
+      },
+      {
         column: 'created_by',
-        descending: [2, 4, 3, 1],
+        ascending: [...alerts]
+          .sort((a, b) => a.created_by.localeCompare(b.created_by))
+          .map((a) => a.id),
+        descending: [...alerts]
+          .sort((a, b) => b.created_by.localeCompare(a.created_by))
+          .map((a) => a.id),
       },
-      { ascending: [2, 3, 4, 1], column: 'updated', descending: [1, 4, 3, 2] },
       {
-        ascending: [1, 3, 4, 2],
-        column: 'updated_by',
-        descending: [2, 4, 3, 1],
+        column: 'updated',
+        ascending: [...alerts]
+          .sort(
+            (a, b) =>
+              new Date(a.updated).getTime() - new Date(b.updated).getTime()
+          )
+          .map((a) => a.id),
+        descending: [...alerts]
+          .sort(
+            (a, b) =>
+              new Date(b.updated).getTime() - new Date(a.updated).getTime()
+          )
+          .map((a) => a.id),
+      },
+      {
+        column: 'updated_by', // ← added: Last Modified By column exists in HTML
+        ascending: [...alerts]
+          .sort((a, b) => a.updated_by.localeCompare(b.updated_by))
+          .map((a) => a.id),
+        descending: [...alerts]
+          .sort((a, b) => b.updated_by.localeCompare(a.updated_by))
+          .map((a) => a.id),
       },
     ];
 
     sortCases.forEach(({ ascending, column, descending }) => {
-      // Verify descending order
-      verifyTableSorting(column, 'descending', descending);
-
-      // Verify ascending order
+      // Verify ascending order first (default click)
       verifyTableSorting(column, 'ascending', ascending);
+
+      // Verify descending order (second click)
+      verifyTableSorting(column, 'descending', descending);
     });
   });
   it('should verify action menu items for enabling and disabling alerts', () => {
@@ -364,6 +385,12 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
   });
 
   it('should search and filter alerts by name, service, and status, and clear filters', () => {
+    // dbaas: ids 1,2 | linode: ids 3,4 | logs: ids 5,6
+    const dbaasAlerts = mockAlerts.filter((a) => a.service_type === 'dbaas');
+    const linodeAlerts = mockAlerts.filter((a) => a.service_type === 'linode');
+    const enabledAlerts = mockAlerts.filter((a) => a.status === 'enabled');
+    const disabledAlerts = mockAlerts.filter((a) => a.status === 'disabled');
+
     // Search by alert name and validate the results
     cy.findByPlaceholderText('Search for Alerts')
       .should('be.visible')
@@ -371,37 +398,33 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
       .type(mockAlerts[0].label);
 
     cy.get(`[data-qa-alert-cell="${mockAlerts[0].id}"]`).should('be.visible');
-    [1, 2, 3].forEach((index) => {
-      cy.get(`[data-qa-alert-cell="${mockAlerts[index].id}"]`).should(
-        'not.exist'
-      );
+    mockAlerts.slice(1).forEach((alert) => {
+      cy.get(`[data-qa-alert-cell="${alert.id}"]`).should('not.exist');
     });
 
-    // Clear the previous search by alert name
+    // Clear the previous search
     cy.get('[data-qa-filter="alert-search"]').within(() => {
       cy.findByTestId('textfield-input').clear();
     });
 
-    // Filter by alert service and validate the results
+    // Filter by service = Databases (dbaas) and validate
     cy.findByPlaceholderText('Select a Service')
       .should('be.visible')
       .type('Databases{enter}');
-
     cy.focused().click();
 
     cy.get('[data-qa="alert-table"]')
       .find('[data-qa-alert-cell]')
-      .should('have.length', 2);
+      .should('have.length', dbaasAlerts.length); // 2
 
-    [0, 1].forEach((index) => {
-      cy.get(`[data-qa-alert-cell="${mockAlerts[index].id}"]`).should(
-        'be.visible'
-      );
+    dbaasAlerts.forEach((alert) => {
+      cy.get(`[data-qa-alert-cell="${alert.id}"]`).should('be.visible');
     });
-    [2, 3].forEach((index) => {
-      cy.get(`[data-qa-alert-cell="${mockAlerts[index].id}"]`).should(
-        'not.exist'
-      );
+    [
+      ...linodeAlerts,
+      ...mockAlerts.filter((a) => a.service_type === 'logs'),
+    ].forEach((alert) => {
+      cy.get(`[data-qa-alert-cell="${alert.id}"]`).should('not.exist');
     });
 
     // Clear the service filter
@@ -413,26 +436,21 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
       ui.button.findByAttribute('aria-label', 'Clear').click();
     });
 
-    // Filter by alert status and validate the results
+    // Filter by status = Enabled and validate
     cy.findByPlaceholderText('Select a Status')
       .should('be.visible')
       .type('Enabled{enter}');
-
     cy.focused().click();
 
     cy.get('[data-qa="alert-table"]')
       .find('[data-qa-alert-cell]')
-      .should('have.length', 2);
+      .should('have.length', enabledAlerts.length); // 3
 
-    [0, 2].forEach((index) => {
-      cy.get(`[data-qa-alert-cell="${mockAlerts[index].id}"]`).should(
-        'be.visible'
-      );
+    enabledAlerts.forEach((alert) => {
+      cy.get(`[data-qa-alert-cell="${alert.id}"]`).should('be.visible');
     });
-    [1, 3].forEach((index) => {
-      cy.get(`[data-qa-alert-cell="${mockAlerts[index].id}"]`).should(
-        'not.exist'
-      );
+    disabledAlerts.forEach((alert) => {
+      cy.get(`[data-qa-alert-cell="${alert.id}"]`).should('not.exist');
     });
   });
 

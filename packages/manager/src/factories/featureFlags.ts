@@ -66,6 +66,10 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       alerts: { beta: true, enabled: true },
       metrics: { beta: true, enabled: true },
     },
+    logs: {
+      alerts: { beta: true, enabled: true },
+      metrics: { beta: true, enabled: true },
+    },
   },
   aclpResourceTypeMap: [
     {
@@ -107,6 +111,11 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       dimensionKey: 'netloadbalancer',
       maxResourceSelections: 10,
       serviceType: 'netloadbalancer',
+    },
+    {
+      dimensionKey: 'logs',
+      maxResourceSelections: 10,
+      serviceType: 'logs',
     },
   ],
 });

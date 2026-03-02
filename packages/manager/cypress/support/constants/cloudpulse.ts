@@ -12,6 +12,7 @@ export const cloudPulseServiceMap: Record<string, string> = {
   blockstorage: 'Volumes',
   lke: 'Kubernetes',
   netloadbalancer: 'Netloadbalancer',
+  logs: 'Logs',
 };
 
 /**
