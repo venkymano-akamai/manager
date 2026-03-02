@@ -1,6 +1,5 @@
 // This file will be maintained only in our aclp repo to work with CRUD handlers.
 import { pickRandom } from '@linode/utilities';
-import { group } from 'console';
 import { http, HttpResponse } from 'msw';
 
 import {
