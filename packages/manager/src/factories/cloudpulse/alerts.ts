@@ -19,12 +19,30 @@ export const alertDimensionsFactory =
     value: 'idle',
   });
 
+export const logAlertDimensionsFactory =
+  Factory.Sync.makeFactory<AlertDefinitionDimensionFilter>({
+    dimension_label: 'status_code',
+    label: 'Status Code',
+    operator: 'eq',
+    value: '200',
+  });
+
 export const alertRulesFactory =
   Factory.Sync.makeFactory<AlertDefinitionMetricCriteria>({
     aggregate_function: 'avg',
     dimension_filters: alertDimensionsFactory.buildList(1),
     label: 'CPU Usage',
     metric: 'system_cpu_utilization_percent',
+    operator: 'eq',
+    threshold: 60,
+    unit: 'Bytes',
+  });
+export const logAlertRulesFactory =
+  Factory.Sync.makeFactory<AlertDefinitionMetricCriteria>({
+    aggregate_function: 'avg',
+    dimension_filters: logAlertDimensionsFactory.buildList(1),
+    label: 'Successful Upload Count',
+    metric: 'success_upload_count',
     operator: 'eq',
     threshold: 60,
     unit: 'Bytes',
@@ -50,6 +68,36 @@ export const cpuRulesFactory = Factory.Sync.makeFactory<MetricCriteria>({
   operator: 'eq',
   threshold: 1000,
 });
+
+export const errorUploadRulesFactory = Factory.Sync.makeFactory<MetricCriteria>(
+  {
+    aggregate_function: 'avg',
+    dimension_filters: [
+      {
+        dimension_label: 'status_code',
+        operator: 'eq',
+        value: '200',
+      },
+    ],
+    metric: 'error_upload_count',
+    operator: 'eq',
+    threshold: 1000,
+  }
+);
+export const successUploadRulesFactory =
+  Factory.Sync.makeFactory<MetricCriteria>({
+    aggregate_function: 'avg',
+    dimension_filters: [
+      {
+        dimension_label: 'status_code',
+        operator: 'eq',
+        value: '200',
+      },
+    ],
+    metric: 'success_upload_count',
+    operator: 'eq',
+    threshold: 1000,
+  });
 
 export const ingressTrafficRateRulesFactory =
   Factory.Sync.makeFactory<MetricCriteria>({

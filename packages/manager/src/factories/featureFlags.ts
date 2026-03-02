@@ -118,5 +118,10 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       maxResourceSelections: 10,
       serviceType: 'netloadbalancer',
     },
+    {
+      dimensionKey: 'logs',
+      maxResourceSelections: 10,
+      serviceType: 'logs',
+    },
   ],
 });
