@@ -70,7 +70,6 @@ export const CloudPulseDashboardSelect = React.memo(
       ? [serviceType]
       : [
           ...getEnabledServiceTypes(serviceTypesList, aclpServices),
-          'netloadbalancer',
           'logs', // These two service types are not part of the service types API response but are required for dashboard select, hence added manually.
         ];
 
