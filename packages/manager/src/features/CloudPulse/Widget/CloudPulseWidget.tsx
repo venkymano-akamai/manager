@@ -1,6 +1,6 @@
 import { useProfile, useRegionsQuery } from '@linode/queries';
 import { Box, Paper, Typography } from '@linode/ui';
-import { GridLegacy, Stack, useTheme } from '@mui/material';
+import { GridLegacy, IconButton, Stack, useTheme } from '@mui/material';
 import { DateTime } from 'luxon';
 import React from 'react';
 
@@ -9,7 +9,9 @@ import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
 
 import { useBlockStorageFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useBlockStorageFetchOptions';
 import { useFirewallFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useFirewallFetchOptions';
+import { useCloudPulseExport } from '../Context/useCloudPulseExport';
 import { WidgetFilterGroupByRenderer } from '../GroupBy/WidgetFilterGroupByRenderer';
+import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import {
   generateGraphData,
   getCloudPulseMetricRequest,
@@ -36,6 +38,7 @@ import { CloudPulseIntervalSelect } from './components/CloudPulseIntervalSelect'
 import { CloudPulseLineGraph } from './components/CloudPulseLineGraph';
 import { CloudPulseDimensionFiltersSelect } from './components/DimensionFilters/CloudPulseDimensionFiltersSelect';
 import { ZoomIcon } from './components/Zoomer';
+import { CloudPulseWidgetCSVDownloader } from './csv/CloudPulseWidgetCSVDownloader';
 
 import type { FilterValueType } from '../Dashboard/CloudPulseDashboardLanding';
 import type { CloudPulseResources } from '../shared/CloudPulseResourcesSelect';
@@ -203,6 +206,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
 
   const flags = useFlags();
   const scaledWidgetUnit = React.useRef(generateCurrentUnit(unit));
+  const filterConfig = FILTER_CONFIG.get(dashboardId);
 
   const jweTokenExpiryError = 'Token expired';
   const { data: regions } = useRegionsQuery();
@@ -238,6 +242,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     scope: 'entity',
     serviceType,
   });
+  const { getRegisteredDashboard, getFilterData } = useCloudPulseExport();
   // Determine which fetch object is relevant for linodes
   const activeLinodeFetch =
     serviceType === 'blockstorage' ? linodeFromVolumes : linodesFetch;
@@ -570,6 +575,31 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     selectedRegions={linodeRegion ? [linodeRegion] : undefined}
                     serviceType={serviceType}
                   />
+                )}
+                {filterConfig && (
+                  <CloudPulseTooltip
+                    key="csv-download-tooltip"
+                    placement="bottom-end"
+                    title="CSV Download"
+                  >
+                    <IconButton
+                      aria-label="Download CSV"
+                      color="inherit"
+                      data-testid="download-csv"
+                      sx={{
+                        padding: 0,
+                      }}
+                    >
+                      <CloudPulseWidgetCSVDownloader
+                        dashboardName={getRegisteredDashboard()?.label ?? ''}
+                        data={data}
+                        duration={duration}
+                        filterConfig={filterConfig}
+                        filters={getFilterData()}
+                        widget={widget}
+                      />
+                    </IconButton>
+                  </CloudPulseTooltip>
                 )}
                 <WidgetFilterGroupByRenderer
                   dashboardId={dashboardId}

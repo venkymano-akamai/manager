@@ -9,6 +9,7 @@ import { LandingHeader } from 'src/components/LandingHeader';
 import { SuspenseLoader } from 'src/components/SuspenseLoader';
 import { useFlags } from 'src/hooks/useFlags';
 
+import { CloudPulseExportContextProvider } from '../Context/CloudPulseContextProvider';
 import { GlobalFilters } from '../Overview/GlobalFilters';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
 import { defaultTimeDuration } from '../Utils/CloudPulseDateTimePickerUtils';
@@ -102,45 +103,47 @@ export const CloudPulseDashboardLanding = () => {
     []
   );
   return (
-    <React.Suspense fallback={<SuspenseLoader />}>
-      <DocumentTitleSegment segment="Dashboards" />
-      <LandingHeader
-        breadcrumbProps={{
-          pathname: '/metrics',
-          labelOptions: {
-            suffixComponent: flags.aclp?.new ? <NewFeatureChip /> : undefined,
-          },
-        }}
-        docsLabel="Docs"
-        docsLink="https://techdocs.akamai.com/cloud-computing/docs/akamai-cloud-pulse"
-      />
-      <GridLegacy container spacing={3} sx={{ width: 'inherit !important' }}>
-        <GridLegacy item xs={12}>
-          <Paper sx={{ padding: 0 }}>
-            <Box display="flex" flexDirection="column">
-              <GlobalFilters
-                handleAnyFilterChange={onFilterChange}
-                handleDashboardChange={onDashboardChange}
-                handleGroupByChange={onGroupByChange}
-                handleTimeDurationChange={onTimeDurationChange}
-                handleToggleAppliedFilter={toggleAppliedFilter}
-              />
-              {dashboard?.service_type && showAppliedFilters && (
-                <CloudPulseAppliedFilterRenderer
-                  dashboardId={dashboard.id}
-                  filters={filterData.label}
-                />
-              )}
-            </Box>
-          </Paper>
-        </GridLegacy>
-        <CloudPulseDashboardRenderer
-          dashboard={dashboard}
-          filterValue={filterData.id}
-          groupBy={groupBy}
-          timeDuration={timeDuration}
+    <CloudPulseExportContextProvider>
+      <React.Suspense fallback={<SuspenseLoader />}>
+        <DocumentTitleSegment segment="Dashboards" />
+        <LandingHeader
+          breadcrumbProps={{
+            pathname: '/metrics',
+            labelOptions: {
+              suffixComponent: flags.aclp?.new ? <NewFeatureChip /> : undefined,
+            },
+          }}
+          docsLabel="Docs"
+          docsLink="https://techdocs.akamai.com/cloud-computing/docs/akamai-cloud-pulse"
         />
-      </GridLegacy>
-    </React.Suspense>
+        <GridLegacy container spacing={3} sx={{ width: 'inherit !important' }}>
+          <GridLegacy item xs={12}>
+            <Paper sx={{ padding: 0 }}>
+              <Box display="flex" flexDirection="column">
+                <GlobalFilters
+                  handleAnyFilterChange={onFilterChange}
+                  handleDashboardChange={onDashboardChange}
+                  handleGroupByChange={onGroupByChange}
+                  handleTimeDurationChange={onTimeDurationChange}
+                  handleToggleAppliedFilter={toggleAppliedFilter}
+                />
+                {dashboard?.service_type && showAppliedFilters && (
+                  <CloudPulseAppliedFilterRenderer
+                    dashboardId={dashboard.id}
+                    filters={filterData.label}
+                  />
+                )}
+              </Box>
+            </Paper>
+          </GridLegacy>
+          <CloudPulseDashboardRenderer
+            dashboard={dashboard}
+            filterValue={filterData.id}
+            groupBy={groupBy}
+            timeDuration={timeDuration}
+          />
+        </GridLegacy>
+      </React.Suspense>
+    </CloudPulseExportContextProvider>
   );
 };
