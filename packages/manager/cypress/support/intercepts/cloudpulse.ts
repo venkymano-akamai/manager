@@ -860,3 +860,35 @@ export const mockGetStreams = (streams: Stream[]): Cypress.Chainable<null> => {
     paginateResponse(streams)
   );
 };
+
+/**
+ * Intercepts GET request to fetch a paginated list of streams.
+ *
+ * @param streams - The array of streams to return in the paginated response.
+ */
+export const mockGetStreamsPaginated = (
+  streams: Stream[]
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('monitor/streams?page=1&page_size=25'),
+    paginateResponse(streams)
+  );
+};
+
+/**
+ * Intercepts GET request to fetch a stream by its ID.
+ *
+ * @param id - The ID of the stream to fetch.
+ * @param stream - The stream object to return in the response.
+ */
+export const mockGetStreamById = (
+  id: number,
+  stream: Stream
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`monitor/streams/${id}`),
+    makeResponse(stream)
+  );
+};
