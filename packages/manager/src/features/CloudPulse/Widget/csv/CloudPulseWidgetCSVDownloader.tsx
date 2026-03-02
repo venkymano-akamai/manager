@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import React from 'react';
 import type { CSVLink } from 'react-csv';
 
@@ -18,6 +18,7 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
     const enableDownloadIcon =
       data && filters && widget && dashboardName && duration && !isDataLoading;
     const csvData = enableDownloadIcon ? generateCSVData(props) : [];
+    const theme = useTheme();
     return (
       <Box>
         <DownloadCSV
@@ -34,6 +35,7 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
           onClick={() => csvRef.current?.link.click()}
           sx={{
             fontSize: 0, // text not needed
+            color: theme.tokens.alias.Content.Text.Primary.Default,
           }}
         />
       </Box>

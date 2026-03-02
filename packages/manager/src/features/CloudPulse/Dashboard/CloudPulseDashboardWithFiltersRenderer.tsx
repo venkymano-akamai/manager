@@ -2,7 +2,6 @@ import { useProfile } from '@linode/queries';
 import { Box, CircleProgress, Divider, ErrorState, Paper } from '@linode/ui';
 import { GridLegacy } from '@mui/material';
 import { DateTime } from 'luxon';
-import { set } from 'ramda';
 import React from 'react';
 
 import {
