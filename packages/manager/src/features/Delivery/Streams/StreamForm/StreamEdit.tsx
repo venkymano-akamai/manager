@@ -3,6 +3,7 @@ import { destinationType, streamType } from '@linode/api-v4';
 import { useAllDestinationsQuery, useStreamQuery } from '@linode/queries';
 import { Box, CircleProgress, ErrorState } from '@linode/ui';
 import { streamAndDestinationFormSchema } from '@linode/validation';
+import { Divider } from '@mui/material';
 import { useParams } from '@tanstack/react-router';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -13,6 +14,7 @@ import {
   LandingHeader,
   type LandingHeaderProps,
 } from 'src/components/LandingHeader';
+import { CloudPulseDashboardWithFilters } from 'src/features/CloudPulse/Dashboard/CloudPulseDashboardWithFilters';
 import { StreamForm } from 'src/features/Delivery/Streams/StreamForm/StreamForm';
 
 import type { StreamAndDestinationFormType } from 'src/features/Delivery/Streams/StreamForm/types';
@@ -129,9 +131,16 @@ export const StreamEdit = () => {
         !isLoadingDestinations &&
         !errorStream &&
         !errorDestinations && (
-          <FormProvider {...form}>
-            <StreamForm mode="edit" streamId={streamId} />
-          </FormProvider>
+          <>
+            <FormProvider {...form}>
+              <StreamForm mode="edit" streamId={streamId} />
+            </FormProvider>
+            <Divider sx={{ marginY: 4 }} />
+            <CloudPulseDashboardWithFilters
+              resource={streamId}
+              serviceType="logs"
+            />
+          </>
         )}
     </>
   );
