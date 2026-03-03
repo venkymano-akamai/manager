@@ -15,19 +15,151 @@ import type {
 import type { DataSet } from 'src/components/AreaChart/AreaChart';
 
 export interface CSVDataProps {
+  /**
+   * The name of the dashboard for which the widget data is being downloaded
+   */
   dashboardName: string;
+  /**
+   * The data points for the widget, typically an array of objects with timestamp and value keys
+   */
   data: DataSet[];
+  /**
+   * The dimension filters applied on the widget data
+   */
   dimensionFilters: MetricsDimensionFilter[];
+  /**
+   * The list of available dimensions for the selected metric, used to map dimension labels to user-friendly names
+   */
   dimensionOptions: Dimension[];
+  /**
+   * The duration for which the data is being downloaded, including start and end times and the time zone
+   */
   duration: DateTimeWithPreset;
+  /**
+   * The filter data applied on the widget, including label filters and other types of filters
+   */
   filterConfig: CloudPulseServiceTypeFilterMap;
+  /**
+   * The filters applied on the widget, used to extract the applied filter values for the CSV
+   */
   filters: FilterData | undefined;
+  /**
+   * The group by options applied on the widget, used to include the group by information in the CSV
+   */
   groupBy: string[];
+  /**
+   * Indicates whether the widget data is still loading, used to determine whether to enable the CSV download functionality
+   */
   isDataLoading: boolean;
+  /**
+   * The service type of the widget, used to apply any service-specific transformations to dimension filter values and labels in the CSV
+   */
   serviceType: CloudPulseServiceType;
+  /**
+   * The widget for which the CSV is being generated, used to extract information such as the metric label, unit, aggregation function, and scrape interval to include in the CSV
+   */
   widget: Widgets;
 }
 
+type CSVRow = Array<number | string>;
+type CSVData = CSVRow[];
+
+/**
+ * @param iso The ISO string to be formatted, typically representing a date and time value such as the start or end time of the data duration for the widget
+ * @param timeZone The time zone to be applied when formatting the ISO string, used to ensure that the date and time values in the CSV are presented in the user's local time zone for better readability and relevance
+ * @returns The formatted date and time string in the specified time zone
+ */
+const formatDateTime = (iso: string, timeZone: string | undefined) =>
+  DateTime.fromISO(iso).setZone(timeZone).toLocaleString(DateTime.DATETIME_MED);
+
+/**
+ * @param millis The timestamp to be formatted in milliseconds
+ * @param timeZone The time zone to te applied while formatting the timestamp
+ * @returns The formatted data and time string in specified time zone
+ */
+const formatTimestamp = (millis: number, timeZone: string | undefined) =>
+  DateTime.fromMillis(millis)
+    .setZone(timeZone)
+    .toLocaleString(DateTime.DATETIME_MED);
+
+/**
+ * @param dimensions The dimensions to be transformed into a map of dimension label to dimension name, used to create a mapping of dimension labels to user-friendly names for better readability in the CSV
+ * @returns The map of dimension label to dimension name, used to look up user-friendly names for dimension labels when generating the CSV data
+ */
+const buildDimensionLabelMap = (dimensions: Dimension[]) =>
+  dimensions.reduce<Record<string, string>>((acc, dimension) => {
+    acc[dimension.dimension_label] = dimension.label;
+    return acc;
+  }, {});
+
+/**
+ * @param dimensionFilters The dimension filters applied on the widget, used to extract the dimension filter information to include in the CSV
+ * @param dimensionOptions The list of available dimensions for the selected metric, used to map dimension labels to user-friendly names in the CSV
+ * @param serviceType The service type of the widget, used to apply any service-specific transformations to dimension filter values and labels in the CSV
+ * @returns The formatted dimension filter string to be included in the CSV, typically in the format of "Dimension Label, Operator, Value; Dimension Label, Operator, Value" for multiple dimension filters, with user-friendly dimension labels and transformed values based on the service type for better readability and relevance in the CSV
+ */
+const buildDimensionFilterString = (
+  dimensionFilters: MetricsDimensionFilter[],
+  dimensionOptions: Dimension[],
+  serviceType: CloudPulseServiceType
+): string => {
+  if (!dimensionFilters.length) return '';
+
+  const labelMap = buildDimensionLabelMap(dimensionOptions);
+
+  return dimensionFilters
+    .map((filter) => {
+      if (filter.dimension_label) {
+        const label = labelMap[filter.dimension_label] ?? '';
+        const transformer =
+          DIMENSION_TRANSFORM_CONFIG[serviceType]?.[filter.dimension_label];
+
+        const value = transformer?.(filter.value ?? '') ?? filter.value ?? '';
+
+        return `${label},${filter.operator}, ${value}`;
+      }
+      return undefined;
+    })
+    .filter((value) => value !== undefined)
+    .join(';');
+};
+
+/**
+ * @param csvData The existing CSV data array to which the applied filters will be appended, used to build the complete CSV data including the applied filters information
+ * @param filters The filters applied on the widget, used to extract the filter information to include in the CSV
+ * @param filterConfig The configuration of the filters for the service type, used to map filter keys to user-friendly names in the CSV
+ * @returns The updated CSV data array with the applied filters appended, used to build the complete CSV data including the applied filters information
+ */
+const appendAppliedFilters = (
+  csvData: CSVData,
+  filters: FilterData,
+  filterConfig: CloudPulseServiceTypeFilterMap
+) => {
+  if (!filters?.label) return;
+
+  const appliedFilters = filterConfig.filters
+    .filter((filter) =>
+      Boolean(filters.label[filter.configuration.filterKey]?.length)
+    )
+    .map(
+      (filter) =>
+        [
+          filter.configuration.name,
+          filters.label[filter.configuration.filterKey],
+        ] as CSVRow
+    );
+
+  csvData.push(...appliedFilters);
+
+  if (appliedFilters.length) {
+    csvData.push([]);
+  }
+};
+
+/**
+ * @param props The properties required to generate the CSV data for a CloudPulse widget, including the dashboard name, widget data, applied filters, group by options, and other relevant information needed to build a comprehensive CSV representation of the widget data
+ * @returns The generated CSV data for the CloudPulse widget, including header information, applied filters, group by details, aggregation function, scrape interval, dimension filters, metric information, and the actual data points
+ */
 export const generateCSVData = ({
   dashboardName,
   data,
@@ -39,53 +171,29 @@ export const generateCSVData = ({
   dimensionFilters,
   dimensionOptions,
   serviceType,
-}: CSVDataProps): Array<Array<number | string>> => {
-  const csvData = [];
+}: CSVDataProps): CSVData => {
+  const csvData: CSVData = [];
+
+  // Header
   csvData.push(['Dashboard', dashboardName]);
   csvData.push([
     'Start Time',
-    DateTime.fromISO(duration.start)
-      .setZone(duration.timeZone)
-      .toLocaleString(DateTime.DATETIME_MED),
+    formatDateTime(duration.start, duration.timeZone),
   ]);
-  csvData.push([
-    'End Time',
-    DateTime.fromISO(duration.end)
-      .setZone(duration.timeZone)
-      .toLocaleString(DateTime.DATETIME_MED),
-  ]);
-  csvData.push([]); // Empty row for separation
+  csvData.push(['End Time', formatDateTime(duration.end, duration.timeZone)]);
+  csvData.push([]);
 
-  // build filter data
-  if (filters && filters.label) {
-    const configuredFilters = filterConfig.filters;
-    const usableFilters = filters.label;
-
-    const appliedFilter = configuredFilters
-      .filter((filter) => {
-        const filterKey = filter.configuration.filterKey;
-        return Boolean(usableFilters[filterKey]?.length);
-      })
-      .reduce(
-        (prevValue, filter) => ({
-          ...prevValue,
-          [filter.configuration.name]:
-            usableFilters[filter.configuration.filterKey],
-        }),
-        {}
-      );
-    Object.entries(appliedFilter).forEach(([filterName, filterValues]) => {
-      csvData.push([filterName, filterValues]);
-    });
-    csvData.push([]); // Empty row for separation
+  // Filters
+  if (filters) {
+    appendAppliedFilters(csvData, filters, filterConfig);
   }
 
-  // populate the widget level aggregation function, scrape interval, group by and dimension filters
-  if (groupBy.length > 0) {
+  // Group By
+  if (groupBy.length) {
     csvData.push(['Group By', groupBy.join(', ')]);
   }
 
-  // aggregation function
+  // Aggregation
   if (widget.aggregate_function) {
     csvData.push([
       'Aggregation Function',
@@ -93,62 +201,44 @@ export const generateCSVData = ({
     ]);
   }
 
-  // scrape interval
+  // Scrape Interval
   if (widget.time_granularity) {
-    csvData.push([
-      'Scrape Interval',
-      `${widget.time_granularity.value === -1 ? '' : widget.time_granularity.value} ${widget.time_granularity.unit}`,
-    ]);
+    const { value, unit } = widget.time_granularity;
+    csvData.push(['Scrape Interval', `${value === -1 ? '' : value} ${unit}`]);
   }
 
-  let filterString: string = '';
+  // Dimension Filters
+  const dimensionFilterString = buildDimensionFilterString(
+    dimensionFilters,
+    dimensionOptions,
+    serviceType
+  );
 
-  // dimnesion filters
-  if (dimensionFilters.length > 0) {
-    const dimensionFilterLabels = dimensionOptions.reduce<
-      Record<string, string>
-    >((acc, dimensionOption) => {
-      acc[dimensionOption.dimension_label] = dimensionOption.label;
-      return acc;
-    }, {});
-    dimensionFilters.forEach((dimensionFilter) => {
-      if (dimensionFilter.dimension_label !== null) {
-        filterString =
-          filterString +
-          `${dimensionFilterLabels[dimensionFilter.dimension_label]},${dimensionFilter.operator}, ${DIMENSION_TRANSFORM_CONFIG[serviceType]?.[dimensionFilter.dimension_label ?? '']?.(dimensionFilter.value ?? '') ?? dimensionFilter.value ?? ''};`;
-      }
-    });
+  if (dimensionFilterString) {
+    csvData.push(['Dimension Filters', dimensionFilterString]);
   }
-  csvData.push(['Dimension Filters', filterString]);
 
-  // add widget label and unit
+  // Metric Info
   csvData.push(['Metric', widget.label]);
   csvData.push(['Unit', widget.unit]);
-  csvData.push([]); // Empty row for separation
+  csvData.push([]);
 
-  if (data.length > 0) {
+  // Data
+  if (data.length) {
     const keys = Object.keys(data[0]);
 
-    // add column headers
     csvData.push(keys);
+    csvData.push([]);
 
-    csvData.push([]); // Empty row for separation
+    data.forEach((dataPoint) => {
+      const row: CSVRow = keys.map((key) =>
+        key === 'timestamp'
+          ? formatTimestamp(dataPoint[key], duration.timeZone)
+          : dataPoint[key]
+      );
 
-    for (const dataPoint of data) {
-      const row = [];
-      for (const key of keys) {
-        if (key === 'timestamp') {
-          row.push(
-            DateTime.fromMillis(dataPoint[key])
-              .setZone(duration.timeZone)
-              .toLocaleString(DateTime.DATETIME_MED)
-          );
-        } else {
-          row.push(dataPoint[key]);
-        }
-      }
       csvData.push(row);
-    }
+    });
   }
 
   return csvData;

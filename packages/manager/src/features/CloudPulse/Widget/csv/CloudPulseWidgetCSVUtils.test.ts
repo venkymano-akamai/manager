@@ -1,0 +1,160 @@
+import { describe, expect, it } from 'vitest';
+
+import { FILTER_CONFIG } from '../../Utils/FilterConfig';
+import { generateCSVData } from './CloudPulseWidgetCSVUtils';
+
+import type { CloudPulseServiceTypeFilterMap } from '../../Utils/models';
+import type { CSVDataProps } from './CloudPulseWidgetCSVUtils';
+
+const baseProps: CSVDataProps = {
+  dashboardName: 'Test Dashboard',
+  data: [
+    { timestamp: 1718000000000, value: 42, value2: 100 },
+    { timestamp: 1718003600000, value: 43, value2: 110 },
+  ],
+  dimensionFilters: [
+    {
+      dimension_label: 'test',
+      operator: 'eq',
+      value: 'A',
+    },
+  ],
+  dimensionOptions: [
+    { dimension_label: 'test', label: 'Test', values: ['A', 'B'] },
+  ],
+  duration: {
+    start: '2024-06-10T00:00:00Z',
+    end: '2024-06-10T01:00:00Z',
+    timeZone: 'UTC',
+    preset: '1h',
+  },
+  filterConfig:
+    FILTER_CONFIG.get(1) ??
+    vi.mockObject<CloudPulseServiceTypeFilterMap>({
+      capability: 'Managed Databases',
+      filters: [],
+      serviceType: 'dbaas',
+    }),
+  filters: {
+    id: {
+      test: 'A',
+    },
+    label: {
+      test: ['A', 'B'],
+    },
+  },
+  groupBy: ['region'],
+  isDataLoading: false,
+  serviceType: 'dbaas',
+  widget: {
+    label: 'CPU Usage',
+    unit: '%',
+    aggregate_function: 'avg',
+    time_granularity: { value: 5, unit: 'minute' },
+    chart_type: 'line',
+    color: '#000000',
+    entity_ids: [],
+    filters: [],
+    metric: 'cpu_usage',
+    service_type: 'dbaas',
+    namespace_id: 1,
+    region_id: 1,
+    serviceType: 'dbaas',
+    size: 12,
+    time_duration: { value: 1, unit: 'hour' },
+    y_label: 'cpu_usage',
+    // Add any other required properties here with mock/test values
+  },
+};
+
+describe('generateCSVData', () => {
+  it('should generate CSV with all sections', () => {
+    const csv = generateCSVData(baseProps);
+
+    expect(csv[0]).toEqual(['Dashboard', 'Test Dashboard']);
+    expect(csv.some((row) => row[0] === 'Start Time')).toBe(true);
+    expect(csv.some((row) => row[0] === 'End Time')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Group By')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Aggregation Function')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Scrape Interval')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Metric')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Unit')).toBe(true);
+    expect(
+      csv.some((row) => Array.isArray(row) && row.includes('timestamp'))
+    ).toBe(true);
+    expect(csv.some((row) => Array.isArray(row) && row.includes(100))).toBe(
+      true
+    );
+  });
+
+  it('should handle empty data', () => {
+    const csv = generateCSVData({ ...baseProps, data: [] });
+    expect(
+      csv.some((row) => Array.isArray(row) && row.includes('timestamp'))
+    ).toBe(false);
+  });
+
+  it('should handle no groupBy', () => {
+    const csv = generateCSVData({ ...baseProps, groupBy: [] });
+    expect(csv.some((row) => row[0] === 'Group By')).toBe(false);
+  });
+
+  it('should handle no aggregation function', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      widget: { ...baseProps.widget, aggregate_function: '' },
+    });
+    expect(csv.some((row) => row[0] === 'Aggregation Function')).toBe(false);
+  });
+
+  it('should include dimension filters', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      dimensionFilters: [
+        {
+          dimension_label: 'test',
+          operator: 'eq',
+          value: 'A',
+        },
+      ],
+    });
+    expect(csv.some((row) => row[0] === 'Dimension Filters')).toBe(true);
+    expect(
+      csv.some((row) =>
+        row[1] ? row[1].toString().includes('Test,eq, A') : false
+      )
+    ).toBe(true);
+  });
+
+  it('should format timestamps using the correct timezone', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      duration: {
+        ...baseProps.duration,
+        timeZone: 'America/New_York',
+      },
+    });
+    // The formatted timestamp should include the correct hour for New York
+    const dataRow = csv.find((row) => Array.isArray(row) && row.includes(42));
+    expect(dataRow?.[0]).toMatch('Jun 10, 2024, 2:13 AM');
+  });
+
+  it('should handle empty dimensionFilters', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      dimensionFilters: [],
+    });
+    expect(csv.some((row) => row[0] === 'Dimension Filters')).toBe(false);
+  });
+
+  it('should handle missing filter values gracefully', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      filters: {
+        id: {},
+        label: {},
+      },
+    });
+    expect(csv.some((row) => row[0] === 'Region')).toBe(false);
+  });
+});
