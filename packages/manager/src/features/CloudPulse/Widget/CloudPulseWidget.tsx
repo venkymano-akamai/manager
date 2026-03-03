@@ -242,7 +242,8 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     scope: 'entity',
     serviceType,
   });
-  const { getSelectedDashboard, getGlobalFilterData } = useCloudPulseExport();
+  const { getSelectedDashboard, getGlobalFilterData, getGlobalGroupBy } =
+    useCloudPulseExport();
   // Determine which fetch object is relevant for linodes
   const activeLinodeFetch =
     serviceType === 'blockstorage' ? linodeFromVolumes : linodesFetch;
@@ -563,7 +564,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   onAggregateFuncChange={handleAggregateFunctionChange}
                 />
               )}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, marginTop: 1 }}>
                 {flags.aclp?.showWidgetDimensionFilters && (
                   <CloudPulseDimensionFiltersSelect
                     dashboardId={dashboardId}
@@ -588,15 +589,24 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                       data-testid="download-csv"
                       sx={{
                         padding: 0,
+                        marginBlockEnd: 'auto',
+                        marginBlockStart: 'auto',
                       }}
                     >
                       <CloudPulseWidgetCSVDownloader
                         dashboardName={getSelectedDashboard()?.label ?? ''}
                         data={data}
+                        dimensionFilters={dimensionFilters ?? []}
+                        dimensionOptions={filteredDimensions ?? []}
                         duration={duration}
                         filterConfig={filterConfig}
                         filters={getGlobalFilterData()}
+                        groupBy={[
+                          ...getGlobalGroupBy(),
+                          ...(groupBy ?? ['Test']),
+                        ]}
                         isDataLoading={isLoading || isJweTokenFetching}
+                        serviceType={serviceType}
                         widget={widget}
                       />
                     </IconButton>

@@ -1,17 +1,30 @@
 import { DateTime } from 'luxon';
 
+import { DIMENSION_TRANSFORM_CONFIG } from '../../shared/DimensionTransform';
+import { convertStringToCamelCasesWithSpaces } from '../../Utils/utils';
+
 import type { FilterData } from '../../Dashboard/CloudPulseDashboardLanding';
 import type { CloudPulseServiceTypeFilterMap } from '../../Utils/models';
-import type { DateTimeWithPreset, Widgets } from '@linode/api-v4';
+import type { MetricsDimensionFilter } from '../components/DimensionFilters/types';
+import type {
+  CloudPulseServiceType,
+  DateTimeWithPreset,
+  Dimension,
+  Widgets,
+} from '@linode/api-v4';
 import type { DataSet } from 'src/components/AreaChart/AreaChart';
 
 export interface CSVDataProps {
   dashboardName: string;
   data: DataSet[];
+  dimensionFilters: MetricsDimensionFilter[];
+  dimensionOptions: Dimension[];
   duration: DateTimeWithPreset;
   filterConfig: CloudPulseServiceTypeFilterMap;
   filters: FilterData | undefined;
+  groupBy: string[];
   isDataLoading: boolean;
+  serviceType: CloudPulseServiceType;
   widget: Widgets;
 }
 
@@ -22,6 +35,10 @@ export const generateCSVData = ({
   filters,
   widget,
   filterConfig,
+  groupBy,
+  dimensionFilters,
+  dimensionOptions,
+  serviceType,
 }: CSVDataProps): Array<Array<number | string>> => {
   const csvData = [];
   csvData.push(['Dashboard', dashboardName]);
@@ -62,6 +79,48 @@ export const generateCSVData = ({
     });
     csvData.push([]); // Empty row for separation
   }
+
+  // populate the widget level aggregation function, scrape interval, group by and dimension filters
+  if (groupBy.length > 0) {
+    csvData.push(['Group By', groupBy.join(', ')]);
+  }
+
+  // aggregation function
+  if (widget.aggregate_function) {
+    csvData.push([
+      'Aggregation Function',
+      convertStringToCamelCasesWithSpaces(widget.aggregate_function),
+    ]);
+  }
+
+  // scrape interval
+  if (widget.time_granularity) {
+    csvData.push([
+      'Scrape Interval',
+      `${widget.time_granularity.value === -1 ? '' : widget.time_granularity.value} ${widget.time_granularity.unit}`,
+    ]);
+  }
+
+  let filterString: string = '';
+
+  // dimnesion filters
+  if (dimensionFilters.length > 0) {
+    const dimensionFilterLabels = dimensionOptions.reduce<
+      Record<string, string>
+    >((acc, dimensionOption) => {
+      acc[dimensionOption.dimension_label] = dimensionOption.label;
+      return acc;
+    }, {});
+    dimensionFilters.forEach((dimensionFilter) => {
+      if (dimensionFilter.dimension_label !== null) {
+        filterString =
+          filterString +
+          `${dimensionFilterLabels[dimensionFilter.dimension_label]},${dimensionFilter.operator}, ${DIMENSION_TRANSFORM_CONFIG[serviceType]?.[dimensionFilter.dimension_label ?? '']?.(dimensionFilter.value ?? '') ?? dimensionFilter.value ?? ''};`;
+      }
+    });
+  }
+  csvData.push(['Dimension Filters', filterString]);
+
   // add widget label and unit
   csvData.push(['Metric', widget.label]);
   csvData.push(['Unit', widget.unit]);

@@ -5,8 +5,10 @@ import type { Dashboard } from '@linode/api-v4';
 
 export type ExportRegistry = {
   getGlobalFilterData: () => FilterData | undefined;
+  getGlobalGroupBy: () => string[];
   getSelectedDashboard: () => Dashboard | undefined;
   setGlobalFilterData: (filterData: FilterData) => void;
+  setGlobalGroupBy: (groupBy: string[]) => void;
   setSelectedDashboard: (dashboard: Dashboard) => void;
 };
 
@@ -15,4 +17,6 @@ export const CloudPulseContext = React.createContext<ExportRegistry>({
   getSelectedDashboard: () => undefined,
   setSelectedDashboard: () => null,
   setGlobalFilterData: () => null,
+  setGlobalGroupBy: () => null,
+  getGlobalGroupBy: () => [],
 });
