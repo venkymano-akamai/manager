@@ -818,7 +818,7 @@ export const cloudPulseDashboardById = () => [
       service_type: serviceType,
       type: 'standard',
       updated: null,
-      group_by: id==='11'? ['entity_id']: undefined,
+      group_by: id === '11' ? ['entity_id'] : undefined,
       widgets: widgets || [
         {
           aggregate_function: 'avg',

@@ -23,6 +23,12 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
     showWidgetDimensionFilters: true,
     enableZoomInCharts: true,
   },
+  aclpLogs: {
+    beta: true,
+    bypassAccountCapabilities: true,
+    customHttpsEnabled: true,
+    enabled: true,
+  },
   aclpAlerting: {
     accountAlertLimit: 10,
     accountMetricLimit: 10,
