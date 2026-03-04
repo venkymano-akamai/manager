@@ -85,6 +85,7 @@ import {
   lkeEnterpriseTypeFactory,
   lkeHighAvailabilityTypeFactory,
   lkeStandardAvailabilityTypeFactory,
+  logsAlertMetricCriteria,
   logsMetricCriteria,
   longviewActivePlanFactory,
   longviewClientFactory,
@@ -3528,6 +3529,12 @@ export const handlers = [
           rules: [firewallMetricRulesFactory.build()],
         },
       }),
+      alertFactory.build({
+        id: 494,
+        label: 'Logs-alert',
+        service_type: 'logs',
+        type: 'user',
+      }),
       ...alertFactory.buildList(3, { status: 'enabling', type: 'user' }),
       ...alertFactory.buildList(3, { status: 'disabling', type: 'user' }),
       ...alertFactory.buildList(3, { status: 'provisioning', type: 'user' }),
@@ -3626,6 +3633,19 @@ export const handlers = [
             entity_ids: ['1', '4'],
             rule_criteria: {
               rules: [firewallMetricRulesFactory.build()],
+            },
+          })
+        );
+      }
+      if (params.id === '494' && params.serviceType === 'logs') {
+        return HttpResponse.json(
+          alertFactory.build({
+            id: 494,
+            label: 'Logs-alert',
+            service_type: 'logs',
+            type: 'user',
+            rule_criteria: {
+              rules: [logsAlertMetricCriteria.build()],
             },
           })
         );
@@ -3973,7 +3993,7 @@ export const handlers = [
         serviceTypesFactory.build({
           label: 'Logs',
           service_type: 'logs',
-          regions: 'us-iad,us-east,eu-west,us-ord,us-west,ca-central',
+          regions: undefined,
           alert: serviceAlertFactory.build({ scope: ['entity'] }),
         }),
       ],
