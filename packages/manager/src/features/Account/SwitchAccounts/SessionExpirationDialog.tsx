@@ -9,6 +9,7 @@ import { sessionExpirationContext as _sessionExpirationContext } from 'src/conte
 import { useParentChildAuthentication } from 'src/features/Account/SwitchAccounts/useParentChildAuthentication';
 import { setTokenInLocalStorage } from 'src/features/Account/SwitchAccounts/utils';
 import { useDelegationRole } from 'src/features/IAM/hooks/useDelegationRole';
+import { useIsIAMDelegationEnabled } from 'src/features/IAM/hooks/useIsIAMEnabled';
 import { parseAPIDate } from 'src/utilities/date';
 import { getStorage, setStorage } from 'src/utilities/storage';
 
@@ -23,7 +24,7 @@ export const SessionExpirationDialog = React.memo(
       _sessionExpirationContext
     );
     const { isProxyUserType, isDelegateUserType } = useDelegationRole();
-
+    const { isIAMDelegationEnabled } = useIsIAMDelegationEnabled();
     const [timeRemaining, setTimeRemaining] = React.useState<{
       minutes: number;
       seconds: number;
@@ -112,10 +113,13 @@ export const SessionExpirationDialog = React.memo(
 
         const proxyToken = await createToken(euuid);
 
+        const tokenPrefix = isIAMDelegationEnabled
+          ? 'authentication/delegate_token'
+          : 'authentication/proxy_token';
+        const tokenUserType = isIAMDelegationEnabled ? 'delegate' : 'proxy';
+
         setTokenInLocalStorage({
-          prefix: isProxyUserType
-            ? 'authentication/proxy_token'
-            : 'authentication/delegate_token',
+          prefix: tokenPrefix,
           token: {
             ...proxyToken,
             token: `Bearer ${proxyToken.token}`,
@@ -123,7 +127,7 @@ export const SessionExpirationDialog = React.memo(
         });
 
         updateCurrentToken({
-          userType: isProxyUserType ? 'proxy' : 'delegate',
+          userType: tokenUserType,
         });
         onClose();
         location.reload();
