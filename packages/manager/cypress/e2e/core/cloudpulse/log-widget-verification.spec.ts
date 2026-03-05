@@ -205,7 +205,7 @@ describe('Integration Tests for Logs Dashboard ', () => {
       .should('be.visible')
       .click();
 
-    cy.findByPlaceholderText('e.g., 200,404,500').type(String(statusCode));
+    cy.findByPlaceholderText('e.g., 200,400').type(String(statusCode));
 
     ui.autocomplete
       .findByLabel('Stream Names')
