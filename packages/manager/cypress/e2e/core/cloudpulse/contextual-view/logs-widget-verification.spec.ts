@@ -225,7 +225,7 @@ describe('Integration Tests for Logs Dashboard', () => {
       .should('have.value', dashboardName);
 
     // ── Apply status code filter ──
-    cy.findByPlaceholderText('e.g., 200,404,500').type(`${statusCode}`);
+    cy.findByPlaceholderText('e.g., 200,400').type(`${statusCode}`);
 
     // ── Select time range ──
     ui.button.findByTitle('Last hour').click();
