@@ -3864,11 +3864,6 @@ export const handlers = [
           created_by: 'system',
           type: 'system',
           channel_type: 'email',
-          content: {
-            email: {
-              email_addresses: ['Users-with-read-write-access-to-resources'],
-            },
-          },
         })
       );
     }
