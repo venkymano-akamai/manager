@@ -76,7 +76,9 @@ describe('generateCSVData', () => {
     expect(csv.some((row) => row[0] === 'End Time')).toBe(true);
     expect(csv.some((row) => row[0] === 'Group By')).toBe(true);
     expect(csv.some((row) => row[0] === 'Aggregation Function')).toBe(true);
-    expect(csv.some((row) => row[0] === 'Scrape Interval')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Data Aggregation Interval')).toBe(
+      true
+    );
     expect(csv.some((row) => row[0] === 'Metric')).toBe(true);
     expect(csv.some((row) => row[0] === 'Unit')).toBe(true);
     expect(
@@ -134,9 +136,9 @@ describe('generateCSVData', () => {
         timeZone: 'America/New_York',
       },
     });
-    // The formatted timestamp should include the correct hour for New York
+    // The formatted timestamp should include the correct hour for New York and timezone abbreviation
     const dataRow = csv.find((row) => Array.isArray(row) && row.includes(42));
-    expect(dataRow?.[0]).toMatch('Jun 10, 2024, 2:13 AM');
+    expect(dataRow?.[0]).toMatch('Jun 10, 2024, 2:13 AM EDT');
   });
 
   it('should handle empty dimensionFilters', () => {
@@ -156,5 +158,49 @@ describe('generateCSVData', () => {
       },
     });
     expect(csv.some((row) => row[0] === 'Region')).toBe(false);
+  });
+
+  it('should filter data based on zoom range when zoomed', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      zoomRange: {
+        left: 1718000000000, // First timestamp
+        right: 1718000000000, // First timestamp only
+      },
+    });
+    // Should only include the first data point
+    const dataRows = csv.filter(
+      (row) => Array.isArray(row) && typeof row[1] === 'number' && row[1] === 42
+    );
+    expect(dataRows.length).toBe(1);
+    expect(dataRows[0]).toContain(42);
+  });
+
+  it('should include all data when zoom range is dataMin/dataMax', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      zoomRange: {
+        left: 'dataMin',
+        right: 'dataMax',
+      },
+    });
+    // Should include all data points
+    expect(csv.some((row) => Array.isArray(row) && row.includes(42))).toBe(
+      true
+    );
+    expect(csv.some((row) => Array.isArray(row) && row.includes(43))).toBe(
+      true
+    );
+  });
+
+  it('should include all data when no zoom range is provided', () => {
+    const csv = generateCSVData(baseProps);
+    // Should include all data points
+    expect(csv.some((row) => Array.isArray(row) && row.includes(42))).toBe(
+      true
+    );
+    expect(csv.some((row) => Array.isArray(row) && row.includes(43))).toBe(
+      true
+    );
   });
 });

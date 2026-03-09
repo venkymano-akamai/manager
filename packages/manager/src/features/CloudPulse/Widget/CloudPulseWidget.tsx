@@ -176,6 +176,10 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     props.widget.group_by
   );
   const [isZoomed, setIsZoomed] = React.useState(false);
+  const [zoomRange, setZoomRange] = React.useState<{
+    left?: 'dataMin' | number;
+    right?: 'dataMax' | number;
+  }>({});
   const theme = useTheme();
 
   const {
@@ -409,9 +413,17 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     [savePref, updatePreferences, widget.label]
   );
 
-  const handleZoomStateChange = React.useCallback((zoomed: boolean) => {
-    setIsZoomed(zoomed);
-  }, []);
+  const handleZoomStateChange = React.useCallback(
+    (
+      zoomed: boolean,
+      left?: 'dataMin' | number,
+      right?: 'dataMax' | number
+    ) => {
+      setIsZoomed(zoomed);
+      setZoomRange({ left, right });
+    },
+    []
+  );
   const {
     data: metricsList,
     error,
@@ -608,6 +620,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                         isDataLoading={isLoading || isJweTokenFetching}
                         serviceType={serviceType}
                         widget={widget}
+                        zoomRange={zoomRange}
                       />
                     </IconButton>
                   </CloudPulseTooltip>
