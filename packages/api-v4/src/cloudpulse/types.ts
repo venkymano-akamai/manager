@@ -47,7 +47,7 @@ type AlertNotificationEmail = 'email';
 type AlertNotificationSlack = 'slack';
 type AlertNotificationPagerDuty = 'pagerduty';
 type AlertNotificationWebHook = 'webhook';
-type EmailRecipientType =
+export type EmailRecipientType =
   | 'admin_users'
   | 'read_users'
   | 'read_write_users'
