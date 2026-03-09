@@ -3,7 +3,7 @@ import React from 'react';
 
 import GroupByIcon from 'src/assets/icons/group-by.svg';
 
-import { useCloudPulseExport } from '../Context/useCloudPulseExport';
+import { useCloudPulseContext } from '../Context/useCloudPulseContext';
 import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import { CloudPulseGroupByDrawer } from './CloudPulseGroupByDrawer';
 import { GLOBAL_GROUP_BY_MESSAGE } from './constants';
@@ -41,7 +41,7 @@ export const GlobalFilterGroupByRenderer = (
     savePreferences,
   } = props;
   const [isSelected, setIsSelected] = React.useState(false);
-  const { setGlobalGroupBy } = useCloudPulseExport();
+  const { setGlobalGroupBy } = useCloudPulseContext();
 
   const { options, defaultValue, isLoading } = useGlobalDimensions(
     selectedDashboard?.id,

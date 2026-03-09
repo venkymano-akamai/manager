@@ -9,7 +9,7 @@ import { LandingHeader } from 'src/components/LandingHeader';
 import { SuspenseLoader } from 'src/components/SuspenseLoader';
 import { useFlags } from 'src/hooks/useFlags';
 
-import { useCloudPulseExport } from '../Context/useCloudPulseExport';
+import { useCloudPulseContext } from '../Context/useCloudPulseContext';
 import { GlobalFilters } from '../Overview/GlobalFilters';
 import { CloudPulseAppliedFilterRenderer } from '../shared/CloudPulseAppliedFilterRenderer';
 import { defaultTimeDuration } from '../Utils/CloudPulseDateTimePickerUtils';
@@ -36,7 +36,7 @@ export interface DashboardProp {
 export const CloudPulseDashboardLanding = () => {
   const { data: profile } = useProfile();
   const flags = useFlags();
-  const { setSelectedDashboard, setGlobalFilterData } = useCloudPulseExport();
+  const { setSelectedDashboard, setGlobalFilterData } = useCloudPulseContext();
   const [filterData, setFilterData] = React.useState<FilterData>({
     id: {},
     label: {},

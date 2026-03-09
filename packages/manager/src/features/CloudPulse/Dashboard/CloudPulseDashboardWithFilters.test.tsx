@@ -6,7 +6,7 @@ import { dashboardFactory } from 'src/factories';
 import * as utils from 'src/features/CloudPulse/Utils/utils';
 import { renderWithTheme } from 'src/utilities/testHelpers';
 
-import { CloudPulseDashboardWithFiltersRenderer } from './CloudPulseDashboardWithFiltersRenderer';
+import { CloudPulseDashboardWithFilters } from './CloudPulseDashboardWithFilters';
 
 import type { GroupByOption } from '../GroupBy/CloudPulseGroupByDrawer';
 
@@ -50,10 +50,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="dbaas"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="dbaas" />
     );
 
     const error = screen.getByText('Error loading dashboards');
@@ -67,10 +64,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
       isLoading: false,
     });
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="dbaas"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="dbaas" />
     );
 
     const circle = screen.getByTestId(circleProgress);
@@ -91,10 +85,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="dbaas"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="dbaas" />
     );
 
     const groupByIcon = screen.getByTestId('group-by');
@@ -114,10 +105,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="dbaas"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="dbaas" />
     );
     const closeIcon = screen.getByTestId('CloseIcon');
     expect(closeIcon).toBeDefined();
@@ -136,10 +124,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType={'dbaas'}
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType={'dbaas'} />
     );
 
     const noFilterText = screen.getByText(
@@ -155,10 +140,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
       isLoading: false,
     });
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="nodebalancer"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="nodebalancer" />
     );
     const presetButton = screen.getByTestId(PRESET_BUTTON_ID);
     const portsSelect = screen.getByPlaceholderText('e.g., 80,443,3000');
@@ -176,10 +158,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
       isLoading: false,
     });
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="firewall"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="firewall" />
     );
     const presetButton = screen.getByTestId(PRESET_BUTTON_ID);
     expect(presetButton).toBeInTheDocument();
@@ -196,7 +175,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
+      <CloudPulseDashboardWithFilters
         region="test"
         resource="test"
         serviceType="objectstorage"
@@ -214,7 +193,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
       isLoading: false,
     });
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
+      <CloudPulseDashboardWithFilters
         resource={1}
         serviceType="objectstorage"
       />
@@ -231,10 +210,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="blockstorage"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="blockstorage" />
     );
 
     const presetButton = screen.getByTestId(PRESET_BUTTON_ID);
@@ -262,10 +238,7 @@ describe('CloudPulseDashboardWithFilters component tests', () => {
     });
 
     renderWithTheme(
-      <CloudPulseDashboardWithFiltersRenderer
-        resource={1}
-        serviceType="firewall"
-      />
+      <CloudPulseDashboardWithFilters resource={1} serviceType="firewall" />
     );
 
     const presetButton = screen.getByTestId(PRESET_BUTTON_ID);

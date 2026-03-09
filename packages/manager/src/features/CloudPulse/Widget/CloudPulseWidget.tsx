@@ -9,7 +9,7 @@ import { useCloudPulseMetricsQuery } from 'src/queries/cloudpulse/metrics';
 
 import { useBlockStorageFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useBlockStorageFetchOptions';
 import { useFirewallFetchOptions } from '../Alerts/CreateAlert/Criteria/DimensionFilterValue/useFirewallFetchOptions';
-import { useCloudPulseExport } from '../Context/useCloudPulseExport';
+import { useCloudPulseContext } from '../Context/useCloudPulseContext';
 import { WidgetFilterGroupByRenderer } from '../GroupBy/WidgetFilterGroupByRenderer';
 import { CloudPulseTooltip } from '../shared/CloudPulseTooltip';
 import {
@@ -247,7 +247,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     serviceType,
   });
   const { getSelectedDashboard, getGlobalFilterData, getGlobalGroupBy } =
-    useCloudPulseExport();
+    useCloudPulseContext();
   // Determine which fetch object is relevant for linodes
   const activeLinodeFetch =
     serviceType === 'blockstorage' ? linodeFromVolumes : linodesFetch;

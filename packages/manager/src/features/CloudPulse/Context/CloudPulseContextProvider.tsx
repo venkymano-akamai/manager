@@ -6,6 +6,9 @@ import type { FilterData } from '../Dashboard/CloudPulseDashboardLanding';
 import type { Dashboard } from '@linode/api-v4';
 
 interface CloudPulseProviderProps {
+  /**
+   * The children of the provider, which will have access to the CloudPulse context
+   */
   children: React.ReactNode;
 }
 
