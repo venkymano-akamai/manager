@@ -1,6 +1,6 @@
 import { useProfile, useRegionsQuery } from '@linode/queries';
 import { Box, Paper, Typography } from '@linode/ui';
-import { GridLegacy, IconButton, Stack, useTheme } from '@mui/material';
+import { GridLegacy, Stack, useTheme } from '@mui/material';
 import { DateTime } from 'luxon';
 import React from 'react';
 
@@ -595,34 +595,23 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     placement="bottom-end"
                     title="CSV Download"
                   >
-                    <IconButton
-                      aria-label="Download CSV"
-                      color="inherit"
-                      data-testid="download-csv"
-                      sx={{
-                        padding: 0,
-                        marginBlockEnd: 'auto',
-                        marginBlockStart: 'auto',
-                      }}
-                    >
-                      <CloudPulseWidgetCSVDownloader
-                        dashboardName={getSelectedDashboard()?.label ?? ''}
-                        data={data}
-                        dimensionFilters={dimensionFilters ?? []}
-                        dimensionOptions={filteredDimensions ?? []}
-                        duration={duration}
-                        filterConfig={filterConfig}
-                        filters={getGlobalFilterData()}
-                        groupBy={[
-                          ...getGlobalGroupBy(),
-                          ...(groupBy ?? ['Test']),
-                        ]}
-                        isDataLoading={isLoading || isJweTokenFetching}
-                        serviceType={serviceType}
-                        widget={widget}
-                        zoomRange={zoomRange}
-                      />
-                    </IconButton>
+                    <CloudPulseWidgetCSVDownloader
+                      dashboardName={getSelectedDashboard()?.label ?? ''}
+                      data={data}
+                      dimensionFilters={dimensionFilters ?? []}
+                      dimensionOptions={filteredDimensions ?? []}
+                      duration={duration}
+                      filterConfig={filterConfig}
+                      filters={getGlobalFilterData()}
+                      groupBy={[
+                        ...getGlobalGroupBy(),
+                        ...(groupBy ?? ['Test']),
+                      ]}
+                      isDataLoading={isLoading || isJweTokenFetching}
+                      serviceType={serviceType}
+                      widget={widget}
+                      zoomRange={zoomRange}
+                    />
                   </CloudPulseTooltip>
                 )}
                 <WidgetFilterGroupByRenderer
