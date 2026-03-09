@@ -1,0 +1,76 @@
+{
+  "data": [
+    {
+      "label": "Successful Upload Count",
+      "metric": "success_upload_count",
+      "unit": "Count",
+      "metric_type": "gauge",
+      "scrape_interval": "60s",
+      "is_alertable": true,
+      "available_aggregate_functions": [
+        "sum"
+      ],
+      "dimensions": [
+        {
+          "label": "Stream Name",
+          "dimension_label": "entity_id",
+          "values": []
+        },
+        {
+          "label": "Status Code",
+          "dimension_label": "status_code",
+          "values": []
+        }
+      ]
+    },
+    {
+      "label": "Error Upload Count",
+      "metric": "error_upload_count",
+      "unit": "Count",
+      "metric_type": "gauge",
+      "scrape_interval": "60s",
+      "is_alertable": true,
+      "available_aggregate_functions": [
+        "sum"
+      ],
+      "dimensions": [
+        {
+          "label": "Stream Name",
+          "dimension_label": "entity_id",
+          "values": []
+        },
+        {
+          "label": "Status Code",
+          "dimension_label": "status_code",
+          "values": []
+        }
+      ]
+    },
+    {
+      "label": "Error Upload Rate",
+      "metric": "error_upload_rate",
+      "unit": "Percent",
+      "metric_type": "gauge",
+      "scrape_interval": "60s",
+      "is_alertable": true,
+      "available_aggregate_functions": [
+        "avg"
+      ],
+      "dimensions": [
+        {
+          "label": "Stream Name",
+          "dimension_label": "entity_id",
+          "values": []
+        },
+        {
+          "label": "Status Code",
+          "dimension_label": "status_code",
+          "values": []
+        }
+      ]
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "results": 3
+}

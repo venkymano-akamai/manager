@@ -17,7 +17,9 @@ import type {
   Dashboard,
   MetricDefinition,
   NotificationChannel,
+  NotificationChannelAlerts,
   Service,
+  Stream,
 } from '@linode/api-v4';
 
 /**
@@ -745,6 +747,23 @@ export const mockGetAlertChannelById = (
 };
 
 /**
+ * Mocks an error response for getting a specific alert channel by ID.
+ *
+ * @param {number} id - The ID of the alert channel for which to mock an error response.
+ * @returns {Cypress.Chainable<null>} - A Cypress chainable used to continue the test flow.
+ *
+ */
+export const mockGetAlertChannelByIdError = (
+  id: number
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${id}`),
+    makeErrorResponse('Error fetching alerts for channel', 500)
+  );
+};
+
+/**
  * Mocks put call to update a specific alert channel by ID.
  * Intercepts PUT requests to update alert channels and returns the provided channel object.
  *
@@ -790,5 +809,86 @@ export const mockUpdateAlertChannelByIdError = (
     'PUT',
     apiMatcher(`/monitor/alert-channels/${id}`),
     makeErrorResponse(errorPayload, statusCode)
+  );
+};
+/**
+ * Intercepts GET request to retrieve alerts associated with a notification channel
+ *
+ * @param channelId - The ID of the notification channel
+ * @param alerts - Mock alert data to return
+ * @returns Cypress chainable
+ */
+export const mockGetAlertsForChannelId = (
+  channelId: number,
+  alerts: NotificationChannelAlerts[]
+) => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${channelId}/alerts*`),
+    paginateResponse(alerts)
+  );
+};
+
+/**
+ *  Intercepts GET request for alerts associated with a notification channel and
+ * mocks an error response instead of returning alert data.
+ *
+ * @param channelId - The ID of the notification channel for which to mock an error.
+ * @returns Cypress chainable that yields an error response for the alerts request.
+ */
+export const mockGetAlertsForChannelIdError = (channelId: number) => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`/monitor/alert-channels/${channelId}/alerts*`),
+    makeErrorResponse('Error in fetching the alerts.', 500)
+  );
+};
+
+/**
+ * Mocks the API response for the '/monitor/streams' endpoint.
+ *
+ * Intercepts the GET request to '/monitor/streams?page_size=500'
+ * and returns a mocked paginated response containing the provided streams.
+ *
+ * @param {Stream[]} streams - Array of stream objects to return.
+ * @returns {Cypress.Chainable<null>}
+ */
+export const mockGetStreams = (streams: Stream[]): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('monitor/streams?page_size=500'),
+    paginateResponse(streams)
+  );
+};
+
+/**
+ * Intercepts GET request to fetch a paginated list of streams.
+ *
+ * @param streams - The array of streams to return in the paginated response.
+ */
+export const mockGetStreamsPaginated = (
+  streams: Stream[]
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher('monitor/streams?page=1&page_size=25'),
+    paginateResponse(streams)
+  );
+};
+
+/**
+ * Intercepts GET request to fetch a stream by its ID.
+ *
+ * @param id - The ID of the stream to fetch.
+ * @param stream - The stream object to return in the response.
+ */
+export const mockGetStreamById = (
+  id: number,
+  stream: Stream
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'GET',
+    apiMatcher(`monitor/streams/${id}`),
+    makeResponse(stream)
   );
 };

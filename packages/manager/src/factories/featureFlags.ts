@@ -23,6 +23,12 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
     showWidgetDimensionFilters: true,
     enableZoomInCharts: true,
   },
+  aclpLogs: {
+    beta: true,
+    bypassAccountCapabilities: true,
+    customHttpsEnabled: true,
+    enabled: true,
+  },
   aclpAlerting: {
     accountAlertLimit: 10,
     accountMetricLimit: 10,
@@ -63,6 +69,10 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       metrics: { beta: true, enabled: true },
     },
     netloadbalancer: {
+      alerts: { beta: true, enabled: true },
+      metrics: { beta: true, enabled: true },
+    },
+    logs: {
       alerts: { beta: true, enabled: true },
       metrics: { beta: true, enabled: true },
     },
@@ -107,6 +117,11 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
       dimensionKey: 'netloadbalancer',
       maxResourceSelections: 10,
       serviceType: 'netloadbalancer',
+    },
+    {
+      dimensionKey: 'logs',
+      maxResourceSelections: 10,
+      serviceType: 'logs',
     },
   ],
 });
