@@ -27,11 +27,8 @@ import {
   kubeLinodeFactory,
   widgetFactory,
 } from 'src/factories';
-import { generateGraphData } from 'src/features/CloudPulse/Utils/CloudPulseWidgetUtils';
-import { formatToolTip } from 'src/features/CloudPulse/Utils/unitConversion';
 
 import type {
-  CloudPulseMetricsResponse,
   CloudPulseServiceType,
   Dashboard,
   Database,
@@ -40,9 +37,6 @@ import type {
 } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
 const TIME_DURATION = 'Last 24 Hours';
 
@@ -64,14 +58,11 @@ const {
   serviceType,
 } = widgetDetails.dbaas;
 
-// ---------------------------------------------------------------------------
-// Shared dimension definitions
-// ---------------------------------------------------------------------------
 
 const SHARED_DIMENSIONS = [
   { dimension_label: 'node_type', label: 'Node Type', value: 'secondary' },
-  { dimension_label: 'region',    label: 'Region',    value: 'us-ord'    },
-  { dimension_label: 'engine',    label: 'Engine',    value: 'mysql'     },
+  { dimension_label: 'region', label: 'Region', value: 'us-ord' },
+  { dimension_label: 'engine', label: 'Engine', value: 'mysql' },
 ];
 
 /**
@@ -108,7 +99,6 @@ const validateWidgetFilters = (
     expect(expectedValues).to.include(filter.value);
   });
 };
-
 
 const dashboard = dashboardFactory.build({
   group_by: ['entity_id'],
@@ -175,7 +165,14 @@ const databaseMock: Database = databaseFactory.build({
   version: '1',
 });
 describe('DBaaS  Widget CSV Download', () => {
-    beforeEach(() => {
+  beforeEach(() => {
+    const downloadsFolder = Cypress.config('downloadsFolder');
+    const serviceTypeTitleCase = serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+    
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
+      { failOnNonZeroExit: false }
+    );
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetLinodes([mockLinode]);
@@ -187,7 +184,9 @@ describe('DBaaS  Widget CSV Download', () => {
     mockGetCloudPulseDashboard(id, dashboard).as('fetchDashboard');
 
     mockCreateCloudPulseJWEToken(serviceType);
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as('getMetrics');
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getMetrics'
+    );
     mockGetRegions([mockRegion, mockRegionWithoutMonitors]);
     mockGetUserPreferences({});
     mockGetDatabases([databaseMock]).as('getDatabases');
@@ -206,7 +205,7 @@ describe('DBaaS  Widget CSV Download', () => {
       });
     });
 
-     // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Step 1: Select dashboard
     // -------------------------------------------------------------------------
     ui.autocomplete
@@ -338,8 +337,10 @@ describe('DBaaS  Widget CSV Download', () => {
         .should('be.visible')
         .and('have.text', 'Group By');
 
-      cy.get('[data-qa-id="groupby-drawer-subtitle"]')
-        .should('have.text', widgetConfig.title);
+      cy.get('[data-qa-id="groupby-drawer-subtitle"]').should(
+        'have.text',
+        widgetConfig.title
+      );
 
       (widgetConfig.filters || []).forEach((filter) => {
         ui.autocomplete
@@ -369,7 +370,8 @@ describe('DBaaS  Widget CSV Download', () => {
       });
 
       (widgetConfig.filters || []).forEach((filter, index) => {
-        const uiOperator = OPERATOR_LABEL_MAP[filter.operator] ?? filter.operator;
+        const uiOperator =
+          OPERATOR_LABEL_MAP[filter.operator] ?? filter.operator;
 
         ui.button.findByTitle('Add Filter').click();
 
@@ -382,9 +384,7 @@ describe('DBaaS  Widget CSV Download', () => {
               .should('be.visible')
               .type(filter.dimension_label);
 
-            ui.autocompletePopper
-              .findByTitle(filter.dimension_label)
-              .click();
+            ui.autocompletePopper.findByTitle(filter.dimension_label).click();
 
             ui.autocomplete
               .findByLabel('Operator')
@@ -401,38 +401,32 @@ describe('DBaaS  Widget CSV Download', () => {
           });
       });
 
-      ui.button
-        .findByAttribute('label', 'Apply')
-        .should('be.visible')
-        .click();
+      ui.button.findByAttribute('label', 'Apply').should('be.visible').click();
     });
   });
 
   it('should download CSV after setting filters', () => {
-
     metrics.forEach((testData) => {
-         const widgetSelector = `[data-qa-widget="${testData.title}"]`;
-         cy.get(widgetSelector)
-           .should('be.visible')
-           .find('h2')
-           .should('have.text', `${testData.title} (${testData.unit})`);
-         cy.get(widgetSelector)
-           .should('be.visible')
-           .within(() => {
-    
-               ui.autocomplete
-               .findByLabel('Select an Interval')
-               .should('be.visible')
-               .type(`${testData.expectedGranularity}{enter}`);
+      const widgetSelector = `[data-qa-widget="${testData.title}"]`;
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .find('h2')
+        .should('have.text', `${testData.title} (${testData.unit})`);
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .within(() => {
+          ui.autocomplete
+            .findByLabel('Select an Interval')
+            .should('be.visible')
+            .type(`${testData.expectedGranularity}{enter}`);
 
-               ui.autocomplete
-               .findByLabel('Select an Aggregate Function')
-               .should('be.visible')
-               .type(`${testData.expectedAggregation}{enter}`); 
+          ui.autocomplete
+            .findByLabel('Select an Aggregate Function')
+            .should('be.visible')
+            .type(`${testData.expectedAggregation}{enter}`);
 
-               cy.get('[aria-label="Download CSV"]').click({ multiple: true });
-   
+          cy.get('[aria-label="Download CSV"]').click();
+        });
     });
-});
   });
 });
