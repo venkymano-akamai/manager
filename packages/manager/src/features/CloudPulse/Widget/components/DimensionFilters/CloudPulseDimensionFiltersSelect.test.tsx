@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
@@ -52,5 +52,27 @@ describe('Tests for CloudPulse Dimension Filters Select', () => {
     expect(applyButton).toBeInTheDocument();
     const cancelButton = screen.getByText('Cancel');
     expect(cancelButton).toBeInTheDocument();
+  });
+  it('renders the CloudPulse Dimension Filter icon with disabled tool tip text when no dimension options are passed', async () => {
+    const handleSubmit = vi.fn();
+    renderWithTheme(
+      <CloudPulseDimensionFiltersSelect
+        dashboardId={1}
+        dimensionOptions={[]}
+        drawerLabel="Test Metric"
+        handleSelectionChange={handleSubmit}
+        selectedDimensions={[]}
+        serviceType="linode"
+      />
+    );
+
+    // Verify the tooltip text is being rendered and the icon button is disabled
+    const tooltipElement = screen.getByTestId(
+      'No dimensions available for filtering'
+    );
+    expect(tooltipElement).toBeVisible();
+
+    const iconButton = screen.getByTestId('dimension-filter');
+    expect(iconButton).toBeDisabled();
   });
 });
