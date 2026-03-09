@@ -14,8 +14,8 @@ export const notificationChannelFactory =
     },
     details: {
       email: {
-        recipient_type: 'read_write_users',
-        usernames: [],
+        recipient_type: 'user',
+        usernames: ['test@test.com', 'test2@test.com'],
       },
     },
     channel_type: 'email',

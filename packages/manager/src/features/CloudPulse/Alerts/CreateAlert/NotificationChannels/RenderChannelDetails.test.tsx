@@ -8,7 +8,11 @@ import { RenderChannelDetails } from './RenderChannelDetails';
 
 import type { NotificationChannel } from '@linode/api-v4';
 
-const mockData = notificationChannelFactory.build();
+const mockData = notificationChannelFactory.build({
+  details: {
+    email: { recipient_type: 'read_write_users', usernames: [] },
+  },
+});
 
 describe('RenderChannelDetails component', () => {
   it('should render the email channel type notification details with recipient_type if no usernames are there', () => {
