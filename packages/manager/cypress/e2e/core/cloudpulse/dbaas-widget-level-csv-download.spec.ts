@@ -366,22 +366,34 @@ describe('DBaaS CPU Widget CSV Download', () => {
   });
   it('should download CSV after setting filters for all widgets', () => {
 
+    const operatorMap: Record<string, string> = {
+      eq: 'Equal',
+      ne: 'Not Equal',
+      contains: 'Contains',
+      starts_with: 'Starts with',
+      ends_with: 'Ends with'
+    };
+  
     metrics.forEach((widgetConfig) => {
   
-      const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
+        const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
   
       cy.get(widgetSelector)
         .should('be.visible')
-        .within(() => {
+        .as('widget');
   
-          ui.button
-            .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-            .as('groupByButton');
+      // -------------------------
+      // GROUP BY
+      // -------------------------
+      cy.get('@widget').within(() => {
   
-          cy.get('@groupByButton').scrollIntoView();
-          cy.get('@groupByButton').should('be.visible').click();
+        ui.button
+          .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+          .as('groupByButton');
   
-        });
+        cy.get('@groupByButton').scrollIntoView().click();
+  
+      });
   
       cy.get('[data-testid="drawer-title"]')
         .should('be.visible')
@@ -390,7 +402,6 @@ describe('DBaaS CPU Widget CSV Download', () => {
       cy.get('[data-qa-id="groupby-drawer-subtitle"]')
         .should('have.text', widgetConfig.title);
   
-      // Apply group-by dynamically from widget configuration
       (widgetConfig.filters || []).forEach((filter) => {
   
         ui.autocomplete
@@ -405,14 +416,68 @@ describe('DBaaS CPU Widget CSV Download', () => {
   
       });
   
-      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload)
-        .as('getGroupBy');
-  
       cy.get('body').type('{esc}');
   
       cy.findByTestId('apply')
         .should('be.visible')
-        .and('be.enabled')
+        .click();
+  
+      // -------------------------
+      // WIDGET DIMENSION FILTER
+      // -------------------------
+      cy.get('@widget').within(() => {
+  
+        ui.button
+          .findByAttribute(
+            'aria-label',
+            `Widget Dimension Filter ${widgetConfig.title}`
+          )
+          .click();
+  
+      });
+  
+      (widgetConfig.filters || []).forEach((filter, index) => {
+  
+        const uiOperator = operatorMap[filter.operator] || filter.operator;
+  
+        ui.button.findByTitle('Add Filter').click();
+  
+        cy.get('[data-testid^="dimension_filters."]')
+          .eq(index)
+          .should('be.visible')
+          .within(() => {
+  
+            ui.autocomplete
+              .findByLabel('Dimension')
+              .should('be.visible')
+              .type(filter.dimension_label);
+  
+            ui.autocompletePopper
+              .findByTitle(filter.dimension_label)
+              .click();
+  
+            ui.autocomplete
+              .findByLabel('Operator')
+              .should('not.be.disabled')
+              .type(uiOperator);
+  
+            ui.autocompletePopper
+              .findByTitle(uiOperator)
+              .click();
+              
+              ui.autocomplete
+              .findByLabel('Value')
+              .should('not.be.disabled')
+              .click()
+              .type(`${filter.value}{downarrow}{enter}`);
+  
+          });
+  
+      });
+  
+      ui.button
+        .findByAttribute('label', 'Apply')
+        .should('be.visible')
         .click();
   
     });
