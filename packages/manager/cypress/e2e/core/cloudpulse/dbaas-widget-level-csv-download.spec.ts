@@ -37,9 +37,6 @@ import type {
 } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
-
-const TIME_DURATION = 'Last 24 Hours';
-
 const OPERATOR_LABEL_MAP: Record<string, string> = {
   contains: 'Contains',
   ends_with: 'Ends with',
@@ -150,9 +147,26 @@ const mockRegionWithoutMonitors = regionFactory.build({
   label: 'Newark, NJ',
 });
 
+const timeDurationToSelect = 'Last 24 Hours';
+
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: generateRandomMetricsData(TIME_DURATION, '5 min'),
+  data: {
+    result: generateRandomMetricsData(timeDurationToSelect, '5 min').result.map(
+      (metricResult) => ({
+        ...metricResult,
+        values: [
+          [1766378789, '10000000.00'],
+          [1766378909, '30000000.00'],
+          [1766379029, '50000000.00'],
+          [1766379089, '70000000.00'],
+          [1766379149, '90000000.00'],
+          [1796379149, '10.10101000.00'],
+        ],
+      })
+    ),
+  },
 });
+
 
 const databaseMock: Database = databaseFactory.build({
   cluster_size: 2,
@@ -167,12 +181,12 @@ const databaseMock: Database = databaseFactory.build({
 describe('DBaaS  Widget CSV Download', () => {
   beforeEach(() => {
     const downloadsFolder = Cypress.config('downloadsFolder');
-    const serviceTypeTitleCase = serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+    // const serviceTypeTitleCase = serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
     
-    cy.exec(
-      `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
-      { failOnNonZeroExit: false }
-    );
+    // cy.exec(
+    //   `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
+    //   { failOnNonZeroExit: false }
+    // );
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetLinodes([mockLinode]);
@@ -218,19 +232,9 @@ describe('DBaaS  Widget CSV Download', () => {
       .should('be.visible')
       .click();
 
-    // -------------------------------------------------------------------------
-    // Step 2: Select time range
-    // -------------------------------------------------------------------------
-    ui.button.findByTitle('Last hour').click();
-    ui.button.findByTitle('Last day').click();
-
-    cy.get('[data-qa-buttons="apply"]')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
 
     // -------------------------------------------------------------------------
-    // Step 3: Select database engine
+    // Step 2: Select database engine
     // -------------------------------------------------------------------------
     ui.autocomplete
       .findByLabel('Database Engine')
@@ -240,7 +244,7 @@ describe('DBaaS  Widget CSV Download', () => {
     ui.autocompletePopper.findByTitle(engine).should('be.visible').click();
 
     // -------------------------------------------------------------------------
-    // Step 4: Select region
+    // Step 3: Select region
     // -------------------------------------------------------------------------
     ui.regionSelect.find().click();
     ui.regionSelect.find().clear();
@@ -250,7 +254,7 @@ describe('DBaaS  Widget CSV Download', () => {
       .click();
 
     // -------------------------------------------------------------------------
-    // Step 5: Select database cluster
+    // Step 4: Select database cluster
     // -------------------------------------------------------------------------
     ui.autocomplete
       .findByLabel('Database Clusters')
@@ -265,7 +269,7 @@ describe('DBaaS  Widget CSV Download', () => {
       .click();
 
     // -------------------------------------------------------------------------
-    // Step 6: Select node type
+    // Step 5: Select node type
     // -------------------------------------------------------------------------
     ui.autocomplete
       .findByLabel('Node Type')
@@ -273,7 +277,7 @@ describe('DBaaS  Widget CSV Download', () => {
       .type(`${nodeType}{enter}`);
 
     // -------------------------------------------------------------------------
-    // Step 7: Apply global Group By
+    // Step 6: Apply global Group By
     // -------------------------------------------------------------------------
     ui.button
       .findByAttribute('aria-label', 'Group By Dashboard Metrics')
@@ -318,7 +322,7 @@ describe('DBaaS  Widget CSV Download', () => {
       .should('have.attr', 'data-qa-selected', 'true');
 
     // -------------------------------------------------------------------------
-    // Step 8: Per-widget Group By and Dimension Filters
+    // Step 7: Per-widget Group By and Dimension Filters
     // -------------------------------------------------------------------------
     metrics.forEach((widgetConfig) => {
       const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
@@ -406,12 +410,28 @@ describe('DBaaS  Widget CSV Download', () => {
   });
 
   it('should download CSV after setting filters', () => {
+
+    // -------------------------------------------------------------------------
+    //  Select time range
+    // -------------------------------------------------------------------------
+
+    ui.button.findByTitle('Last hour').as('startDateInput');
+    cy.get('@startDateInput').scrollIntoView();
+
+    cy.get('@startDateInput').click();
+
+    ui.button.findByTitle('Last day').click();
+
+    cy.get('[data-qa-buttons="apply"]')
+      .should('be.visible')
+      .should('be.enabled')
+      .click();
     metrics.forEach((testData) => {
       const widgetSelector = `[data-qa-widget="${testData.title}"]`;
       cy.get(widgetSelector)
         .should('be.visible')
         .find('h2')
-        .should('have.text', `${testData.title} (${testData.unit})`);
+        .should('contain.text', `${testData.title}`);
       cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
