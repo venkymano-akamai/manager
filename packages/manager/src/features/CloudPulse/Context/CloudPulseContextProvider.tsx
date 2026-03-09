@@ -16,7 +16,7 @@ export const CloudPulseContextProvider = ({
   children,
 }: CloudPulseProviderProps) => {
   const globalFilterData = React.useRef<FilterData | undefined>(undefined);
-  const selectedDashboard = React.useRef<Dashboard | undefined>(undefined);
+  const globalSelectedDashboard = React.useRef<Dashboard | undefined>(undefined);
   const globalGroupBy = React.useRef<string[]>([]);
 
   const setGlobalFilterData = React.useCallback((filterData: FilterData) => {
@@ -27,13 +27,13 @@ export const CloudPulseContextProvider = ({
     return globalFilterData.current;
   }, []);
 
-  const setSelectedDashboard = React.useCallback((dashboard: Dashboard) => {
+  const setGlobalSelectedDashboard = React.useCallback((dashboard: Dashboard) => {
     // Placeholder for potential future use if we need to register dashboard-level data
-    selectedDashboard.current = dashboard;
+    globalSelectedDashboard.current = dashboard;
   }, []);
 
-  const getSelectedDashboard = React.useCallback(() => {
-    return selectedDashboard.current;
+  const getGlobalSelectedDashboard = React.useCallback(() => {
+    return globalSelectedDashboard.current;
   }, []);
 
   const setGlobalGroupBy = React.useCallback((groupBy: string[]) => {
@@ -49,8 +49,8 @@ export const CloudPulseContextProvider = ({
       value={{
         setGlobalFilterData,
         getGlobalFilterData,
-        setSelectedDashboard,
-        getSelectedDashboard,
+        setGlobalSelectedDashboard,
+        getGlobalSelectedDashboard,
         setGlobalGroupBy,
         getGlobalGroupBy,
       }}

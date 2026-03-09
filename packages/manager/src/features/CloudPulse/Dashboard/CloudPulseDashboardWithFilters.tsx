@@ -71,7 +71,8 @@ const CloudPulseDashboardWithFiltersContent = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
     const { dashboardId, resource, region, serviceType } = props;
 
-    const { setSelectedDashboard, setGlobalFilterData } = useCloudPulseContext();
+    const { setGlobalSelectedDashboard, setGlobalFilterData } =
+      useCloudPulseContext();
 
     const { data: dashboardById, isError: isDashboardByIdError } =
       useCloudPulseDashboardByIdQuery(dashboardId, !serviceType);
@@ -164,9 +165,9 @@ const CloudPulseDashboardWithFiltersContent = React.memo(
 
     React.useEffect(() => {
       if (currentDashboard) {
-        setSelectedDashboard(currentDashboard);
+        setGlobalSelectedDashboard(currentDashboard);
       }
-    }, [currentDashboard, setSelectedDashboard]);
+    }, [currentDashboard, setGlobalSelectedDashboard]);
 
     const renderPlaceHolder = (title: string) => {
       return (

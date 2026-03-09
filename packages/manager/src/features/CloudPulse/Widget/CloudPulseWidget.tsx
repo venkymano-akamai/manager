@@ -246,7 +246,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     scope: 'entity',
     serviceType,
   });
-  const { getSelectedDashboard, getGlobalFilterData, getGlobalGroupBy } =
+  const { getGlobalSelectedDashboard, getGlobalFilterData, getGlobalGroupBy } =
     useCloudPulseContext();
   // Determine which fetch object is relevant for linodes
   const activeLinodeFetch =
@@ -596,7 +596,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     title="CSV Download"
                   >
                     <CloudPulseWidgetCSVDownloader
-                      dashboardName={getSelectedDashboard()?.label ?? ''}
+                      dashboardName={getGlobalSelectedDashboard()?.label ?? ''}
                       data={data}
                       dimensionFilters={dimensionFilters ?? []}
                       dimensionOptions={filteredDimensions ?? []}

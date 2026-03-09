@@ -36,7 +36,8 @@ export interface DashboardProp {
 export const CloudPulseDashboardLanding = () => {
   const { data: profile } = useProfile();
   const flags = useFlags();
-  const { setSelectedDashboard, setGlobalFilterData } = useCloudPulseContext();
+  const { setGlobalSelectedDashboard, setGlobalFilterData } =
+    useCloudPulseContext();
   const [filterData, setFilterData] = React.useState<FilterData>({
     id: {},
     label: {},
@@ -87,7 +88,7 @@ export const CloudPulseDashboardLanding = () => {
   const onDashboardChange = React.useCallback(
     (dashboardObj: Dashboard, skipReset: boolean = false) => {
       setDashboard(dashboardObj);
-      setSelectedDashboard(dashboardObj);
+      setGlobalSelectedDashboard(dashboardObj);
       if (!skipReset) {
         setFilterData({
           id: {},
@@ -96,7 +97,7 @@ export const CloudPulseDashboardLanding = () => {
         setTimeDuration(defaultTimeDuration(timezone)); // clear time duration on dashboard change
       }
     },
-    [timezone, setSelectedDashboard]
+    [timezone, setGlobalSelectedDashboard]
   );
   const onTimeDurationChange = React.useCallback(
     (timeDurationObj: DateTimeWithPreset) => {
