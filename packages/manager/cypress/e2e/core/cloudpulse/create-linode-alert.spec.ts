@@ -504,7 +504,7 @@ describe('Create Alert', () => {
 
         // Content email
         expect(systemChannel)
-          .to.have.nested.property('content.email.email_addresses')
+          .to.have.nested.property('content.email.usernames')
           .that.deep.equals(['test@test.com', 'test2@test.com']);
 
         // Ensure details is absent for system channel
