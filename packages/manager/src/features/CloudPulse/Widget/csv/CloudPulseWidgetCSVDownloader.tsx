@@ -14,12 +14,10 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
       null
     );
     const { enqueueSnackbar } = useSnackbar();
-    const { data, filters, widget, dashboardName, duration, isDataLoading } =
-      props;
+    const { data, widget, dashboardName, duration, isDataLoading } = props;
     const enableDownloadIcon =
       data &&
       data.length > 0 &&
-      filters &&
       widget &&
       dashboardName &&
       duration &&
