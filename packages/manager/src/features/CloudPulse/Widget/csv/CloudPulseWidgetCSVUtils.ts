@@ -83,7 +83,7 @@ const formatDateTime = (iso: string, timeZone: string | undefined) => {
 
 /**
  * @param millis The timestamp to be formatted in milliseconds
- * @param timeZone The time zone to te applied while formatting the timestamp
+ * @param timeZone The time zone to be applied while formatting the timestamp
  * @returns The formatted data and time string in specified time zone
  */
 const formatTimestamp = (millis: number, timeZone: string | undefined) => {
@@ -150,13 +150,13 @@ const appendAppliedFilters = (
     .filter((filter) =>
       Boolean(filters.label[filter.configuration.filterKey]?.length)
     )
-    .map(
-      (filter) =>
-        [
-          filter.configuration.name,
-          filters.label[filter.configuration.filterKey],
-        ] as CSVRow
-    );
+    .map((filter) => {
+      const labelValue = filters.label[filter.configuration.filterKey];
+      return [
+        filter.configuration.name,
+        Array.isArray(labelValue) ? labelValue.join(', ') : labelValue,
+      ];
+    });
 
   csvData.push(...appliedFilters);
 
@@ -186,22 +186,16 @@ export const generateCSVData = ({
 
   // Filter data based on zoom range if zoom is active
   const filteredData =
-    !zoomRange?.left ||
-    !zoomRange?.right ||
-    zoomRange.left === 'dataMin' ||
-    zoomRange.right === 'dataMax'
-      ? data
-      : data.filter((dataPoint) => {
-          const timestamp = dataPoint.timestamp;
-          const left = zoomRange.left;
-          const right = zoomRange.right;
-          return (
-            typeof left === 'number' &&
-            typeof right === 'number' &&
-            timestamp >= left &&
-            timestamp <= right
-          );
-        });
+    zoomRange?.left && zoomRange?.right
+      ? data.filter(
+          (d) =>
+            (typeof zoomRange.left === 'number' &&
+              typeof zoomRange.right === 'number' &&
+              d.timestamp >= zoomRange.left &&
+              d.timestamp <= zoomRange.right) ||
+            (zoomRange.left === 'dataMin' && zoomRange.right === 'dataMax') // Include all data if zoom range is set to dataMin/dataMax
+        )
+      : data;
 
   // Header
   csvData.push(['Dashboard', dashboardName]);
@@ -235,7 +229,7 @@ export const generateCSVData = ({
     const { value, unit } = widget.time_granularity;
     csvData.push([
       'Data Aggregation Interval',
-      `${value === -1 ? '' : value} ${unit}`,
+      `${value === -1 && unit === 'Auto' ? '' : value} ${unit}`,
     ]);
   }
 

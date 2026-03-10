@@ -585,7 +585,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     serviceType={serviceType}
                   />
                 )}
-                {filterConfig && (
+                {filterConfig && flags.aclp?.enableCSVDownload && (
                   <CloudPulseTooltip
                     key="csv-download-tooltip"
                     placement="bottom-end"
@@ -599,10 +599,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                       duration={duration}
                       filterConfig={filterConfig}
                       filters={getGlobalFilterData()}
-                      groupBy={[
-                        ...getGlobalGroupBy(),
-                        ...(groupBy ?? ['Test']),
-                      ]}
+                      groupBy={[...getGlobalGroupBy(), ...(groupBy ?? [])]}
                       isDataLoading={isLoading || isJweTokenFetching}
                       serviceType={serviceType}
                       widget={widget}
