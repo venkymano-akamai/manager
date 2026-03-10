@@ -150,13 +150,13 @@ const appendAppliedFilters = (
     .filter((filter) =>
       Boolean(filters.label[filter.configuration.filterKey]?.length)
     )
-    .map(
-      (filter) =>
-        [
-          filter.configuration.name,
-          filters.label[filter.configuration.filterKey],
-        ] as CSVRow
-    );
+    .map((filter) => {
+      const labelValue = filters.label[filter.configuration.filterKey];
+      return [
+        filter.configuration.name,
+        Array.isArray(labelValue) ? labelValue.join(', ') : labelValue,
+      ];
+    });
 
   csvData.push(...appliedFilters);
 
