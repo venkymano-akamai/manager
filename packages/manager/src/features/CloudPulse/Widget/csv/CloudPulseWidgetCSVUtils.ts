@@ -211,9 +211,13 @@ export const generateCSVData = ({
     appendAppliedFilters(csvData, filters, filterConfig);
   }
 
-  // Group By
-  if (groupBy.length) {
-    csvData.push(['Group By', groupBy.join(', ')]);
+  // Scrape Interval
+  if (widget.time_granularity) {
+    const { value, unit } = widget.time_granularity;
+    csvData.push([
+      'Data Aggregation Interval',
+      `${value === -1 && unit === 'Auto' ? '' : value} ${unit}`,
+    ]);
   }
 
   // Aggregation
@@ -224,13 +228,9 @@ export const generateCSVData = ({
     ]);
   }
 
-  // Scrape Interval
-  if (widget.time_granularity) {
-    const { value, unit } = widget.time_granularity;
-    csvData.push([
-      'Data Aggregation Interval',
-      `${value === -1 && unit === 'Auto' ? '' : value} ${unit}`,
-    ]);
+  // Group By
+  if (groupBy.length) {
+    csvData.push(['Group By', groupBy.join(', ')]);
   }
 
   // Dimension Filters
@@ -247,20 +247,47 @@ export const generateCSVData = ({
   // Metric Info
   csvData.push(['Metric', widget.label]);
   csvData.push(['Unit', widget.unit]);
+
+  if (
+    zoomRange &&
+    zoomRange.left !== 'dataMin' &&
+    zoomRange.right !== 'dataMax'
+  ) {
+    csvData.push([
+      'Zoom Start Time',
+      formatTimestamp(zoomRange.left, duration.timeZone),
+    ]);
+    csvData.push([
+      'Zoom End Time',
+      formatTimestamp(zoomRange.right, duration.timeZone),
+    ]);
+  }
+
   csvData.push([]);
 
   // Data
   if (filteredData.length) {
-    const keys = Object.keys(filteredData[0]);
+    // Collect all unique keys across all data points (timestamp is always present)
+    const metricKeys = new Set<string>();
+    filteredData.forEach((dataPoint) => {
+      Object.keys(dataPoint).forEach((key) => {
+        if (key !== 'timestamp') {
+          metricKeys.add(key);
+        }
+      });
+    });
 
-    csvData.push(keys);
+    // Build final keys array: timestamp first, then sorted metric keys
+    const sortedKeys = ['time', ...Array.from(metricKeys).sort()];
+
+    csvData.push(sortedKeys);
     csvData.push([]);
 
     filteredData.forEach((dataPoint) => {
-      const row: CSVRow = keys.map((key) =>
-        key === 'timestamp'
-          ? formatTimestamp(dataPoint[key], duration.timeZone)
-          : dataPoint[key]
+      const row: CSVRow = sortedKeys.map((key) =>
+        key === 'time'
+          ? formatTimestamp(dataPoint['timestamp'], duration.timeZone)
+          : (dataPoint[key] ?? '')
       );
 
       csvData.push(row);

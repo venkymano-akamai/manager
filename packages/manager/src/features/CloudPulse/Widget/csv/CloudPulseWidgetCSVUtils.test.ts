@@ -81,9 +81,9 @@ describe('generateCSVData', () => {
     );
     expect(csv.some((row) => row[0] === 'Metric')).toBe(true);
     expect(csv.some((row) => row[0] === 'Unit')).toBe(true);
-    expect(
-      csv.some((row) => Array.isArray(row) && row.includes('timestamp'))
-    ).toBe(true);
+    expect(csv.some((row) => Array.isArray(row) && row.includes('time'))).toBe(
+      true
+    );
     expect(csv.some((row) => Array.isArray(row) && row.includes(100))).toBe(
       true
     );
@@ -91,9 +91,9 @@ describe('generateCSVData', () => {
 
   it('should handle empty data', () => {
     const csv = generateCSVData({ ...baseProps, data: [] });
-    expect(
-      csv.some((row) => Array.isArray(row) && row.includes('timestamp'))
-    ).toBe(false);
+    expect(csv.some((row) => Array.isArray(row) && row.includes('time'))).toBe(
+      false
+    );
   });
 
   it('should handle no groupBy', () => {
