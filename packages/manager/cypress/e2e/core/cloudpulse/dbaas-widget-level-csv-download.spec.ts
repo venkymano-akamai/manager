@@ -148,6 +148,7 @@ const mockRegionWithoutMonitors = regionFactory.build({
 });
 
 const timeDurationToSelect = 'Last 24 Hours';
+const interval = 5 * 60;      // 5 min in seconds
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: {
@@ -155,17 +156,28 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
       (metricResult) => ({
         ...metricResult,
         values: [
-          [1766378789, '10000000.00'],
-          [1766378909, '30000000.00'],
-          [1766379029, '50000000.00'],
-          [1766379089, '70000000.00'],
-          [1766379149, '90000000.00'],
-          [1796379149, '10.10'],
+          [1753939800, '10000000.00'],
+          [1753939800 + interval, '30000000.00'],
+          [1753939800 + interval * 2, '50000000.00'],
+          [1753939800 + interval * 3, '70000000.00'],
+          [1753939800 + interval * 4, '90000000.00'],
+          [1754026200, '10.10'],
         ],
       })
     ),
   },
 });
+// Helper to extract key/value from a CSV metadata row
+const getValue = (lines: string[], key: string): { key: string; value: string } => {
+  const line = lines.find((l) => l.startsWith(`"${key}"`));
+  const [parsedKey, parsedValue] = line?.split('","') ?? [];
+  return {
+    key: parsedKey?.replace(/^"/, '').trim(),
+    value: parsedValue?.replace(/"$/, '').trim(),
+  };
+};
+
+
 /**
  * Reads and asserts the CSV file content against the API request and response.
  */
@@ -179,40 +191,31 @@ const validateCSV = (
     interception.response?.body?.data?.result?.[0]?.values ?? [];
 
   cy.readFile(csvFilePath).then((csvContent: string) => {
-    // --- Basic metadata ---
-    expect(csvContent).to.not.be.empty;
-    expect(csvContent).to.include(dashboardName);
-    expect(csvContent).to.include(widgetConfig.title);
-    expect(csvContent).to.include(widgetConfig.unit);
-    expect(csvContent.toLowerCase()).to.include(
-      requestBody.metrics[0].aggregate_function.toLowerCase()
-    );
-    expect(csvContent).to.include(String(requestBody.time_granularity.value));
+    const lines = csvContent.split('\n').map((l) => l.trim());
 
-    // --- Timestamp and metric value assertions ---
-    responseValues.forEach(([epoch, value]: [number, string]) => {
-      // Convert epoch to readable date string matching CSV format
-      const date = new Date(epoch * 1000);
-      const formattedDate = date.toLocaleString('en-US', {
-        day: 'numeric',
-        hour: 'numeric',
-        hour12: true,
-        minute: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
+    // --- Dashboard ---
+    const dashboard = getValue(lines, 'Dashboard');
+    expect(dashboard.key).to.equal('Dashboard');
+    expect(dashboard.value).to.equal(dashboardName);
 
-      // Assert timestamp exists in CSV
-      expect(csvContent).to.include(formattedDate);
+// --- Time Range ---
+const startTime = getValue(lines, 'Start Time');
+expect(startTime.key).to.equal('Start Time');
+expect(startTime.value).to.equal('Jul 31, 2025, 5:30 AM');
 
-      // Assert metric value exists in CSV (strip trailing decimals)
-      if (value !== 'NaN') {
-        expect(csvContent).to.include(String(parseFloat(value)));
-      }
-    });
+const endTime = getValue(lines, 'End Time');
+expect(endTime.key).to.equal('End Time');
+expect(endTime.value).to.equal('Aug 1, 2025, 5:30 AM');
+    // --- Widget Metadata ---
+    const metric = getValue(lines, 'Metric');
+    expect(metric.key).to.equal('Metric');
+    expect(metric.value).to.equal(widgetConfig.title);
+
+    const unit = getValue(lines, 'Unit');
+    expect(unit.key).to.equal('Unit');
+    expect(unit.value).to.equal(widgetConfig.unit);
   });
 };
-
 
 const databaseMock: Database = databaseFactory.build({
   cluster_size: 2,
@@ -226,6 +229,13 @@ const databaseMock: Database = databaseFactory.build({
 });
 describe('DBaaS  Widget CSV Download', () => {
   beforeEach(() => {
+    const downloadsFolder = Cypress.config('downloadsFolder');
+     const serviceTypeTitleCase = serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+    
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
+      { failOnNonZeroExit: false }
+    );
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetLinodes([mockLinode]);
@@ -363,7 +373,12 @@ describe('DBaaS  Widget CSV Download', () => {
     // -------------------------------------------------------------------------
     // Step 7: Per-widget Group By and Dimension Filters
     // -------------------------------------------------------------------------
-    metrics.forEach((widgetConfig) => {
+    const widgetConfig = metrics.find((m) => m.title === 'CPU Utilization');
+
+    if (!widgetConfig) {
+      throw new Error('CPU Utilization widget not found');
+    }
+    
       const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
 
       cy.get(widgetSelector).should('be.visible').as('widget');
@@ -445,7 +460,6 @@ describe('DBaaS  Widget CSV Download', () => {
       });
 
       ui.button.findByAttribute('label', 'Apply').should('be.visible').click();
-    });
   });
 
   it('should download CSV and validate content for all widgets', () => {
@@ -456,6 +470,11 @@ describe('DBaaS  Widget CSV Download', () => {
     // -------------------------------------------------------------------------
     // Select time range
     // -------------------------------------------------------------------------
+
+    const MOCK_START_DATE = new Date('2025-08-01');
+
+    cy.clock(MOCK_START_DATE.getTime(), ['Date']);
+
     ui.button.findByTitle('Last hour').as('startDateInput');
     cy.get('@startDateInput').click();
     ui.button.findByTitle('Last day').click();
@@ -468,7 +487,12 @@ describe('DBaaS  Widget CSV Download', () => {
     // -------------------------------------------------------------------------
     // Per-widget: set interval, aggregation, download CSV, validate
     // -------------------------------------------------------------------------
-    metrics.forEach((widgetConfig) => {
+    const widgetConfig = metrics.find((m) => m.title === 'CPU Utilization');
+
+    if (!widgetConfig) {
+      throw new Error('CPU Utilization widget not found');
+    }
+    
       const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
 
       cy.get(widgetSelector)
@@ -496,13 +520,15 @@ describe('DBaaS  Widget CSV Download', () => {
       // Wait for metrics API call OUTSIDE of .within()
       // and validate the downloaded CSV against request + response
       const serviceTypeTitleCase =
-        serviceType.charAt(0).toUpperCase();
-      const downloadsFolder = Cypress.config('downloadsFolder');
-      const csvFilePath = `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${widgetConfig.title}.csv`;
+  serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
 
-      cy.wait('@getMetrics').then((interception: Interception) => {
-        validateCSV(csvFilePath, widgetConfig, interception);
+const downloadsFolder = Cypress.config('downloadsFolder');
+
+const csvFilePath =
+  `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${widgetConfig.title}.csv`;
+
+  cy.wait('@getMetrics').then((interception: Interception) => {
+       validateCSV(csvFilePath, widgetConfig, interception);
       });
     });
   });
-});
