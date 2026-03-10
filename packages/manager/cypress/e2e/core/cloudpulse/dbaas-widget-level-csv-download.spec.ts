@@ -29,6 +29,7 @@ import {
 } from 'src/factories';
 
 import type {
+  CloudPulseMetricsResponseData,
   CloudPulseServiceType,
   Dashboard,
   Database,
@@ -37,6 +38,8 @@ import type {
 } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const OPERATOR_LABEL_MAP: Record<string, string> = {
   contains: 'Contains',
   ends_with: 'Ends with',
@@ -44,6 +47,23 @@ const OPERATOR_LABEL_MAP: Record<string, string> = {
   ne: 'Not Equal',
   starts_with: 'Starts with',
 };
+
+const SHARED_DIMENSIONS = [
+  { dimension_label: 'entity_id', label: 'Entity Id' },
+  { dimension_label: 'node_type', label: 'Node Type', value: 'secondary' },
+  { dimension_label: 'region', label: 'Region', value: 'us-ord' },
+  { dimension_label: 'engine', label: 'Engine', value: 'mysql' },
+];
+
+// Named epoch constants for mock data (5 min scrape interval)
+const MOCK_START_TIME = 1753939800; // Jul 31, 2025, 5:30 AM UTC
+const MOCK_END_TIME = 1754026200; // Aug 1, 2025, 5:30 AM UTC
+const MOCK_INTERVAL = 5 * 60; // 5 min in seconds
+
+// cy.clock() date — must be at module level so it's set before cy.visitWithLogin()
+const MOCK_CLOCK_DATE = new Date('2025-08-01');
+
+// ─── Widget Details ────────────────────────────────────────────────────────────
 
 const {
   clusterName,
@@ -56,12 +76,8 @@ const {
   region,
 } = widgetDetails.dbaas;
 
-const SHARED_DIMENSIONS = [
-  { dimension_label: 'entity_id', label: 'Entity Id' }, // add this
-  { dimension_label: 'node_type', label: 'Node Type', value: 'secondary' },
-  { dimension_label: 'region', label: 'Region', value: 'us-ord' },
-  { dimension_label: 'engine', label: 'Engine', value: 'mysql' },
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const getFiltersForMetric = (metricName: string) => {
   const metric = metrics.find((m) => m.name === metricName);
   if (!metric) {
@@ -76,6 +92,36 @@ const getFiltersForMetric = (metricName: string) => {
   }));
 };
 
+/**
+ * Extracts a key/value pair from a CSV metadata row.
+ * Throws a clear error if the row is missing, preventing silent undefined failures.
+ */
+const getValue = (
+  lines: string[],
+  key: string
+): { key: string; value: string } => {
+  const line = lines.find((l) => l.startsWith(`"${key}"`));
+  if (!line) {
+    throw new Error(`CSV row not found for key: "${key}"`);
+  }
+  const [parsedKey, parsedValue] = line.split('","');
+  return {
+    key: parsedKey?.replace(/^"/, '').trim(),
+    value: parsedValue?.replace(/"$/, '').trim(),
+  };
+};
+
+/** Formats an epoch (seconds) to match the CSV date format: "Jul 31, 2025, 5:30 AM" */
+const formatDate = (epoch: number): string =>
+  new Date(epoch * 1000).toLocaleString('en-US', {
+    day: 'numeric',
+    hour: 'numeric',
+    hour12: true,
+    minute: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
 const validateWidgetFilters = (
   widget: Widgets,
   expectedDimensionLabel: string,
@@ -88,6 +134,135 @@ const validateWidgetFilters = (
     expect(expectedValues).to.include(filter.value);
   });
 };
+
+/**
+ * Reads and validates the downloaded CSV file against the API request/response.
+ * widgetConfig is a single metric entry from the metrics array.
+ */
+const validateCSV = (
+  csvFilePath: string,
+  widgetConfig: (typeof metrics)[number],
+  interception: Interception
+) => {
+  const requestBody = interception.request.body;
+
+  cy.readFile(csvFilePath).then((csvContent: string) => {
+    const lines = csvContent.split('\n').map((l) => l.trim());
+
+    // --- Dashboard ---
+    const dashboardRow = getValue(lines, 'Dashboard');
+    expect(dashboardRow.key).to.equal('Dashboard');
+    expect(dashboardRow.value).to.equal(dashboardName);
+
+    // --- Time Range ---
+    const csvStartTime = getValue(lines, 'Start Time');
+    expect(csvStartTime.key).to.equal('Start Time');
+    expect(csvStartTime.value).to.equal(widgetConfig.startDate);
+
+    const csvEndTime = getValue(lines, 'End Time');
+    expect(csvEndTime.key).to.equal('End Time');
+    expect(csvEndTime.value).to.equal(widgetConfig.endDate);
+
+    // --- Database Metadata ---
+    const nodeTypeValue = requestBody.filters.find(
+      (f: { dimension_label: string }) => f.dimension_label === 'node_type'
+    )?.value;
+
+    const dbEngine = getValue(lines, 'Database Engine');
+    expect(dbEngine.key).to.equal('Database Engine');
+    expect(dbEngine.value.toLowerCase()).to.equal('mysql');
+
+    const regionRow = getValue(lines, 'Region');
+    expect(regionRow.key).to.equal('Region');
+    expect(regionRow.value).to.include(region);
+
+    const dbClusters = getValue(lines, 'Database Clusters');
+    expect(dbClusters.key).to.equal('Database Clusters');
+    expect(dbClusters.value).to.equal(clusterName);
+
+    const nodeTypeRow = getValue(lines, 'Node Type');
+    expect(nodeTypeRow.key).to.equal('Node Type');
+    expect(nodeTypeRow.value.toLowerCase()).to.equal(
+      nodeTypeValue?.toLowerCase()
+    );
+
+    // --- Group By ---
+    const allDimensions = [
+      ...SHARED_DIMENSIONS,
+      ...widgetConfig.filters.map((f) => ({
+        dimension_label: f.dimension_label,
+        label: f.dimension_label,
+      })),
+    ];
+
+    const groupByRow = getValue(lines, 'Group By');
+    expect(groupByRow.key).to.equal('Group By');
+    expect(groupByRow.value).to.equal(
+      requestBody.group_by
+        .map((g: string) => {
+          const match = allDimensions.find((d) => d.dimension_label === g);
+          return match ? match.label : g;
+        })
+        .join(', ')
+    );
+
+    // --- Aggregation Function ---
+    const aggregationRow = getValue(lines, 'Aggregation Function');
+    expect(aggregationRow.key).to.equal('Aggregation Function');
+    expect(aggregationRow.value.toLowerCase()).to.equal(
+      widgetConfig.expectedAggregation.toLowerCase()
+    );
+
+    // --- Scrape Interval ---
+    const granularityRow = getValue(lines, 'Scrape Interval');
+    expect(granularityRow.key).to.equal('Scrape Interval');
+    expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity);
+
+    // --- Widget Metadata ---
+    const metricRow = getValue(lines, 'Metric');
+    expect(metricRow.key).to.equal('Metric');
+    expect(metricRow.value).to.equal(widgetConfig.title);
+
+    const unitRow = getValue(lines, 'Unit');
+    expect(unitRow.key).to.equal('Unit');
+    expect(unitRow.value).to.equal(widgetConfig.unit);
+
+    // --- Timestamp header ---
+    const timestampHeader = lines.find((l) => l.startsWith('"timestamp"'));
+    expect(timestampHeader).to.equal(`"timestamp","${widgetConfig.title}"`);
+
+    // --- Data rows from mock response ---
+    const responseData = interception.response?.body
+      ?.data as CloudPulseMetricsResponseData;
+    const allResults = responseData?.result ?? [];
+
+    expect(allResults.length).to.be.greaterThan(
+      0,
+      'Response should have at least one result'
+    );
+
+    allResults.forEach((result, resultIndex) => {
+      result.values.forEach(([epoch, value], valueIndex) => {
+        const formattedDate = formatDate(epoch);
+
+        expect(csvContent).to.include(
+          formattedDate,
+          `Result[${resultIndex}] value[${valueIndex}] timestamp should appear in CSV`
+        );
+
+        if (value !== 'NaN') {
+          const parsedValue = String(parseFloat(value));
+          expect(csvContent).to.include(
+            parsedValue,
+            `Result[${resultIndex}] value[${valueIndex}] metric value should appear in CSV`
+          );
+        }
+      });
+    });
+  });
+};
+
+// ─── Factories ────────────────────────────────────────────────────────────────
 
 const cloudPulseDashboard = dashboardFactory.build({
   group_by: ['entity_id'],
@@ -137,210 +312,6 @@ const mockRegionWithoutMonitors = regionFactory.build({
   label: 'Newark, NJ',
 });
 
-// Fixed: timeDurationToSelect matches the actual preset label used in the UI
-const timeDurationToSelect = 'Last 24 Hours';
-
-// Fixed: named constants used instead of raw hardcoded numbers
-const startTime = 1753939800; // Jul 31, 2025, 5:30 AM UTC
-const endTime = 1754026200;   // Aug 1, 2025, 5:30 AM UTC
-const interval = 5 * 60;     // 5 min scrape interval in seconds
-
-const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: {
-    result: generateRandomMetricsData(timeDurationToSelect, '5 min').result.map(
-      (metricResult) => ({
-        ...metricResult,
-        values: [
-          [startTime, '10000000.00'],
-          [startTime + interval, '30000000.00'],
-          [startTime + interval * 2, '50000000.00'],
-          [startTime + interval * 3, '70000000.00'],
-          [startTime + interval * 4, '90000000.00'],
-          [endTime, '10.10'],
-        ],
-      })
-    ),
-  },
-});
-// Format epoch to match CSV date format: "Mar 9, 2026, 9:01 AM"
-const formatDate = (epoch: number): string =>
-  new Date(epoch * 1000).toLocaleString('en-US', {
-    day: 'numeric',
-    hour: 'numeric',
-    hour12: true,
-    minute: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-
-// Helper to extract key/value from a CSV metadata row
-const getValue = (
-  lines: string[],
-  key: string
-): { key: string; value: string } => {
-  const line = lines.find((l) => l.startsWith(`"${key}"`));
-  const [parsedKey, parsedValue] = line?.split('","') ?? [];
-  return {
-    key: parsedKey?.replace(/^"/, '').trim(),
-    value: parsedValue?.replace(/"$/, '').trim(),
-  };
-};
-
-/**
- * Reads and asserts the CSV file content against the API request and response.
- */
-const validateCSV = (
-  csvFilePath: string,
-  widgetConfig: (typeof metrics)[0],
-  interception: Interception
-) => {
-  const requestBody = interception.request.body;
-  const responseValues =
-    interception.response?.body?.data?.result?.[0]?.values ?? [];
-
-  cy.readFile(csvFilePath).then((csvContent: string) => {
-    const lines = csvContent.split('\n').map((l) => l.trim());
-
-    // --- Dashboard ---
-    const dashboardRow = getValue(lines, 'Dashboard');
-    expect(dashboardRow.key).to.equal('Dashboard');
-    expect(dashboardRow.value).to.equal(dashboardName);
-
-    // --- Time Range ---
-    const csvStartTime = getValue(lines, 'Start Time');
-    expect(csvStartTime.key).to.equal('Start Time');
-    expect(csvStartTime.value).to.equal(widgetConfig.startDate);
-
-    const csvEndTime = getValue(lines, 'End Time');
-    expect(csvEndTime.key).to.equal('End Time');
-    expect(csvEndTime.value).to.equal(widgetConfig.endDate);
-
-    // --- Database Metadata ---
-    const getFilter = (label: string) =>
-      requestBody.filters.find(
-        (f: { dimension_label: string }) => f.dimension_label === label
-      )?.value;
-
-    const dbEngine = getValue(lines, 'Database Engine');
-    expect(dbEngine.key).to.equal('Database Engine');
-    expect(dbEngine.value.toLowerCase()).to.equal('mysql');
-
-    const regionkey = getValue(lines, 'Region');
-    expect(regionkey.key).to.equal('Region');
-    expect(regionkey.value).to.include(region);
-
-    const dbClusters = getValue(lines, 'Database Clusters');
-    expect(dbClusters.key).to.equal('Database Clusters');
-    expect(dbClusters.value).to.equal(clusterName);
-
-    const nodeTypeRow = getValue(lines, 'Node Type');
-    expect(nodeTypeRow.key).to.equal('Node Type');
-    expect(nodeTypeRow.value.toLowerCase()).to.equal(
-      getFilter('node_type')?.toLowerCase()
-    );
-
-    // --- Group By ---
-    const allDimensions = [
-      ...SHARED_DIMENSIONS,
-      ...widgetConfig.filters.map((f) => ({
-        dimension_label: f.dimension_label,
-        label: f.dimension_label,
-      })),
-    ];
-
-    const groupByRow = getValue(lines, 'Group By');
-    expect(groupByRow.key).to.equal('Group By');
-    expect(groupByRow.value).to.equal(
-      requestBody.group_by
-        .map((g: string) => {
-          const match = allDimensions.find((d) => d.dimension_label === g);
-          return match ? match.label : g;
-        })
-        .join(', ')
-    );
-
-    // --- Aggregation Function ---
-    const aggregationRow = getValue(lines, 'Aggregation Function');
-    expect(aggregationRow.key).to.equal('Aggregation Function');
-    expect(aggregationRow.value.toLowerCase()).to.equal(
-      widgetConfig.expectedAggregation.toLowerCase()
-    );
-
-    // --- Scrape Interval ---
-    const granularityRow = getValue(lines, 'Scrape Interval');
-    expect(granularityRow.key).to.equal('Scrape Interval');
-    expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity);
-
-    // --- Widget Metadata ---
-    const metricRow = getValue(lines, 'Metric');
-    expect(metricRow.key).to.equal('Metric');
-    expect(metricRow.value).to.equal(widgetConfig.title);
-
-    const unitRow = getValue(lines, 'Unit');
-    expect(unitRow.key).to.equal('Unit');
-    expect(unitRow.value).to.equal(widgetConfig.unit);
-
-    // --- Timestamp header ---
-    const timestampHeader = lines.find((l) => l.startsWith('"timestamp"'));
-    expect(timestampHeader).to.equal(`"timestamp","${widgetConfig.title}"`);
-
-    // --- Data rows from first result ---
-    responseValues.forEach(([epoch, value]: [number, string]) => {
-      const formattedDate = new Date(epoch * 1000).toLocaleString('en-US', {
-        day: 'numeric',
-        hour: 'numeric',
-        hour12: true,
-        minute: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-
-      expect(csvContent).to.include(formattedDate);
-
-      if (value !== 'NaN') {
-        expect(csvContent).to.include(String(parseFloat(value)));
-      }
-    });
-
-    // --- Data rows from mock response (all results) ---
-    const allResults = interception.response?.body?.data?.result ?? [];
-
-    expect(allResults.length).to.be.greaterThan(
-      0,
-      'Response should have at least one result'
-    );
-
-    allResults.forEach(
-      (result: { values: [number, string][] }, resultIndex: number) => {
-        expect(result.values.length).to.be.greaterThan(
-          0,
-          `Result[${resultIndex}] should have at least one value`
-        );
-
-        result.values.forEach(
-          ([epoch, value]: [number, string], valueIndex: number) => {
-            const formattedDate = formatDate(epoch);
-
-            expect(csvContent).to.include(
-              formattedDate,
-              `Result[${resultIndex}] value[${valueIndex}]: epoch ${epoch} should appear as "${formattedDate}" in CSV`
-            );
-
-            if (value !== 'NaN') {
-              const parsedValue = String(parseFloat(value));
-              expect(csvContent).to.include(
-                parsedValue,
-                `Result[${resultIndex}] value[${valueIndex}]: metric value "${parsedValue}" should appear in CSV`
-              );
-            }
-          }
-        );
-      }
-    );
-  });
-};
-
-
 const databaseMock: Database = databaseFactory.build({
   cluster_size: 2,
   engine: 'mysql',
@@ -352,9 +323,25 @@ const databaseMock: Database = databaseFactory.build({
   version: '1',
 });
 
-// Fixed: MOCK_START_DATE moved to module level so cy.clock() 
-// can be called before cy.visitWithLogin() in beforeEach
-const MOCK_START_DATE = new Date('2025-08-01');
+const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
+  data: {
+    result: generateRandomMetricsData('Last 24 Hours', '5 min').result.map(
+      (metricResult) => ({
+        ...metricResult,
+        values: [
+          [MOCK_START_TIME, '10.00'],
+          [MOCK_START_TIME + MOCK_INTERVAL, '20.00'],
+          [MOCK_START_TIME + MOCK_INTERVAL * 2, '30.00'],
+          [MOCK_START_TIME + MOCK_INTERVAL * 3, '40.00'],
+          [MOCK_START_TIME + MOCK_INTERVAL * 4, '50.00'],
+          [MOCK_END_TIME, '60.00'],
+        ],
+      })
+    ),
+  },
+});
+
+// ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
@@ -362,20 +349,23 @@ describe('DBaaS Widget CSV Download', () => {
     const serviceTypeTitleCase =
       serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
 
+    // Clean up any previously downloaded CSV files for this dashboard
     cy.exec(
       `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
       { failOnNonZeroExit: false }
     );
 
-    // Fixed: cy.clock() called before cy.visitWithLogin() so the
-    // mocked date is active when the app boots
-    cy.clock(MOCK_START_DATE.getTime(), ['Date']);
+    // cy.clock() must be called before cy.visitWithLogin() so the mocked
+    // date is active when the app initialises
+    cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
     mockGetLinodes([mockLinode]);
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
-    mockGetCloudPulseDashboards(serviceType, [cloudPulseDashboard]).as('fetchDashboards');
+    mockGetCloudPulseDashboards(serviceType, [cloudPulseDashboard]).as(
+      'fetchDashboards'
+    );
     mockGetCloudPulseServices([serviceType]).as('fetchServices');
     mockGetCloudPulseDashboard(id, cloudPulseDashboard).as('fetchDashboard');
     mockCreateCloudPulseJWEToken(serviceType);
@@ -387,7 +377,6 @@ describe('DBaaS Widget CSV Download', () => {
     mockGetDatabases([databaseMock]).as('getDatabases');
 
     cy.visitWithLogin('/metrics');
-
     cy.wait('@fetchServices');
 
     cy.wait('@fetchDashboards').then((interception: Interception) => {
@@ -399,23 +388,24 @@ describe('DBaaS Widget CSV Download', () => {
       });
     });
 
+    // Select dashboard
     ui.autocomplete
       .findByLabel('Dashboard')
       .should('be.visible')
       .type(dashboardName);
-
     ui.autocompletePopper
       .findByTitle(dashboardName)
       .should('be.visible')
       .click();
 
+    // Select database engine
     ui.autocomplete
       .findByLabel('Database Engine')
       .should('be.visible')
       .type(engine);
-
     ui.autocompletePopper.findByTitle(engine).should('be.visible').click();
 
+    // Select region
     ui.regionSelect.find().click();
     ui.regionSelect.find().clear();
     ui.regionSelect
@@ -423,11 +413,11 @@ describe('DBaaS Widget CSV Download', () => {
       .should('be.visible')
       .click();
 
+    // Select cluster
     ui.autocomplete
       .findByLabel('Database Clusters')
       .should('be.visible')
       .type(clusterName);
-
     ui.autocompletePopper.findByTitle(clusterName).should('be.visible').click();
 
     ui.button
@@ -435,203 +425,195 @@ describe('DBaaS Widget CSV Download', () => {
       .should('be.visible')
       .click();
 
+    // Select node type
     ui.autocomplete
       .findByLabel('Node Type')
       .should('be.visible')
       .type(`${nodeType}{enter}`);
+  });
 
-    ui.button
-      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-      .should('be.visible')
-      .first()
-      .as('dashboardGroupByBtn');
+  metrics.forEach((widgetConfig) => {
+    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+        'getMetrics'
+      );
 
-    cy.get('@dashboardGroupByBtn').scrollIntoView();
-    ui.tooltip.findByText('Group By');
-    cy.get('@dashboardGroupByBtn')
-      .invoke('attr', 'data-qa-selected')
-      .should('eq', 'true');
-    cy.get('@dashboardGroupByBtn').should('be.visible').click();
+      const { dateSelection, filters, title, name } = widgetConfig;
+      const widgetSelector = `[data-qa-widget="${title}"]`;
 
-    cy.get('[data-testid="drawer-title"]')
-      .should('be.visible')
-      .and('have.text', 'Global Group By');
-
-    cy.get('[data-testid="drawer"]')
-      .find('p')
-      .first()
-      .should('have.text', 'Dbaas Dashboard');
-
-    ui.autocomplete
-      .findByLabel('Dimensions')
-      .should('be.visible')
-      .type('Node Type');
-
-    ui.autocompletePopper.findByTitle('Node Type').should('be.visible').click();
-
-    cy.get('body').type('{esc}');
-    cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
-
-    ui.button
-      .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-      .should('have.attr', 'data-qa-selected', 'true');
-
-    const widgetConfig = metrics.find((m) => m.title === 'CPU Utilization');
-
-    if (!widgetConfig) {
-      throw new Error('CPU Utilization widget not found');
-    }
-
-    const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
-
-    cy.get(widgetSelector).should('be.visible').as('widget');
-
-    cy.get('@widget').within(() => {
+      // ── Dashboard-level Group By ──────────────────────────────────────────
       ui.button
         .findByAttribute('aria-label', 'Group By Dashboard Metrics')
-        .scrollIntoView()
-        .click();
-    });
+        .should('be.visible')
+        .first()
+        .as('dashboardGroupByBtn');
 
-    cy.get('[data-testid="drawer-title"]')
-      .should('be.visible')
-      .and('have.text', 'Group By');
+      cy.get('@dashboardGroupByBtn').scrollIntoView();
+      ui.tooltip.findByText('Group By');
+      cy.get('@dashboardGroupByBtn')
+        .invoke('attr', 'data-qa-selected')
+        .should('eq', 'true');
+      cy.get('@dashboardGroupByBtn').should('be.visible').click();
 
-    cy.get('[data-qa-id="groupby-drawer-subtitle"]').should(
-      'have.text',
-      widgetConfig.title
-    );
+      cy.get('[data-testid="drawer-title"]')
+        .should('be.visible')
+        .and('have.text', 'Global Group By');
 
-    (widgetConfig.filters || []).forEach((filter) => {
+      cy.get('[data-testid="drawer"]')
+        .find('p')
+        .first()
+        .should('have.text', 'Dbaas Dashboard');
+
       ui.autocomplete
         .findByLabel('Dimensions')
         .should('be.visible')
-        .type(filter.dimension_label);
-
+        .type('Node Type');
       ui.autocompletePopper
-        .findByTitle(filter.dimension_label)
+        .findByTitle('Node Type')
         .should('be.visible')
         .click();
-    });
 
-    cy.get('body').type('{esc}');
-    cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
+      cy.get('body').type('{esc}');
+      cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
 
-    cy.get('@widget').within(() => {
       ui.button
-        .findByAttribute(
-          'aria-label',
-          `Widget Dimension Filter ${widgetConfig.title}`
-        )
+        .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+        .should('have.attr', 'data-qa-selected', 'true');
+
+      // ── Widget-level Group By ─────────────────────────────────────────────
+      cy.get(widgetSelector).should('be.visible').as('widget');
+
+      cy.get('@widget').within(() => {
+        ui.button
+          .findByAttribute('aria-label', 'Group By Dashboard Metrics')
+          .scrollIntoView()
+          .click();
+      });
+
+      cy.get('[data-testid="drawer-title"]')
+        .should('be.visible')
+        .and('have.text', 'Group By');
+
+      cy.get('[data-qa-id="groupby-drawer-subtitle"]').should(
+        'have.text',
+        title
+      );
+
+      (filters || []).forEach((filter) => {
+        ui.autocomplete
+          .findByLabel('Dimensions')
+          .should('be.visible')
+          .type(filter.dimension_label);
+
+        ui.autocompletePopper
+          .findByTitle(filter.dimension_label)
+          .should('be.visible')
+          .click();
+      });
+
+      cy.get('body').type('{esc}');
+      cy.findByTestId('apply').should('be.visible').and('be.enabled').click();
+
+      // ── Widget Dimension Filters ──────────────────────────────────────────
+      cy.get('@widget').within(() => {
+        ui.button
+          .findByAttribute('aria-label', `Widget Dimension Filter ${title}`)
+          .click();
+      });
+
+      (filters || []).forEach((filter, index) => {
+        const uiOperator =
+          OPERATOR_LABEL_MAP[filter.operator] ?? filter.operator;
+
+        ui.button.findByTitle('Add Filter').click();
+
+        cy.get('[data-testid^="dimension_filters."]')
+          .eq(index)
+          .should('be.visible')
+          .within(() => {
+            ui.autocomplete
+              .findByLabel('Dimension')
+              .should('be.visible')
+              .type(filter.dimension_label);
+
+            ui.autocompletePopper.findByTitle(filter.dimension_label).click();
+
+            ui.autocomplete
+              .findByLabel('Operator')
+              .should('not.be.disabled')
+              .type(uiOperator);
+
+            ui.autocompletePopper.findByTitle(uiOperator).click();
+
+            ui.autocomplete
+              .findByLabel('Value')
+              .should('not.be.disabled')
+              .click()
+              .type(`${filter.value}{downarrow}{enter}`);
+          });
+      });
+
+      ui.button.findByAttribute('label', 'Apply').should('be.visible').click();
+
+      // ── Date Selection ────────────────────────────────────────────────────
+      ui.button.findByTitle('Last hour').click();
+      ui.button.findByTitle(dateSelection).click();
+
+      cy.get('[data-qa-buttons="apply"]')
+        .should('be.visible')
+        .should('be.enabled')
         .click();
-    });
 
-    (widgetConfig.filters || []).forEach((filter, index) => {
-      const uiOperator = OPERATOR_LABEL_MAP[filter.operator] ?? filter.operator;
+      cy.wait('@getMetrics');
 
-      ui.button.findByTitle('Add Filter').click();
+      // ── Assert widget is visible ──────────────────────────────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .find('h2')
+        .should('contain.text', title);
 
-      cy.get('[data-testid^="dimension_filters."]')
-        .eq(index)
+      // ── Set interval, aggregation, trigger CSV download ───────────────────
+      cy.get(widgetSelector)
         .should('be.visible')
         .within(() => {
           ui.autocomplete
-            .findByLabel('Dimension')
+            .findByLabel('Select an Interval')
             .should('be.visible')
-            .type(filter.dimension_label);
-
-          ui.autocompletePopper.findByTitle(filter.dimension_label).click();
+            .type(`${widgetConfig.expectedGranularity}{enter}`);
 
           ui.autocomplete
-            .findByLabel('Operator')
-            .should('not.be.disabled')
-            .type(uiOperator);
+            .findByLabel('Select an Aggregate Function')
+            .should('be.visible')
+            .type(`${widgetConfig.expectedAggregation}{enter}`);
 
-          ui.autocompletePopper.findByTitle(uiOperator).click();
-
-          ui.autocomplete
-            .findByLabel('Value')
-            .should('not.be.disabled')
-            .click()
-            .type(`${filter.value}{downarrow}{enter}`);
+          cy.get('[aria-label="Download CSV"]').click();
         });
-    });
 
-    ui.button.findByAttribute('label', 'Apply').should('be.visible').click();
-  });
+      // ── Build CSV file path ───────────────────────────────────────────────
+      const serviceTypeTitleCase =
+        serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+      const downloadsFolder = Cypress.config('downloadsFolder');
+      const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
+      const csvFilePath = `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${sanitizedTitle}.csv`;
 
-  it('should download CSV and validate content for all widgets', () => {
-    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-      'refreshMetrics'
-    );
-  
-    const widgetConfig = metrics.find((m) => m.title === 'CPU Utilization');
-  
-    if (!widgetConfig) {
-      throw new Error('CPU Utilization widget not found');
-    }
-  
-    const { dateSelection } = widgetConfig;
-    const widgetSelector = `[data-qa-widget="${widgetConfig.title}"]`;
-  
-    // --- Open date picker and select preset ---
-    ui.button.findByTitle('Last hour').click();
-    ui.button.findByTitle(dateSelection).click();
-  
-    cy.get('[data-qa-buttons="apply"]')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
-  
-    // --- Wait for metrics to reload after date change ---
-    cy.wait('@getMetrics');
-  
-    cy.get(widgetSelector)
-      .should('be.visible')
-      .find('h2')
-      .should('contain.text', widgetConfig.title);
-  
-    // --- Set interval, aggregation, download CSV ---
-    cy.get(widgetSelector)
-      .should('be.visible')
-      .within(() => {
-        ui.autocomplete
-          .findByLabel('Select an Interval')
-          .should('be.visible')
-          .type(`${widgetConfig.expectedGranularity}{enter}`);
-  
-        ui.autocomplete
-          .findByLabel('Select an Aggregate Function')
-          .should('be.visible')
-          .type(`${widgetConfig.expectedAggregation}{enter}`);
-  
-        cy.get('[aria-label="Download CSV"]').click();
+      // ── Find matching interception and validate CSV ───────────────────────
+      cy.get('@getMetrics.all').then((calls) => {
+        const interceptions = calls as unknown as Interception[];
+
+        const interception = [...interceptions]
+          .reverse()
+          .find((i) =>
+            i.request.body.metrics.some(
+              (m: { name: string }) => m.name === name
+            )
+          );
+
+        if (!interception) {
+          throw new Error(`No interception found for widget: ${name}`);
+        }
+
+        validateCSV(csvFilePath, widgetConfig, interception);
       });
-  
-    // --- Build CSV file path ---
-    const serviceTypeTitleCase =
-      serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
-    const downloadsFolder = Cypress.config('downloadsFolder');
-    const csvFilePath = `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${widgetConfig.title}.csv`;
-  
-   // --- Wait for API and validate CSV ---
-cy.get('@getMetrics.all').then((calls) => {
-  const interceptions = (calls as unknown as Interception[]);
-
-  // Get the last call that matches this specific widget's metric name
-  const interception = [...interceptions]
-    .reverse()
-    .find((i) =>
-      i.request.body.metrics.some(
-        (m: { name: string }) => m.name === widgetConfig.name
-      )
-    );
-
-  if (!interception) {
-    throw new Error(`No interception found for widget: ${widgetConfig.name}`);
-  }
-
-  validateCSV(csvFilePath, widgetConfig, interception);
-});
+    });
   });
 });
