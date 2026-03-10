@@ -261,6 +261,20 @@ const validateCSV = (
     });
   });
 };
+const matchesWidgetName = (m: { name: string }, widgetName: string) =>
+  m.name === widgetName;
+
+const findInterceptionForWidget = (
+  interceptions: Interception[],
+  widgetName: string
+) =>
+  [...interceptions]
+    .reverse()
+    .find((i) =>
+      i.request.body.metrics.some((m: { name: string }) =>
+        matchesWidgetName(m, widgetName)
+      )
+    );
 
 // ─── Factories ────────────────────────────────────────────────────────────────
 
@@ -597,16 +611,10 @@ describe('DBaaS Widget CSV Download', () => {
       const csvFilePath = `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${sanitizedTitle}.csv`;
 
       // ── Find matching interception and validate CSV ───────────────────────
+      // ── Find matching interception and validate CSV ───────────────────────
       cy.get('@getMetrics.all').then((calls) => {
         const interceptions = calls as unknown as Interception[];
-
-        const interception = [...interceptions]
-          .reverse()
-          .find((i) =>
-            i.request.body.metrics.some(
-              (m: { name: string }) => m.name === name
-            )
-          );
+        const interception = findInterceptionForWidget(interceptions, name);
 
         if (!interception) {
           throw new Error(`No interception found for widget: ${name}`);
