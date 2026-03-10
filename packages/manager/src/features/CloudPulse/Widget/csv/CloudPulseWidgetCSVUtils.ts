@@ -189,10 +189,11 @@ export const generateCSVData = ({
     zoomRange?.left && zoomRange?.right
       ? data.filter(
           (d) =>
-            typeof zoomRange.left === 'number' &&
-            typeof zoomRange.right === 'number' &&
-            d.timestamp >= zoomRange.left &&
-            d.timestamp <= zoomRange.right
+            (typeof zoomRange.left === 'number' &&
+              typeof zoomRange.right === 'number' &&
+              d.timestamp >= zoomRange.left &&
+              d.timestamp <= zoomRange.right) ||
+            (zoomRange.left === 'dataMin' && zoomRange.right === 'dataMax') // Include all data if zoom range is set to dataMin/dataMax
         )
       : data;
 
