@@ -267,30 +267,26 @@ export const generateCSVData = ({
 
   // Data
   if (filteredData.length) {
-    // Collect all unique keys across all data points
-    const allKeysSet = new Set<string>();
+    // Collect all unique keys across all data points (timestamp is always present)
+    const metricKeys = new Set<string>();
     filteredData.forEach((dataPoint) => {
-      Object.keys(dataPoint).forEach((key) => allKeysSet.add(key));
+      Object.keys(dataPoint).forEach((key) => {
+        if (key !== 'timestamp') {
+          metricKeys.add(key);
+        }
+      });
     });
 
-    // Ensure timestamp is first, then other keys in sorted order
-    const allKeys = Array.from(allKeysSet);
-    const sortedKeys = [
-      ...(allKeys.includes('timestamp') ? ['timestamp'] : []),
-      ...allKeys.filter((key) => key !== 'timestamp').sort(),
-    ];
+    // Build final keys array: timestamp first, then sorted metric keys
+    const sortedKeys = ['time', ...Array.from(metricKeys).sort()];
 
-    const headerKeys = sortedKeys.map((key) =>
-      key === 'timestamp' ? 'time' : key
-    );
-
-    csvData.push(headerKeys);
+    csvData.push(sortedKeys);
     csvData.push([]);
 
     filteredData.forEach((dataPoint) => {
       const row: CSVRow = sortedKeys.map((key) =>
-        key === 'timestamp'
-          ? formatTimestamp(dataPoint[key], duration.timeZone)
+        key === 'time'
+          ? formatTimestamp(dataPoint['timestamp'], duration.timeZone)
           : (dataPoint[key] ?? '')
       );
 
