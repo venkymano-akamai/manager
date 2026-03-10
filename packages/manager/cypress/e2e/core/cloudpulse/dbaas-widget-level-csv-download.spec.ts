@@ -162,6 +162,16 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
     ),
   },
 });
+// Format epoch to match CSV date format: "Mar 9, 2026, 9:01 AM"
+const formatDate = (epoch: number): string =>
+  new Date(epoch * 1000).toLocaleString('en-US', {
+    day: 'numeric',
+    hour: 'numeric',
+    hour12: true,
+    minute: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
 // Helper to extract key/value from a CSV metadata row
 const getValue = (
@@ -205,7 +215,7 @@ const validateCSV = (
     expect(csvEndTime.key).to.equal('End Time');
     expect(csvEndTime.value).to.equal(widgetConfig.endDate);
 
-    // --- Database Metadata (from request filters array) ---
+    // --- Database Metadata ---
     const getFilter = (label: string) =>
       requestBody.filters.find(
         (f: { dimension_label: string }) => f.dimension_label === label
@@ -216,7 +226,7 @@ const validateCSV = (
     expect(dbEngine.value.toLowerCase()).to.equal('mysql');
 
     const regionkey = getValue(lines, 'Region');
-     expect(regionkey.key).to.equal('Region');
+    expect(regionkey.key).to.equal('Region');
     expect(regionkey.value).to.include(region);
 
     const dbClusters = getValue(lines, 'Database Clusters');
@@ -229,37 +239,37 @@ const validateCSV = (
       getFilter('node_type')?.toLowerCase()
     );
 
-// --- Group By ---
-const allDimensions = [
-  ...SHARED_DIMENSIONS,
-  ...widgetConfig.filters.map((f) => ({
-    dimension_label: f.dimension_label,
-    label: f.dimension_label, // filters don't have a label, use dimension_label as-is
-  })),
-];
+    // --- Group By ---
+    const allDimensions = [
+      ...SHARED_DIMENSIONS,
+      ...widgetConfig.filters.map((f) => ({
+        dimension_label: f.dimension_label,
+        label: f.dimension_label,
+      })),
+    ];
 
-const groupByRow = getValue(lines, 'Group By');
-expect(groupByRow.key).to.equal('Group By');
-expect(groupByRow.value).to.equal(
-  requestBody.group_by
-    .map((g: string) => {
-      const match = allDimensions.find((d) => d.dimension_label === g);
-      return match ? match.label : g;
-    })
-    .join(', ')
-);
+    const groupByRow = getValue(lines, 'Group By');
+    expect(groupByRow.key).to.equal('Group By');
+    expect(groupByRow.value).to.equal(
+      requestBody.group_by
+        .map((g: string) => {
+          const match = allDimensions.find((d) => d.dimension_label === g);
+          return match ? match.label : g;
+        })
+        .join(', ')
+    );
 
-  // --- Aggregation Function ---
-const aggregationRow = getValue(lines, 'Aggregation Function');
-expect(aggregationRow.key).to.equal('Aggregation Function');
-expect(aggregationRow.value.toLowerCase()).to.equal(
-  widgetConfig.expectedAggregation.toLowerCase()
-);
+    // --- Aggregation Function ---
+    const aggregationRow = getValue(lines, 'Aggregation Function');
+    expect(aggregationRow.key).to.equal('Aggregation Function');
+    expect(aggregationRow.value.toLowerCase()).to.equal(
+      widgetConfig.expectedAggregation.toLowerCase()
+    );
 
-// --- Scrape Interval ---
-const granularityRow = getValue(lines, 'Scrape Interval');
-expect(granularityRow.key).to.equal('Scrape Interval');
-expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity); // '1 hr'
+    // --- Scrape Interval ---
+    const granularityRow = getValue(lines, 'Scrape Interval');
+    expect(granularityRow.key).to.equal('Scrape Interval');
+    expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity);
 
     // --- Widget Metadata ---
     const metricRow = getValue(lines, 'Metric');
@@ -274,7 +284,7 @@ expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity); // '1 h
     const timestampHeader = lines.find((l) => l.startsWith('"timestamp"'));
     expect(timestampHeader).to.equal(`"timestamp","${widgetConfig.title}"`);
 
-    // --- Data rows from response values ---
+    // --- Data rows from first result ---
     responseValues.forEach(([epoch, value]: [number, string]) => {
       const formattedDate = new Date(epoch * 1000).toLocaleString('en-US', {
         day: 'numeric',
@@ -291,8 +301,45 @@ expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity); // '1 h
         expect(csvContent).to.include(String(parseFloat(value)));
       }
     });
+
+    // --- Data rows from mock response (all results) ---
+    const allResults = interception.response?.body?.data?.result ?? [];
+
+    expect(allResults.length).to.be.greaterThan(
+      0,
+      'Response should have at least one result'
+    );
+
+    allResults.forEach(
+      (result: { values: [number, string][] }, resultIndex: number) => {
+        expect(result.values.length).to.be.greaterThan(
+          0,
+          `Result[${resultIndex}] should have at least one value`
+        );
+
+        result.values.forEach(
+          ([epoch, value]: [number, string], valueIndex: number) => {
+            const formattedDate = formatDate(epoch);
+
+            expect(csvContent).to.include(
+              formattedDate,
+              `Result[${resultIndex}] value[${valueIndex}]: epoch ${epoch} should appear as "${formattedDate}" in CSV`
+            );
+
+            if (value !== 'NaN') {
+              const parsedValue = String(parseFloat(value));
+              expect(csvContent).to.include(
+                parsedValue,
+                `Result[${resultIndex}] value[${valueIndex}]: metric value "${parsedValue}" should appear in CSV`
+              );
+            }
+          }
+        );
+      }
+    );
   });
 };
+
 
 const databaseMock: Database = databaseFactory.build({
   cluster_size: 2,
