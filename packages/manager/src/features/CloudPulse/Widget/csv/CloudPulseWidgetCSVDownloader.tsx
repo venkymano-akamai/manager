@@ -18,7 +18,13 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
     const { data, filters, widget, dashboardName, duration, isDataLoading } =
       props;
     const enableDownloadIcon =
-      data && filters && widget && dashboardName && duration && !isDataLoading;
+      data &&
+      data.length > 0 &&
+      filters &&
+      widget &&
+      dashboardName &&
+      duration &&
+      !isDataLoading;
     const csvData = enableDownloadIcon ? generateCSVData(props) : [];
 
     const handleDownloadClick = () => {

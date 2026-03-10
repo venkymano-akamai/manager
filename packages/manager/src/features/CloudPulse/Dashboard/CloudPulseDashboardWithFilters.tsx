@@ -61,13 +61,13 @@ export const CloudPulseDashboardWithFilters = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
     return (
       <CloudPulseContextProvider>
-        <CloudPulseDashboardWithFiltersContent {...props} />
+        <CloudPulseDashboardWithFiltersRenderer {...props} />
       </CloudPulseContextProvider>
     );
   }
 );
 
-const CloudPulseDashboardWithFiltersContent = React.memo(
+const CloudPulseDashboardWithFiltersRenderer = React.memo(
   (props: CloudPulseDashboardWithFiltersProp) => {
     const { dashboardId, resource, region, serviceType } = props;
 

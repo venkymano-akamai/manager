@@ -177,9 +177,9 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
   );
   const [isZoomed, setIsZoomed] = React.useState(false);
   const [zoomRange, setZoomRange] = React.useState<{
-    left?: 'dataMin' | number;
-    right?: 'dataMax' | number;
-  }>({});
+    left: 'dataMin' | number;
+    right: 'dataMax' | number;
+  }>();
   const theme = useTheme();
 
   const {
@@ -414,11 +414,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
   );
 
   const handleZoomStateChange = React.useCallback(
-    (
-      zoomed: boolean,
-      left?: 'dataMin' | number,
-      right?: 'dataMax' | number
-    ) => {
+    (zoomed: boolean, left: 'dataMin' | number, right: 'dataMax' | number) => {
       setIsZoomed(zoomed);
       setZoomRange({ left, right });
     },
@@ -552,7 +548,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                 flex: { sm: 3, xs: 0 },
                 justifyContent: 'end',
                 alignItems: 'center',
-                gap: 2,
+                gap: 1,
                 maxHeight: `calc(${theme.spacing(10)} + 5px)`,
                 overflow: 'auto',
                 width: { sm: 'inherit', xs: '100%' },
@@ -576,7 +572,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   onAggregateFuncChange={handleAggregateFunctionChange}
                 />
               )}
-              <Box sx={{ display: 'flex', gap: 2, marginTop: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, marginTop: 1 }}>
                 {flags.aclp?.showWidgetDimensionFilters && (
                   <CloudPulseDimensionFiltersSelect
                     dashboardId={dashboardId}
@@ -589,7 +585,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     serviceType={serviceType}
                   />
                 )}
-                {filterConfig && flags.aclp?.enableCSVDownload && (
+                {filterConfig && (
                   <CloudPulseTooltip
                     key="csv-download-tooltip"
                     placement="bottom-end"

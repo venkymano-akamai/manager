@@ -24,8 +24,8 @@ export interface CloudPulseLineGraph extends AreaChartProps {
   loading?: boolean;
   onZoomChange?: (
     isZoomed: boolean,
-    left?: 'dataMin' | number,
-    right?: 'dataMax' | number
+    left: 'dataMin' | number,
+    right: 'dataMax' | number
   ) => void;
   zoomResetKey: string;
 }

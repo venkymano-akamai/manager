@@ -63,8 +63,8 @@ export interface CSVDataProps {
    * The zoom range boundaries (left and right timestamps) if the chart is zoomed, used to filter the data to only include the zoomed range in the CSV
    */
   zoomRange?: {
-    left?: 'dataMin' | number;
-    right?: 'dataMax' | number;
+    left: 'dataMin' | number;
+    right: 'dataMax' | number;
   };
 }
 
