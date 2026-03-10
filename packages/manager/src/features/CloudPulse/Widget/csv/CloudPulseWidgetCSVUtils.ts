@@ -59,6 +59,13 @@ export interface CSVDataProps {
    * The widget for which the CSV is being generated, used to extract information such as the metric label, unit, aggregation function, and scrape interval to include in the CSV
    */
   widget: Widgets;
+  /**
+   * The zoom range boundaries (left and right timestamps) if the chart is zoomed, used to filter the data to only include the zoomed range in the CSV
+   */
+  zoomRange?: {
+    left: 'dataMin' | number;
+    right: 'dataMax' | number;
+  };
 }
 
 type CSVRow = Array<number | string>;
@@ -69,18 +76,20 @@ type CSVData = CSVRow[];
  * @param timeZone The time zone to be applied when formatting the ISO string, used to ensure that the date and time values in the CSV are presented in the user's local time zone for better readability and relevance
  * @returns The formatted date and time string in the specified time zone
  */
-const formatDateTime = (iso: string, timeZone: string | undefined) =>
-  DateTime.fromISO(iso).setZone(timeZone).toLocaleString(DateTime.DATETIME_MED);
+const formatDateTime = (iso: string, timeZone: string | undefined) => {
+  const dateTime = DateTime.fromISO(iso).setZone(timeZone);
+  return `${dateTime.toLocaleString(DateTime.DATETIME_MED)} ${dateTime.offsetNameShort}`;
+};
 
 /**
  * @param millis The timestamp to be formatted in milliseconds
  * @param timeZone The time zone to te applied while formatting the timestamp
  * @returns The formatted data and time string in specified time zone
  */
-const formatTimestamp = (millis: number, timeZone: string | undefined) =>
-  DateTime.fromMillis(millis)
-    .setZone(timeZone)
-    .toLocaleString(DateTime.DATETIME_MED);
+const formatTimestamp = (millis: number, timeZone: string | undefined) => {
+  const dateTime = DateTime.fromMillis(millis).setZone(timeZone);
+  return `${dateTime.toLocaleString(DateTime.DATETIME_MED)} ${dateTime.offsetNameShort}`;
+};
 
 /**
  * @param dimensions The dimensions to be transformed into a map of dimension label to dimension name, used to create a mapping of dimension labels to user-friendly names for better readability in the CSV
@@ -171,8 +180,28 @@ export const generateCSVData = ({
   dimensionFilters,
   dimensionOptions,
   serviceType,
+  zoomRange,
 }: CSVDataProps): CSVData => {
   const csvData: CSVData = [];
+
+  // Filter data based on zoom range if zoom is active
+  const filteredData =
+    !zoomRange?.left ||
+    !zoomRange?.right ||
+    zoomRange.left === 'dataMin' ||
+    zoomRange.right === 'dataMax'
+      ? data
+      : data.filter((dataPoint) => {
+          const timestamp = dataPoint.timestamp;
+          const left = zoomRange.left;
+          const right = zoomRange.right;
+          return (
+            typeof left === 'number' &&
+            typeof right === 'number' &&
+            timestamp >= left &&
+            timestamp <= right
+          );
+        });
 
   // Header
   csvData.push(['Dashboard', dashboardName]);
@@ -204,7 +233,10 @@ export const generateCSVData = ({
   // Scrape Interval
   if (widget.time_granularity) {
     const { value, unit } = widget.time_granularity;
-    csvData.push(['Scrape Interval', `${value === -1 ? '' : value} ${unit}`]);
+    csvData.push([
+      'Data Aggregation Interval',
+      `${value === -1 ? '' : value} ${unit}`,
+    ]);
   }
 
   // Dimension Filters
@@ -224,13 +256,13 @@ export const generateCSVData = ({
   csvData.push([]);
 
   // Data
-  if (data.length) {
-    const keys = Object.keys(data[0]);
+  if (filteredData.length) {
+    const keys = Object.keys(filteredData[0]);
 
     csvData.push(keys);
     csvData.push([]);
 
-    data.forEach((dataPoint) => {
+    filteredData.forEach((dataPoint) => {
       const row: CSVRow = keys.map((key) =>
         key === 'timestamp'
           ? formatTimestamp(dataPoint[key], duration.timeZone)

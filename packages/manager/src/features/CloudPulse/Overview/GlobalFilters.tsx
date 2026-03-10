@@ -117,6 +117,7 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
       if (savePref) {
         updatePreferences({ [GROUP_BY]: selectedValues });
       }
+
       handleGroupByChange(selectedValues);
     },
     []

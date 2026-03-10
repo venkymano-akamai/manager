@@ -1,4 +1,5 @@
-import { Box, useTheme } from '@mui/material';
+import { Box } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import React from 'react';
 import type { CSVLink } from 'react-csv';
 
@@ -13,12 +14,24 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
     const csvRef = React.useRef<(CSVLink & { link: HTMLAnchorElement }) | null>(
       null
     );
+    const { enqueueSnackbar } = useSnackbar();
     const { data, filters, widget, dashboardName, duration, isDataLoading } =
       props;
     const enableDownloadIcon =
-      data && filters && widget && dashboardName && duration && !isDataLoading;
+      data &&
+      data.length > 0 &&
+      filters &&
+      widget &&
+      dashboardName &&
+      duration &&
+      !isDataLoading;
     const csvData = enableDownloadIcon ? generateCSVData(props) : [];
-    const theme = useTheme();
+
+    const handleDownloadClick = () => {
+      csvRef.current?.link.click();
+      enqueueSnackbar('CSV downloaded.', { variant: 'success' });
+    };
+
     return (
       <Box>
         <DownloadCSV
@@ -26,17 +39,17 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
           csvRef={csvRef}
           data={csvData}
           disabled={!enableDownloadIcon}
-          filename={`${dashboardName}-${widget.label}.csv`}
+          filename={`${widget.label}.csv`}
           headers={[]}
           iconStyles={{
             height: '24px',
             width: '24px',
           }}
-          onClick={() => csvRef.current?.link.click()}
-          sx={{
+          onClick={handleDownloadClick}
+          sx={(theme) => ({
             fontSize: '0',
             color: theme.tokens.alias.Content.Icon.Primary.Default, // consistent icon with other icons in the widget header
-          }}
+          })}
         />
       </Box>
     );

@@ -41,7 +41,7 @@ export const DownloadCSV = ({
   onClick,
   sx,
   text = 'Download CSV',
-  disabled = false,
+  disabled,
   iconStyles,
 }: DownloadCSVProps) => {
   const renderButton =

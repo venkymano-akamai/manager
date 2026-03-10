@@ -94,6 +94,12 @@ interface AclpFlag {
    * This property indicates whether to bypass account capabilities check or not
    */
   bypassAccountCapabilities?: boolean;
+
+  /**
+   * This property indicates whether to show the "Download CSV" icon in the alert details page or not
+   */
+  enableCSVDownload?: boolean;
+
   /**
    * This property indicates whether the feature is enabled
    */
