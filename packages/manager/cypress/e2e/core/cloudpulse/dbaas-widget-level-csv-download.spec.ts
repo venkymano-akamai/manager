@@ -60,7 +60,6 @@ const MOCK_START_TIME = 1753939800; // Jul 31, 2025, 5:30 AM UTC
 const MOCK_END_TIME = 1754026200; // Aug 1, 2025, 5:30 AM UTC
 const MOCK_INTERVAL = 5 * 60; // 5 min in seconds
 
-// cy.clock() date — must be at module level so it's set before cy.visitWithLogin()
 const MOCK_CLOCK_DATE = new Date('2025-08-01');
 
 // ─── Widget Details ────────────────────────────────────────────────────────────
@@ -213,9 +212,9 @@ const validateCSV = (
       widgetConfig.expectedAggregation.toLowerCase()
     );
 
-    // --- Scrape Interval ---
-    const granularityRow = getValue(lines, 'Scrape Interval');
-    expect(granularityRow.key).to.equal('Scrape Interval');
+    // --- Data Aggregation Interval ---
+    const granularityRow = getValue(lines, 'Data Aggregation Interval');
+    expect(granularityRow.key).to.equal('Data Aggregation Interval');
     expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity);
 
     // --- Widget Metadata ---
@@ -359,15 +358,15 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    const downloadsFolder = Cypress.config('downloadsFolder');
-    const serviceTypeTitleCase =
-      serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+    // const downloadsFolder = Cypress.config('downloadsFolder');
+    // const serviceTypeTitleCase =
+    //   serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
 
-    // Clean up any previously downloaded CSV files for this dashboard
-    cy.exec(
-      `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
-      { failOnNonZeroExit: false }
-    );
+    // // Clean up any previously downloaded CSV files for this dashboard
+    // cy.exec(
+    //   `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
+    //   { failOnNonZeroExit: false }
+    // );
 
     // cy.clock() must be called before cy.visitWithLogin() so the mocked
     // date is active when the app initialises
@@ -599,16 +598,15 @@ describe('DBaaS Widget CSV Download', () => {
             .findByLabel('Select an Aggregate Function')
             .should('be.visible')
             .type(`${widgetConfig.expectedAggregation}{enter}`);
+          ui.tooltip.findByText('CSV Download').should('be.visible');
 
-          cy.get('[aria-label="Download CSV"]').click();
+          cy.get('[aria-label="CSV Download"]').click();
         });
 
       // ── Build CSV file path ───────────────────────────────────────────────
-      const serviceTypeTitleCase =
-        serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
       const downloadsFolder = Cypress.config('downloadsFolder');
       const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
-      const csvFilePath = `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${sanitizedTitle}.csv`;
+      const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
 
       // ── Find matching interception and validate CSV ───────────────────────
       // ── Find matching interception and validate CSV ───────────────────────
