@@ -249,19 +249,17 @@ expect(groupByRow.value).to.equal(
     .join(', ')
 );
 
-    // --- Aggregation Function (from request metrics[0]) ---
-    const aggregationRow = getValue(lines, 'Aggregation Function');
-    expect(aggregationRow.key).to.equal('Aggregation Function');
-    expect(aggregationRow.value.toLowerCase()).to.equal(
-      requestBody.metrics[0].aggregate_function.toLowerCase()
-    );
+  // --- Aggregation Function ---
+const aggregationRow = getValue(lines, 'Aggregation Function');
+expect(aggregationRow.key).to.equal('Aggregation Function');
+expect(aggregationRow.value.toLowerCase()).to.equal(
+  widgetConfig.expectedAggregation.toLowerCase()
+);
 
-    // --- Scrape Interval (from request time_granularity) ---
-    const granularityRow = getValue(lines, 'Scrape Interval');
-    expect(granularityRow.key).to.equal('Scrape Interval');
-    expect(granularityRow.value).to.equal(
-      `${requestBody.time_granularity.value} ${requestBody.time_granularity.unit}`
-    );
+// --- Scrape Interval ---
+const granularityRow = getValue(lines, 'Scrape Interval');
+expect(granularityRow.key).to.equal('Scrape Interval');
+expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity); // '1 hr'
 
     // --- Widget Metadata ---
     const metricRow = getValue(lines, 'Metric');
@@ -569,19 +567,24 @@ describe('DBaaS Widget CSV Download', () => {
     const downloadsFolder = Cypress.config('downloadsFolder');
     const csvFilePath = `${downloadsFolder}/${serviceTypeTitleCase} Dashboard-${widgetConfig.title}.csv`;
   
-    // --- Wait for API and validate CSV ---
-    cy.get('@getMetrics.all').then((calls) => {
-      const interceptions = (calls as unknown as Interception[]).slice(-4);
-    
-      const interception = interceptions.find(
-        (i) => i.request.body.metrics[0].name === widgetConfig.name
-      );
-    
-      if (!interception) {
-        throw new Error(`No interception found for widget: ${widgetConfig.name}`);
-      }
-    
-      validateCSV(csvFilePath, widgetConfig, interception);
-    });
+   // --- Wait for API and validate CSV ---
+cy.get('@getMetrics.all').then((calls) => {
+  const interceptions = (calls as unknown as Interception[]);
+
+  // Get the last call that matches this specific widget's metric name
+  const interception = [...interceptions]
+    .reverse()
+    .find((i) =>
+      i.request.body.metrics.some(
+        (m: { name: string }) => m.name === widgetConfig.name
+      )
+    );
+
+  if (!interception) {
+    throw new Error(`No interception found for widget: ${widgetConfig.name}`);
+  }
+
+  validateCSV(csvFilePath, widgetConfig, interception);
+});
   });
 });
