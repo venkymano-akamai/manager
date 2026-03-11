@@ -40,6 +40,8 @@ import type {
 } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const OPERATOR_LABEL_MAP: Record<string, string> = {
   contains: 'Contains',
   ends_with: 'Ends with',
