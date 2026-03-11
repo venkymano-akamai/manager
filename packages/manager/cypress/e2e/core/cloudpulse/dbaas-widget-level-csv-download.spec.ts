@@ -4,6 +4,7 @@ import { mockGetAccount } from 'support/intercepts/account';
 import {
   mockCreateCloudPulseJWEToken,
   mockCreateCloudPulseMetrics,
+  mockCreateCloudPulseMetricsError,
   mockGetCloudPulseDashboard,
   mockGetCloudPulseDashboards,
   mockGetCloudPulseMetricDefinitions,
@@ -445,9 +446,8 @@ describe('DBaaS Widget CSV Download', () => {
       .type(`${nodeType}{enter}`);
   });
 
-  metrics
-  .forEach((widgetConfig) => {
-        it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+  metrics.forEach((widgetConfig) => {
+    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
       mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
         'getMetrics'
       );
@@ -602,8 +602,8 @@ describe('DBaaS Widget CSV Download', () => {
           ui.tooltip.findByText('CSV Download').should('be.visible');
 
           cy.get('[aria-label="CSV Download"]').click();
-          
-         // ui.toast.assertMessage('CSV downloaded.');
+
+          // ui.toast.assertMessage('CSV downloaded.');
         });
 
       // ── Build CSV file path ───────────────────────────────────────────────
@@ -623,5 +623,34 @@ describe('DBaaS Widget CSV Download', () => {
         validateCSV(csvFilePath, widgetConfig, interception);
       });
     });
+  });
+
+  it('CSV button should be disabled when no data', () => {
+    const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build();
+    metricsAPIResponsePayload.data.result.forEach((m) => {
+      m.values = [];
+    });
+
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getMetrics'
+    );
+
+    cy.get('[data-qa-widget="Disk I/O"]')
+      .find('[aria-label="CSV Download"] button')
+      .should('be.disabled');
+  });
+
+  it('should show error when aggregation interval is invalid', () => {
+    mockCreateCloudPulseMetricsError(serviceType).as('getMetrics');
+
+    cy.wait('@getMetrics');
+
+    cy.get('[data-testid="error-state"]')
+      .should('be.visible')
+      .and('contain.text', 'Error while rendering graph');
+
+    cy.get('[data-qa-widget="Disk I/O"]')
+      .find('[aria-label="CSV Download"] button')
+      .should('be.disabled');
   });
 });

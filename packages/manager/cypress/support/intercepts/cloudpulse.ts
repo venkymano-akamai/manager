@@ -892,3 +892,33 @@ export const mockGetStreamById = (
     makeResponse(stream)
   );
 };
+
+/**
+ * Intercepts the CloudPulse metrics API and returns a hardcoded
+ * internal server error response.
+ *
+ * This is used to simulate backend failure scenarios so the UI
+ * error handling can be tested (e.g., displaying an error message
+ * when the metrics service is unavailable).
+ *
+ * The interceptor responds with:
+ * - HTTP status: 500
+ * - Body: "internal server error"
+ *
+ * @param serviceType The service type used in the metrics endpoint URL.
+ * @returns Cypress chainable intercept object.
+ */
+
+
+export const mockCreateCloudPulseMetricsError = (
+  serviceType: string
+): Cypress.Chainable<null> => {
+  return cy.intercept(
+    'POST',
+    `**/monitor/services/${serviceType}/metrics`,
+    {
+      statusCode: 500,
+      body: 'internal server error',
+    }
+  );
+};
