@@ -81,9 +81,9 @@ describe('generateCSVData', () => {
     );
     expect(csv.some((row) => row[0] === 'Metric')).toBe(true);
     expect(csv.some((row) => row[0] === 'Unit')).toBe(true);
-    expect(csv.some((row) => Array.isArray(row) && row.includes('time'))).toBe(
-      true
-    );
+    expect(
+      csv.some((row) => Array.isArray(row) && row.includes('time (UTC)'))
+    ).toBe(true);
     expect(csv.some((row) => Array.isArray(row) && row.includes(100))).toBe(
       true
     );
@@ -91,9 +91,9 @@ describe('generateCSVData', () => {
 
   it('should handle empty data', () => {
     const csv = generateCSVData({ ...baseProps, data: [] });
-    expect(csv.some((row) => Array.isArray(row) && row.includes('time'))).toBe(
-      false
-    );
+    expect(
+      csv.some((row) => Array.isArray(row) && row.includes('time (UTC)'))
+    ).toBe(false);
   });
 
   it('should handle no groupBy', () => {
@@ -123,7 +123,7 @@ describe('generateCSVData', () => {
     expect(csv.some((row) => row[0] === 'Dimension Filters')).toBe(true);
     expect(
       csv.some((row) =>
-        row[1] ? row[1].toString().includes('Test,eq, A') : false
+        row[1] ? row[1].toString().includes('Test,eq,A') : false
       )
     ).toBe(true);
   });
@@ -136,9 +136,12 @@ describe('generateCSVData', () => {
         timeZone: 'America/New_York',
       },
     });
+    expect(
+      csv.some((row) => Array.isArray(row) && row.includes('time (EDT)'))
+    ).toBe(true);
     // The formatted timestamp should include the correct hour for New York and timezone abbreviation
     const dataRow = csv.find((row) => Array.isArray(row) && row.includes(42));
-    expect(dataRow?.[0]).toMatch('Jun 10, 2024, 2:13 AM EDT');
+    expect(dataRow?.[0]).toMatch('Jun 10, 2024, 2:13 AM');
   });
 
   it('should handle empty dimensionFilters', () => {

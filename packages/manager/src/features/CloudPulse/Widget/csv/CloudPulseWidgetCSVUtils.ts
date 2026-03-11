@@ -88,7 +88,7 @@ const formatDateTime = (iso: string, timeZone: string | undefined) => {
  */
 const formatTimestamp = (millis: number, timeZone: string | undefined) => {
   const dateTime = DateTime.fromMillis(millis).setZone(timeZone);
-  return `${dateTime.toLocaleString(DateTime.DATETIME_MED)} ${dateTime.offsetNameShort}`;
+  return dateTime.toLocaleString(DateTime.DATETIME_MED);
 };
 
 /**
@@ -125,7 +125,7 @@ const buildDimensionFilterString = (
 
         const value = transformer?.(filter.value ?? '') ?? filter.value ?? '';
 
-        return `${label},${filter.operator}, ${value}`;
+        return `${label},${filter.operator},${value}`;
       }
       return undefined;
     })
@@ -147,13 +147,13 @@ const appendAppliedFilters = (
   if (!filters?.label) return;
 
   const appliedFilters = filterConfig.filters
-    .filter((filter) =>
-      Boolean(filters.label[filter.configuration.filterKey]?.length)
+    .filter(({ configuration }) =>
+      Boolean(filters.label[configuration.filterKey]?.length)
     )
-    .map((filter) => {
-      const labelValue = filters.label[filter.configuration.filterKey];
+    .map(({ configuration }) => {
+      const labelValue = filters.label[configuration.filterKey];
       return [
-        filter.configuration.name,
+        configuration.name,
         Array.isArray(labelValue) ? labelValue.join(', ') : labelValue,
       ];
     });
@@ -286,15 +286,20 @@ export const generateCSVData = ({
     });
 
     // Build final keys array: timestamp first, then sorted metric keys
-    const sortedKeys = ['time', ...Array.from(metricKeys).sort()];
+    const offsetNameShort = DateTime.fromMillis(
+      filteredData[0].timestamp
+    ).setZone(duration.timeZone).offsetNameShort;
+
+    const timeHeader = `time (${offsetNameShort})`;
+    const sortedKeys = [timeHeader, ...Array.from(metricKeys).sort()];
 
     csvData.push(sortedKeys);
     csvData.push([]);
 
     filteredData.forEach((dataPoint) => {
       const row: CSVRow = sortedKeys.map((key) =>
-        key === 'time'
-          ? formatTimestamp(dataPoint['timestamp'], duration.timeZone)
+        key === timeHeader
+          ? formatTimestamp(dataPoint.timestamp, duration.timeZone)
           : (dataPoint[key] ?? '')
       );
 
