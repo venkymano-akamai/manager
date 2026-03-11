@@ -354,23 +354,22 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
     ),
   },
 });
+const downloadsFolder = Cypress.config('downloadsFolder');
 
 // ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    // const downloadsFolder = Cypress.config('downloadsFolder');
-    // const serviceTypeTitleCase =
-    //   serviceType.charAt(0).toUpperCase() + serviceType.slice(1);
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+      -name "CPU Utilization*" -o \
+      -name "Disk I_O*" -o \
+      -name "Memory Usage*" -o \
+      -name "Network*" \
+      \\) -delete`,
+      { failOnNonZeroExit: false }
+    );
 
-    // // Clean up any previously downloaded CSV files for this dashboard
-    // cy.exec(
-    //   `find "${downloadsFolder}" -maxdepth 1 -name "${serviceTypeTitleCase} Dashboard*" -exec rm -f {} \\;`,
-    //   { failOnNonZeroExit: false }
-    // );
-
-    // cy.clock() must be called before cy.visitWithLogin() so the mocked
-    // date is active when the app initialises
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
     mockAppendFeatureFlags(flagsFactory.build());
@@ -602,12 +601,10 @@ describe('DBaaS Widget CSV Download', () => {
           ui.tooltip.findByText('CSV Download').should('be.visible');
 
           cy.get('[aria-label="CSV Download"]').click();
-
-          // ui.toast.assertMessage('CSV downloaded.');
         });
+      ui.toast.assertMessage('Downloaded CSV.');
 
       // ── Build CSV file path ───────────────────────────────────────────────
-      const downloadsFolder = Cypress.config('downloadsFolder');
       const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
       const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
 
