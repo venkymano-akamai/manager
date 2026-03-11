@@ -227,8 +227,8 @@ const validateCSV = (
     expect(unitRow.value).to.equal(widgetConfig.unit);
 
     // --- Timestamp header ---
-    const timestampHeader = lines.find((l) => l.startsWith('"timestamp"'));
-    expect(timestampHeader).to.equal(`"timestamp","${widgetConfig.title}"`);
+    const timestampHeader = lines.find((l) => l.startsWith('"time"'));
+    expect(timestampHeader).to.equal(`"time","${widgetConfig.title}"`);
 
     // --- Data rows from mock response ---
     const responseData = interception.response?.body
@@ -445,8 +445,9 @@ describe('DBaaS Widget CSV Download', () => {
       .type(`${nodeType}{enter}`);
   });
 
-  metrics.forEach((widgetConfig) => {
-    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+  metrics
+  .forEach((widgetConfig) => {
+        it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
       mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
         'getMetrics'
       );
@@ -601,6 +602,8 @@ describe('DBaaS Widget CSV Download', () => {
           ui.tooltip.findByText('CSV Download').should('be.visible');
 
           cy.get('[aria-label="CSV Download"]').click();
+          
+         // ui.toast.assertMessage('CSV downloaded.');
         });
 
       // ── Build CSV file path ───────────────────────────────────────────────
@@ -608,7 +611,6 @@ describe('DBaaS Widget CSV Download', () => {
       const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
       const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
 
-      // ── Find matching interception and validate CSV ───────────────────────
       // ── Find matching interception and validate CSV ───────────────────────
       cy.get('@getMetrics.all').then((calls) => {
         const interceptions = calls as unknown as Interception[];
