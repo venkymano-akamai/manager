@@ -35,11 +35,10 @@ import type {
   Dashboard,
   Database,
   DimensionFilter,
+  Linode,
   Widgets,
 } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const OPERATOR_LABEL_MAP: Record<string, string> = {
   contains: 'Contains',
@@ -178,7 +177,7 @@ const validateCSV = (
 
     const dbClusters = getValue(lines, 'Database Clusters');
     expect(dbClusters.key).to.equal('Database Clusters');
-    expect(dbClusters.value).to.equal(clusterName);
+    expect(dbClusters.value).to.equal('mysql-cluster, mysql-cluster-2');
 
     const nodeTypeRow = getValue(lines, 'Node Type');
     expect(nodeTypeRow.key).to.equal('Node Type');
@@ -227,10 +226,10 @@ const validateCSV = (
     expect(unitRow.key).to.equal('Unit');
     expect(unitRow.value).to.equal(widgetConfig.unit);
 
-    // --- Timestamp header ---
     const timestampHeader = lines.find((l) => l.startsWith('"time"'));
-    expect(timestampHeader).to.equal(`"time","${widgetConfig.title}"`);
-
+    expect(timestampHeader).to.equal(
+      '"time","mysql-cluster | Secondary | Secondary-1"'
+    );
     // --- Data rows from mock response ---
     const responseData = interception.response?.body
       ?.data as CloudPulseMetricsResponseData;
@@ -305,12 +304,19 @@ const metricDefinitions = metrics.map(({ name, title, unit }) =>
   })
 );
 
-const mockLinode = linodeFactory.build({
-  id: kubeLinodeFactory.build().instance_id ?? undefined,
-  label: clusterName,
-  region: 'us-ord',
-});
+const mockLinodes: Linode[] = linodeFactory
+  .buildList(2, {
+    region: 'us-ord',
+  })
+  .map((linode, index) => {
+    const kubeInstance = kubeLinodeFactory.build();
 
+    return {
+      ...linode,
+      id: kubeInstance.instance_id ?? linode.id,
+      label: index === 0 ? clusterName : `${clusterName}-2`,
+    };
+  });
 const mockAccount = accountFactory.build();
 
 const mockRegion = regionFactory.build({
@@ -326,16 +332,20 @@ const mockRegionWithoutMonitors = regionFactory.build({
   label: 'Newark, NJ',
 });
 
-const databaseMock: Database = databaseFactory.build({
-  cluster_size: 2,
-  engine: 'mysql',
-  hosts: { primary: undefined, secondary: undefined },
-  label: clusterName,
-  region: mockRegion.id,
-  status: 'provisioning',
-  type: engine,
-  version: '1',
-});
+const databaseMocks: Database[] = databaseFactory
+  .buildList(2, {
+    cluster_size: 2,
+    engine: 'mysql',
+    hosts: { primary: undefined, secondary: undefined },
+    region: mockRegion.id,
+    status: 'provisioning',
+    type: engine,
+    version: '1',
+  })
+  .map((db, index) => ({
+    ...db,
+    label: index === 0 ? clusterName : `${clusterName}-${index + 1}`,
+  }));
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: {
@@ -372,7 +382,7 @@ describe('DBaaS Widget CSV Download', () => {
 
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(mockAccount);
-    mockGetLinodes([mockLinode]);
+    mockGetLinodes(mockLinodes);
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
     mockGetCloudPulseDashboards(serviceType, [cloudPulseDashboard]).as(
       'fetchDashboards'
@@ -385,7 +395,7 @@ describe('DBaaS Widget CSV Download', () => {
     );
     mockGetRegions([mockRegion, mockRegionWithoutMonitors]);
     mockGetUserPreferences({});
-    mockGetDatabases([databaseMock]).as('getDatabases');
+    mockGetDatabases(databaseMocks).as('getDatabases');
 
     cy.visitWithLogin('/metrics');
     cy.wait('@fetchServices');
@@ -428,8 +438,7 @@ describe('DBaaS Widget CSV Download', () => {
     ui.autocomplete
       .findByLabel('Database Clusters')
       .should('be.visible')
-      .type(clusterName);
-    ui.autocompletePopper.findByTitle(clusterName).should('be.visible').click();
+      .type('Select All{enter}');
 
     ui.button
       .findByAttribute('aria-label', 'Close')
@@ -443,13 +452,13 @@ describe('DBaaS Widget CSV Download', () => {
       .type(`${nodeType}{enter}`);
   });
 
-  metrics
-  .filter((widget) => widget.title === 'Disk I/O')
-  .forEach((widgetConfig) => {
-    it.only(`should download CSV and validate content for ${widgetConfig.title}`, () => {
-      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
-        'getMetrics'
-      );
+  metrics.forEach((widgetConfig) => {
+    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
+        entity_id: '1',
+        node_id: `${nodeType}-1`,
+        node_type: nodeType,
+      }).as('getMetrics');
 
       const { dateSelection, filters, title, name } = widgetConfig;
       const widgetSelector = `[data-qa-widget="${title}"]`;

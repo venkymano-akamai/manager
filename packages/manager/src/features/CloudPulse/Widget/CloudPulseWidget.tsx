@@ -585,7 +585,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                     serviceType={serviceType}
                   />
                 )}
-                {filterConfig && flags.aclp?.enableCSVDownload && (
+                {filterConfig && (
                   <CloudPulseTooltip
                     key="csv-download-tooltip"
                     placement="bottom-end"
