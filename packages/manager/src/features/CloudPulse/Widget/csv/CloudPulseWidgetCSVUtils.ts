@@ -216,7 +216,7 @@ export const generateCSVData = ({
     const { value, unit } = widget.time_granularity;
     csvData.push([
       'Data Aggregation Interval',
-      `${value === -1 && unit === 'Auto' ? '' : value} ${unit}`,
+      value === -1 && unit === 'Auto' ? 'Auto' : `${value} ${unit}`,
     ]);
   }
 
