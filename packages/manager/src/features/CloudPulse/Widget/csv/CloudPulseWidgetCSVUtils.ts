@@ -188,22 +188,30 @@ export const generateCSVData = ({
   const filteredData =
     zoomRange?.left && zoomRange?.right
       ? data.filter(
-          (d) =>
+          ({ timestamp }) =>
             (typeof zoomRange.left === 'number' &&
               typeof zoomRange.right === 'number' &&
-              d.timestamp >= zoomRange.left &&
-              d.timestamp <= zoomRange.right) ||
+              timestamp >= zoomRange.left &&
+              timestamp <= zoomRange.right) ||
             (zoomRange.left === 'dataMin' && zoomRange.right === 'dataMax') // Include all data if zoom range is set to dataMin/dataMax
         )
       : data;
 
   // Header
   csvData.push(['Dashboard', dashboardName]);
-  csvData.push([
-    'Start Time',
-    formatDateTime(duration.start, duration.timeZone),
-  ]);
-  csvData.push(['End Time', formatDateTime(duration.end, duration.timeZone)]);
+
+  if (duration.preset && duration.preset !== 'Reset') {
+    csvData.push(['Duration', duration.preset]);
+  } else {
+    // Use actual data timestamps for presets, duration values for custom ranges
+    const startTime = formatDateTime(duration.start, duration.timeZone);
+
+    const endTime = formatDateTime(duration.end, duration.timeZone);
+
+    csvData.push(['Start Time', startTime]);
+    csvData.push(['End Time', endTime]);
+  }
+
   csvData.push([]);
 
   // Filters

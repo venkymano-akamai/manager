@@ -26,7 +26,7 @@ const baseProps: CSVDataProps = {
     start: '2024-06-10T00:00:00Z',
     end: '2024-06-10T01:00:00Z',
     timeZone: 'UTC',
-    preset: '1h',
+    preset: 'Reset',
   },
   filterConfig:
     FILTER_CONFIG.get(1) ??
