@@ -29,7 +29,7 @@ export const CloudPulseWidgetCSVDownloader = React.memo(
 
     const handleDownloadClick = React.useCallback(() => {
       csvRef.current?.link.click();
-      enqueueSnackbar('CSV downloaded.', {
+      enqueueSnackbar('Downloaded CSV.', {
         variant: 'success',
         autoHideDuration: 5000,
       });
