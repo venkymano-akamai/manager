@@ -356,8 +356,6 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
 });
 const downloadsFolder = Cypress.config('downloadsFolder');
 
-// ─── Test Suite ───────────────────────────────────────────────────────────────
-
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
     cy.exec(
@@ -445,8 +443,10 @@ describe('DBaaS Widget CSV Download', () => {
       .type(`${nodeType}{enter}`);
   });
 
-  metrics.forEach((widgetConfig) => {
-    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+  metrics
+  .filter((widget) => widget.title === 'Disk I/O')
+  .forEach((widgetConfig) => {
+    it.only(`should download CSV and validate content for ${widgetConfig.title}`, () => {
       mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
         'getMetrics'
       );

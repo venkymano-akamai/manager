@@ -96,8 +96,8 @@ export const widgetDetails = {
         startDate: 'Aug 1, 2025, 4:30 AM GMT+5:30',
         endDate: 'Aug 1, 2025, 5:30 AM GMT+5:30',
         filters: [
-          { dimension_label: 'device', operator: 'eq', value: 'loop0' },
-          { dimension_label: 'direction', operator: 'eq', value: 'write' },
+          { dimension_label: 'device', operator: 'In', value: 'loop0' },
+          { dimension_label: 'direction', operator: 'Not Equal', value: 'write' },
           { dimension_label: 'Linode', operator: 'eq', value: '1' },
         ],
       },
