@@ -628,7 +628,12 @@ describe('DBaaS Widget CSV Download', () => {
             .type(`${widgetConfig.expectedAggregation}{enter}`);
           ui.tooltip.findByText(downloadCSV).should('be.visible');
 
-          cy.get(`[aria-label="${downloadCSV}"]`).should('be.visible').click();
+          cy.get(`[aria-label="${downloadCSV}"] button`).as('csvButton');
+          cy.get('@csvButton').scrollIntoView();
+
+          cy.get('@csvButton').should('be.visible').should('be.enabled');
+
+          cy.get('@csvButton').click({ force: true });
         });
 
       // ── Build CSV file path ───────────────────────────────────────────────
