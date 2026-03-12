@@ -88,7 +88,7 @@ const formatDateTime = (iso: string, timeZone: string | undefined) => {
  */
 const formatTimestamp = (millis: number, timeZone: string | undefined) => {
   const dateTime = DateTime.fromMillis(millis).setZone(timeZone);
-  return `${dateTime.toLocaleString(DateTime.DATETIME_MED)} ${dateTime.offsetNameShort}`;
+  return dateTime.toLocaleString(DateTime.DATETIME_MED);
 };
 
 /**
@@ -125,7 +125,7 @@ const buildDimensionFilterString = (
 
         const value = transformer?.(filter.value ?? '') ?? filter.value ?? '';
 
-        return `${label},${filter.operator}, ${value}`;
+        return `${label},${filter.operator},${value}`;
       }
       return undefined;
     })
@@ -147,13 +147,13 @@ const appendAppliedFilters = (
   if (!filters?.label) return;
 
   const appliedFilters = filterConfig.filters
-    .filter((filter) =>
-      Boolean(filters.label[filter.configuration.filterKey]?.length)
+    .filter(({ configuration }) =>
+      Boolean(filters.label[configuration.filterKey]?.length)
     )
-    .map((filter) => {
-      const labelValue = filters.label[filter.configuration.filterKey];
+    .map(({ configuration }) => {
+      const labelValue = filters.label[configuration.filterKey];
       return [
-        filter.configuration.name,
+        configuration.name,
         Array.isArray(labelValue) ? labelValue.join(', ') : labelValue,
       ];
     });
@@ -188,22 +188,30 @@ export const generateCSVData = ({
   const filteredData =
     zoomRange?.left && zoomRange?.right
       ? data.filter(
-          (d) =>
+          ({ timestamp }) =>
             (typeof zoomRange.left === 'number' &&
               typeof zoomRange.right === 'number' &&
-              d.timestamp >= zoomRange.left &&
-              d.timestamp <= zoomRange.right) ||
+              timestamp >= zoomRange.left &&
+              timestamp <= zoomRange.right) ||
             (zoomRange.left === 'dataMin' && zoomRange.right === 'dataMax') // Include all data if zoom range is set to dataMin/dataMax
         )
       : data;
 
   // Header
   csvData.push(['Dashboard', dashboardName]);
-  csvData.push([
-    'Start Time',
-    formatDateTime(duration.start, duration.timeZone),
-  ]);
-  csvData.push(['End Time', formatDateTime(duration.end, duration.timeZone)]);
+
+  if (duration.preset && duration.preset !== 'Reset') {
+    csvData.push(['Duration', duration.preset]);
+  } else {
+    // Use actual data timestamps for presets, duration values for custom ranges
+    const startTime = formatDateTime(duration.start, duration.timeZone);
+
+    const endTime = formatDateTime(duration.end, duration.timeZone);
+
+    csvData.push(['Start Time', startTime]);
+    csvData.push(['End Time', endTime]);
+  }
+
   csvData.push([]);
 
   // Filters
@@ -214,10 +222,9 @@ export const generateCSVData = ({
   // Scrape Interval
   if (widget.time_granularity) {
     const { value, unit } = widget.time_granularity;
-    csvData.push([
-      'Data Aggregation Interval',
-      `${value === -1 && unit === 'Auto' ? '' : value} ${unit}`,
-    ]);
+    const intervalValue =
+      value === -1 && unit === 'Auto' ? unit : `${value} ${unit}`;
+    csvData.push(['Data Aggregation Interval', intervalValue.trim()]);
   }
 
   // Aggregation
@@ -278,15 +285,20 @@ export const generateCSVData = ({
     });
 
     // Build final keys array: timestamp first, then sorted metric keys
-    const sortedKeys = ['time', ...Array.from(metricKeys).sort()];
+    const offsetNameShort = DateTime.fromMillis(
+      filteredData[0].timestamp
+    ).setZone(duration.timeZone).offsetNameShort;
+
+    const timeHeader = `time (${offsetNameShort})`;
+    const sortedKeys = [timeHeader, ...Array.from(metricKeys).sort()];
 
     csvData.push(sortedKeys);
     csvData.push([]);
 
     filteredData.forEach((dataPoint) => {
       const row: CSVRow = sortedKeys.map((key) =>
-        key === 'time'
-          ? formatTimestamp(dataPoint['timestamp'], duration.timeZone)
+        key === timeHeader
+          ? formatTimestamp(dataPoint.timestamp, duration.timeZone)
           : (dataPoint[key] ?? '')
       );
 

@@ -589,7 +589,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                   <CloudPulseTooltip
                     key="csv-download-tooltip"
                     placement="bottom-end"
-                    title="CSV Download"
+                    title="Download CSV"
                   >
                     <CloudPulseWidgetCSVDownloader
                       dashboardName={getGlobalSelectedDashboard()?.label ?? ''}
