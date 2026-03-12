@@ -201,7 +201,7 @@ export const generateCSVData = ({
   csvData.push(['Dashboard', dashboardName]);
 
   if (duration.preset && duration.preset !== 'Reset') {
-    csvData.push(['Duration', duration.preset]);
+    csvData.push(['Time Range', duration.preset]);
   } else {
     // Use actual data timestamps for presets, duration values for custom ranges
     const startTime = formatDateTime(duration.start, duration.timeZone);
