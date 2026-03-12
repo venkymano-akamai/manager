@@ -224,7 +224,7 @@ export const generateCSVData = ({
     const { value, unit } = widget.time_granularity;
     const intervalValue =
       value === -1 && unit === 'Auto' ? unit : `${value} ${unit}`;
-    csvData.push(['Data Aggregation Interval', intervalValue.trim()]);
+    csvData.push(['Data Aggregation Interval', intervalValue]);
   }
 
   // Aggregation
