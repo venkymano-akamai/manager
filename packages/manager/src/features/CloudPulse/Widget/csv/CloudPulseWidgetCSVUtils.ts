@@ -201,7 +201,7 @@ export const generateCSVData = ({
   csvData.push(['Dashboard', dashboardName]);
 
   if (duration.preset && duration.preset !== 'Reset') {
-    csvData.push(['Duration', duration.preset]);
+    csvData.push(['Time Range', duration.preset]);
   } else {
     // Use actual data timestamps for presets, duration values for custom ranges
     const startTime = formatDateTime(duration.start, duration.timeZone);
@@ -224,7 +224,7 @@ export const generateCSVData = ({
     const { value, unit } = widget.time_granularity;
     const intervalValue =
       value === -1 && unit === 'Auto' ? unit : `${value} ${unit}`;
-    csvData.push(['Data Aggregation Interval', intervalValue.trim()]);
+    csvData.push(['Data Aggregation Interval', intervalValue]);
   }
 
   // Aggregation
