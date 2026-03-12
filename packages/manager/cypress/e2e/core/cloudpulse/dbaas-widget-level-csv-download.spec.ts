@@ -1,3 +1,4 @@
+/* eslint-disable cypress/no-unnecessary-waiting */
 import {
   linodeFactory,
   profileFactory,
@@ -430,15 +431,15 @@ const downloadsFolder = Cypress.config('downloadsFolder');
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    // cy.exec(
-    //   `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-    //   -name "CPU Utilization*" -o \
-    //   -name "Disk I_O*" -o \
-    //   -name "Memory Usage*" -o \
-    //   -name "Network*" \
-    //   \\) -delete`,
-    //   { failOnNonZeroExit: false }
-    // );
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+      -name "CPU Utilization*" -o \
+      -name "Disk I_O*" -o \
+      -name "Memory Usage*" -o \
+      -name "Network*" \
+      \\) -delete`,
+      { failOnNonZeroExit: false }
+    );
 
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
@@ -477,14 +478,136 @@ describe('DBaaS Widget CSV Download', () => {
 
       // ── Date Selection ────────────────────────────────────────────────────
       ui.button.findByTitle('Last hour').click();
-      ui.button.findByTitle(dateSelection).click();
+      if (dateSelection === 'Reset') {
+        const startDayOfMonth = 1;
+        const endDayOfMonth = 3;
+        const startHour = 1;
+        const startMinute = 15;
+        const endHour = 2;
+        const endMinute = 45;
 
-      cy.get('[data-qa-buttons="apply"]')
-        .should('be.visible')
-        .should('be.enabled')
-        .click();
+        ui.button.findByTitle('Reset').should('be.visible').click();
 
-      cy.wait('@getMetrics');
+        cy.get('[data-qa-preset="Reset"]').should(
+          'have.attr',
+          'aria-selected',
+          'true'
+        );
+
+        // --- Open the date picker dialog and select start/end days ---
+
+        cy.get('[role="dialog"]').within(() => {
+          // --- Select start and end day ---
+          cy.findAllByText(startDayOfMonth).first().click();
+          cy.findAllByText(endDayOfMonth).first().click();
+        });
+        // --- Select start time (hours and minutes) in the time picker ---
+
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .first()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+
+        // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
+        cy.get(`[aria-label="${startHour} hours"]`).click();
+
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .first()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .wait(300)
+          .first()
+          .click();
+
+        cy.get(`[aria-label="${startMinute} minutes"]`).first().click();
+
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .first()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+
+        cy.findByLabelText('Select meridiem')
+          .as('startMeridiemSelect')
+          .scrollIntoView();
+        cy.get('@startMeridiemSelect').find('[aria-label="AM"]').click();
+
+        // --- Select end time (hours and minutes) in the time picker ---
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+
+        // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
+        cy.get(`[aria-label="${endHour} hours"]`).last().click();
+
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .wait(300)
+          .last()
+          .click();
+
+        cy.get(`[aria-label="${endMinute} minutes"]`).last().click();
+
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+
+        cy.findByLabelText('Select meridiem')
+          .as('endMeridiemSelect')
+          .scrollIntoView();
+        cy.get('@endMeridiemSelect').find('[aria-label="AM"]').click();
+
+        // --- Set timezone ---
+        cy.findByPlaceholderText('Choose a Timezone')
+          .as('timezoneInput')
+          .clear();
+        cy.get('@timezoneInput').type('(GMT +0:00) Greenwich Mean Time{enter}');
+
+        // --- Apply date/time range ---
+        cy.get('[data-qa-buttons="apply"]')
+          .should('be.visible')
+          .and('be.enabled')
+          .click();
+      } else {
+        ui.button.findByTitle(dateSelection).click();
+        cy.get('[data-qa-buttons="apply"]')
+          .should('be.visible')
+          .should('be.enabled')
+          .click();
+      }
 
       // ── Assert widget is visible ──────────────────────────────────────────
       cy.get(widgetSelector)
