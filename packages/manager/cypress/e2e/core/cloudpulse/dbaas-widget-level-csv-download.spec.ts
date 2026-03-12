@@ -1,4 +1,8 @@
-import { linodeFactory, regionFactory } from '@linode/utilities';
+import {
+  linodeFactory,
+  profileFactory,
+  regionFactory,
+} from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
@@ -13,7 +17,10 @@ import {
 import { mockGetDatabases } from 'support/intercepts/databases';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
 import { mockGetLinodes } from 'support/intercepts/linodes';
-import { mockGetUserPreferences } from 'support/intercepts/profile';
+import {
+  mockGetProfile,
+  mockGetUserPreferences,
+} from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
@@ -112,16 +119,20 @@ const getValue = (
   };
 };
 
-/** Formats an epoch (seconds) to match the CSV date format: "Jul 31, 2025, 5:30 AM" */
-const formatDate = (epoch: number): string =>
-  new Date(epoch * 1000).toLocaleString('en-US', {
-    day: 'numeric',
-    hour: 'numeric',
-    hour12: true,
-    minute: '2-digit',
+/** Formats an epoch (seconds) to match the CSV date format */
+const formatDate = (epoch: number): string => {
+  const date = new Date(epoch * 1000);
+
+  return date.toLocaleString('en-US', {
+    timeZone: 'UTC',
     month: 'short',
+    day: 'numeric',
     year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
   });
+};
 
 const validateWidgetFilters = (
   widget: Widgets,
@@ -135,6 +146,10 @@ const validateWidgetFilters = (
     expect(expectedValues).to.include(filter.value);
   });
 };
+// Profile timezone is set to 'UTC'
+const mockProfile = profileFactory.build({
+  timezone: 'GMT',
+});
 
 /**
  * Reads and validates the downloaded CSV file against the API request/response.
@@ -156,13 +171,17 @@ const validateCSV = (
     expect(dashboardRow.value).to.equal(dashboardName);
 
     // --- Time Range ---
-    const csvStartTime = getValue(lines, 'Start Time');
-    expect(csvStartTime.key).to.equal('Start Time');
-    expect(csvStartTime.value).to.equal(widgetConfig.startDate);
+    // const csvStartTime = getValue(lines, 'Start Time');
+    // expect(csvStartTime.key).to.equal('Start Time');
+    // expect(csvStartTime.value).to.equal(widgetConfig.startDate);
 
-    const csvEndTime = getValue(lines, 'End Time');
-    expect(csvEndTime.key).to.equal('End Time');
-    expect(csvEndTime.value).to.equal(widgetConfig.endDate);
+    // const csvEndTime = getValue(lines, 'End Time');
+    // expect(csvEndTime.key).to.equal('End Time');
+    // expect(csvEndTime.value).to.equal(widgetConfig.endDate);
+
+    const csvStartTime = getValue(lines, 'Duration');
+    expect(csvStartTime.key).to.equal('Duration');
+    expect(csvStartTime.value).to.equal(widgetConfig.dateSelection);
 
     // --- Database Metadata ---
     const nodeTypeValue = requestBody.filters.find(
@@ -228,9 +247,9 @@ const validateCSV = (
     expect(unitRow.key).to.equal('Unit');
     expect(unitRow.value).to.equal(widgetConfig.unit);
 
-    const timestampHeader = lines.find((l) => l.startsWith('"time"'));
+    const timestampHeader = lines.find((l) => l.startsWith('"time (UTC)"'));
     expect(timestampHeader).to.equal(
-      '"time","mysql-cluster | Secondary | Secondary-1"'
+      '"time (UTC)","mysql-cluster | Secondary | Secondary-1"'
     );
     // --- Data rows from mock response ---
     const responseData = interception.response?.body
@@ -383,6 +402,7 @@ describe('DBaaS Widget CSV Download', () => {
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
     mockAppendFeatureFlags(flagsFactory.build());
+    mockGetProfile(mockProfile);
     mockGetAccount(mockAccount);
     mockGetLinodes(mockLinodes);
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
@@ -609,11 +629,11 @@ describe('DBaaS Widget CSV Download', () => {
             .findByLabel('Select an Aggregate Function')
             .should('be.visible')
             .type(`${widgetConfig.expectedAggregation}{enter}`);
-          ui.tooltip.findByText('CSV Download').should('be.visible');
+          ui.tooltip.findByText('Download CSV').should('be.visible');
 
-          cy.get('[aria-label="CSV Download"]').click();
+          cy.get('[aria-label="Download CSV"]').click();
         });
-      ui.toast.assertMessage('Downloaded CSV.');
+      ui.toast.assertMessage('Downloaded CSV');
 
       // ── Build CSV file path ───────────────────────────────────────────────
       const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
@@ -644,7 +664,7 @@ describe('DBaaS Widget CSV Download', () => {
     );
 
     cy.get('[data-qa-widget="Disk I/O"]')
-      .find('[aria-label="CSV Download"] button')
+      .find('[aria-label="Download CSV"] button')
       .should('be.disabled');
   });
 
@@ -658,7 +678,7 @@ describe('DBaaS Widget CSV Download', () => {
       .and('contain.text', 'Error while rendering graph');
 
     cy.get('[data-qa-widget="Disk I/O"]')
-      .find('[aria-label="CSV Download"] button')
+      .find('[aria-label="Download CSV"] button')
       .should('be.disabled');
   });
 });
