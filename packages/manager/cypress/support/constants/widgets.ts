@@ -93,8 +93,8 @@ export const widgetDetails = {
         unit: 'OPS',
         yLabel: 'system_disk_operations_total',
         dateSelection: 'Last hour',
-        startDate: 'Aug 1, 2025, 4:30 AM GMT+5:30',
-        endDate: 'Aug 1, 2025, 5:30 AM GMT+5:30',
+        startDate: 'Aug 1, 2025, 4:30 AM UTC',
+        endDate: 'Aug 1, 2025, 5:30 AM UTC',
         filters: [
           { dimension_label: 'device', operator: 'In', value: 'loop0' },
           {
@@ -114,8 +114,8 @@ export const widgetDetails = {
         unit: '%',
         yLabel: 'system_cpu_utilization_ratio',
         dateSelection: 'Last day',
-        startDate: 'Jul 31, 2025, 5:30 AM GMT+5:30',
-        endDate: 'Aug 1, 2025, 5:30 AM GMT+5:30',
+        startDate: 'Jul 31, 2025, 5:30 AM UTC',
+        endDate: 'Aug 1, 2025, 5:30 AM UTC',
         filters: [
           { dimension_label: 'cpu', operator: 'eq', value: 'cpu' },
           { dimension_label: 'state', operator: 'eq', value: 'user' },
@@ -130,8 +130,8 @@ export const widgetDetails = {
         unit: 'B',
         yLabel: 'system_memory_usage_bytes',
         dateSelection: 'Last 7 days',
-        startDate: 'Jul 26, 2025, 5:30 AM GMT+5:30',
-        endDate: 'Aug 1, 2025, 5:30 AM GMT+5:30',
+        startDate: 'Jul 26, 2025, 5:30 AM UTC',
+        endDate: 'Aug 1, 2025, 5:30 AM UTC',
         filters: [{ dimension_label: 'state', operator: 'eq', value: 'used' }],
       },
       {

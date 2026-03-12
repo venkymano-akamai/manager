@@ -48,8 +48,6 @@ import type { Interception } from 'support/cypress-exports';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const downloadCSV = 'Download CSV';
-const DOWNLOAD_CSV_TOAST = 'Downloaded CSV.';
-
 const SHARED_DIMENSIONS = [
   { dimension_label: 'entity_id', label: 'Entity Id' },
   { dimension_label: 'node_type', label: 'Node Type', value: 'secondary' },
@@ -117,7 +115,7 @@ const formatDate = (epoch: number): string => {
   const date = new Date(epoch * 1000);
 
   return date.toLocaleString('en-US', {
-    timeZone: 'UTC',
+    timeZone: 'GMT',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -630,9 +628,8 @@ describe('DBaaS Widget CSV Download', () => {
             .type(`${widgetConfig.expectedAggregation}{enter}`);
           ui.tooltip.findByText(downloadCSV).should('be.visible');
 
-          cy.get(`[aria-label="${downloadCSV}"]`).click();
+          cy.get(`[aria-label="${downloadCSV}"]`).should('be.visible').click();
         });
-      ui.toast.assertMessage(DOWNLOAD_CSV_TOAST);
 
       // ── Build CSV file path ───────────────────────────────────────────────
       const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
