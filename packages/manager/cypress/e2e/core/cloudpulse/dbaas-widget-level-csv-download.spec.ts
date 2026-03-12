@@ -161,8 +161,8 @@ const validateCSV = (
       expect(csvEndTime.key).to.equal('End Time');
       expect(csvEndTime.value).to.equal(widgetConfig.endDate);
     } else {
-      const csvDuration = getValue(lines, 'Duration');
-      expect(csvDuration.key).to.equal('Duration');
+      const csvDuration = getValue(lines, 'Time Range');
+      expect(csvDuration.key).to.equal('Time Range');
       expect(csvDuration.value).to.equal(widgetConfig.dateSelection);
     }
 
