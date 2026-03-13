@@ -95,6 +95,12 @@ const notificationChannels = [
     label: 'system-channel-1',
     type: 'system',
     channel_type: 'email',
+    details: {
+      email: {
+        recipient_type: 'read_write_users',
+        usernames: [],
+      },
+    },
   }),
   notificationChannelFactory.build({
     id: 3,
@@ -504,11 +510,11 @@ describe('Create Alert', () => {
 
         // Content email
         expect(systemChannel)
-          .to.have.nested.property('content.email.email_addresses')
-          .that.deep.equals(['test@test.com', 'test2@test.com']);
-
-        // Ensure details is absent for system channel
-        expect(systemChannel.details).to.be.undefined;
+          .to.have.nested.property('details.email.usernames')
+          .that.deep.equals([]);
+        expect(systemChannel)
+          .to.have.nested.property('details.email.recipient_type')
+          .that.equals('read_write_users');
 
         // 🔹 Validate user-channel-3 (with details)
         const userChannel = body.data.find(
@@ -521,10 +527,6 @@ describe('Create Alert', () => {
         expect(userChannel.created_by).to.eq('user1');
 
         // Content email
-        expect(userChannel)
-          .to.have.nested.property('content.email.email_addresses')
-          .that.deep.equals(['test@test.com', 'test2@test.com']);
-
         expect(userChannel)
           .to.have.nested.property('details.email.usernames')
           .that.deep.equals(['LinodeUser', 'LinodeUser1']);
