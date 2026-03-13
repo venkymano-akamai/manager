@@ -202,6 +202,9 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
       'getSecondAlertDefinitions'
     );
     cy.visitWithLogin(alertDefinitionsUrl);
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
     cy.wait('@getAlertDefinitionsList');
     mockDeleteAlert('dbaas', 1).as('deleteAlert');
     mockDeleteAlert('linode', 0).as('deleteAlert2');
