@@ -112,10 +112,10 @@ const getValue = (
 
 /** Formats an epoch (seconds) to match the CSV date format */
 const formatDate = (epoch: number): string => {
-  const date = new Date(epoch * 1000);
+  const d = new Date(epoch * 1000);
 
-  return date.toLocaleString('en-US', {
-    timeZone: 'GMT',
+  return d.toLocaleString('en-US', {
+    timeZone: 'UTC',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -127,7 +127,7 @@ const formatDate = (epoch: number): string => {
 
 // Profile timezone is set to 'UTC'
 const mockProfile = profileFactory.build({
-  timezone: 'GMT',
+  timezone: 'UTC',
 });
 
 /**
@@ -587,12 +587,6 @@ describe('DBaaS Widget CSV Download', () => {
           .as('endMeridiemSelect')
           .scrollIntoView();
         cy.get('@endMeridiemSelect').find('[aria-label="AM"]').click();
-
-        // --- Set timezone ---
-        cy.findByPlaceholderText('Choose a Timezone')
-          .as('timezoneInput')
-          .clear();
-        cy.get('@timezoneInput').type('(GMT +0:00) Greenwich Mean Time{enter}');
 
         // --- Apply date/time range ---
         cy.get('[data-qa-buttons="apply"]')
