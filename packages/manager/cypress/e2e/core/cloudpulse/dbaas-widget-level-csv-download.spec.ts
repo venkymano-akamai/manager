@@ -37,12 +37,7 @@ import {
   widgetFactory,
 } from 'src/factories';
 
-import type {
-  CloudPulseMetricsResponseData,
-  CloudPulseServiceType,
-  Database,
-  Linode,
-} from '@linode/api-v4';
+import type { CloudPulseServiceType, Database, Linode } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -119,21 +114,6 @@ const getValue = (
   };
 };
 
-/** Formats an epoch (seconds) to match the CSV date format */
-const formatDate = (epoch: number): string => {
-  const d = new Date(epoch * 1000);
-
-  return d.toLocaleString('en-US', {
-    timeZone: 'UTC',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-};
-
 // Profile timezone is set to 'UTC'
 const mockProfile = profileFactory.build({
   timezone: 'UTC',
@@ -158,29 +138,15 @@ const validateCSV = (
     expect(dashboardRow.key).to.equal('Dashboard');
     expect(dashboardRow.value).to.equal(dashboardName);
 
-    // --- Time Range: custom (Reset) vs preset ---
-    // if (widgetConfig.dateSelection === 'Reset') {
-    //   const csvStartTime = getValue(lines, 'Start Time');
-    //   expect(csvStartTime.key).to.equal('Start Time');
-    
-    //   expect(new Date(csvStartTime.value).getTime())
-    //     .to.equal(new Date(widgetConfig.startDate).getTime());
-    
-    //   const csvEndTime = getValue(lines, 'End Time');
-    //   expect(csvEndTime.key).to.equal('End Time');
-    
-    //   expect(new Date(csvEndTime.value).getTime())
-    //     .to.equal(new Date(widgetConfig.endDate).getTime());
-    // } 
     if (widgetConfig.dateSelection === 'Reset') {
       const csvStartTime = getValue(lines, 'Start Time');
       expect(csvStartTime.key).to.equal('Start Time');
       expect(csvStartTime.value).to.equal('Jul 31, 2025, 7:45 PM UTC');
-    
+
       const csvEndTime = getValue(lines, 'End Time');
       expect(csvEndTime.key).to.equal('End Time');
       expect(csvEndTime.value).to.equal('Aug 2, 2025, 9:15 PM UTC');
-    }else {
+    } else {
       const csvDuration = getValue(lines, 'Time Range');
       expect(csvDuration.key).to.equal('Time Range');
       expect(csvDuration.value).to.equal(widgetConfig.dateSelection);
@@ -255,20 +221,20 @@ const validateCSV = (
       '"time (UTC)","mysql-cluster | Secondary | Secondary-1"'
     );
 
-// find where data rows start
-const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
+    // find where data rows start
+    const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
 
-// actual CSV metric rows
-const csvRows = lines.slice(headerIndex + 2); // skip header + blank line
+    // actual CSV metric rows
+    const csvRows = lines.slice(headerIndex + 2); // skip header + blank line
 
-expect(csvRows.length).to.equal(expectedRows.length);
+    expect(csvRows.length).to.equal(expectedRows.length);
 
-expectedRows.forEach((row, index) => {
-  expect(csvRows[index]).to.equal(
-    row,
-    `CSV row ${index} should match expected value`
-  );
-});
+    expectedRows.forEach((row, index) => {
+      expect(csvRows[index]).to.equal(
+        row,
+        `CSV row ${index} should match expected value`
+      );
+    });
   });
 };
 const matchesWidgetName = (m: { name: string }, widgetName: string) =>
