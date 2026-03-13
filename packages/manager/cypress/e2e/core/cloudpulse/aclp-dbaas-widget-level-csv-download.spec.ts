@@ -43,6 +43,15 @@ import type { Interception } from 'support/cypress-exports';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const downloadCSV = 'Download CSV';
+const expectedRows = [
+  '"Jul 31, 2025, 5:30 AM","10"',
+  '"Jul 31, 2025, 5:35 AM","20"',
+  '"Jul 31, 2025, 5:40 AM","30"',
+  '"Jul 31, 2025, 5:45 AM","40"',
+  '"Jul 31, 2025, 5:50 AM","50"',
+  '"Aug 1, 2025, 5:30 AM","60"',
+];
+
 const SHARED_DIMENSIONS = [
   { dimension_label: 'entity_id', label: 'Entity Id' },
   { dimension_label: 'node_type', label: 'Node Type', value: 'secondary' },
@@ -224,16 +233,6 @@ const validateCSV = (
     const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
 
     const csvRows = lines.slice(headerIndex + 2, headerIndex + 8);
-
-    const expectedRows = [
-      '"Jul 31, 2025, 5:30 AM","10"',
-      '"Jul 31, 2025, 5:35 AM","20"',
-      '"Jul 31, 2025, 5:40 AM","30"',
-      '"Jul 31, 2025, 5:45 AM","40"',
-      '"Jul 31, 2025, 5:50 AM","50"',
-      '"Aug 1, 2025, 5:30 AM","60"',
-    ];
-
     expectedRows.forEach((expectedRow, index) => {
       const actualRow = csvRows[index];
 
@@ -411,15 +410,15 @@ const downloadsFolder = Cypress.config('downloadsFolder');
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    // cy.exec(
-    //   `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-    //   -name "CPU Utilization*" -o \
-    //   -name "Disk I_O*" -o \
-    //   -name "Memory Usage*" -o \
-    //   -name "Network*" \
-    //   \\) -delete`,
-    //   { failOnNonZeroExit: false }
-    // );
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+      -name "CPU Utilization*" -o \
+      -name "Disk I_O*" -o \
+      -name "Memory Usage*" -o \
+      -name "Network*" \
+      \\) -delete`,
+      { failOnNonZeroExit: false }
+    );
 
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
