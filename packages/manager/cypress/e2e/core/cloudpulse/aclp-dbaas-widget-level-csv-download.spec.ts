@@ -452,12 +452,6 @@ describe('DBaaS Widget CSV Download', () => {
         const startMinute = 15;
         const endHour = 2;
         const endMinute = 45;
-
-        cy.findByPlaceholderText('Choose a Timezone').clear();
-        cy.findByPlaceholderText('Choose a Timezone').type(
-          '(GMT +0:00) Greenwich Mean Time{enter}'
-        );
-
         // --- Open the date picker dialog and select start/end days ---
 
         cy.get('[role="dialog"]').within(() => {
