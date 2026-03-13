@@ -126,19 +126,13 @@ const validateCSV = (
 
     // --- Time Range: custom (Reset) vs preset ---
     if (widgetConfig.dateSelection === 'Reset') {
-      // const csvStartTime = getValue(lines, 'Start Time');
-      // expect(csvStartTime.key).to.equal('Start Time');
+      const csvStartTime = getValue(lines, 'Start Time');
+  expect(csvStartTime.key).to.equal('Start Time');
+  expect(csvStartTime.value).to.equal(widgetConfig.startDate);
 
-      // expect(new Date(csvStartTime.value).getTime()).to.equal(
-      //   new Date(widgetConfig.startDate).getTime()
-      // );
-
-      // const csvEndTime = getValue(lines, 'End Time');
-      // expect(csvEndTime.key).to.equal('End Time');
-
-      // expect(new Date(csvEndTime.value).getTime()).to.equal(
-      //   new Date(widgetConfig.endDate).getTime()
-      // );
+  const csvEndTime = getValue(lines, 'End Time');
+  expect(csvEndTime.key).to.equal('End Time');
+  expect(csvEndTime.value).to.equal(widgetConfig.endDate);
     } else {
       const csvDuration = getValue(lines, 'Time Range');
       expect(csvDuration.key).to.equal('Time Range');
