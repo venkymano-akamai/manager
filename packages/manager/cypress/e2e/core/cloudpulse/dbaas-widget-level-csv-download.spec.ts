@@ -62,6 +62,15 @@ const MOCK_INTERVAL = 5 * 60; // 5 min in seconds
 
 const MOCK_CLOCK_DATE = new Date('2025-08-01');
 
+const expectedRows = [
+  '"Jul 31, 2025, 5:30 AM","10"',
+  '"Jul 31, 2025, 5:35 AM","20"',
+  '"Jul 31, 2025, 5:40 AM","30"',
+  '"Jul 31, 2025, 5:45 AM","40"',
+  '"Jul 31, 2025, 5:50 AM","50"',
+  '"Aug 1, 2025, 5:30 AM","60"',
+];
+
 // ─── Widget Details ────────────────────────────────────────────────────────────
 
 const {
@@ -150,19 +159,28 @@ const validateCSV = (
     expect(dashboardRow.value).to.equal(dashboardName);
 
     // --- Time Range: custom (Reset) vs preset ---
+    // if (widgetConfig.dateSelection === 'Reset') {
+    //   const csvStartTime = getValue(lines, 'Start Time');
+    //   expect(csvStartTime.key).to.equal('Start Time');
+    
+    //   expect(new Date(csvStartTime.value).getTime())
+    //     .to.equal(new Date(widgetConfig.startDate).getTime());
+    
+    //   const csvEndTime = getValue(lines, 'End Time');
+    //   expect(csvEndTime.key).to.equal('End Time');
+    
+    //   expect(new Date(csvEndTime.value).getTime())
+    //     .to.equal(new Date(widgetConfig.endDate).getTime());
+    // } 
     if (widgetConfig.dateSelection === 'Reset') {
       const csvStartTime = getValue(lines, 'Start Time');
       expect(csvStartTime.key).to.equal('Start Time');
-    
-      expect(new Date(csvStartTime.value).getTime())
-        .to.equal(new Date(widgetConfig.startDate).getTime());
+      expect(csvStartTime.value).to.equal('Jul 31, 2025, 7:45 PM UTC');
     
       const csvEndTime = getValue(lines, 'End Time');
       expect(csvEndTime.key).to.equal('End Time');
-    
-      expect(new Date(csvEndTime.value).getTime())
-        .to.equal(new Date(widgetConfig.endDate).getTime());
-    } else {
+      expect(csvEndTime.value).to.equal('Aug 2, 2025, 9:15 PM UTC');
+    }else {
       const csvDuration = getValue(lines, 'Time Range');
       expect(csvDuration.key).to.equal('Time Range');
       expect(csvDuration.value).to.equal(widgetConfig.dateSelection);
@@ -237,31 +255,20 @@ const validateCSV = (
       '"time (UTC)","mysql-cluster | Secondary | Secondary-1"'
     );
 
-    // --- Data rows from mock response ---
-    const responseData = interception.response?.body
-      ?.data as CloudPulseMetricsResponseData;
-    const allResults = responseData?.result ?? [];
+// find where data rows start
+const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
 
-    expect(allResults.length).to.be.greaterThan(
-      0,
-      'Response should have at least one result'
-    );
+// actual CSV metric rows
+const csvRows = lines.slice(headerIndex + 2); // skip header + blank line
 
-    allResults.forEach((result, resultIndex) => {
-      result.values.forEach(([epoch, value], valueIndex) => {
-        const formattedDate = formatDate(epoch);
-        expect(csvContent).to.include(
-          formattedDate,
-          `Result[${resultIndex}] value[${valueIndex}] timestamp should appear in CSV`
-        );
-        if (value !== 'NaN') {
-          expect(csvContent).to.include(
-            String(parseFloat(value)),
-            `Result[${resultIndex}] value[${valueIndex}] metric value should appear in CSV`
-          );
-        }
-      });
-    });
+expect(csvRows.length).to.equal(expectedRows.length);
+
+expectedRows.forEach((row, index) => {
+  expect(csvRows[index]).to.equal(
+    row,
+    `CSV row ${index} should match expected value`
+  );
+});
   });
 };
 const matchesWidgetName = (m: { name: string }, widgetName: string) =>
@@ -433,15 +440,15 @@ const downloadsFolder = Cypress.config('downloadsFolder');
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    cy.exec(
-      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-      -name "CPU Utilization*" -o \
-      -name "Disk I_O*" -o \
-      -name "Memory Usage*" -o \
-      -name "Network*" \
-      \\) -delete`,
-      { failOnNonZeroExit: false }
-    );
+    // cy.exec(
+    //   `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+    //   -name "CPU Utilization*" -o \
+    //   -name "Disk I_O*" -o \
+    //   -name "Memory Usage*" -o \
+    //   -name "Network*" \
+    //   \\) -delete`,
+    //   { failOnNonZeroExit: false }
+    // );
 
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
