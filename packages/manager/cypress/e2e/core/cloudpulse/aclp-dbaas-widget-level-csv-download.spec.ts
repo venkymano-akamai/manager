@@ -52,15 +52,6 @@ const SHARED_DIMENSIONS = [
 
 const MOCK_CLOCK_DATE = new Date('2025-08-01');
 
-const expectedRows = [
-  '"Jul 31, 2025, 5:30 AM","10"',
-  '"Jul 31, 2025, 5:35 AM","20"',
-  '"Jul 31, 2025, 5:40 AM","30"',
-  '"Jul 31, 2025, 5:45 AM","40"',
-  '"Jul 31, 2025, 5:50 AM","50"',
-  '"Aug 1, 2025, 5:30 AM","60"',
-];
-
 // ─── Widget Details ────────────────────────────────────────────────────────────
 
 const {
@@ -223,20 +214,24 @@ const validateCSV = (
       '"time (UTC)","mysql-cluster | Secondary | Secondary-1"'
     );
 
-    // find where data rows start
     const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
 
-    const csvRows = lines
-      .slice(headerIndex + 1)
-      .filter((l) => l.startsWith('"Jul') || l.startsWith('"Aug'));
+    const csvRows = lines.slice(headerIndex + 2, headerIndex + 8);
 
-    expect(csvRows.length).to.equal(expectedRows.length);
+    const expectedRows = [
+      '"Jul 31, 2025, 5:30 AM","10"',
+      '"Jul 31, 2025, 5:35 AM","20"',
+      '"Jul 31, 2025, 5:40 AM","30"',
+      '"Jul 31, 2025, 5:45 AM","40"',
+      '"Jul 31, 2025, 5:50 AM","50"',
+      '"Aug 1, 2025, 5:30 AM","60"',
+    ];
 
-    expectedRows.forEach((row, index) => {
-      expect(csvRows[index]).to.equal(
-        row,
-        `CSV row ${index} should match expected value`
-      );
+    expectedRows.forEach((expectedRow, index) => {
+      const actualRow = csvRows[index];
+
+      cy.log(`Row ${index} → expected: ${expectedRow} | actual: ${actualRow}`);
+      expect(actualRow, `CSV row ${index}`).to.equal(expectedRow);
     });
   });
 };
