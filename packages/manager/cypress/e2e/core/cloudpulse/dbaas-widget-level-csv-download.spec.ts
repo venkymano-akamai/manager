@@ -50,11 +50,6 @@ const SHARED_DIMENSIONS = [
   { dimension_label: 'engine', label: 'Engine', value: 'mysql' },
 ];
 
-// Named epoch constants for mock data (5 min scrape interval)
-const MOCK_START_TIME = 1753939800; // Jul 31, 2025, 5:30 AM UTC
-const MOCK_END_TIME = 1754026200; // Aug 1, 2025, 5:30 AM UTC
-const MOCK_INTERVAL = 5 * 60; // 5 min in seconds
-
 const MOCK_CLOCK_DATE = new Date('2025-08-01');
 
 const expectedRows = [
@@ -231,8 +226,9 @@ const validateCSV = (
     // find where data rows start
     const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
 
-    // actual CSV metric rows
-    const csvRows = lines.slice(headerIndex + 2); // skip header + blank line
+    const csvRows = lines
+      .slice(headerIndex + 1)
+      .filter((l) => l.startsWith('"Jul') || l.startsWith('"Aug'));
 
     expect(csvRows.length).to.equal(expectedRows.length);
 
@@ -337,12 +333,12 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
       (metricResult) => ({
         ...metricResult,
         values: [
-          [MOCK_START_TIME, '10.00'],
-          [MOCK_START_TIME + MOCK_INTERVAL, '20.00'],
-          [MOCK_START_TIME + MOCK_INTERVAL * 2, '30.00'],
-          [MOCK_START_TIME + MOCK_INTERVAL * 3, '40.00'],
-          [MOCK_START_TIME + MOCK_INTERVAL * 4, '50.00'],
-          [MOCK_END_TIME, '60.00'],
+          [1753939800, '10.00'], // Jul 31 2025 05:30 UTC
+          [1753940100, '20.00'], // Jul 31 2025 05:35 UTC
+          [1753940400, '30.00'], // Jul 31 2025 05:40 UTC
+          [1753940700, '40.00'], // Jul 31 2025 05:45 UTC
+          [1753941000, '50.00'], // Jul 31 2025 05:50 UTC
+          [1754026200, '60.00'], // Aug 1 2025 05:30 UTC
         ],
       })
     ),
@@ -468,12 +464,9 @@ describe('DBaaS Widget CSV Download', () => {
         const endHour = 2;
         const endMinute = 45;
 
-        ui.button.findByTitle('Reset').should('be.visible').click();
-
-        cy.get('[data-qa-preset="Reset"]').should(
-          'have.attr',
-          'aria-selected',
-          'true'
+        cy.findByPlaceholderText('Choose a Timezone').clear();
+        cy.findByPlaceholderText('Choose a Timezone').type(
+          '(GMT +0:00) Greenwich Mean Time{enter}'
         );
 
         // --- Open the date picker dialog and select start/end days ---
