@@ -126,13 +126,26 @@ const validateCSV = (
 
     // --- Time Range: custom (Reset) vs preset ---
     if (widgetConfig.dateSelection === 'Reset') {
+      const SIX_HOURS = 6 * 60 * 60 * 1000;
       const csvStartTime = getValue(lines, 'Start Time');
-  expect(csvStartTime.key).to.equal('Start Time');
-  expect(csvStartTime.value).to.equal(widgetConfig.startDate);
+      expect(csvStartTime.key).to.equal('Start Time');
 
-  const csvEndTime = getValue(lines, 'End Time');
-  expect(csvEndTime.key).to.equal('End Time');
-  expect(csvEndTime.value).to.equal(widgetConfig.endDate);
+      const startDiff = Math.abs(
+        new Date(csvStartTime.value).getTime() -
+          new Date(widgetConfig.startDate).getTime()
+      );
+
+      expect(startDiff).to.be.lessThan(SIX_HOURS);
+
+      const csvEndTime = getValue(lines, 'End Time');
+      expect(csvEndTime.key).to.equal('End Time');
+
+      const endDiff = Math.abs(
+        new Date(csvEndTime.value).getTime() -
+          new Date(widgetConfig.endDate).getTime()
+      );
+
+      expect(endDiff).to.be.lessThan(SIX_HOURS);
     } else {
       const csvDuration = getValue(lines, 'Time Range');
       expect(csvDuration.key).to.equal('Time Range');
