@@ -514,6 +514,8 @@ describe('DBaaS Widget CSV Download', () => {
           .first()
           .click();
 
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+
         cy.get(`[aria-label="${startMinute} minutes"]`).first().click();
 
         ui.button
