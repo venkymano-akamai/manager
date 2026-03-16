@@ -129,10 +129,17 @@ export const mockGetCloudPulseDashboards = (
  *
  * @returns {Cypress.Chainable<null>} The chainable Cypress object.
  */
+
 export const mockCreateCloudPulseMetrics = (
   serviceType: string,
   mockResponse: CloudPulseMetricsResponse,
-  overrideMetric?: Record<string, string> // full metric object override
+  overrideMetric?: Record<string, unknown> & {
+    absolute_time_duration?: { end: string; start: string };
+    entity_id?: string;
+    node_id?: string;
+    node_type?: string;
+    relative_time_duration?: { unit: string; value: number };
+  }
 ): Cypress.Chainable<null> => {
   return cy.intercept(
     'POST',
@@ -141,6 +148,13 @@ export const mockCreateCloudPulseMetrics = (
       const requestedMetric: string =
         req.body?.metrics?.[0]?.name ?? 'unknown_metric';
 
+      // ✅ Destructure — keep only flat string fields in metric label
+      const {
+        relative_time_duration,
+        absolute_time_duration,
+        ...metricFields
+      } = overrideMetric ?? {};
+
       const response: CloudPulseMetricsResponse = {
         ...mockResponse,
         data: {
@@ -148,8 +162,8 @@ export const mockCreateCloudPulseMetrics = (
           result: (mockResponse.data?.result ?? []).map((r) => ({
             ...r,
             metric: {
-              ...(overrideMetric ?? {}),
-              metric_name: requestedMetric, // always ensure metric_name is set
+              ...metricFields, // ✅ only entity_id, node_id, node_type
+              metric_name: requestedMetric,
             },
           })),
         },
@@ -159,7 +173,6 @@ export const mockCreateCloudPulseMetrics = (
     }
   );
 };
-
 /**
  * Mocks the API response for fetching a dashboard.
  *
@@ -909,16 +922,11 @@ export const mockGetStreamById = (
  * @returns Cypress chainable intercept object.
  */
 
-
 export const mockCreateCloudPulseMetricsError = (
   serviceType: string
 ): Cypress.Chainable<null> => {
-  return cy.intercept(
-    'POST',
-    `**/monitor/services/${serviceType}/metrics`,
-    {
-      statusCode: 500,
-      body: 'internal server error',
-    }
-  );
+  return cy.intercept('POST', `**/monitor/services/${serviceType}/metrics`, {
+    statusCode: 500,
+    body: 'internal server error',
+  });
 };
