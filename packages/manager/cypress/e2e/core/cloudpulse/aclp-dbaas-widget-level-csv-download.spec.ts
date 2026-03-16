@@ -161,13 +161,13 @@ const validateCSV = (
       const csvStartTime = getValue(lines, 'Start Time');
       expect(csvStartTime.key).to.equal('Start Time');
       expect(new Date(csvStartTime.value).getTime()).to.equal(
-        new Date(widgetConfig.startDate).getTime()
+        new Date(requestBody.absolute_time_duration.start).getTime() // ✅ from API request
       );
 
       const csvEndTime = getValue(lines, 'End Time');
       expect(csvEndTime.key).to.equal('End Time');
       expect(new Date(csvEndTime.value).getTime()).to.equal(
-        new Date(widgetConfig.endDate).getTime()
+        new Date(requestBody.absolute_time_duration.end).getTime() // ✅ from API request
       );
     } else {
       const csvDuration = getValue(lines, 'Time Range');
