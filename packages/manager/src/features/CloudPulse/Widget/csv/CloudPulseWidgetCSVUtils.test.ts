@@ -6,8 +6,13 @@ import { generateCSVData } from './CloudPulseWidgetCSVUtils';
 import type { CloudPulseServiceTypeFilterMap } from '../../Utils/models';
 import type { CSVDataProps } from './CloudPulseWidgetCSVUtils';
 
+const DASHBOARD_NAME = 'Test Dashboard';
+const START_TIME_LABEL = 'Start Time';
+const DATA_INTERVAL_LABEL = 'Data Aggregation Interval';
+const DIMENSION_FILTERS_LABEL = 'Dimension Filters';
+
 const baseProps: CSVDataProps = {
-  dashboardName: 'Test Dashboard',
+  dashboardName: DASHBOARD_NAME,
   data: [
     { timestamp: 1718000000000, value: 42, value2: 100 },
     { timestamp: 1718003600000, value: 43, value2: 110 },
@@ -63,7 +68,6 @@ const baseProps: CSVDataProps = {
     size: 12,
     time_duration: { value: 1, unit: 'hour' },
     y_label: 'cpu_usage',
-    // Add any other required properties here with mock/test values
   },
 };
 
@@ -72,13 +76,9 @@ describe('generateCSVData', () => {
     const csv = generateCSVData(baseProps);
 
     expect(csv[0]).toEqual(['Dashboard', 'Test Dashboard']);
-    expect(csv.some((row) => row[0] === 'Start Time')).toBe(true);
-    expect(csv.some((row) => row[0] === 'End Time')).toBe(true);
     expect(csv.some((row) => row[0] === 'Group By')).toBe(true);
     expect(csv.some((row) => row[0] === 'Aggregation Function')).toBe(true);
-    expect(csv.some((row) => row[0] === 'Data Aggregation Interval')).toBe(
-      true
-    );
+    expect(csv.some((row) => row[0] === DATA_INTERVAL_LABEL)).toBe(true);
     expect(csv.some((row) => row[0] === 'Metric')).toBe(true);
     expect(csv.some((row) => row[0] === 'Unit')).toBe(true);
     expect(
@@ -120,7 +120,7 @@ describe('generateCSVData', () => {
         },
       ],
     });
-    expect(csv.some((row) => row[0] === 'Dimension Filters')).toBe(true);
+    expect(csv.some((row) => row[0] === DIMENSION_FILTERS_LABEL)).toBe(true);
     expect(
       csv.some((row) =>
         row[1] ? row[1].toString().includes('Test,eq,A') : false
@@ -149,7 +149,7 @@ describe('generateCSVData', () => {
       ...baseProps,
       dimensionFilters: [],
     });
-    expect(csv.some((row) => row[0] === 'Dimension Filters')).toBe(false);
+    expect(csv.some((row) => row[0] === DIMENSION_FILTERS_LABEL)).toBe(false);
   });
 
   it('should handle missing filter values gracefully', () => {
@@ -205,5 +205,92 @@ describe('generateCSVData', () => {
     expect(csv.some((row) => Array.isArray(row) && row.includes(43))).toBe(
       true
     );
+  });
+
+  it('should show preset name instead of start/end times for relative durations', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      duration: {
+        ...baseProps.duration,
+        preset: 'Last 1 Hour',
+      },
+    });
+    expect(
+      csv.some((row) => row[0] === 'Time Range' && row[1] === 'Last 1 Hour')
+    ).toBe(true);
+    expect(csv.some((row) => row[0] === START_TIME_LABEL)).toBe(false);
+    expect(csv.some((row) => row[0] === 'End Time')).toBe(false);
+  });
+
+  it('should show start/end times for custom/absolute time ranges', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      duration: {
+        start: '2024-06-10T00:00:00Z',
+        end: '2024-06-10T01:00:00Z',
+        timeZone: 'UTC',
+        preset: 'Reset',
+      },
+    });
+    expect(csv.some((row) => row[0] === START_TIME_LABEL)).toBe(true);
+    expect(csv.some((row) => row[0] === 'End Time')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Time Range')).toBe(false);
+  });
+
+  it('should handle Auto time granularity correctly', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      widget: {
+        ...baseProps.widget,
+        time_granularity: { value: -1, unit: 'Auto' },
+      },
+    });
+
+    const intervalRow = csv.find((row) => row[0] === DATA_INTERVAL_LABEL);
+    expect(intervalRow?.[1]).toBe('Auto');
+  });
+
+  it('should handle regular time granularity correctly', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      widget: {
+        ...baseProps.widget,
+        time_granularity: { value: 30, unit: 'seconds' },
+      },
+    });
+
+    const intervalRow = csv.find(
+      (row) => row[0] === 'Data Aggregation Interval'
+    );
+    expect(intervalRow?.[1]).toBe('30 seconds');
+  });
+
+  it('should handle multiple dimension filters', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      dimensionFilters: [
+        { dimension_label: 'test', operator: 'eq', value: 'A' },
+        { dimension_label: 'test', operator: 'eq', value: 'B' },
+      ],
+      dimensionOptions: [
+        { dimension_label: 'test', label: 'Test Label', values: ['A', 'B'] },
+      ],
+    });
+
+    const filterRow = csv.find((row) => row[0] === DIMENSION_FILTERS_LABEL);
+    expect(filterRow?.[1]).toContain('Test Label,eq,A;Test Label,eq,B');
+  });
+
+  it('should include zoom range times when zoomed', () => {
+    const csv = generateCSVData({
+      ...baseProps,
+      zoomRange: {
+        left: 1718000000000,
+        right: 1718003600000,
+      },
+    });
+
+    expect(csv.some((row) => row[0] === 'Zoom Start Time')).toBe(true);
+    expect(csv.some((row) => row[0] === 'Zoom End Time')).toBe(true);
   });
 });
