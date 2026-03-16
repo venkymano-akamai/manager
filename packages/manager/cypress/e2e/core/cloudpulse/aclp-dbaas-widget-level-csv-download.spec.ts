@@ -339,7 +339,6 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
     ),
   },
 });
-
 const getTimeDuration = (widgetConfig: (typeof metrics)[number]) => {
   const durationMap: Record<Labels, object> = {
     'Last 30 Minutes': { relative_time_duration: { unit: 'min', value: 30 } },
@@ -348,11 +347,14 @@ const getTimeDuration = (widgetConfig: (typeof metrics)[number]) => {
     'Last 7 Days': { relative_time_duration: { unit: 'days', value: 7 } },
     'Last 30 Days': { relative_time_duration: { unit: 'days', value: 30 } },
   };
+
   if (widgetConfig.dateSelection === 'Reset') {
     return {
       absolute_time_duration: {
-        start: '2025-07-31T19:45:00Z',
-        end: '2025-08-02T21:15:00Z',
+        end: new Date(widgetConfig.endDate).toISOString().replace('.000Z', 'Z'),
+        start: new Date(widgetConfig.startDate)
+          .toISOString()
+          .replace('.000Z', 'Z'),
       },
     };
   }
@@ -424,15 +426,15 @@ const downloadsFolder = Cypress.config('downloadsFolder');
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    // cy.exec(
-    //   `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-    //   -name "CPU Utilization*" -o \
-    //   -name "Disk I_O*" -o \
-    //   -name "Memory Usage*" -o \
-    //   -name "Network*" \
-    //   \\) -delete`,
-    //   { failOnNonZeroExit: false }
-    // );
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+      -name "CPU Utilization*" -o \
+      -name "Disk I_O*" -o \
+      -name "Memory Usage*" -o \
+      -name "Network*" \
+      \\) -delete`,
+      { failOnNonZeroExit: false }
+    );
 
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
@@ -458,190 +460,188 @@ describe('DBaaS Widget CSV Download', () => {
     cy.wait(['@fetchServices', '@fetchDashboard', '@getUserPreferences']);
   });
 
-  metrics
-    .filter((m) => m.title === 'Network Traffic')
-    .forEach((widgetConfig) => {
-      it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
-        mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
-          entity_id: '1',
-          node_id: `${nodeType}-1`,
-          node_type: nodeType,
-          ...getTimeDuration(widgetConfig),
-        }).as('getMetrics');
+  metrics.forEach((widgetConfig) => {
+    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
+        entity_id: '1',
+        node_id: `${nodeType}-1`,
+        node_type: nodeType,
+        ...getTimeDuration(widgetConfig),
+      }).as('getMetrics');
 
-        const { dateSelection, title, name } = widgetConfig;
-        const widgetSelector = `[data-qa-widget="${title}"]`;
+      const { dateSelection, title, name } = widgetConfig;
+      const widgetSelector = `[data-qa-widget="${title}"]`;
 
-        // ── Date Selection ────────────────────────────────────────────────────
-        ui.button.findByTitle('Last hour').click();
-        if (dateSelection === 'Reset') {
-          const startDayOfMonth = 1;
-          const endDayOfMonth = 3;
-          const startHour = 1;
-          const startMinute = 15;
-          const endHour = 2;
-          const endMinute = 45;
-          // --- Open the date picker dialog and select start/end days ---
+      // ── Date Selection ────────────────────────────────────────────────────
+      ui.button.findByTitle('Last hour').click();
+      if (dateSelection === 'Reset') {
+        const startDayOfMonth = 1;
+        const endDayOfMonth = 3;
+        const startHour = 1;
+        const startMinute = 15;
+        const endHour = 2;
+        const endMinute = 45;
+        // --- Open the date picker dialog and select start/end days ---
 
-          cy.get('[role="dialog"]').within(() => {
-            // --- Select start and end day ---
-            cy.findAllByText(startDayOfMonth).first().click();
-            cy.findAllByText(endDayOfMonth).first().click();
-          });
-          // --- Select start time (hours and minutes) in the time picker ---
+        cy.get('[role="dialog"]').within(() => {
+          // --- Select start and end day ---
+          cy.findAllByText(startDayOfMonth).first().click();
+          cy.findAllByText(endDayOfMonth).first().click();
+        });
+        // --- Select start time (hours and minutes) in the time picker ---
 
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .first()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .first()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-          cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
-          // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
-          cy.get(`[aria-label="${startHour} hours"]`).click();
+        // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
+        cy.get(`[aria-label="${startHour} hours"]`).click();
 
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .first()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .first()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-          cy.get('@timePickerButton', { timeout: 15000 })
-            .wait(300)
-            .first()
-            .click();
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .wait(300)
+          .first()
+          .click();
 
-          cy.get(`[aria-label="${startMinute} minutes"]`).first().click();
+        cy.get(`[aria-label="${startMinute} minutes"]`).first().click();
 
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .first()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .first()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-          cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
-          cy.findByLabelText('Select meridiem')
-            .as('startMeridiemSelect')
-            .scrollIntoView();
-          cy.get('@startMeridiemSelect').find('[aria-label="AM"]').click();
+        cy.findByLabelText('Select meridiem')
+          .as('startMeridiemSelect')
+          .scrollIntoView();
+        cy.get('@startMeridiemSelect').find('[aria-label="AM"]').click();
 
-          // --- Select end time (hours and minutes) in the time picker ---
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .last()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        // --- Select end time (hours and minutes) in the time picker ---
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .last()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
-          // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
-          cy.get(`[aria-label="${endHour} hours"]`).last().click();
+        // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
+        cy.get(`[aria-label="${endHour} hours"]`).last().click();
 
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .last()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-          cy.get('@timePickerButton', { timeout: 15000 })
-            .wait(300)
-            .last()
-            .click();
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .wait(300)
+          .last()
+          .click();
 
-          cy.get(`[aria-label="${endMinute} minutes"]`).last().click();
+        cy.get(`[aria-label="${endMinute} minutes"]`).last().click();
 
-          ui.button
-            .findByAttribute('aria-label^', 'Choose time')
-            .last()
-            .should('be.visible', { timeout: 10000 })
-            .as('timePickerButton');
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
 
-          cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-          cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
-          cy.findByLabelText('Select meridiem')
-            .as('endMeridiemSelect')
-            .scrollIntoView();
-          cy.get('@endMeridiemSelect').find('[aria-label="AM"]').click();
+        cy.findByLabelText('Select meridiem')
+          .as('endMeridiemSelect')
+          .scrollIntoView();
+        cy.get('@endMeridiemSelect').find('[aria-label="AM"]').click();
 
-          // --- Apply date/time range ---
-          cy.get('[data-qa-buttons="apply"]')
+        // --- Apply date/time range ---
+        cy.get('[data-qa-buttons="apply"]')
+          .should('be.visible')
+          .and('be.enabled')
+          .click();
+      } else {
+        ui.button.findByTitle(dateSelection).click();
+        cy.get('[data-qa-buttons="apply"]')
+          .should('be.visible')
+          .should('be.enabled')
+          .click();
+      }
+
+      // ── Assert widget is visible ──────────────────────────────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .find('h2')
+        .should('contain.text', title);
+
+      // ── Set interval, aggregation, trigger CSV download ───────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .within(() => {
+          ui.autocomplete
+            .findByLabel('Select an Interval')
             .should('be.visible')
-            .and('be.enabled')
-            .click();
-        } else {
-          ui.button.findByTitle(dateSelection).click();
-          cy.get('[data-qa-buttons="apply"]')
+            .type(`${widgetConfig.expectedGranularity}{enter}`);
+
+          ui.autocomplete
+            .findByLabel('Select an Aggregate Function')
             .should('be.visible')
-            .should('be.enabled')
-            .click();
+            .type(`${widgetConfig.expectedAggregation}{enter}`);
+          ui.tooltip.findByText(downloadCSV).should('be.visible');
+
+          cy.get(`[aria-label="${downloadCSV}"] button`).as('csvButton');
+          cy.get('@csvButton').scrollIntoView();
+
+          cy.get('@csvButton').should('be.visible').should('be.enabled');
+
+          cy.get('@csvButton').click({ force: true });
+        });
+
+      // ── Build CSV file path ───────────────────────────────────────────────
+      const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
+      const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
+
+      // ── Find matching interception and validate CSV ───────────────────────
+      cy.get('@getMetrics.all').then((calls) => {
+        const interceptions = calls as unknown as Interception[];
+        const interception = findInterceptionForWidget(interceptions, name);
+
+        if (!interception) {
+          throw new Error(`No interception found for widget: ${name}`);
         }
 
-        // ── Assert widget is visible ──────────────────────────────────────────
-        cy.get(widgetSelector)
-          .should('be.visible')
-          .find('h2')
-          .should('contain.text', title);
-
-        // ── Set interval, aggregation, trigger CSV download ───────────────────
-        cy.get(widgetSelector)
-          .should('be.visible')
-          .within(() => {
-            ui.autocomplete
-              .findByLabel('Select an Interval')
-              .should('be.visible')
-              .type(`${widgetConfig.expectedGranularity}{enter}`);
-
-            ui.autocomplete
-              .findByLabel('Select an Aggregate Function')
-              .should('be.visible')
-              .type(`${widgetConfig.expectedAggregation}{enter}`);
-            ui.tooltip.findByText(downloadCSV).should('be.visible');
-
-            cy.get(`[aria-label="${downloadCSV}"] button`).as('csvButton');
-            cy.get('@csvButton').scrollIntoView();
-
-            cy.get('@csvButton').should('be.visible').should('be.enabled');
-
-            cy.get('@csvButton').click({ force: true });
-          });
-
-        // ── Build CSV file path ───────────────────────────────────────────────
-        const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
-        const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
-
-        // ── Find matching interception and validate CSV ───────────────────────
-        cy.get('@getMetrics.all').then((calls) => {
-          const interceptions = calls as unknown as Interception[];
-          const interception = findInterceptionForWidget(interceptions, name);
-
-          if (!interception) {
-            throw new Error(`No interception found for widget: ${name}`);
-          }
-
-          validateCSV(csvFilePath, widgetConfig, interception);
-        });
+        validateCSV(csvFilePath, widgetConfig, interception);
       });
     });
+  });
 
   it('CSV button should be disabled when no data', () => {
     const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build();
