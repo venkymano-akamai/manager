@@ -143,8 +143,8 @@ export const widgetDetails = {
         unit: 'B',
         yLabel: 'system_network_io_bytes_total',
         dateSelection: 'Reset',
-        startDate: 'Aug 1, 2025, 1:15 AM UTC',
-        endDate: 'Aug 3, 2025, 2:45 AM UTC',
+        startDate: 'Jul 31, 2025, 7:45 PM UTC', // ✅ Aug 1 1:15 AM IST = Jul 31 7:45 PM UTC
+        endDate: 'Aug 2, 2025, 9:15 PM UTC', // ✅ Aug 3 2:45 AM IST = Aug 2 9:15 PM UTC
         filters: [
           { dimension_label: 'device', operator: 'eq', value: 'lo' },
           { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
