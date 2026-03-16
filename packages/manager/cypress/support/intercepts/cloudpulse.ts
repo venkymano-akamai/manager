@@ -129,17 +129,10 @@ export const mockGetCloudPulseDashboards = (
  *
  * @returns {Cypress.Chainable<null>} The chainable Cypress object.
  */
-
 export const mockCreateCloudPulseMetrics = (
   serviceType: string,
   mockResponse: CloudPulseMetricsResponse,
-  overrideMetric?: Record<string, unknown> & {
-    absolute_time_duration?: { end: string; start: string };
-    entity_id?: string;
-    node_id?: string;
-    node_type?: string;
-    relative_time_duration?: { unit: string; value: number };
-  }
+  overrideMetric?: Record<string, string> // full metric object override
 ): Cypress.Chainable<null> => {
   return cy.intercept(
     'POST',
@@ -148,13 +141,6 @@ export const mockCreateCloudPulseMetrics = (
       const requestedMetric: string =
         req.body?.metrics?.[0]?.name ?? 'unknown_metric';
 
-      // ✅ Destructure — keep only flat string fields in metric label
-      const {
-        relative_time_duration,
-        absolute_time_duration,
-        ...metricFields
-      } = overrideMetric ?? {};
-
       const response: CloudPulseMetricsResponse = {
         ...mockResponse,
         data: {
@@ -162,8 +148,8 @@ export const mockCreateCloudPulseMetrics = (
           result: (mockResponse.data?.result ?? []).map((r) => ({
             ...r,
             metric: {
-              ...metricFields, // ✅ only entity_id, node_id, node_type
-              metric_name: requestedMetric,
+              ...(overrideMetric ?? {}),
+              metric_name: requestedMetric, // always ensure metric_name is set
             },
           })),
         },
@@ -173,6 +159,7 @@ export const mockCreateCloudPulseMetrics = (
     }
   );
 };
+
 /**
  * Mocks the API response for fetching a dashboard.
  *

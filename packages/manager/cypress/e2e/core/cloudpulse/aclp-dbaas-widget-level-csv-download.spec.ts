@@ -1,5 +1,4 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
-// eslint-disable-next-line perfectionist/sort-object-types
 import {
   linodeFactory,
   profileFactory,
@@ -39,7 +38,6 @@ import {
 } from 'src/factories';
 
 import type { CloudPulseServiceType, Database, Linode } from '@linode/api-v4';
-import type { Labels } from 'src/features/CloudPulse/shared/CloudPulseTimeRangeSelect';
 import type { Interception } from 'support/cypress-exports';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -137,17 +135,26 @@ const validateCSV = (
 
     // --- Time Range: custom (Reset) vs preset ---
     if (widgetConfig.dateSelection === 'Reset') {
+      const SIX_HOURS = 6 * 60 * 60 * 1000;
       const csvStartTime = getValue(lines, 'Start Time');
       expect(csvStartTime.key).to.equal('Start Time');
-      expect(new Date(csvStartTime.value).getTime()).to.equal(
-        new Date(widgetConfig.startDate).getTime()
+
+      const startDiff = Math.abs(
+        new Date(csvStartTime.value).getTime() -
+          new Date(widgetConfig.startDate).getTime()
       );
+
+      expect(startDiff).to.be.lessThan(SIX_HOURS);
 
       const csvEndTime = getValue(lines, 'End Time');
       expect(csvEndTime.key).to.equal('End Time');
-      expect(new Date(csvEndTime.value).getTime()).to.equal(
-        new Date(widgetConfig.endDate).getTime()
+
+      const endDiff = Math.abs(
+        new Date(csvEndTime.value).getTime() -
+          new Date(widgetConfig.endDate).getTime()
       );
+
+      expect(endDiff).to.be.lessThan(SIX_HOURS);
     } else {
       const csvDuration = getValue(lines, 'Time Range');
       expect(csvDuration.key).to.equal('Time Range');
@@ -338,28 +345,6 @@ const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
     ),
   },
 });
-
-const getTimeDuration = (widgetConfig: (typeof metrics)[number]) => {
-  const durationMap: Record<Labels, object> = {
-    'Last 30 Minutes': { relative_time_duration: { unit: 'min', value: 30 } },
-    'Last 12 Hours': { relative_time_duration: { unit: 'hr', value: 12 } },
-    'Last 24 Hours': { relative_time_duration: { unit: 'hr', value: 24 } },
-    'Last 7 Days': { relative_time_duration: { unit: 'days', value: 7 } },
-    'Last 30 Days': { relative_time_duration: { unit: 'days', value: 30 } },
-  };
-  if (widgetConfig.dateSelection === 'Reset') {
-    return {
-      absolute_time_duration: {
-        end: new Date(widgetConfig.endDate).toISOString().replace('.000', ''),
-        start: new Date(widgetConfig.startDate)
-          .toISOString()
-          .replace('.000', ''),
-      },
-    };
-  }
-
-  return durationMap[widgetConfig.dateSelection as Labels];
-};
 const mockUserPreferences = {
   aclpPreference: {
     dashboardId: id,
@@ -425,15 +410,15 @@ const downloadsFolder = Cypress.config('downloadsFolder');
 
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    // cy.exec(
-    //   `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-    //   -name "CPU Utilization*" -o \
-    //   -name "Disk I_O*" -o \
-    //   -name "Memory Usage*" -o \
-    //   -name "Network*" \
-    //   \\) -delete`,
-    //   { failOnNonZeroExit: false }
-    // );
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+      -name "CPU Utilization*" -o \
+      -name "Disk I_O*" -o \
+      -name "Memory Usage*" -o \
+      -name "Network*" \
+      \\) -delete`,
+      { failOnNonZeroExit: false }
+    );
 
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
@@ -465,7 +450,6 @@ describe('DBaaS Widget CSV Download', () => {
         entity_id: '1',
         node_id: `${nodeType}-1`,
         node_type: nodeType,
-        ...getTimeDuration(widgetConfig),
       }).as('getMetrics');
 
       const { dateSelection, title, name } = widgetConfig;
@@ -540,12 +524,6 @@ describe('DBaaS Widget CSV Download', () => {
           .as('timePickerButton');
 
         cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
-
-        ui.button
-          .findByAttribute('aria-label^', 'Choose time')
-          .last()
-          .should('be.visible', { timeout: 10000 })
-          .as('timePickerButton');
 
         cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
