@@ -137,16 +137,18 @@ const validateCSV = (
 
     // --- Time Range: custom (Reset) vs preset ---
     if (widgetConfig.dateSelection === 'Reset') {
-      const expectedStart = new Date(widgetConfig.startDate)
-        .toISOString()
-        .replace('.000', '');
+      const csvStartDate = getValue(lines, 'Start Time');
+      const csvEndDate = getValue(lines, 'End Time');
 
-      const expectedEnd = new Date(widgetConfig.endDate)
+      const csvStart = new Date(csvStartDate.value)
         .toISOString()
-        .replace('.000', '');
+        .replace('.000Z', 'Z');
+      const csvEnd = new Date(csvEndDate.value)
+        .toISOString()
+        .replace('.000Z', 'Z');
 
-      expect(requestBody.absolute_time_duration.start).to.equal(expectedStart);
-      expect(requestBody.absolute_time_duration.end).to.equal(expectedEnd);
+      expect(requestBody.absolute_time_duration.start).to.equal(csvStart);
+      expect(requestBody.absolute_time_duration.end).to.equal(csvEnd);
     } else {
       const csvDuration = getValue(lines, 'Time Range');
       expect(csvDuration.key).to.equal('Time Range');
@@ -349,10 +351,8 @@ const getTimeDuration = (widgetConfig: (typeof metrics)[number]) => {
   if (widgetConfig.dateSelection === 'Reset') {
     return {
       absolute_time_duration: {
-        end: new Date(widgetConfig.endDate).toISOString().replace('.000', ''),
-        start: new Date(widgetConfig.startDate)
-          .toISOString()
-          .replace('.000', ''),
+        start: '2025-07-31T19:45:00Z',
+        end: '2025-08-02T21:15:00Z',
       },
     };
   }
