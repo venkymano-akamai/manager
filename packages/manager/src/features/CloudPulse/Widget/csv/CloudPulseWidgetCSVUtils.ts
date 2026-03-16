@@ -80,7 +80,6 @@ const formatDateTime = (iso: string, timeZone: string | undefined) => {
   const dateTime = DateTime.fromISO(iso).setZone(timeZone);
   return `${dateTime.toLocaleString(DateTime.DATETIME_MED)} ${dateTime.offsetNameShort}`;
 };
-
 /**
  * @param millis The timestamp to be formatted in milliseconds
  * @param timeZone The time zone to be applied while formatting the timestamp
@@ -90,7 +89,6 @@ const formatTimestamp = (millis: number, timeZone: string | undefined) => {
   const dateTime = DateTime.fromMillis(millis).setZone(timeZone);
   return dateTime.toLocaleString(DateTime.DATETIME_MED);
 };
-
 /**
  * @param dimensions The dimensions to be transformed into a map of dimension label to dimension name, used to create a mapping of dimension labels to user-friendly names for better readability in the CSV
  * @returns The map of dimension label to dimension name, used to look up user-friendly names for dimension labels when generating the CSV data
@@ -100,7 +98,6 @@ const buildDimensionLabelMap = (dimensions: Dimension[]) =>
     acc[dimension.dimension_label] = dimension.label;
     return acc;
   }, {});
-
 /**
  * @param dimensionFilters The dimension filters applied on the widget, used to extract the dimension filter information to include in the CSV
  * @param dimensionOptions The list of available dimensions for the selected metric, used to map dimension labels to user-friendly names in the CSV
@@ -164,7 +161,6 @@ const appendAppliedFilters = (
     csvData.push([]);
   }
 };
-
 /**
  * @param props The properties required to generate the CSV data for a CloudPulse widget, including the dashboard name, widget data, applied filters, group by options, and other relevant information needed to build a comprehensive CSV representation of the widget data
  * @returns The generated CSV data for the CloudPulse widget, including header information, applied filters, group by details, aggregation function, scrape interval, dimension filters, metric information, and the actual data points
@@ -183,7 +179,6 @@ export const generateCSVData = ({
   zoomRange,
 }: CSVDataProps): CSVData => {
   const csvData: CSVData = [];
-
   // Filter data based on zoom range if zoom is active
   const filteredData =
     zoomRange?.left && zoomRange?.right
@@ -196,10 +191,8 @@ export const generateCSVData = ({
             (zoomRange.left === 'dataMin' && zoomRange.right === 'dataMax') // Include all data if zoom range is set to dataMin/dataMax
         )
       : data;
-
   // Header
   csvData.push(['Dashboard', dashboardName]);
-
   if (duration.preset && duration.preset !== 'Reset') {
     csvData.push(['Time Range', duration.preset]);
   } else {
@@ -211,14 +204,11 @@ export const generateCSVData = ({
     csvData.push(['Start Time', startTime]);
     csvData.push(['End Time', endTime]);
   }
-
   csvData.push([]);
-
   // Filters
   if (filters) {
     appendAppliedFilters(csvData, filters, filterConfig);
   }
-
   // Scrape Interval
   if (widget.time_granularity) {
     const { value, unit } = widget.time_granularity;
@@ -226,7 +216,6 @@ export const generateCSVData = ({
       value === -1 && unit === 'Auto' ? unit : `${value} ${unit}`;
     csvData.push(['Data Aggregation Interval', intervalValue]);
   }
-
   // Aggregation
   if (widget.aggregate_function) {
     csvData.push([
@@ -234,12 +223,10 @@ export const generateCSVData = ({
       convertStringToCamelCasesWithSpaces(widget.aggregate_function),
     ]);
   }
-
   // Group By
   if (groupBy.length) {
     csvData.push(['Group By', groupBy.join(', ')]);
   }
-
   // Dimension Filters
   const dimensionFilterString = buildDimensionFilterString(
     dimensionFilters,
@@ -250,7 +237,6 @@ export const generateCSVData = ({
   if (dimensionFilterString) {
     csvData.push(['Dimension Filters', dimensionFilterString]);
   }
-
   // Metric Info
   csvData.push(['Metric', widget.label]);
   csvData.push(['Unit', widget.unit]);
@@ -269,9 +255,7 @@ export const generateCSVData = ({
       formatTimestamp(zoomRange.right, duration.timeZone),
     ]);
   }
-
   csvData.push([]);
-
   // Data
   if (filteredData.length) {
     // Collect all unique keys across all data points (timestamp is always present)
@@ -283,7 +267,6 @@ export const generateCSVData = ({
         }
       });
     });
-
     // Build final keys array: timestamp first, then sorted metric keys
     const offsetNameShort = DateTime.fromMillis(
       filteredData[0].timestamp
@@ -305,6 +288,5 @@ export const generateCSVData = ({
       csvData.push(row);
     });
   }
-
   return csvData;
 };
