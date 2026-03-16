@@ -541,6 +541,12 @@ describe('DBaaS Widget CSV Download', () => {
 
         cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
+        ui.button
+          .findByAttribute('aria-label^', 'Choose time')
+          .last()
+          .should('be.visible', { timeout: 10000 })
+          .as('timePickerButton');
+
         cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
 
         // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
