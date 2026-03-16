@@ -114,8 +114,8 @@ export const widgetDetails = {
         unit: '%',
         yLabel: 'system_cpu_utilization_ratio',
         dateSelection: 'Last day',
-        startDate: 'Jul 31, 2025, 5:30 AM UTC',
-        endDate: 'Aug 1, 2025, 5:30 AM UTC',
+        startDate: 'Aug 1, 2025, 1:15 AM UTC', // ✅ 2025-08-01T01:15:00Z → 1754010900
+        endDate: 'Aug 3, 2025, 2:45 AM UTC', // ✅ matches picker: endDayOfMonth=3, endHour=2, endMinute=45, AM
         filters: [
           { dimension_label: 'cpu', operator: 'eq', value: 'cpu' },
           { dimension_label: 'state', operator: 'eq', value: 'user' },
