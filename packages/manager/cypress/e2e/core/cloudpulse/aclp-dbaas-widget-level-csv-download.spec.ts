@@ -45,14 +45,6 @@ import type { Interception } from 'support/cypress-exports';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const downloadCSV = 'Download CSV';
-const expectedRows = [
-  '"Jul 31, 2025, 5:30 AM","10"',
-  '"Jul 31, 2025, 5:35 AM","20"',
-  '"Jul 31, 2025, 5:40 AM","30"',
-  '"Jul 31, 2025, 5:45 AM","40"',
-  '"Jul 31, 2025, 5:50 AM","50"',
-  '"Aug 1, 2025, 5:30 AM","60"',
-];
 
 const SHARED_DIMENSIONS = [
   { dimension_label: 'entity_id', label: 'Entity Id' },
@@ -226,12 +218,19 @@ const validateCSV = (
 
     const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
 
-    const csvRows = lines.slice(headerIndex + 2, headerIndex + 8);
-    expectedRows.forEach((expectedRow, index) => {
-      const actualRow = csvRows[index];
-
-      cy.log(`Row ${index} → expected: ${expectedRow} | actual: ${actualRow}`);
-      expect(actualRow, `CSV row ${index}`).to.equal(expectedRow);
+    const csvRows = lines.slice(headerIndex + 2, headerIndex + 2 + ROW_COUNT);
+    cy.wrap(null).then(() => {
+      const mismatches: string[] = [];
+      expectedRows.forEach((expectedRow, index) => {
+        if (csvRows[index] !== expectedRow) {
+          mismatches.push(
+            `Row ${index}: expected "${expectedRow}" got "${csvRows[index]}"`
+          );
+        }
+      });
+      if (mismatches.length > 0) {
+        throw new Error(`CSV row mismatches:\n${mismatches.join('\n')}`);
+      }
     });
   });
 };
@@ -322,19 +321,36 @@ const databaseMocks: Database[] = databaseFactory
     label: index === 0 ? clusterName : `${clusterName}-${index + 1}`,
   }));
 
+// ─── Shared metric data (single source of truth) ──────────────────────────────
+
+const BASE_TIMESTAMP = 1753939800;
+const INTERVAL_SECONDS = 300;
+const ROW_COUNT = 10;
+
+const metricValues: [number, string][] = Array.from(
+  { length: ROW_COUNT },
+  (_, i) => [BASE_TIMESTAMP + i * INTERVAL_SECONDS, `${i + 1}.00`]
+);
+
+const expectedRows = metricValues.map(
+  ([ts, val]) =>
+    `"${new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC',
+    }).format(new Date(ts * 1000))}","${parseInt(val)}"`
+);
+
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
   data: {
     result: generateRandomMetricsData('Last 24 Hours', '5 min').result.map(
       (metricResult) => ({
         ...metricResult,
-        values: [
-          [1753939800, '10.00'], // Jul 31 2025 05:30 UTC
-          [1753940100, '20.00'], // Jul 31 2025 05:35 UTC
-          [1753940400, '30.00'], // Jul 31 2025 05:40 UTC
-          [1753940700, '40.00'], // Jul 31 2025 05:45 UTC
-          [1753941000, '50.00'], // Jul 31 2025 05:50 UTC
-          [1754026200, '60.00'], // Aug 1 2025 05:30 UTC
-        ],
+        values: metricValues,
       })
     ),
   },
