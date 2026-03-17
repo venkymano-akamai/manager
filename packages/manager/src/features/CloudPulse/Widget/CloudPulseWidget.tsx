@@ -19,6 +19,7 @@ import {
 import {
   AGGREGATE_FUNCTION,
   GROUP_BY,
+  RESOURCE_ID,
   SIZE,
   TIME_GRANULARITY,
 } from '../Utils/constants';
@@ -466,7 +467,7 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
       serviceType,
       groupBy: [...globalFilterGroupBy, ...(groupBy ?? [])],
       metricLabel: availableMetrics?.label,
-      humanizableUnits: flags.aclp?.humanizableUnits ?? ['Count'],
+      humanizableUnits: flags.aclp?.humanizableUnits ?? [],
     });
 
     data = generatedData.dimensions;
@@ -512,6 +513,8 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     vpcFetch.isLoading,
     linodeFromVolumes.isLoading,
   ]);
+
+  const filterData = getGlobalFilterData();
   return (
     <GridLegacy container item lg={widget.size} xs={12}>
       <Stack
@@ -598,7 +601,21 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                       dimensionOptions={filteredDimensions ?? []}
                       duration={duration}
                       filterConfig={filterConfig}
-                      filters={getGlobalFilterData()}
+                      filters={
+                        !savePref // contextual view
+                          ? {
+                              ...(filterData || { id: {} }),
+                              label: {
+                                ...(filterData?.label || {}),
+                                [RESOURCE_ID]: resources
+                                  .filter((resource) =>
+                                    entityIds.includes(resource.id.toString())
+                                  )
+                                  .map((resource) => resource.label),
+                              },
+                            }
+                          : filterData
+                      }
                       groupBy={[...getGlobalGroupBy(), ...(groupBy ?? [])]}
                       isDataLoading={isLoading || isJweTokenFetching}
                       serviceType={serviceType}
