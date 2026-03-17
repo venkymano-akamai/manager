@@ -132,7 +132,15 @@ export const mockGetCloudPulseDashboards = (
 export const mockCreateCloudPulseMetrics = (
   serviceType: string,
   mockResponse: CloudPulseMetricsResponse,
-  overrideMetric?: Record<string, string> // full metric object override
+  // ✅ Fixed
+  overrideMetric?: {
+    [key: string]: unknown; // ← this line must be present
+    absolute_time_duration?: { end: string; start: string };
+    entity_id?: string;
+    node_id?: string;
+    node_type?: string;
+    relative_time_duration?: { unit: string; value: number };
+  }
 ): Cypress.Chainable<null> => {
   return cy.intercept(
     'POST',
@@ -141,6 +149,12 @@ export const mockCreateCloudPulseMetrics = (
       const requestedMetric: string =
         req.body?.metrics?.[0]?.name ?? 'unknown_metric';
 
+      const {
+        absolute_time_duration,
+        relative_time_duration,
+        ...metricFields
+      } = overrideMetric ?? {};
+
       const response: CloudPulseMetricsResponse = {
         ...mockResponse,
         data: {
@@ -148,8 +162,8 @@ export const mockCreateCloudPulseMetrics = (
           result: (mockResponse.data?.result ?? []).map((r) => ({
             ...r,
             metric: {
-              ...(overrideMetric ?? {}),
-              metric_name: requestedMetric, // always ensure metric_name is set
+              ...metricFields,
+              metric_name: requestedMetric,
             },
           })),
         },
@@ -891,4 +905,29 @@ export const mockGetStreamById = (
     apiMatcher(`monitor/streams/${id}`),
     makeResponse(stream)
   );
+};
+
+/**
+ * Intercepts the CloudPulse metrics API and returns a hardcoded
+ * internal server error response.
+ *
+ * This is used to simulate backend failure scenarios so the UI
+ * error handling can be tested (e.g., displaying an error message
+ * when the metrics service is unavailable).
+ *
+ * The interceptor responds with:
+ * - HTTP status: 500
+ * - Body: "internal server error"
+ *
+ * @param serviceType The service type used in the metrics endpoint URL.
+ * @returns Cypress chainable intercept object.
+ */
+
+export const mockCreateCloudPulseMetricsError = (
+  serviceType: string
+): Cypress.Chainable<null> => {
+  return cy.intercept('POST', `**/monitor/services/${serviceType}/metrics`, {
+    statusCode: 500,
+    body: 'internal server error',
+  });
 };
