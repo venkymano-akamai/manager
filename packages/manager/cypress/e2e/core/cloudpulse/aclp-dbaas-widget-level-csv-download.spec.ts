@@ -514,7 +514,9 @@ describe('DBaaS Widget CSV Download', () => {
 
         cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
-        cy.get('@timePickerButton', { timeout: 15000 }).wait(300).click();
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .should('be.enabled')
+          .click();
 
         // Selects the start hour, minute, and meridiem (AM/PM) in the time picker.
         cy.get(`[aria-label="${startHour} hours"]`).click();
@@ -528,8 +530,7 @@ describe('DBaaS Widget CSV Download', () => {
         cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
 
         cy.get('@timePickerButton', { timeout: 15000 })
-          .wait(300)
-          .first()
+          .should('be.enabled')
           .click();
 
         cy.get(`[aria-label="${startMinute} minutes"]`).first().click();
