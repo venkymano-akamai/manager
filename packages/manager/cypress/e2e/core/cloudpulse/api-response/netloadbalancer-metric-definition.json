@@ -77,9 +77,143 @@
                     "values": []
                 }
             ]
+        },
+        {
+            "label": "Ingress Traffic Rate Per Backend",
+            "metric": "nlb_backend_ingress_traffic",
+            "unit": "Bps",
+            "metric_type": "gauge",
+            "scrape_interval": "60s",
+            "is_alertable": true,
+            "available_aggregate_functions": [
+                "sum"
+            ],
+            "dimensions": [
+                {
+                    "label": "Node ID",
+                    "dimension_label": "node_id",
+                    "values": []
+                },
+                {
+                    "label": "Port",
+                    "dimension_label": "port",
+                    "values": []
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v4",
+                        "v6"
+                    ]
+                },
+                {
+                    "label": "VIP",
+                    "dimension_label": "ip",
+                    "values": []
+                }
+            ]
+        },
+        {
+            "label": "Ingress Packets Rate Per Backend",
+            "metric": "nlb_backend_ingress_packets",
+            "unit": "packets/s",
+            "metric_type": "gauge",
+            "scrape_interval": "60s",
+            "is_alertable": true,
+            "available_aggregate_functions": [
+                "sum"
+            ],
+            "dimensions": [
+                {
+                    "label": "Node ID",
+                    "dimension_label": "node_id",
+                    "values": []
+                },
+                {
+                    "label": "Port",
+                    "dimension_label": "port",
+                    "values": []
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v4",
+                        "v6"
+                    ]
+                },
+                {
+                    "label": "VIP",
+                    "dimension_label": "ip",
+                    "values": []
+                }
+            ]
+        },
+        {
+            "label": "Ingress TCP SYN",
+            "metric": "nlb_ingress_tcp_syn_total",
+            "unit": "Count",
+            "metric_type": "gauge",
+            "scrape_interval": "60s",
+            "is_alertable": true,
+            "available_aggregate_functions": [
+                "sum"
+            ],
+            "dimensions": [
+                {
+                    "label": "Port",
+                    "dimension_label": "port",
+                    "values": []
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v4",
+                        "v6"
+                    ]
+                },
+                {
+                    "label": "VIP",
+                    "dimension_label": "ip",
+                    "values": []
+                }
+            ]
+        },
+        {
+            "label": "Ingress TCP RST",
+            "metric": "nlb_ingress_tcp_rst_total",
+            "unit": "Count",
+            "metric_type": "gauge",
+            "scrape_interval": "60s",
+            "is_alertable": true,
+            "available_aggregate_functions": [
+                "sum"
+            ],
+            "dimensions": [
+                {
+                    "label": "Port",
+                    "dimension_label": "port",
+                    "values": []
+                },
+                {
+                    "label": "IP Version",
+                    "dimension_label": "ip_version",
+                    "values": [
+                        "v4",
+                        "v6"
+                    ]
+                },
+                {
+                    "label": "VIP",
+                    "dimension_label": "ip",
+                    "values": []
+                }
+            ]
         }
     ],
     "page": 1,
     "pages": 1,
-    "results": 2
+    "results": 6
 }

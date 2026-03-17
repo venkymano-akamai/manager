@@ -712,7 +712,7 @@ describe('Integration Tests for netloadbalancer Dashboard ', () => {
     });
   });
 
-  it('Add and Remove widget level dimension filter and validate  api rewsponse', () => {
+  it('Add and Remove widget level dimension filter and validate  api response', () => {
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getFilterMetrics'
     );

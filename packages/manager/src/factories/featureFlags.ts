@@ -22,6 +22,7 @@ export const flagsFactory = Factory.Sync.makeFactory<Partial<Flags>>({
     enabled: true,
     showWidgetDimensionFilters: true,
     enableZoomInCharts: true,
+    enableCSVDownload: true,
   },
   aclpLogs: {
     beta: true,
