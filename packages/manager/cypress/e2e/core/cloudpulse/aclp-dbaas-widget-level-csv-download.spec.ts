@@ -527,7 +527,9 @@ describe('DBaaS Widget CSV Download', () => {
           .should('be.visible', { timeout: 10000 })
           .as('timePickerButton');
 
-        cy.get('@timePickerButton').scrollIntoView({ easing: 'linear' });
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .should('be.enabled')
+          .click();
 
         cy.get('@timePickerButton', { timeout: 15000 })
           .should('be.enabled')
@@ -549,7 +551,9 @@ describe('DBaaS Widget CSV Download', () => {
           .as('startMeridiemSelect')
           .scrollIntoView();
         cy.get('@startMeridiemSelect').find('[aria-label="AM"]').click();
-
+        cy.get('@timePickerButton', { timeout: 15000 })
+          .should('be.enabled')
+          .click();
         // --- Select end time (hours and minutes) in the time picker ---
         ui.button
           .findByAttribute('aria-label^', 'Choose time')
