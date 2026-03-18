@@ -8,8 +8,8 @@
             "group_by": [
                 "entity_id"
             ],
-            "created": "2025-06-25T01:25:37",
-            "updated": "2025-11-07T07:31:09",
+            "created": "2025-09-15T03:24:08",
+            "updated": "2025-11-14T01:11:36",
             "widgets": [
                 {
                     "metric": "nlb_ingress_traffic",
@@ -29,6 +29,46 @@
                     "size": 12,
                     "chart_type": "line",
                     "y_label": "nlb_ingress_packets",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "nlb_backend_ingress_traffic",
+                    "unit": "Bps",
+                    "label": "Ingress Traffic Rate Per Backend Node",
+                    "color": "default",
+                    "size": 12,
+                    "chart_type": "line",
+                    "y_label": "nlb_backend_ingress_traffic",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "nlb_backend_ingress_packets",
+                    "unit": "packets/s",
+                    "label": "Ingress Packets Rate Per Backend Node",
+                    "color": "default",
+                    "size": 12,
+                    "chart_type": "line",
+                    "y_label": "nlb_backend_ingress_packets",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "nlb_ingress_tcp_syn_total",
+                    "unit": "Count",
+                    "label": "Ingress SYN TCP / VIP",
+                    "color": "default",
+                    "size": 12,
+                    "chart_type": "line",
+                    "y_label": "nlb_ingress_tcp_syn_total",
+                    "aggregate_function": "sum"
+                },
+                {
+                    "metric": "nlb_ingress_tcp_rst_total",
+                    "unit": "Count",
+                    "label": "Ingress RST TCP / VIP",
+                    "color": "default",
+                    "size": 12,
+                    "chart_type": "line",
+                    "y_label": "nlb_ingress_tcp_rst_total",
                     "aggregate_function": "sum"
                 }
             ]

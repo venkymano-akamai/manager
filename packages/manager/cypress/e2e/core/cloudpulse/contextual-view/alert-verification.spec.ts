@@ -1,6 +1,3 @@
-/* eslint-disable cypress/no-unnecessary-waiting */
-/*  sonarjs/no-skipped-tests */
-
 /**
  * @file Integration Tests for contextual view of Entity Listing.
  */
@@ -14,11 +11,14 @@ import {
   mockGetAllAlertDefinitions,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
-import { mockGetLinodes, mockUpdateLinode } from 'support/intercepts/linodes';
+import {
+  mockGetLinode,
+  mockGetLinodes,
+  mockUpdateLinode,
+} from 'support/intercepts/linodes';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { cleanUp } from 'support/util/cleanup';
-import { createTestLinode } from 'support/util/linodes';
 import { chooseRegion } from 'support/util/regions';
 
 import { accountFactory, alertFactory, flagsFactory } from 'src/factories';
@@ -197,96 +197,88 @@ describe('Alert Contextual view for linode', () => {
    */
   // Reason: Checking by anantha
   it('should verify sorting, alert management, and search functionality for contextual view of entity listing.', () => {
-    cy.defer(() =>
-      createTestLinode({ region: mockRegion.id, booted: true })
-    ).then((linode) => {
-      mockGetLinodes(mockLinodes).as('getLinodes');
-      mockAppendFeatureFlags(flagsFactory.build());
-      mockGetAccount(mockAccount);
-      mockGetAlertDefinition(serviceType, alerts).as(
-        'getDBaaSAlertDefinitions'
+    mockLinodes[0] = { ...mockLinodes[0], id: 1, region: mockRegion.id };
+    mockGetLinodes(mockLinodes).as('getLinodes');
+    mockGetLinode(mockLinodes[0].id, mockLinodes[0]).as('getLinode');
+    mockAppendFeatureFlags(flagsFactory.build());
+    mockGetAccount(mockAccount);
+    mockGetAlertDefinition(serviceType, alerts).as('getDBaaSAlertDefinitions');
+    mockGetAllAlertDefinitions(alerts).as('getAlertDefinitionsList');
+    mockUpdateLinode(mockLinodes[0].id, mockLinodes[0]).as('updateLinode');
+
+    mockAddEntityToAlert(serviceType, '100', { [ALERT_TYPE]: 100 }).as(
+      'addEntityToAlert'
+    );
+    mockDeleteEntityFromAlert(serviceType, '100', 4).as('deleteEntityToAlert');
+    mockGetRegions([mockRegion]);
+
+    // Visit the database alerts page
+    cy.visitWithLogin(`/linodes/${mockLinodes[0].id}/alerts`);
+    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+      'not.exist'
+    );
+    // Navigation to Alerts beta
+    ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
+    cy.wait('@getDBaaSAlertDefinitions');
+    cy.get('[data-qa-notice="true"]')
+      .should('be.visible')
+      .contains(
+        'Welcome to Alerts (Beta), designed for flexibility with features like customizable alerts.'
       );
-      mockGetAllAlertDefinitions(alerts).as('getAlertDefinitionsList');
-      mockUpdateLinode(linode.id, mockLinodes[0]).as('updateLinode');
 
-      mockAddEntityToAlert(serviceType, '100', { [ALERT_TYPE]: 100 }).as(
-        'addEntityToAlert'
-      );
-      mockDeleteEntityFromAlert(serviceType, '100', 4).as(
-        'deleteEntityToAlert'
-      );
-      mockGetRegions([mockRegion]);
-
-      // Visit the database alerts page
-      cy.visitWithLogin(`/linodes/${linode.id}/alerts`);
-      cy.wait(1000);
-      // Navigation to Alerts beta
-      ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
-      cy.wait('@getDBaaSAlertDefinitions');
-      cy.get('[data-qa-notice="true"]')
-        .should('be.visible')
-        .contains(
-          'Welcome to Alerts (Beta), designed for flexibility with features like customizable alerts.'
-        );
-
-      // Test sorting
-      sortCases.forEach(({ ascending, column, descending }) => {
-        verifyTableSorting(column, 'descending', descending);
-        verifyTableSorting(column, 'ascending', ascending);
-      });
-      ui.heading.findByText('scope').click();
-
-      ui.buttonGroup.findButtonByTitle('Manage Alerts').should('be.visible');
-
-      ui.tooltip
-        .findByText(
-          'Indicates whether the alert applies to all entities in the account, entities in specific regions, or just this entity.'
-        )
-        .should('be.visible');
-
-      ui.tooltip
-        .findByText(
-          "Account-level alerts can't be enabled or disabled for a single entity."
-        )
-        .should('be.visible');
-
-      // Alert Links Verification
-      [1, 2, 3, 4].forEach((id) => {
-        cy.get(`[data-qa-alert-cell="${id}"]`).within(() => {
-          cy.get('a')
-            .should(
-              'have.attr',
-              'href',
-              `/alerts/definitions/detail/${serviceType}/${id}`
-            )
-            .and('have.text', `Alert-${id}`);
-        });
-      });
-      // Select Alert Type Test
-      cy.findByPlaceholderText('Select Alert Type')
-        .should('be.visible')
-        .type(`${alerts[0].type}{enter}`);
-      cy.get(`[data-qa-alert-cell="${alerts[0].id}"]`).should('be.visible');
-
-      // check it is disabled as region should be un toggled
-      ui.toggle
-        .find()
-        .should('have.attr', 'data-qa-toggle', 'true')
-        .should('be.visible')
-        .should('be.disabled');
-
-      cy.findByPlaceholderText('Search for Alerts').type('Alert-4');
-      // toggle the alert
-      ui.toggle
-        .find()
-        .should('have.attr', 'data-qa-toggle', 'false')
-        .should('be.visible')
-        .click();
-
-      ui.button.findByTitle('Save').should('be.visible').click();
-      ui.button.findByTitle('Confirm').should('be.visible').click();
-
-      ui.toast.assertMessage('Your settings for alerts have been saved.');
+    // Test sorting
+    sortCases.forEach(({ ascending, column, descending }) => {
+      verifyTableSorting(column, 'descending', descending);
+      verifyTableSorting(column, 'ascending', ascending);
     });
+    ui.heading.findByText('scope').click();
+
+    ui.buttonGroup.findButtonByTitle('Manage Alerts').should('be.visible');
+
+    ui.tooltip
+      .findByText(
+        'Indicates whether the alert applies to all entities in the account, entities in specific regions, or just this entity.'
+      )
+      .should('be.visible');
+
+    ui.tooltip
+      .findByText(
+        "Account-level alerts can't be enabled or disabled for a single entity."
+      )
+      .should('be.visible');
+
+    // Alert Links Verification
+    [1, 2, 3, 4].forEach((id) => {
+      cy.get(`[data-qa-alert-cell="${id}"]`).within(() => {
+        cy.get('a')
+          .should(
+            'have.attr',
+            'href',
+            `/alerts/definitions/detail/${serviceType}/${id}`
+          )
+          .and('have.text', `Alert-${id}`);
+      });
+    });
+    // Select Alert Type Test
+    cy.findByPlaceholderText('Select Alert Type')
+      .should('be.visible')
+      .type(`${alerts[0].type}{enter}`);
+    cy.get(`[data-qa-alert-cell="${alerts[0].id}"]`).should('be.visible');
+
+    // check it is disabled as region should be un toggled
+    cy.findByPlaceholderText('Search for Alerts').type('Alert-4');
+
+    // Scope to Alert-4's specific row
+    cy.get('[data-qa-alert-cell="4"]')
+      .closest('tr')
+      .find('[data-qa-toggle]')
+      .should('have.attr', 'data-qa-toggle', 'true')
+      .should('be.visible')
+      .click();
+
+    ui.button.findByTitle('Save').should('be.visible').click();
+    ui.button.findByTitle('Confirm').should('be.visible').click();
+
+    ui.toast.assertMessage('Your settings for alerts have been saved.');
   });
 });

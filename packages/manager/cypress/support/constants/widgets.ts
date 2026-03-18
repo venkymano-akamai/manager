@@ -73,7 +73,7 @@ export const widgetDetails = {
         ],
       },
     ],
-    region: 'US, Chicago, IL (us-ord)',
+    region: 'US, Chicago, IL',
     resource: 'LKE-resource',
     serviceType: 'lke',
   },
@@ -92,9 +92,16 @@ export const widgetDetails = {
         title: 'Disk I/O',
         unit: 'OPS',
         yLabel: 'system_disk_operations_total',
+        dateSelection: 'Last hour',
+        startDate: 'Aug 1, 2025, 4:30 AM UTC',
+        endDate: 'Aug 1, 2025, 5:30 AM UTC',
         filters: [
-          { dimension_label: 'device', operator: 'eq', value: 'loop0' },
-          { dimension_label: 'direction', operator: 'eq', value: 'write' },
+          { dimension_label: 'device', operator: 'In', value: 'loop0' },
+          {
+            dimension_label: 'direction',
+            operator: 'Not Equal',
+            value: 'write',
+          },
           { dimension_label: 'Linode', operator: 'eq', value: '1' },
         ],
       },
@@ -106,6 +113,9 @@ export const widgetDetails = {
         title: 'CPU Utilization',
         unit: '%',
         yLabel: 'system_cpu_utilization_ratio',
+        dateSelection: 'Last day',
+        startDate: 'Aug 1, 2025, 1:15 AM UTC', // ✅ 2025-08-01T01:15:00Z → 1754010900
+        endDate: 'Aug 3, 2025, 2:45 AM UTC', // ✅ matches picker: endDayOfMonth=3, endHour=2, endMinute=45, AM
         filters: [
           { dimension_label: 'cpu', operator: 'eq', value: 'cpu' },
           { dimension_label: 'state', operator: 'eq', value: 'user' },
@@ -119,6 +129,9 @@ export const widgetDetails = {
         title: 'Memory Usage',
         unit: 'B',
         yLabel: 'system_memory_usage_bytes',
+        dateSelection: 'Last 7 days',
+        startDate: 'Jul 26, 2025, 5:30 AM UTC',
+        endDate: 'Aug 1, 2025, 5:30 AM UTC',
         filters: [{ dimension_label: 'state', operator: 'eq', value: 'used' }],
       },
       {
@@ -129,6 +142,9 @@ export const widgetDetails = {
         title: 'Network Traffic',
         unit: 'B',
         yLabel: 'system_network_io_bytes_total',
+        dateSelection: 'Reset',
+        startDate: '2025-07-31T19:45:00Z', // ✅ Aug 1 1:15 AM IST = Jul 31 7:45 PM UTC
+        endDate: '2025-08-02T21:15:00Z', // ✅ Aug 3 2:45 AM IST = Aug 2 9:15 PM UTC
         filters: [
           { dimension_label: 'device', operator: 'eq', value: 'lo' },
           { dimension_label: 'direction', operator: 'eq', value: 'transmit' },
@@ -136,7 +152,7 @@ export const widgetDetails = {
       },
     ],
     nodeType: 'Secondary',
-    region: 'US, Chicago, IL (us-ord)',
+    region: 'US, Chicago, IL',
     resource: 'Dbaas-resource',
     serviceType: 'dbaas',
   },
