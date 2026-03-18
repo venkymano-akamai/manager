@@ -19,6 +19,7 @@ import {
 import {
   AGGREGATE_FUNCTION,
   GROUP_BY,
+  REGION,
   RESOURCE_ID,
   SIZE,
   TIME_GRANULARITY,
@@ -612,6 +613,12 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
                                     entityIds.includes(resource.id.toString())
                                   )
                                   .map((resource) => resource.label),
+                                ...(region && {
+                                  [REGION]: [
+                                    regions?.find(({ id }) => id === region)
+                                      ?.label ?? region,
+                                  ],
+                                }),
                               },
                             }
                           : filterData
