@@ -8,6 +8,7 @@ import { mockGetAccount } from 'support/intercepts/account';
 import {
   mockCreateCloudPulseJWEToken,
   mockCreateCloudPulseMetrics,
+  mockCreateCloudPulseMetricsError,
   mockGetCloudPulseDashboard,
   mockGetCloudPulseDashboards,
   mockGetCloudPulseMetricDefinitions,
@@ -390,19 +391,20 @@ const databaseMocks: Database[] = databaseFactory
     label: index === 0 ? clusterName : `${clusterName}-${index + 1}`,
   }));
 
+before(() => {
+  cy.exec(
+    `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+      -name "CPU Utilization*" -o \
+      -name "Disk I_O*" -o \
+      -name "Memory Usage*" -o \
+      -name "Network*" \
+      \\) -delete`,
+    { failOnNonZeroExit: false }
+  );
+});
 // It needs to be fixed
 describe('Integration Tests for DBaaS Dashboard ', () => {
   beforeEach(() => {
-    // cy.exec(
-    //   `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-    //   -name "CPU Utilization*" -o \
-    //   -name "Disk I_O*" -o \
-    //   -name "Memory Usage*" -o \
-    //   -name "Network*" \
-    //   \\) -delete`,
-    //   { failOnNonZeroExit: false }
-    // );
-
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
     mockGetProfile(mockProfile);
     mockAppendFeatureFlags(flagsFactory.build());
@@ -917,5 +919,57 @@ describe('Integration Tests for DBaaS Dashboard ', () => {
         validateCSV(csvFilePath, widgetConfig, interception);
       });
     });
+  });
+  it('CSV button should be disabled when no data', () => {
+    const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build();
+    metricsAPIResponsePayload.data.result.forEach((m) => {
+      m.values = [];
+    });
+
+    mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
+      'getMetrics'
+    );
+    // navigate to the databases page
+    cy.visitWithLogin('/databases');
+
+    // navigate to the Databases
+    cy.get('[data-testid="menu-item-Databases"]').should('be.visible').click();
+
+    // navigate to the Monitor
+    cy.visitWithLogin(
+      `/databases/${databaseMock.engine}/${databaseMock.id}/metrics`
+    );
+
+    cy.wait(['@getDashboard', '@getServiceType', '@getDatabase']);
+
+    cy.get('[data-qa-widget="Disk I/O"]')
+      .find(`[aria-label="${downloadCSV}"] button`)
+      .should('be.disabled');
+  });
+
+  it('should show error when aggregation interval is invalid', () => {
+    mockCreateCloudPulseMetricsError(serviceType).as('getMetrics');
+    // navigate to the databases page
+    cy.visitWithLogin('/databases');
+
+    // navigate to the Databases
+    cy.get('[data-testid="menu-item-Databases"]').should('be.visible').click();
+
+    // navigate to the Monitor
+    cy.visitWithLogin(
+      `/databases/${databaseMock.engine}/${databaseMock.id}/metrics`
+    );
+
+    cy.wait(['@getDashboard', '@getServiceType', '@getDatabase']);
+
+    cy.wait('@getMetrics');
+
+    cy.get('[data-testid="error-state"]')
+      .should('be.visible')
+      .and('contain.text', 'Error while rendering graph');
+
+    cy.get('[data-qa-widget="Disk I/O"]')
+      .find(`[aria-label="${downloadCSV}"] button`)
+      .should('be.disabled');
   });
 });

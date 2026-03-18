@@ -440,18 +440,20 @@ const mockUserPreferences = {
 
 const downloadsFolder = Cypress.config('downloadsFolder');
 
+before(() => {
+  cy.exec(
+    `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+    -name "CPU Utilization*" -o \
+    -name "Disk I_O*" -o \
+    -name "Memory Usage*" -o \
+    -name "Network*" \
+    \\) -delete`,
+    { failOnNonZeroExit: false }
+  );
+});
+
 describe('DBaaS Widget CSV Download', () => {
   beforeEach(() => {
-    cy.exec(
-      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
-      -name "CPU Utilization*" -o \
-      -name "Disk I_O*" -o \
-      -name "Memory Usage*" -o \
-      -name "Network*" \
-      \\) -delete`,
-      { failOnNonZeroExit: false }
-    );
-
     cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
 
     mockAppendFeatureFlags(flagsFactory.build());
