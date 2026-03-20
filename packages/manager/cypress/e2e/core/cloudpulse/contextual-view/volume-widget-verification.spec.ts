@@ -3,7 +3,7 @@
  * @file Integration Tests for CloudPulse Volume Dashboard – Refactored & Stable
  */
 
-import { regionFactory } from '@linode/utilities';
+import { profileFactory, regionFactory } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
@@ -15,6 +15,7 @@ import {
   mockGetCloudPulseServices,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
+import { mockGetProfile } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { mockGetVolume, mockGetVolumes } from 'support/intercepts/volumes';
 import { ui } from 'support/ui';
@@ -37,7 +38,7 @@ import type { CloudPulseMetricsResponse } from '@linode/api-v4';
 import type { Interception } from 'support/cypress-exports';
 
 const expectedGranularityArray = ['Auto', '1 day', '1 hr'];
-const timeDurationToSelect = 'Last 24 Hours';
+const downloadsFolder = Cypress.config('downloadsFolder');
 const { dashboardName, id, metrics } = widgetDetails.blockstorage;
 
 const serviceType = 'blockstorage';
@@ -46,6 +47,129 @@ const capabilities = 'Block Storage';
 const dimensions = [
   { label: 'Region', dimension_label: 'region', value: 'us-ord' },
 ];
+const MOCK_CLOCK_DATE = new Date('2025-08-01');
+const mockProfile = profileFactory.build({
+  timezone: 'UTC',
+});
+const downloadCSV = 'Download CSV';
+
+const getValue = (
+  lines: string[],
+  key: string
+): { key: string; value: string } => {
+  const line = lines.find((l) => l.startsWith(`"${key}"`));
+  if (!line) {
+    throw new Error(`CSV row not found for key: "${key}"`);
+  }
+  const [parsedKey, parsedValue] = line.split('","');
+  return {
+    key: parsedKey?.replace(/^"/, '').trim(),
+    value: parsedValue?.replace(/"$/, '').trim(),
+  };
+};
+
+const matchesWidgetName = (m: { name: string }, widgetName: string) =>
+  m.name === widgetName;
+
+const findInterceptionForWidget = (
+  interceptions: Interception[],
+  widgetName: string
+) =>
+  [...interceptions]
+    .reverse()
+    .find((i) =>
+      i.request.body.metrics.some((m: { name: string }) =>
+        matchesWidgetName(m, widgetName)
+      )
+    );
+const BASE_TIMESTAMP = 1753939800;
+const INTERVAL_SECONDS = 300;
+const ROW_COUNT = 10;
+const metricValues: [number, string][] = Array.from(
+  { length: ROW_COUNT },
+  (_, i) => [BASE_TIMESTAMP + i * INTERVAL_SECONDS, `${i + 1}.00`]
+);
+
+const expectedRows = metricValues.map(
+  ([ts, val]) =>
+    `"${new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC',
+    }).format(new Date(ts * 1000))}","${parseInt(val)}"`
+);
+
+const validateCSV = (
+  csvFilePath: string,
+  widgetConfig: (typeof metrics)[number],
+  _interception: Interception
+) => {
+  cy.readFile(csvFilePath).then((csvContent: string) => {
+    const lines = csvContent.split('\n').map((l) => l.trim());
+
+    // --- Dashboard ---
+    const dashboardRow = getValue(lines, 'Dashboard');
+    expect(dashboardRow.key).to.equal('Dashboard');
+    expect(dashboardRow.value).to.equal(dashboardName);
+
+    const csvDuration = getValue(lines, 'Time Range');
+    expect(csvDuration.key).to.equal('Time Range');
+    expect(csvDuration.value).to.equal('Last hour');
+
+    const dbClusters = getValue(lines, 'Volumes');
+    expect(dbClusters.key).to.equal('Volumes');
+    expect(dbClusters.value).to.equal('test-volume-ord');
+
+    const groupByRow = getValue(lines, 'Group By');
+    expect(groupByRow.key).to.equal('Group By');
+    expect(groupByRow.value).to.equal('Entity Id');
+
+    // --- Aggregation Function ---
+    const aggregationRow = getValue(lines, 'Aggregation Function');
+    expect(aggregationRow.key).to.equal('Aggregation Function');
+    expect(aggregationRow.value.toLowerCase()).to.equal(
+      widgetConfig.expectedAggregation.toLowerCase()
+    );
+
+    // --- Data Aggregation Interval ---
+    const granularityRow = getValue(lines, 'Data Aggregation Interval');
+    expect(granularityRow.key).to.equal('Data Aggregation Interval');
+    expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity);
+
+    // --- Widget Metadata ---
+    const metricRow = getValue(lines, 'Metric');
+    expect(metricRow.key).to.equal('Metric');
+    expect(metricRow.value).to.equal(widgetConfig.title);
+
+    const unitRow = getValue(lines, 'Unit');
+    expect(unitRow.key).to.equal('Unit');
+    expect(unitRow.value).to.equal(widgetConfig.unit);
+
+    const timestampHeader = lines.find((l) => l.startsWith('"time (UTC)"'));
+    expect(timestampHeader).to.equal('"time (UTC)","test-volume-ord"');
+
+    const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
+
+    const csvRows = lines.slice(headerIndex + 2, headerIndex + 2 + ROW_COUNT);
+    cy.wrap(null).then(() => {
+      const mismatches: string[] = [];
+      expectedRows.forEach((expectedRow, index) => {
+        if (csvRows[index] !== expectedRow) {
+          mismatches.push(
+            `Row ${index}: expected "${expectedRow}" got "${csvRows[index]}"`
+          );
+        }
+      });
+      if (mismatches.length > 0) {
+        throw new Error(`CSV row mismatches:\n${mismatches.join('\n')}`);
+      }
+    });
+  });
+};
 
 // Convert widget filters to dashboard filters
 const getFiltersForMetric = (metricName: string) => {
@@ -101,7 +225,14 @@ const mockRegions = [
 ];
 
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
+  data: {
+    result: generateRandomMetricsData('Last 24 Hours', '5 min').result.map(
+      (metricResult) => ({
+        ...metricResult,
+        values: metricValues,
+      })
+    ),
+  },
 });
 
 const mockVolumesEncrypted = [
@@ -202,10 +333,16 @@ const clearGroupBy = () => {
     .find('button[aria-label="Clear"]')
     .click();
 };
-
-// skip the spec as volume metrics are not yet supported in CloudPulse GA
+beforeEach(() => {
+  const folder = Cypress.config('downloadsFolder');
+  cy.exec(`find "${folder}" -maxdepth 1 -iname "volume*.csv" -delete`, {
+    failOnNonZeroExit: false,
+  });
+});
 describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
   beforeEach(() => {
+    cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
+    mockGetProfile(mockProfile);
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(accountFactory.build());
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
@@ -222,18 +359,6 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
     mockGetVolumes(mockVolumesEncrypted);
 
     cy.visitWithLogin('/volumes/1/metrics');
-
-    // Select a time duration from the autocomplete input.
-    ui.button.findByTitle('Last hour').as('timeRangeTrigger');
-    cy.get('@timeRangeTrigger').click();
-
-    // select a different preset but cancel
-    ui.button.findByTitle('Last day').click();
-
-    cy.get('[data-qa-buttons="apply"]')
-      .should('be.visible')
-      .should('be.enabled')
-      .click();
 
     ui.button
       .findByAttribute('aria-label', 'Group By Dashboard Metrics')
@@ -388,6 +513,62 @@ describe('CloudPulse Blockstorage Dashboard – Refactored', () => {
           .findByAttribute('aria-label', 'Zoom In')
           .click({ force: true });
         assertLegendValues(testData);
+      });
+    });
+  });
+
+  metrics.forEach((widgetConfig) => {
+    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
+        entity_id: '1',
+      }).as('getMetrics');
+
+      const { title, name } = widgetConfig;
+      const widgetSelector = `[data-qa-widget="${title}"]`;
+
+      // ── Assert widget is visible ──────────────────────────────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .find('h2')
+        .should('contain.text', title);
+
+      // ── Set interval, aggregation, trigger CSV download ───────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .within(() => {
+          ui.autocomplete
+            .findByLabel('Select an Interval')
+            .should('be.visible')
+            .type(`${widgetConfig.expectedGranularity}{enter}`);
+
+          ui.autocomplete
+            .findByLabel('Select an Aggregate Function')
+            .should('be.visible')
+            .type(`${widgetConfig.expectedAggregation}{enter}`);
+          ui.tooltip.findByText(downloadCSV).should('be.visible');
+
+          cy.get(`[aria-label="${downloadCSV}"] button`).as('csvButton');
+          cy.get('@csvButton').scrollIntoView();
+
+          cy.get('@csvButton').should('be.visible').should('be.enabled');
+
+          cy.get('@csvButton').click({ force: true });
+        });
+
+      // ── Build CSV file path ───────────────────────────────────────────────
+      const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
+      const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
+
+      // ── Find matching interception and validate CSV ───────────────────────
+      cy.get('@getMetrics.all').then((calls) => {
+        const interceptions = calls as unknown as Interception[];
+        const interception = findInterceptionForWidget(interceptions, name);
+
+        if (!interception) {
+          throw new Error(`No interception found for widget: ${name}`);
+        }
+
+        validateCSV(csvFilePath, widgetConfig, interception);
       });
     });
   });
