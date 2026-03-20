@@ -248,9 +248,9 @@ const validateCSV = (
     expect(streamRow.value).to.equal(streamName);
 
     // --- Stream ---
-    const statusCode = getValue(lines, 'Status Code');
-    expect(statusCode.key).to.equal('Status Code');
-    expect(statusCode.value).to.equal('200');
+    const statusCodeRow = getValue(lines, 'Status Code');
+    expect(statusCodeRow.key).to.equal('Status Code');
+    expect(statusCodeRow.value).to.equal('200');
 
     // --- Aggregation Function ---
     const aggregationRow = getValue(lines, 'Aggregation Function');
