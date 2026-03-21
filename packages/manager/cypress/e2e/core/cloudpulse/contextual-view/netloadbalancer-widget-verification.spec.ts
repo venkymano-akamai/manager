@@ -1,6 +1,7 @@
 /* eslint-disable cypress/no-unnecessary-waiting */
 /**
- * @file Integration Tests for CloudPulse nodebalancer Dashboard.
+ * @file Integration tests for the CloudPulse NodeBalancer dashboard.
+ * @todo Rename this file to `nodebalancer-widget-verification.spec.ts` to match the service under test.
  */
 import {
   accountAvailabilityFactory,
