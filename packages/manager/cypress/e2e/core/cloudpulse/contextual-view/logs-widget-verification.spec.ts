@@ -1,6 +1,7 @@
 /**
  * @file Integration Tests for CloudPulse Logs Service Contextual view.
  */
+import { profileFactory } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
 import { mockGetAccount } from 'support/intercepts/account';
 import {
@@ -15,6 +16,7 @@ import {
   mockGetStreamsPaginated,
 } from 'support/intercepts/cloudpulse';
 import { mockAppendFeatureFlags } from 'support/intercepts/feature-flags';
+import { mockGetProfile } from 'support/intercepts/profile';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
 
@@ -48,6 +50,8 @@ const ZOOM_IN_ARIA = 'Zoom In';
 const COL_MAX = '[data-qa-graph-column-title="Max"]';
 const COL_AVG = '[data-qa-graph-column-title="Avg"]';
 const COL_LAST = '[data-qa-graph-column-title="Last"]';
+const downloadCSV = 'Download CSV';
+const downloadsFolder = Cypress.config('downloadsFolder');
 
 // ─── Suite Constants ──────────────────────────────────────────────────────────
 
@@ -56,6 +60,33 @@ const timeDurationToSelect = 'Last 24 Hours';
 const { dashboardName, id, metrics, statusCode, streamName } =
   widgetDetails.logs;
 const serviceType = 'logs';
+
+// ─── Mock Data ────────────────────────────────────────────────────────────────
+
+const MOCK_CLOCK_DATE = new Date('2025-08-01');
+const BASE_TIMESTAMP = 1753939800; // Jul 31, 2025, 5:30 AM UTC
+const INTERVAL_SECONDS = 300; // 5 min
+const ROW_COUNT = 10;
+
+const mockProfile = profileFactory.build({ timezone: 'UTC' });
+
+const metricValues: [number, string][] = Array.from(
+  { length: ROW_COUNT },
+  (_, i) => [BASE_TIMESTAMP + i * INTERVAL_SECONDS, `${i + 1}.00`]
+);
+
+const expectedRows = metricValues.map(
+  ([ts, val]) =>
+    `"${new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC',
+    }).format(new Date(ts * 1000))}","${parseInt(val)}"`
+);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -157,6 +188,115 @@ const verifyAggregationInterception = (
     interception.request.body.metrics[0].aggregate_function
   );
 };
+
+/**
+ * Extracts a key/value pair from a CSV metadata row.
+ */
+const getValue = (
+  lines: string[],
+  key: string
+): { key: string; value: string } => {
+  const line = lines.find((l) => l.startsWith(`"${key}"`));
+  if (!line) {
+    throw new Error(`CSV row not found for key: "${key}"`);
+  }
+  const [parsedKey, parsedValue] = line.split('","');
+  return {
+    key: parsedKey?.replace(/^"/, '').trim(),
+    value: parsedValue?.replace(/"$/, '').trim(),
+  };
+};
+
+const matchesWidgetName = (m: { name: string }, widgetName: string) =>
+  m.name === widgetName;
+
+const findInterceptionForWidget = (
+  interceptions: Interception[],
+  widgetName: string
+) =>
+  [...interceptions]
+    .reverse()
+    .find((i) =>
+      i.request.body.metrics.some((m: { name: string }) =>
+        matchesWidgetName(m, widgetName)
+      )
+    );
+
+/**
+ * Reads and validates the downloaded CSV file against expected values.
+ */
+const validateCSV = (
+  csvFilePath: string,
+  widgetConfig: (typeof metrics)[number],
+  _interception: Interception
+) => {
+  cy.readFile(csvFilePath).then((csvContent: string) => {
+    const lines = csvContent.split('\n').map((l) => l.trim());
+
+    // --- Dashboard ---
+    const dashboardRow = getValue(lines, 'Dashboard');
+    expect(dashboardRow.key).to.equal('Dashboard');
+    expect(dashboardRow.value).to.equal(dashboardName);
+
+    // --- Time Range ---
+    const csvDuration = getValue(lines, 'Time Range');
+    expect(csvDuration.key).to.equal('Time Range');
+    expect(csvDuration.value).to.equal('Last day');
+
+    const streamRow = getValue(lines, 'Stream Names');
+    expect(streamRow.key).to.equal('Stream Names');
+    expect(streamRow.value).to.equal(streamName);
+
+    // --- Stream ---
+    const statusCodeRow = getValue(lines, 'Status Code');
+    expect(statusCodeRow.key).to.equal('Status Code');
+    expect(statusCodeRow.value).to.equal('200');
+
+    // --- Aggregation Function ---
+    const aggregationRow = getValue(lines, 'Aggregation Function');
+    expect(aggregationRow.key).to.equal('Aggregation Function');
+    expect(aggregationRow.value.toLowerCase()).to.equal(
+      widgetConfig.expectedAggregation.toLowerCase()
+    );
+
+    // --- Data Aggregation Interval ---
+    const granularityRow = getValue(lines, 'Data Aggregation Interval');
+    expect(granularityRow.key).to.equal('Data Aggregation Interval');
+    expect(granularityRow.value).to.equal(widgetConfig.expectedGranularity);
+
+    // --- Widget Metadata ---
+    const metricRow = getValue(lines, 'Metric');
+    expect(metricRow.key).to.equal('Metric');
+    expect(metricRow.value).to.equal(widgetConfig.title);
+
+    const unitRow = getValue(lines, 'Unit');
+    expect(unitRow.key).to.equal('Unit');
+    expect(unitRow.value).to.equal(widgetConfig.unit);
+
+    // --- Timestamp header ---
+    const timestampHeader = lines.find((l) => l.startsWith('"time (UTC)"'));
+    expect(timestampHeader).to.equal(`"time (UTC)","${streamName}"`);
+
+    // --- Data rows ---
+    const headerIndex = lines.findIndex((l) => l.startsWith('"time (UTC)"'));
+    const csvRows = lines.slice(headerIndex + 2, headerIndex + 2 + ROW_COUNT);
+
+    cy.wrap(null).then(() => {
+      const mismatches: string[] = [];
+      expectedRows.forEach((expectedRow, index) => {
+        if (csvRows[index] !== expectedRow) {
+          mismatches.push(
+            `Row ${index}: expected "${expectedRow}" got "${csvRows[index]}"`
+          );
+        }
+      });
+      if (mismatches.length > 0) {
+        throw new Error(`CSV row mismatches:\n${mismatches.join('\n')}`);
+      }
+    });
+  });
+};
+
 // ─── Factories ────────────────────────────────────────────────────────────────
 
 const dashboard = dashboardFactory.build({
@@ -176,8 +316,17 @@ const dashboard = dashboardFactory.build({
   ),
 });
 
+// metricsAPIResponsePayload uses metricValues so mock data and
+// expectedRows are always derived from the same source of truth
 const metricsAPIResponsePayload = cloudPulseMetricsResponseFactory.build({
-  data: generateRandomMetricsData(timeDurationToSelect, '5 min'),
+  data: {
+    result: generateRandomMetricsData(timeDurationToSelect, '5 min').result.map(
+      (metricResult) => ({
+        ...metricResult,
+        values: metricValues,
+      })
+    ),
+  },
 });
 
 const metricDefinitions = metrics.map(({ name, title, unit }) =>
@@ -195,6 +344,16 @@ const streams = streamFactory.build({ label: streamName, id: 1 });
 
 describe('Integration Tests for Logs Dashboard', () => {
   beforeEach(() => {
+    cy.exec(
+      `find "${downloadsFolder}" -maxdepth 1 -type f \\( \
+        -name "Error*" -o \
+        -name "Success*" \
+        \\) -delete`,
+      { failOnNonZeroExit: false }
+    );
+    cy.clock(MOCK_CLOCK_DATE.getTime(), ['Date']);
+    mockGetProfile(mockProfile);
+
     // ── Mocks ──
     mockAppendFeatureFlags(flagsFactory.build());
     mockGetAccount(accountFactory.build());
@@ -246,7 +405,6 @@ describe('Integration Tests for Logs Dashboard', () => {
       entity_id: '1',
     }).as('refreshMetrics');
 
-    // Validate legend rows before applying Group By
     metrics.forEach((testData) => {
       cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
@@ -257,7 +415,6 @@ describe('Integration Tests for Logs Dashboard', () => {
         });
     });
 
-    // Open Group By drawer
     ui.button
       .findByAttribute('aria-label', GROUP_BY_ARIA_LABEL)
       .should('be.visible')
@@ -281,7 +438,6 @@ describe('Integration Tests for Logs Dashboard', () => {
 
     cy.get(DRAWER_TESTID).find('p').first().and('have.text', dashboardName);
 
-    // Select dimension
     ui.autocomplete
       .findByLabel('Dimensions')
       .should('be.visible')
@@ -299,7 +455,6 @@ describe('Integration Tests for Logs Dashboard', () => {
       .should('have.attr', 'aria-label', GROUP_BY_ARIA_LABEL)
       .and('have.attr', 'data-qa-selected', 'true');
 
-    // Verify API calls contain correct group_by values
     cy.get('@refreshMetrics.all')
       .should('have.length', 3)
       .each((interception: Interception) => {
@@ -309,7 +464,6 @@ describe('Integration Tests for Logs Dashboard', () => {
         ]);
       });
 
-    // Validate legend rows after Group By
     metrics.forEach((testData) => {
       cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
@@ -337,7 +491,6 @@ describe('Integration Tests for Logs Dashboard', () => {
     cy.get('@dashboardGroupByBtn').scrollIntoView();
     cy.get('@dashboardGroupByBtn').click();
 
-    // Clear all dimensions
     cy.get(DIMENSIONS_AUTOCOMPLETE).within(() => {
       cy.get('button[aria-label="Clear"]').should('be.visible').click();
     });
@@ -350,7 +503,6 @@ describe('Integration Tests for Logs Dashboard', () => {
       'false'
     );
 
-    // Correctly validate empty/null group_by
     cy.get('@refreshMetrics.all')
       .should('have.length', 3)
       .each((interception: Interception) => {
@@ -363,7 +515,6 @@ describe('Integration Tests for Logs Dashboard', () => {
         ).to.be.true;
       });
 
-    // Validate legend rows after clearing Group By
     metrics.forEach((testData) => {
       cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
@@ -387,7 +538,6 @@ describe('Integration Tests for Logs Dashboard', () => {
         .should('have.text', `${testData.title} (${testData.unit})`);
 
       cy.get(widgetSelector).within(() => {
-        // Verify all granularity options exist in popper
         ui.autocomplete
           .findByLabel('Select an Interval')
           .should('be.visible')
@@ -397,7 +547,6 @@ describe('Integration Tests for Logs Dashboard', () => {
           ui.autocompletePopper.findByTitle(option).should('exist');
         });
 
-        // Register mock once per widget
         mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
           'getGranularityMetrics'
         );
@@ -422,7 +571,6 @@ describe('Integration Tests for Logs Dashboard', () => {
   // ─── Test: Aggregation Selection ────────────────────────────────────────────
 
   it('should allow users to select the desired aggregation and view the latest data from the API displayed in the graph', () => {
-    // Register mock once before the loop
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getAggregationMetrics'
     );
@@ -450,14 +598,13 @@ describe('Integration Tests for Logs Dashboard', () => {
     });
   });
 
-  // ─── Test: Widget Zoom In / Out ───────────────────────────────────────────────
+  // ─── Test: Widget Zoom In / Out ──────────────────────────────────────────────
 
   it('should zoom in and out of all the widgets', () => {
     metrics.forEach((testData) => {
       cy.get(`[${DATA_QA_WIDGET}="${testData.title}"]`)
         .should('be.visible')
         .within(() => {
-          // Zoom Out
           ui.button
             .findByAttribute('aria-label', ZOOM_OUT_ARIA)
             .should('be.visible')
@@ -466,7 +613,6 @@ describe('Integration Tests for Logs Dashboard', () => {
 
           validateLegendRows(testData);
 
-          // Zoom In
           ui.button
             .findByAttribute('aria-label', ZOOM_IN_ARIA)
             .should('be.visible')
@@ -476,6 +622,61 @@ describe('Integration Tests for Logs Dashboard', () => {
 
           validateLegendRows(testData);
         });
+    });
+  });
+
+  metrics.forEach((widgetConfig) => {
+    it(`should download CSV and validate content for ${widgetConfig.title}`, () => {
+      mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload, {
+        entity_id: '1',
+      }).as('getMetrics');
+
+      const { title, name } = widgetConfig;
+      const widgetSelector = `[${DATA_QA_WIDGET}="${title}"]`;
+
+      // ── Assert widget is visible ────────────────────────────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .find('h2')
+        .should('contain.text', title);
+
+      // ── Set interval, aggregation, trigger CSV download ─────────────────
+      cy.get(widgetSelector)
+        .should('be.visible')
+        .within(() => {
+          ui.autocomplete
+            .findByLabel('Select an Interval')
+            .should('be.visible')
+            .type(`${widgetConfig.expectedGranularity}{enter}`);
+
+          ui.autocomplete
+            .findByLabel('Select an Aggregate Function')
+            .should('be.visible')
+            .type(`${widgetConfig.expectedAggregation}{enter}`);
+
+          ui.tooltip.findByText(downloadCSV).should('be.visible');
+
+          cy.get(`[aria-label="${downloadCSV}"] button`).as('csvButton');
+          cy.get('@csvButton').scrollIntoView();
+          cy.get('@csvButton').should('be.visible').should('be.enabled');
+          cy.get('@csvButton').click({ force: true });
+        });
+
+      // ── Build CSV file path ─────────────────────────────────────────────
+      const sanitizedTitle = widgetConfig.title.replace(/\//g, '_');
+      const csvFilePath = `${downloadsFolder}/${sanitizedTitle}.csv`;
+
+      // ── Find matching interception and validate CSV ─────────────────────
+      cy.get('@getMetrics.all').then((calls) => {
+        const interceptions = calls as unknown as Interception[];
+        const interception = findInterceptionForWidget(interceptions, name);
+
+        if (!interception) {
+          throw new Error(`No interception found for widget: ${name}`);
+        }
+
+        validateCSV(csvFilePath, widgetConfig, interception);
+      });
     });
   });
 });
