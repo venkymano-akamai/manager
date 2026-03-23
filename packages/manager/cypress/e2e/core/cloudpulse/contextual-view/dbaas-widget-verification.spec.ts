@@ -286,7 +286,7 @@ const validateCSV = (
 
     const dbClusters = getValue(lines, 'Database Clusters');
     expect(dbClusters.key).to.equal('Database Clusters');
-    expect(dbClusters.value).to.equal('mysql-cluster');
+    expect(dbClusters.value).to.equal(clusterName);
 
     const nodeTypeRow = getValue(lines, 'Node Type');
     expect(nodeTypeRow.key).to.equal('Node Type');
