@@ -72,6 +72,76 @@ describe('NotificationChannelTableRow', () => {
     expect(screen.getByText('Email')).toBeVisible();
   });
 
+  it('should render channel type as Slack for slack type', () => {
+    const channel = notificationChannelFactory.build({
+      channel_type: 'slack',
+      details: {
+        slack: {
+          slack_channel: 'channel',
+          slack_webhook_url: 'url',
+        },
+      },
+    });
+
+    renderWithTheme(
+      wrapWithTableBody(
+        <NotificationChannelTableRow
+          handlers={handlers}
+          notificationChannel={channel}
+        />
+      )
+    );
+
+    expect(screen.getByText('Slack')).toBeVisible();
+  });
+
+  it('should render channel type as PagerDuty for pagerduty type', () => {
+    const channel = notificationChannelFactory.build({
+      channel_type: 'pagerduty',
+      details: {
+        pagerduty: {
+          attributes: [],
+          description: 'desc',
+          service_api_key: 'key',
+        },
+      },
+    });
+
+    renderWithTheme(
+      wrapWithTableBody(
+        <NotificationChannelTableRow
+          handlers={handlers}
+          notificationChannel={channel}
+        />
+      )
+    );
+
+    expect(screen.getByText('PagerDuty')).toBeVisible();
+  });
+
+  it('should render channel type as Webhook for webhook type', () => {
+    const channel = notificationChannelFactory.build({
+      channel_type: 'webhook',
+      details: {
+        webhook: {
+          http_headers: [],
+          webhook_url: 'url',
+        },
+      },
+    });
+
+    renderWithTheme(
+      wrapWithTableBody(
+        <NotificationChannelTableRow
+          handlers={handlers}
+          notificationChannel={channel}
+        />
+      )
+    );
+
+    expect(screen.getByText('Webhook')).toBeVisible();
+  });
+
   it('should render zero alerts count when no alerts are associated', () => {
     const channel = notificationChannelFactory.build({
       alerts: { alert_count: 0 },

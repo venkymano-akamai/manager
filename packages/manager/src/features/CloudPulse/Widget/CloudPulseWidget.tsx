@@ -514,7 +514,6 @@ export const CloudPulseWidget = (props: CloudPulseWidgetProperties) => {
     vpcFetch.isLoading,
     linodeFromVolumes.isLoading,
   ]);
-
   const filterData = getGlobalFilterData();
   return (
     <GridLegacy container item lg={widget.size} xs={12}>
