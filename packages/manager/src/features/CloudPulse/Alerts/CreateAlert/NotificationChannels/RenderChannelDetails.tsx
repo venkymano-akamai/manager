@@ -20,7 +20,6 @@ export const RenderChannelDetails = (props: RenderChannelDetailProps) => {
     const recipients = hasUserNames
       ? detailEmail.usernames
       : [detailEmail.recipient_type];
-
     return (
       <>
         {recipients.map((value) => (

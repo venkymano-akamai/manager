@@ -32,7 +32,10 @@ const createNotificationChannel = notificationChannelFactory.build({
   channel_type: 'email',
   details: {
     email: {
+<<<<<<< HEAD
       recipient_type: 'user',
+=======
+>>>>>>> 28d5bf90e90cfcf0d97fcf80d3b17f554f3ccd07
       usernames: ['user1', 'user2'],
     },
   },

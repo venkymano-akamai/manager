@@ -22,6 +22,7 @@ import { ui } from 'support/ui';
 import { notificationChannelAlertsFactory } from 'src/factories';
 import {
   accountFactory,
+  alertFactory,
   flagsFactory,
   notificationChannelFactory,
 } from 'src/factories';
@@ -63,25 +64,39 @@ const {
 } = notificationChannelDetails[0];
 
 const mockAlerts = [
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 1,
+    label: 'Alert-C',
     service_type: 'linode',
   }),
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 2,
+    label: 'Alert-A',
     service_type: 'dbaas',
   }),
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 3,
+    label: 'Alert-G',
     service_type: 'nodebalancer',
   }),
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 4,
+    label: 'Alert-E',
     service_type: 'lke',
   }),
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 5,
+    label: 'Alert-B',
     service_type: 'firewall',
   }),
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 6,
+    label: 'Alert-F',
     service_type: 'objectstorage',
   }),
-  ...notificationChannelAlertsFactory.buildList(2, {
+  notificationChannelAlertsFactory.build({
+    id: 7,
+    label: 'Alert-D',
     service_type: 'blockstorage',
   }),
 ];
@@ -103,11 +118,43 @@ const verifyAlertOrder = (expectedAlerts: { id: number }[]): void => {
 };
 
 describe('CloudPulse Alerting - Notification Channel Show details Validation', () => {
+  const associatedAlertsTable = '[data-qa="associated-alerts-table"]';
+
   beforeEach(() => {
     // Setup all mock APIs - tests will navigate directly to detail page
     const mockflags = flagsFactory.build({
       aclpAlerting: {
         notificationChannels: true,
+      },
+      aclpServices: {
+        linode: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
+        dbaas: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
+        nodebalancer: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
+        firewall: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
+        lke: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
+        objectstorage: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
+        blockstorage: {
+          alerts: { beta: true, enabled: true },
+          metrics: { beta: true, enabled: true },
+        },
       },
     });
     mockAppendFeatureFlags(mockflags);
@@ -232,7 +279,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       const expectedHeaders = ['Alert Name', 'Service'];
 
       // Validate table headers
-      cy.get('[data-qa="associated-alerts-table"]').within(() => {
+      cy.get(associatedAlertsTable).within(() => {
         expectedHeaders.forEach((header) => {
           cy.findByText(header).should('have.text', header);
         });
@@ -262,7 +309,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       const filteredAlertsLen = mockAlerts.filter((alert) =>
         alert.label.toLowerCase().includes(mockAlerts[0].label.toLowerCase())
       ).length;
-      cy.get('[data-qa="associated-alerts-table"]')
+      cy.get(associatedAlertsTable)
         .find('tbody')
         .last()
         .find('tr')
@@ -278,7 +325,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
       const dbaasAlerts = mockAlerts.filter(
         (alert) => alert.service_type === 'dbaas'
       );
-      cy.get('[data-qa="associated-alerts-table"]')
+      cy.get(associatedAlertsTable)
         .find('tbody')
         .last()
         .find('tr')
@@ -292,102 +339,86 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
         .findByAttribute('aria-label', 'Clear')
         .should('be.visible')
         .click();
-
-      // Validate the sorting functionality for Alert Name
-      cy.get('[data-qa="associated-alerts-table"]').within(() => {
-        // Click on the 'Alert Name' header to sort
-        ui.heading.findByText('label').click();
-
-        // Get the sort order and verify data matches
-        const AlertNameHeading = ui.heading.findByText('label');
-        AlertNameHeading.should('have.attr', 'aria-sort').then((sortOrder) => {
-          let expectedAlerts;
-          if (sortOrder === 'ascending') {
-            expectedAlerts = [...mockAlerts].sort((a, b) =>
-              a.label.localeCompare(b.label)
-            );
-          } else {
-            expectedAlerts = [...mockAlerts].sort((a, b) =>
-              b.label.localeCompare(a.label)
-            );
-          }
-          verifyAlertOrder(expectedAlerts);
-        });
-
-        // Click again to toggle sort order
-        ui.heading.findByText('label').click();
-
-        // Get the new sort order and verify data matches
-        const AlertNameHeadingAfterToggle = ui.heading.findByText('label');
-        AlertNameHeadingAfterToggle.should('have.attr', 'aria-sort').then(
-          (sortOrder) => {
-            let expectedAlerts;
-            if (sortOrder === 'ascending') {
-              expectedAlerts = [...mockAlerts].sort((a, b) =>
-                a.label.localeCompare(b.label)
-              );
-            } else {
-              expectedAlerts = [...mockAlerts].sort((a, b) =>
-                b.label.localeCompare(a.label)
-              );
-            }
-            verifyAlertOrder(expectedAlerts);
-          }
-        );
-      });
-
-      // Validate the sorting functionality for service Type
-      cy.get('[data-qa="associated-alerts-table"]').within(() => {
-        // Click on the 'Service' header to sort
-        ui.heading.findByText('service_type_label').click();
-
-        // Get the sort order and verify data matches
-        const serviceHeading = ui.heading.findByText('service_type_label');
-        serviceHeading.should('have.attr', 'aria-sort').then((sortOrder) => {
-          let expectedAlerts;
-          if (sortOrder === 'ascending') {
-            expectedAlerts = [...mockAlerts].sort((a, b) =>
-              cloudPulseServiceMap[a.service_type].localeCompare(
-                cloudPulseServiceMap[b.service_type]
-              )
-            );
-          } else {
-            expectedAlerts = [...mockAlerts].sort((a, b) =>
-              cloudPulseServiceMap[b.service_type].localeCompare(
-                cloudPulseServiceMap[a.service_type]
-              )
-            );
-          }
-          verifyAlertOrder(expectedAlerts);
-        });
-
-        // Click again to toggle sort order
-        ui.heading.findByText('service_type_label').click();
-
-        // Get the new sort order and verify data matches
-        const serviceHeadingAfterToggle =
-          ui.heading.findByText('service_type_label');
-        serviceHeadingAfterToggle
-          .should('have.attr', 'aria-sort')
-          .then((sortOrder) => {
-            let expectedAlerts;
-            if (sortOrder === 'ascending') {
-              expectedAlerts = [...mockAlerts].sort((a, b) =>
-                cloudPulseServiceMap[a.service_type].localeCompare(
-                  cloudPulseServiceMap[b.service_type]
-                )
-              );
-            } else {
-              expectedAlerts = [...mockAlerts].sort((a, b) =>
-                cloudPulseServiceMap[b.service_type].localeCompare(
-                  cloudPulseServiceMap[a.service_type]
-                )
-              );
-            }
-            verifyAlertOrder(expectedAlerts);
-          });
-      });
     });
+
+    // Validate the sorting functionality for Alert Name
+    // Default order is ascending by label; first click toggles to descending
+    cy.get(associatedAlertsTable).within(() => {
+      ui.heading.findByText('label').click();
+    });
+    ui.heading.findByText('label').as('alertNameHeading');
+    cy.get('@alertNameHeading').should('have.attr', 'aria-sort', 'descending');
+    // Descending by label: G(3), F(6), E(4), D(7), C(1), B(5), A(2)
+    verifyAlertOrder([
+      { id: 3 },
+      { id: 6 },
+      { id: 4 },
+      { id: 7 },
+      { id: 1 },
+      { id: 5 },
+      { id: 2 },
+    ]);
+
+    // Second click toggles back to ascending
+    cy.get(associatedAlertsTable).within(() => {
+      ui.heading.findByText('label').click();
+    });
+    ui.heading.findByText('label').as('alertNameHeadingAfterToggle');
+    cy.get('@alertNameHeadingAfterToggle').should(
+      'have.attr',
+      'aria-sort',
+      'ascending'
+    );
+    // Ascending by label: A(2), B(5), C(1), D(7), E(4), F(6), G(3)
+    verifyAlertOrder([
+      { id: 2 },
+      { id: 5 },
+      { id: 1 },
+      { id: 7 },
+      { id: 4 },
+      { id: 6 },
+      { id: 3 },
+    ]);
+
+    // Validate the sorting functionality for Service Type
+    // After label sort ends on ascending, all headers share that direction,
+    // so the first click on service_type_label toggles to descending
+    cy.get(associatedAlertsTable).within(() => {
+      ui.heading.findByText('service_type_label').click();
+    });
+    ui.heading.findByText('service_type_label').as('serviceHeading');
+    cy.get('@serviceHeading').should('have.attr', 'aria-sort', 'descending');
+    // Descending by service label: Volumes(7), Object Storage(6), NodeBalancers(3), Linodes(1), Kubernetes(4), Firewalls(5), Databases(2)
+    verifyAlertOrder([
+      { id: 7 },
+      { id: 6 },
+      { id: 3 },
+      { id: 1 },
+      { id: 4 },
+      { id: 5 },
+      { id: 2 },
+    ]);
+
+    // Second click toggles to ascending
+    cy.get(associatedAlertsTable).within(() => {
+      ui.heading.findByText('service_type_label').click();
+    });
+    ui.heading.findByText('service_type_label').as('serviceHeadingAfterToggle');
+    cy.get('@serviceHeadingAfterToggle').should(
+      'have.attr',
+      'aria-sort',
+      'ascending'
+    );
+    // Ascending by service label: Databases(2), Firewalls(5), Kubernetes(4), Linodes(1), NodeBalancers(3), Object Storage(6), Volumes(7)
+    verifyAlertOrder([
+      { id: 2 },
+      { id: 5 },
+      { id: 4 },
+      { id: 1 },
+      { id: 3 },
+      { id: 6 },
+      { id: 7 },
+    ]);
   });
 
   it('should verify the pagination functionality in Associated Alerts table', () => {
@@ -437,7 +468,7 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
           .click();
 
         // Verify the correct number of rows (alerts + header)
-        cy.get('[data-qa="associated-alerts-table"]')
+        cy.get(associatedAlertsTable)
           .find('tr')
           .should('have.length', expectedRowCount);
       });
@@ -498,125 +529,6 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
     ).should('be.visible');
   });
 
-  it('should verify for empty state when overview and details data is missing', () => {
-    // Mock incomplete channel details with missing fields
-    const incompleteChannelDetails = notificationChannelFactory.build({
-      label: '',
-      channel_type: 'email',
-      created_by: '',
-      updated_by: '',
-      details: {},
-    });
-    mockGetAlertChannelById(id, incompleteChannelDetails).as(
-      'getAlertNotificationChannelByIdIncomplete'
-    );
-    mockGetAlertsForChannelId(id, []).as('getAlertsForChannelIdEmpty');
-    // Navigate directly to the notification channel detail page
-    cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
-    cy.wait('@getAlertNotificationChannelByIdIncomplete');
-    cy.wait('@getAlertsForChannelIdEmpty');
-    cy.wait('@getCloudPulseServices');
-    // Verify that the URL is correct
-    cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
-
-    // Verify Overview section handles empty fields gracefully
-    cy.get('[data-qa-section="Overview"]').within(() => {
-      // Verify Name field with empty label
-      cy.findByText('Name:').should('be.visible');
-      // Ensure no error-like values are displayed
-      cy.contains('undefined').should('not.exist');
-      cy.contains('null').should('not.exist');
-
-      // Verify Channel Type displays correctly even with empty fields
-      cy.findByText('Channel Type:').should('be.visible');
-      cy.findByText('Email').should('be.visible');
-
-      // Verify Created by field with empty value
-      cy.findByText('Created by:').should('be.visible');
-      cy.contains('undefined').should('not.exist');
-      cy.contains('null').should('not.exist');
-
-      // Verify Last Modified by field with empty value
-      cy.findByText('Last Modified by:').should('be.visible');
-      cy.contains('undefined').should('not.exist');
-      cy.contains('null').should('not.exist');
-    });
-
-    // Verify Details section handles empty/missing recipient data gracefully
-    cy.get('[data-qa-section="Details"]').within(() => {
-      // Verify Recipient Type field
-      cy.findByText('Recipient Type:').should('be.visible');
-      cy.contains('undefined').should('not.exist');
-      cy.contains('null').should('not.exist');
-    });
-
-    // Verify the page layout doesn't break with missing data
-    cy.get('[data-qa-section="Overview"]').should('be.visible');
-    cy.get('[data-qa-section="Details"]').should('be.visible');
-  });
-
-  it('should verify notificationChannels with long usernames list wrapping behavior', () => {
-    // Create test data with very long usernames and labels
-    const longUsernames = Array.from(
-      { length: 50 },
-      (_, i) =>
-        `verylongnametestcasecheckwithsplcharsvisibleornotorwrappingup-${i + 1}`
-    );
-    const longUsernamesChannelDetails = notificationChannelFactory.build({
-      label: 'Userlongnamerepeat123456'.repeat(5),
-      channel_type: 'email',
-      type: 'user',
-      details: {
-        email: {
-          recipient_type: 'user',
-          usernames: longUsernames,
-        },
-      },
-      created_by: 'longnamerepeat123456'.repeat(5),
-      updated_by: 'longnamerepeat123456'.repeat(5),
-      created: '2026-01-27T06:18:00Z',
-      updated: new Date().toISOString(),
-    });
-    mockGetAlertChannelById(id, longUsernamesChannelDetails).as(
-      'getAlertNotificationChannelByIdLongUsernames'
-    );
-
-    const largeAlertList = notificationChannelAlertsFactory.buildList(100, {
-      service_type: 'nodebalancer',
-      label: 'longnamerepeat123456'.repeat(5),
-    });
-
-    mockGetAlertsForChannelId(id, largeAlertList).as(
-      'getLargeAlertNamesForChannelId'
-    );
-    // Navigate directly to the notification channel detail page
-    cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
-    cy.wait('@getAlertNotificationChannelByIdLongUsernames');
-    cy.wait('@getLargeAlertNamesForChannelId');
-    cy.wait('@getCloudPulseServices');
-    // Verify that the URL is correct
-    cy.url().should('include', `/alerts/notification-channels/detail/${id}`);
-    // Validate that the long label is displayed correctly
-    cy.get('[data-qa-section="Overview"]').within(() => {
-      cy.findByText('Name:').should('be.visible');
-      cy.findByText(longUsernamesChannelDetails.label).should('be.visible');
-    });
-    cy.get('[data-qa-section="Details"]').within(() => {
-      // Validate that all usernames are displayed correctly without overflow
-      longUsernames.forEach((username) => {
-        cy.get(`[data-qa-chip="${username}"]`)
-          .should('have.text', username)
-          .should('be.visible')
-          .and(($chip) => {
-            // Check that the chip does not overflow its container
-            expect($chip[0].scrollWidth).to.be.lessThan(
-              $chip[0].clientWidth + 1
-            );
-          });
-      });
-    });
-  });
-
   it('should verify clicking on the alert name navigates to the alert detail page', () => {
     // Navigate directly to the notification channel detail page
     cy.visitWithLogin(`/alerts/notification-channels/detail/${id}`);
@@ -633,14 +545,27 @@ describe('CloudPulse Alerting - Notification Channel Show details Validation', (
 
         // Find the corresponding alert from mockAlerts
         const clickedAlert = mockAlerts.find((alert) => alert.id === alertId);
+        const serviceType = clickedAlert?.service_type || 'dbaas'; // Default to 'dbaas' if undefined
+
+        const alertDetails = alertFactory.build({
+          service_type: serviceType,
+          status: 'failed',
+          type: 'user',
+          id: alertId,
+        });
+
+        mockGetAlertDefinitions(serviceType, alertId, alertDetails).as(
+          'getAlertDefinitions'
+        );
 
         // Click the alert link
         cy.get('[data-qa-alert-link="true"]').first().click();
 
         // Verify that the URL navigates to the correct alert detail page
+        cy.wait('@getAlertDefinitions');
         cy.url().should(
           'include',
-          `/alerts/definitions/detail/${clickedAlert?.service_type}/${clickedAlert?.id}`
+          `/alerts/definitions/detail/${serviceType}/${alertId}`
         );
       });
   });

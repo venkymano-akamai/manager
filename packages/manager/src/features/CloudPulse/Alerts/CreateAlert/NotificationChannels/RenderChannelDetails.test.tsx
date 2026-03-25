@@ -10,7 +10,10 @@ import type { NotificationChannel } from '@linode/api-v4';
 
 const mockData = notificationChannelFactory.build({
   details: {
-    email: { recipient_type: 'read_write_users', usernames: [] },
+    email: {
+      recipient_type: 'read_write_users',
+      usernames: [],
+    },
   },
 });
 

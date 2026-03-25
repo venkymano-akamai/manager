@@ -4,12 +4,12 @@
  */
 
 export const cloudPulseServiceMap: Record<string, string> = {
+  blockstorage: 'Volumes',
   dbaas: 'Databases',
   linode: 'Linodes',
   nodebalancer: 'NodeBalancers',
   firewall: 'Firewalls',
   objectstorage: 'Object Storage',
-  blockstorage: 'Volumes',
   lke: 'Kubernetes',
   netloadbalancer: 'Netloadbalancer',
   logs: 'Logs',
