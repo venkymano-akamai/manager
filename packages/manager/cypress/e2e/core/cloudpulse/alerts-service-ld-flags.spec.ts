@@ -92,7 +92,7 @@ describe('Linode ACLP Metrics and Alerts Flag Behavior', () => {
     cy.get('[data-qa-autocomplete-popper]')
       .should('be.visible')
       .and('have.text', NO_OPTIONS_TEXT)
-      .and('not.contain.text', 'Linode beta');
+      .and('not.contain.text', 'Linodes beta');
   });
 
   it('should show no available services in the Service dropdown when Linode alerts are disabled but beta is true', () => {
@@ -115,7 +115,7 @@ describe('Linode ACLP Metrics and Alerts Flag Behavior', () => {
     cy.get('[data-qa-autocomplete-popper]')
       .should('be.visible')
       .and('have.text', NO_OPTIONS_TEXT)
-      .and('not.contain.text', 'Linode beta');
+      .and('not.contain.text', 'Linodes beta');
   });
 
   it('should show no options and exclude Linode beta in Service dropdown when alerts are disabled but beta is true', () => {
@@ -138,7 +138,7 @@ describe('Linode ACLP Metrics and Alerts Flag Behavior', () => {
     cy.get('[data-qa-autocomplete-popper]')
       .should('be.visible')
       .and('contain.text', 'You have no options to choose from')
-      .and('not.contain.text', 'Linode beta');
+      .and('not.contain.text', 'Linodes beta');
   });
 
   it('should show Linode without beta tag in Service dropdown when alerts are enabled but not in beta', () => {
