@@ -182,6 +182,7 @@ interface AclpAlerting {
   editDisabledStatuses?: AlertStatusType[];
   maxDimensionFiltersValues?: number;
   maxEmailChannelRecipients?: number;
+  new?: boolean;
   notificationChannels: boolean;
   recentActivity: boolean;
   systemChannelSupportedServices?: CloudPulseServiceType[]; // linode, dbaas, etc.
@@ -280,6 +281,7 @@ export interface Flags {
   promos: boolean;
   promotionalOffers: PromotionalOffer[];
   referralBannerText: BannerContent;
+  reserveIp: boolean;
   resourceLock: ResourceLockFlag;
   secureVmCopy: SecureVMCopy;
   selfServeBetas: boolean;
@@ -398,6 +400,7 @@ export type ProductInformationBannerLocation =
   | 'NodeBalancers'
   | 'Object Storage'
   | 'Placement Groups'
+  | 'Reserved IPs'
   | 'StackScripts'
   | 'Volumes'
   | 'VPC';

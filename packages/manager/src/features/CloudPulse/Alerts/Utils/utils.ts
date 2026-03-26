@@ -250,8 +250,8 @@ export const getChipLabels = (
   if (value.channel_type === 'email') {
     const recipients =
       value.details.email.recipient_type === 'user'
-        ? value.details?.email?.usernames
-        : [value.details?.email?.recipient_type];
+        ? value.details.email.usernames
+        : [value.details.email.recipient_type];
 
     return {
       label: 'To',
@@ -260,17 +260,17 @@ export const getChipLabels = (
   } else if (value.channel_type === 'slack') {
     return {
       label: 'Slack Webhook URL',
-      values: [value.details?.slack.slack_webhook_url ?? ''],
+      values: [value.details.slack.slack_webhook_url ?? ''],
     };
   } else if (value.channel_type === 'pagerduty') {
     return {
       label: 'Service API Key',
-      values: [value.details?.pagerduty.service_api_key ?? ''],
+      values: [value.details.pagerduty.service_api_key ?? ''],
     };
   } else {
     return {
       label: 'Webhook URL',
-      values: [value.details?.webhook.webhook_url ?? ''],
+      values: [value.details.webhook.webhook_url ?? ''],
     };
   }
 };
