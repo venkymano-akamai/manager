@@ -1,6 +1,6 @@
+import { getFeatureChip } from '@linode/shared';
 import {
   Autocomplete,
-  BetaChip,
   Box,
   Button,
   CircleProgress,
@@ -119,7 +119,7 @@ export const AlertReusableComponent = (props: AlertReusableComponentProps) => {
     [alerts, regionId, searchText, selectedType]
   );
 
-  const { aclpServices } = useFlags();
+  const { aclpAlerting } = useFlags();
 
   const navigate = useNavigate();
 
@@ -139,7 +139,7 @@ export const AlertReusableComponent = (props: AlertReusableComponentProps) => {
             <Box display="flex" justifyContent="space-between">
               <Box alignItems="center" display="flex" gap={0.5}>
                 <Typography variant="h2">Alerts</Typography>
-                {aclpServices?.[serviceType]?.alerts?.beta && <BetaChip />}
+                {aclpAlerting && getFeatureChip(aclpAlerting)}
               </Box>
               <Button
                 buttonType="outlined"
