@@ -1,0 +1,11 @@
+.virtualized-listbox {
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.virtualized-listbox::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
+}
