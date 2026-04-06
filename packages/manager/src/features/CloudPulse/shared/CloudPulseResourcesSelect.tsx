@@ -156,7 +156,7 @@ export const CloudPulseResourcesSelect = React.memo(
       React.HTMLAttributes<HTMLElement>
     >((props, ref) => {
       // Extract children and forward to VirtualizedListbox
-      const { children, style, ...otherProps } = props;
+      const { children, ...otherProps } = props;
       return (
         <Box ref={ref} {...otherProps}>
           <VirtualizedListbox>{children}</VirtualizedListbox>
