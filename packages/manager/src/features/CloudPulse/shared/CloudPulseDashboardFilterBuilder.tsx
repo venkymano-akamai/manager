@@ -110,10 +110,35 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
 
     const [showFilter, setShowFilter] = React.useState<boolean>(true);
 
+    const [showLoadingIndicator, setShowLoadingIndicator] =
+      React.useState<boolean>(false);
+
     const theme = useTheme();
 
     const dependentFilterReference: React.MutableRefObject<CloudPulseMetricsFilter> =
       React.useRef({});
+
+    // Show loading indicator only if loading continues for more than 5 seconds
+    React.useEffect(() => {
+      let timer: NodeJS.Timeout;
+
+      if (isLoading) {
+        // Set a timer to show loading indicator after 5 seconds
+        timer = setTimeout(() => {
+          setShowLoadingIndicator(true);
+        }, 5000);
+      } else {
+        // Reset the indicator when loading completes
+        setShowLoadingIndicator(false);
+      }
+
+      // Clean up timer on unmount or when isLoading changes
+      return () => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      };
+    }, [isLoading]);
 
     const checkAndUpdateDependentFilters = React.useCallback(
       (filterKey: string, value: FilterValueType) => {
@@ -549,10 +574,17 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
           <GridLegacy
             alignItems="center"
             container
+            direction="column"
             display="flex"
             justifyContent="center"
           >
             <CircleProgress size="md" />
+            {showLoadingIndicator && (
+              <Typography mt={2} variant="body1">
+                Taking longer than expected. Please wait while the process
+                completes.
+              </Typography>
+            )}
           </GridLegacy>
         ) : (
           <GridLegacy

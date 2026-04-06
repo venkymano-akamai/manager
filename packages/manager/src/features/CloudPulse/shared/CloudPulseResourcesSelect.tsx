@@ -158,18 +158,7 @@ export const CloudPulseResourcesSelect = React.memo(
       // Extract children and forward to VirtualizedListbox
       const { children, style, ...otherProps } = props;
       return (
-        <Box
-          ref={ref}
-          {...otherProps}
-          sx={{
-            /* Firefox */
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none',
-            /* Chrome, Safari, Opera */
-            '&::-webkit-scrollbar': { display: 'none' },
-            ...style,
-          }}
-        >
+        <Box ref={ref} {...otherProps}>
           <VirtualizedListbox>{children}</VirtualizedListbox>
         </Box>
       );

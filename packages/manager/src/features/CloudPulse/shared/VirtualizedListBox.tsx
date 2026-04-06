@@ -1,4 +1,3 @@
-import { useTheme } from '@linode/ui';
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 
@@ -23,8 +22,6 @@ export const VirtualizedListbox = React.memo(
     if (itemCount === 0) {
       return <ul>{children}</ul>;
     }
-    // const theme = useTheme();
-    // const overflowStyles = theme.components?.MuiAutocomplete?.styleOverrides?.listbox ?? {};
 
     return (
       <FixedSizeList
@@ -39,7 +36,6 @@ export const VirtualizedListbox = React.memo(
         style={{
           paddingBottom: 8,
           paddingTop: 8,
-          // ...overflowStyles,
         }}
         width="100%"
       >
