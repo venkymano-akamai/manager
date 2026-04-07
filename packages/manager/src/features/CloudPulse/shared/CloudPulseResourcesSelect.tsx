@@ -239,14 +239,6 @@ export const CloudPulseResourcesSelect = React.memo(
         slotProps={{
           listbox: {
             component: ListboxWrapper,
-            sx: {
-              border: 'none',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              '&::-webkit-scrollbar': {
-                display: 'none',
-              },
-            },
           },
         }}
         textFieldProps={{
