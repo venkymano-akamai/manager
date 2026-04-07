@@ -1,8 +1,6 @@
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 
-import './VirtualizedListBox.css';
-
 export interface VirtualizedListboxProps {
   children: React.ReactNode;
 }
@@ -27,20 +25,18 @@ export const VirtualizedListbox = React.memo(
       <FixedSizeList
         className="virtualized-listbox"
         height={calculatedHeight}
-        innerElementType="ul"
+        innerElementType="div"
         itemCount={itemCount}
         itemData={itemData}
         itemSize={36}
-        outerElementType="div"
-        overscanCount={5}
+        outerElementType="ul"
         style={{
-          paddingBottom: 8,
-          paddingTop: 8,
+          margin: 0,
         }}
         width="100%"
       >
         {({ data, index, style }) => (
-          <li style={{ ...style, boxSizing: 'border-box' }}>{data[index]}</li>
+          <div style={{ ...style, boxSizing: 'border-box' }}>{data[index]}</div>
         )}
       </FixedSizeList>
     );

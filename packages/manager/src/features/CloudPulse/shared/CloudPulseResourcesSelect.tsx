@@ -15,6 +15,7 @@ import type { CloudPulseMetricsFilter } from '../Dashboard/CloudPulseDashboardLa
 import type { QueryFunctionType } from '../Utils/models';
 import type { AssociatedEntityType } from './types';
 import type { CloudPulseServiceType, FilterValue } from '@linode/api-v4';
+import type { FilterOptionsState } from '@mui/material';
 
 export interface CloudPulseResources {
   clusterSize?: number;
@@ -140,32 +141,44 @@ export const CloudPulseResourcesSelect = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [resources, region, xFilter, resourceType]);
 
-    // Optimize filtering for large lists - limit results and use efficient matching
-    const filterOptions = React.useMemo(
-      () =>
-        createFilterOptions<CloudPulseResources>({
-          limit: 1300, // Limit results shown while typing to improve performance
-          stringify: (resource) => resource.label,
-        }),
-      []
-    );
+    // Optimize filtering for large lists - only apply limit when user is actively searching
+    const filterOptions = React.useMemo(() => {
+      const baseFilterOptions = createFilterOptions<CloudPulseResources>({
+        stringify: (resource) => resource.label,
+      });
+
+      return (
+        options: CloudPulseResources[],
+        state: FilterOptionsState<CloudPulseResources>
+      ) => {
+        // Only apply limit when there's search input to improve filtering performance
+        if (state.inputValue) {
+          const filtered = baseFilterOptions(options, state);
+          return filtered.slice(0, 1300);
+        }
+        // Show all options when no search text (virtualization handles performance)
+        return options;
+      };
+    }, []);
 
     // Wrapper component to connect VirtualizedListbox with MUI Autocomplete
-    const ListboxWrapper = React.useMemo(
-      () =>
-        React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLElement>>(
-          (props, ref) => {
-            // Extract children and forward to VirtualizedListbox
-            const { children, ...otherProps } = props;
-            return (
-              <Box ref={ref} {...otherProps}>
-                <VirtualizedListbox>{children}</VirtualizedListbox>
-              </Box>
-            );
-          }
-        ),
-      []
-    );
+    const ListboxWrapper = React.useMemo(() => {
+      if (getResourcesList.length <= 100) {
+        return undefined;
+      }
+      return React.forwardRef<
+        HTMLDivElement,
+        React.HTMLAttributes<HTMLElement>
+      >((props, ref) => {
+        // Extract children and forward to VirtualizedListbox
+        const { children, ...otherProps } = props;
+        return (
+          <div ref={ref} {...otherProps}>
+            <VirtualizedListbox>{children}</VirtualizedListbox>
+          </div>
+        );
+      });
+    }, [getResourcesList.length]);
 
     return (
       <Autocomplete
