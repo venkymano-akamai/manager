@@ -40,7 +40,7 @@ export const VirtualizedListbox = React.memo(
         width="100%"
       >
         {({ data, index, style }) => (
-          <div style={{ ...style, boxSizing: 'border-box' }}>{data[index]}</div>
+          <li style={{ ...style, boxSizing: 'border-box' }}>{data[index]}</li>
         )}
       </FixedSizeList>
     );

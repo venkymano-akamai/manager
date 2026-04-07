@@ -151,18 +151,21 @@ export const CloudPulseResourcesSelect = React.memo(
     );
 
     // Wrapper component to connect VirtualizedListbox with MUI Autocomplete
-    const ListboxWrapper = React.forwardRef<
-      HTMLDivElement,
-      React.HTMLAttributes<HTMLElement>
-    >((props, ref) => {
-      // Extract children and forward to VirtualizedListbox
-      const { children, ...otherProps } = props;
-      return (
-        <Box ref={ref} {...otherProps}>
-          <VirtualizedListbox>{children}</VirtualizedListbox>
-        </Box>
-      );
-    });
+    const ListboxWrapper = React.useMemo(
+      () =>
+        React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLElement>>(
+          (props, ref) => {
+            // Extract children and forward to VirtualizedListbox
+            const { children, ...otherProps } = props;
+            return (
+              <Box ref={ref} {...otherProps}>
+                <VirtualizedListbox>{children}</VirtualizedListbox>
+              </Box>
+            );
+          }
+        ),
+      []
+    );
 
     return (
       <Autocomplete

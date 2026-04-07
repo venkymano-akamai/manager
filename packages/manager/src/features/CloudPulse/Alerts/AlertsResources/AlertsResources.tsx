@@ -420,7 +420,8 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
           <CircleProgress />
           {showLoadingIndicator && (
             <Typography variant="body1">
-              The loading time is over 10 seconds. Please wait while the process completes.
+              The loading time is over 10 seconds. Please wait while the process
+              completes.
             </Typography>
           )}
         </Stack>
