@@ -31,23 +31,20 @@ export const useDelayedLoadingIndicator = (
     useState<boolean>(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-
-    if (isLoading) {
-      // Set a timer to show loading indicator after the specified delay
-      timer = setTimeout(() => {
-        setShowLoadingIndicator(true);
-      }, delay);
-    } else {
-      // Reset the indicator when loading completes
+    if (!isLoading) {
+      // Reset the indicator immediately when loading completes
       setShowLoadingIndicator(false);
+      return;
     }
 
-    // Clean up timer on unmount or when isLoading changes
+    // Set a timer to show loading indicator after the specified delay
+    const timer = setTimeout(() => {
+      setShowLoadingIndicator(true);
+    }, delay);
+
+    // Clean up timer on unmount or when dependencies change
     return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
+      clearTimeout(timer);
     };
   }, [isLoading, delay]);
 

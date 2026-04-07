@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useDelayedLoadingIndicator } from './useDelayedLoadingIndicator';
@@ -30,11 +30,15 @@ describe('useDelayedLoadingIndicator', () => {
 
     expect(result.current).toBe(false);
 
-    vi.advanceTimersByTime(4999);
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
 
     expect(result.current).toBe(false);
 
-    vi.advanceTimersByTime(1);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
 
     expect(result.current).toBe(true);
   });
@@ -47,11 +51,15 @@ describe('useDelayedLoadingIndicator', () => {
 
     expect(result.current).toBe(false);
 
-    vi.advanceTimersByTime(2999);
+    act(() => {
+      vi.advanceTimersByTime(2999);
+    });
 
     expect(result.current).toBe(false);
 
-    vi.advanceTimersByTime(1);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
 
     expect(result.current).toBe(true);
   });
@@ -64,7 +72,9 @@ describe('useDelayedLoadingIndicator', () => {
 
     expect(result.current).toBe(false);
 
-    vi.advanceTimersByTime(3000);
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
 
     expect(result.current).toBe(false);
 
@@ -81,7 +91,9 @@ describe('useDelayedLoadingIndicator', () => {
     );
 
     // Wait for delay to pass
-    vi.advanceTimersByTime(5000);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
 
     expect(result.current).toBe(true);
 
@@ -100,7 +112,9 @@ describe('useDelayedLoadingIndicator', () => {
     expect(result.current).toBe(false);
 
     // Stop loading before delay
-    vi.advanceTimersByTime(2000);
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
     rerender({ isLoading: false });
 
     expect(result.current).toBe(false);
@@ -111,7 +125,9 @@ describe('useDelayedLoadingIndicator', () => {
     expect(result.current).toBe(false);
 
     // Wait for new delay
-    vi.advanceTimersByTime(5000);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
 
     expect(result.current).toBe(true);
   });
