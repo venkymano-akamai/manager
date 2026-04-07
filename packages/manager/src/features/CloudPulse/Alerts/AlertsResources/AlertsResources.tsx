@@ -7,6 +7,7 @@ import EntityIcon from 'src/assets/icons/entityIcons/alertsresources.svg';
 import { DebouncedSearchTextField } from 'src/components/DebouncedSearchTextField';
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 
+import { useDelayedLoadingIndicator } from '../../Utils/useDelayedLoadingIndicator';
 import { StyledPlaceholder } from '../AlertsDetail/AlertDetail';
 import { MULTILINE_ERROR_SEPARATOR } from '../constants';
 import { AlertListNoticeMessages } from '../Utils/AlertListNoticeMessages';
@@ -370,6 +371,11 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     !isDataLoadingError && !isSelectionsNeeded && alertResourceIds.length === 0;
   const showEditInformation = isSelectionsNeeded && alertType === 'system';
 
+  const isLoading = isRegionsLoading || isResourcesLoading;
+
+  // Show loading indicator only if loading continues for more than 10 seconds
+  const showLoadingIndicator = useDelayedLoadingIndicator(isLoading, 10000);
+
   if (isNoResources) {
     return (
       <Stack gap={2}>
@@ -407,10 +413,18 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
     maxSelectionCount && selectedResources
       ? Math.max(0, maxSelectionCount - selectedResources.length)
       : undefined;
-  const isLoading = isRegionsLoading || isResourcesLoading;
   return (
     <Stack gap={2}>
-      {isLoading && <CircleProgress />}
+      {isLoading && (
+        <Stack alignItems="center" gap={2}>
+          <CircleProgress />
+          {showLoadingIndicator && (
+            <Typography variant="body1">
+              The loading time is over 10 seconds. Please wait while the process completes.
+            </Typography>
+          )}
+        </Stack>
+      )}
       {!hideLabel && (
         <Typography
           display={isLoading ? 'none' : 'block'}
