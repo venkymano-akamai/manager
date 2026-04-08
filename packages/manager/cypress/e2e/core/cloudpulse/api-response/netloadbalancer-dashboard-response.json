@@ -39,6 +39,9 @@
                     "size": 12,
                     "chart_type": "line",
                     "y_label": "nlb_backend_ingress_traffic",
+                    "group_by": [
+                        "node_id"
+                    ],
                     "aggregate_function": "sum"
                 },
                 {
@@ -49,6 +52,9 @@
                     "size": 12,
                     "chart_type": "line",
                     "y_label": "nlb_backend_ingress_packets",
+                    "group_by": [
+                        "node_id"
+                    ],
                     "aggregate_function": "sum"
                 },
                 {

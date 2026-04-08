@@ -175,7 +175,6 @@ describe('CloudPulse API - Dashboards and Metric Definitions', () => {
     { type: 'nodebalancer', id: 3 },
     { type: 'firewall', id: 4 },
     { type: 'objectstorage', id: 6 },
-    { type: 'linode', id: 2 },
     { type: 'netloadbalancer', id: 5 },
   ];
 
@@ -188,7 +187,6 @@ describe('CloudPulse API - Dashboards and Metric Definitions', () => {
       'firewall',
       'nodebalancer',
       'objectstorage',
-      'linode',
       'netloadbalancer',
     ].forEach((type) => {
       it(`should fetch ${type.toUpperCase()} dashboards`, () => {
@@ -243,7 +241,7 @@ describe('CloudPulse API - Dashboards and Metric Definitions', () => {
   // Metric Definitions tests
   // -----------------------------
   context('Metric Definitions', () => {
-    ['dbaas', 'objectstorage', 'linode', 'firewall', 'nodebalancer'].forEach(
+    ['dbaas', 'objectstorage', 'firewall', 'nodebalancer'].forEach(
       (type) => {
         it(`should fetch ${type.toUpperCase()} metric definitions`, () => {
           const url = `${apiBaseUrl}/v4beta/monitor/services/${type}/metric-definitions`;
