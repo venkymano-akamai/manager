@@ -7,6 +7,7 @@ import {
   accountAvailabilityFactory,
   linodeFactory,
   nodeBalancerFactory,
+  profileFactory,
   regionFactory,
 } from '@linode/utilities';
 import { widgetDetails } from 'support/constants/widgets';
@@ -28,7 +29,7 @@ import {
   mockGetNodeBalancer,
   mockGetNodeBalancers,
 } from 'support/intercepts/nodebalancers';
-import { mockGetUserPreferences } from 'support/intercepts/profile';
+import { mockGetProfile, mockGetUserPreferences } from 'support/intercepts/profile';
 import { mockGetRegions } from 'support/intercepts/regions';
 import { ui } from 'support/ui';
 import { generateRandomMetricsData } from 'support/util/cloudpulse';
@@ -137,6 +138,9 @@ const mockNodeBalancer = nodeBalancerFactory.build({
   label: resource,
   region: 'us-east',
   id: 1,
+});
+const mockProfile = profileFactory.build({
+  timezone: 'UTC',
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -280,6 +284,7 @@ describe('Integration Tests for Nodebalancer Dashboard ', () => {
       { failOnNonZeroExit: false }
     );
     mockAppendFeatureFlags(flagsFactory.build());
+    mockGetProfile(mockProfile);
     mockGetAccount(accountFactory.build({}));
     mockGetCloudPulseMetricDefinitions(serviceType, metricDefinitions);
     mockGetCloudPulseDashboards(serviceType, [dashboard]).as('fetchDashboard');
