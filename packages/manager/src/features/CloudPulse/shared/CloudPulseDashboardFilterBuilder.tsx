@@ -560,8 +560,7 @@ export const CloudPulseDashboardFilterBuilder = React.memo(
             <CircleProgress size="md" />
             {showLoadingIndicator && (
               <Typography mt={2} variant="body1">
-                The loading time is over 10 seconds. Please wait while the
-                process completes.
+                Loading data. Processing time may be longer for large datasets.
               </Typography>
             )}
           </GridLegacy>
