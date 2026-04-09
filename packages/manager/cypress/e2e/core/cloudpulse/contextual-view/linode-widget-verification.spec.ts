@@ -135,7 +135,10 @@ describe('Integration Tests for Linode Dashboard ', () => {
     mockGetCloudPulseDashboard(id, dashboard);
     mockCreateCloudPulseJWEToken(serviceType);
     mockGetRegions([mockRegion]);
-    mockGetUserPreferences({ isAclpMetricsBeta: true }).as('fetchPreferences');
+    mockGetUserPreferences({
+      isAclpMetricsBeta: true,
+      isAclpMetricsMode: true,
+    }).as('fetchPreferences');
     mockCreateCloudPulseMetrics(serviceType, metricsAPIResponsePayload).as(
       'getMetrics'
     );

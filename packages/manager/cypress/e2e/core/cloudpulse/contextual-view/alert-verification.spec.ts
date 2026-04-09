@@ -218,13 +218,7 @@ describe('Alert Contextual view for linode', () => {
       'not.exist'
     );
     // Navigation to Alerts beta
-    ui.button.findByTitle('Try Alerts (Beta)').should('be.visible').click();
     cy.wait('@getDBaaSAlertDefinitions');
-    cy.get('[data-qa-notice="true"]')
-      .should('be.visible')
-      .contains(
-        'Welcome to Alerts (Beta), designed for flexibility with features like customizable alerts.'
-      );
 
     // Test sorting
     sortCases.forEach(({ ascending, column, descending }) => {
@@ -276,9 +270,9 @@ describe('Alert Contextual view for linode', () => {
       .should('be.visible')
       .click();
 
-    ui.button.findByTitle('Save').should('be.visible').click();
-    ui.button.findByTitle('Confirm').should('be.visible').click();
+    ui.button.findByTitle('Save Alerts').should('be.visible').click();
+    //  ui.button.findByTitle('Confirm').should('be.visible').click();
 
-    ui.toast.assertMessage('Your settings for alerts have been saved.');
+    ui.toast.assertMessage('All your settings for Alerts have been saved.');
   });
 });

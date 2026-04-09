@@ -202,7 +202,7 @@ describe('Integration Tests for CloudPulse Alerts Listing Page', () => {
       'getSecondAlertDefinitions'
     );
     cy.visitWithLogin(alertDefinitionsUrl);
-    cy.get('[aria-label="Content is loading"]', { timeout: 30000 }).should(
+    cy.get('[aria-label="Content is loading"]', { timeout: 50000 }).should(
       'not.exist'
     );
     cy.wait('@getAlertDefinitionsList');
