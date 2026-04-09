@@ -2,6 +2,9 @@ import React from 'react';
 import { FixedSizeList } from 'react-window';
 
 export interface VirtualizedListboxProps {
+  /**
+   * The children of the VirtualizedListbox component, which are expected to be the options to be rendered in the list.
+   */
   children: React.ReactNode;
 }
 
