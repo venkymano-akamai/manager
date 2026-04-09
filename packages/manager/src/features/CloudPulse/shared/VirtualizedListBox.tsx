@@ -13,17 +13,6 @@ export interface VirtualizedListboxProps {
 /**
  * A virtualized listbox component that efficiently renders large lists by only
  * rendering visible items. Uses react-window for virtualization.
- *
- * @example
- * ```tsx
- * <Autocomplete
- *   slotProps={{
- *     listbox: {
- *       component: VirtualizedListbox,
- *     },
- *   }}
- * />
- * ```
  */
 export const VirtualizedListbox = React.memo(
   (props: VirtualizedListboxProps) => {

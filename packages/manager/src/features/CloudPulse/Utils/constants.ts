@@ -188,7 +188,7 @@ export const VIRTUALIZATION_CONFIG = {
   THRESHOLD: 100,
   /** Maximum number of filtered results to show when searching */
   FILTER_LIMIT: 1300,
-} as const;
+};
 
 /**
  * Delay times for loading indicators (milliseconds)
@@ -198,4 +198,4 @@ export const LOADING_DELAYS = {
   DEFAULT: 5000,
   /** Extended delay for large dataset operations */
   LARGE_DATASET: 10000,
-} as const;
+};
