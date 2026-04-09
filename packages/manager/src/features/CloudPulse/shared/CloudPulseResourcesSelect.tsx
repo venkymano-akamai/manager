@@ -5,7 +5,11 @@ import React from 'react';
 import { useFlags } from 'src/hooks/useFlags';
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 
-import { CLUSTERS_TOOLTIP_TEXT, RESOURCE_FILTER_MAP } from '../Utils/constants';
+import {
+  CLUSTERS_TOOLTIP_TEXT,
+  RESOURCE_FILTER_MAP,
+  VIRTUALIZATION_CONFIG,
+} from '../Utils/constants';
 import { filterUsingDependentFilters } from '../Utils/FilterBuilder';
 import { deepEqual } from '../Utils/utils';
 import { CLOUD_PULSE_TEXT_FIELD_PROPS } from './styles';
@@ -154,7 +158,7 @@ export const CloudPulseResourcesSelect = React.memo(
         // Only apply limit when there's search input to improve filtering performance
         if (state.inputValue) {
           const filtered = baseFilterOptions(options, state);
-          return filtered.slice(0, 1300);
+          return filtered.slice(0, VIRTUALIZATION_CONFIG.FILTER_LIMIT);
         }
         // Show all options when no search text (virtualization handles performance)
         return options;
@@ -163,10 +167,10 @@ export const CloudPulseResourcesSelect = React.memo(
 
     // Wrapper component to connect VirtualizedListbox with MUI Autocomplete
     const ListboxWrapper = React.useMemo(() => {
-      if (getResourcesList.length <= 100) {
+      if (getResourcesList.length <= VIRTUALIZATION_CONFIG.THRESHOLD) {
         return undefined;
       }
-      return React.forwardRef<
+      const Wrapper = React.forwardRef<
         HTMLDivElement,
         React.HTMLAttributes<HTMLElement>
       >((props, ref) => {
@@ -178,6 +182,8 @@ export const CloudPulseResourcesSelect = React.memo(
           </div>
         );
       });
+      Wrapper.displayName = 'VirtualizedListboxWrapper';
+      return Wrapper;
     }, [getResourcesList.length]);
 
     return (

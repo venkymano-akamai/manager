@@ -7,6 +7,8 @@ import EntityIcon from 'src/assets/icons/entityIcons/alertsresources.svg';
 import { DebouncedSearchTextField } from 'src/components/DebouncedSearchTextField';
 import { useResourcesQuery } from 'src/queries/cloudpulse/resources';
 
+import { DelayedLoadingMessage } from '../../shared/DelayedLoadingMessage';
+import { LOADING_DELAYS } from '../../Utils/constants';
 import { useDelayedLoadingIndicator } from '../../Utils/useDelayedLoadingIndicator';
 import { StyledPlaceholder } from '../AlertsDetail/AlertDetail';
 import { MULTILINE_ERROR_SEPARATOR } from '../constants';
@@ -374,7 +376,10 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
   const isLoading = isRegionsLoading || isResourcesLoading;
 
   // Show loading indicator only if loading continues for more than 10 seconds
-  const showLoadingIndicator = useDelayedLoadingIndicator(isLoading, 10000);
+  const showLoadingIndicator = useDelayedLoadingIndicator(
+    isLoading,
+    LOADING_DELAYS.LARGE_DATASET
+  );
 
   if (isNoResources) {
     return (
@@ -418,11 +423,7 @@ export const AlertResources = React.memo((props: AlertResourcesProp) => {
       {isLoading && (
         <Stack alignItems="center" gap={2}>
           <CircleProgress />
-          {showLoadingIndicator && (
-            <Typography variant="body1">
-              Loading data. Processing time may be longer for large datasets.
-            </Typography>
-          )}
+          {showLoadingIndicator && <DelayedLoadingMessage />}
         </Stack>
       )}
       {!hideLabel && (

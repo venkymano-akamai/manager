@@ -1,6 +1,8 @@
 import React from 'react';
 import { FixedSizeList } from 'react-window';
 
+import { VIRTUALIZATION_CONFIG } from '../Utils/constants';
+
 export interface VirtualizedListboxProps {
   /**
    * The children of the VirtualizedListbox component, which are expected to be the options to be rendered in the list.
@@ -8,6 +10,21 @@ export interface VirtualizedListboxProps {
   children: React.ReactNode;
 }
 
+/**
+ * A virtualized listbox component that efficiently renders large lists by only
+ * rendering visible items. Uses react-window for virtualization.
+ *
+ * @example
+ * ```tsx
+ * <Autocomplete
+ *   slotProps={{
+ *     listbox: {
+ *       component: VirtualizedListbox,
+ *     },
+ *   }}
+ * />
+ * ```
+ */
 export const VirtualizedListbox = React.memo(
   (props: VirtualizedListboxProps) => {
     const { children } = props;
@@ -16,7 +33,11 @@ export const VirtualizedListbox = React.memo(
     const itemCount = itemData.length;
 
     const calculatedHeight = React.useMemo(
-      () => Math.min(160, itemCount * 36),
+      () =>
+        Math.min(
+          VIRTUALIZATION_CONFIG.MAX_VISIBLE_HEIGHT,
+          itemCount * VIRTUALIZATION_CONFIG.ITEM_HEIGHT
+        ),
       [itemCount]
     );
 
@@ -31,7 +52,7 @@ export const VirtualizedListbox = React.memo(
         innerElementType="div"
         itemCount={itemCount}
         itemData={itemData}
-        itemSize={36}
+        itemSize={VIRTUALIZATION_CONFIG.ITEM_HEIGHT}
         outerElementType="ul"
         style={{
           margin: 0,
@@ -45,3 +66,5 @@ export const VirtualizedListbox = React.memo(
     );
   }
 );
+
+VirtualizedListbox.displayName = 'VirtualizedListbox';
