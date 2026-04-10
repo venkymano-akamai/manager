@@ -1,5 +1,5 @@
-import React from 'react';
-import { FixedSizeList } from 'react-window';
+import * as React from 'react';
+import { List, type RowComponentProps } from 'react-window';
 
 import { VIRTUALIZATION_CONFIG } from '../Utils/constants';
 
@@ -30,28 +30,39 @@ export const VirtualizedListbox = React.memo(
       [itemCount]
     );
 
+    const RowComponent = React.useCallback(
+      ({
+        index,
+        items,
+        style,
+      }: RowComponentProps<{
+        items: React.ReactNode[];
+      }>) => {
+        return (
+          <div style={{ ...style, boxSizing: 'border-box' }}>
+            {items[index]}
+          </div>
+        );
+      },
+      []
+    );
+
     if (itemCount === 0) {
       return <ul>{children}</ul>;
     }
 
     return (
-      <FixedSizeList
+      <List
         className="virtualized-listbox"
-        height={calculatedHeight}
-        innerElementType="div"
-        itemCount={itemCount}
-        itemData={itemData}
-        itemSize={VIRTUALIZATION_CONFIG.ITEM_HEIGHT}
-        outerElementType="ul"
+        rowComponent={RowComponent}
+        rowCount={itemCount}
+        rowHeight={VIRTUALIZATION_CONFIG.ITEM_HEIGHT}
+        rowProps={{ items: itemData }}
         style={{
+          height: calculatedHeight,
           margin: 0,
         }}
-        width="100%"
-      >
-        {({ data, index, style }) => (
-          <div style={{ ...style, boxSizing: 'border-box' }}>{data[index]}</div>
-        )}
-      </FixedSizeList>
+      />
     );
   }
 );
