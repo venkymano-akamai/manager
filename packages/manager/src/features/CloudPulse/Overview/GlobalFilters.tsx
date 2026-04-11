@@ -1,4 +1,4 @@
-import { Box, Divider } from '@linode/ui';
+import { Box, Divider, Notice } from '@linode/ui';
 import { IconButton } from '@mui/material';
 import { GridLegacy } from '@mui/material';
 import * as React from 'react';
@@ -104,7 +104,12 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
     handleAnyFilterChange(REFRESH, Date.now(), []);
   }, []);
 
-  const { isLoading, isError } = useResourcesQuery(
+  const {
+    isLoading,
+    isError,
+    error: resourcesError,
+    failureReason,
+  } = useResourcesQuery(
     selectedDashboard !== undefined,
     selectedDashboard?.service_type ?? '',
     {},
@@ -122,6 +127,10 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
     },
     []
   );
+
+  const errorCode = resourcesError
+    ? 'Unable to fetch resources due to access restrictions'
+    : failureReason;
 
   return (
     <GridLegacy container>
@@ -191,7 +200,24 @@ export const GlobalFilters = React.memo((props: GlobalFilterProperties) => {
         </GridLegacy>
       )}
 
-      {selectedDashboard && (
+      {isError && (
+        <GridLegacy
+          alignItems="center"
+          container
+          display="flex"
+          justifyContent="center"
+          paddingTop={2}
+          margin={2}
+        >
+          <Notice variant="error">
+            {errorCode
+              ? `Error fetching resources: ${errorCode}`
+              : 'An unexpected error occurred while fetching resources.'}
+          </Notice>
+        </GridLegacy>
+      )}
+
+      {!errorCode && selectedDashboard && (
         <CloudPulseDashboardFilterBuilder
           dashboard={selectedDashboard}
           emitFilterChange={emitFilterChange}
